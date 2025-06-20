@@ -92,10 +92,11 @@ typedef enum VulkanObjectType {
     kVulkanObjectTypeTensorViewARM = 51,
     kVulkanObjectTypeOpticalFlowSessionNV = 52,
     kVulkanObjectTypeShaderEXT = 53,
-    kVulkanObjectTypeExternalComputeQueueNV = 54,
-    kVulkanObjectTypeIndirectExecutionSetEXT = 55,
-    kVulkanObjectTypeIndirectCommandsLayoutEXT = 56,
-    kVulkanObjectTypeMax = 57,
+    kVulkanObjectTypeDataGraphPipelineSessionARM = 54,
+    kVulkanObjectTypeExternalComputeQueueNV = 55,
+    kVulkanObjectTypeIndirectExecutionSetEXT = 56,
+    kVulkanObjectTypeIndirectCommandsLayoutEXT = 57,
+    kVulkanObjectTypeMax = 58,
     // Aliases for backwards compatibilty of "promoted" types
     kVulkanObjectTypeSamplerYcbcrConversionKHR = kVulkanObjectTypeSamplerYcbcrConversion,
     kVulkanObjectTypeDescriptorUpdateTemplateKHR = kVulkanObjectTypeDescriptorUpdateTemplate,
@@ -158,6 +159,7 @@ static const char * const object_string[kVulkanObjectTypeMax] = {
     "TensorViewARM",
     "OpticalFlowSessionNV",
     "ShaderEXT",
+    "DataGraphPipelineSessionARM",
     "ExternalComputeQueueNV",
     "IndirectExecutionSetEXT",
     "IndirectCommandsLayoutEXT",
@@ -219,6 +221,7 @@ const VkDebugReportObjectTypeEXT get_debug_report_enum[] = {
     VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT,   // kVulkanObjectTypeTensorViewARM
     VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT,   // kVulkanObjectTypeOpticalFlowSessionNV
     VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT,   // kVulkanObjectTypeShaderEXT
+    VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT,   // kVulkanObjectTypeDataGraphPipelineSessionARM
     VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT,   // kVulkanObjectTypeExternalComputeQueueNV
     VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT,   // kVulkanObjectTypeIndirectExecutionSetEXT
     VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT,   // kVulkanObjectTypeIndirectCommandsLayoutEXT
@@ -280,6 +283,7 @@ const VkObjectType get_object_type_enum[] = {
     VK_OBJECT_TYPE_TENSOR_VIEW_ARM,   // kVulkanObjectTypeTensorViewARM
     VK_OBJECT_TYPE_OPTICAL_FLOW_SESSION_NV,   // kVulkanObjectTypeOpticalFlowSessionNV
     VK_OBJECT_TYPE_SHADER_EXT,   // kVulkanObjectTypeShaderEXT
+    VK_OBJECT_TYPE_DATA_GRAPH_PIPELINE_SESSION_ARM,   // kVulkanObjectTypeDataGraphPipelineSessionARM
     VK_OBJECT_TYPE_EXTERNAL_COMPUTE_QUEUE_NV,   // kVulkanObjectTypeExternalComputeQueueNV
     VK_OBJECT_TYPE_INDIRECT_EXECUTION_SET_EXT,   // kVulkanObjectTypeIndirectExecutionSetEXT
     VK_OBJECT_TYPE_INDIRECT_COMMANDS_LAYOUT_EXT,   // kVulkanObjectTypeIndirectCommandsLayoutEXT
