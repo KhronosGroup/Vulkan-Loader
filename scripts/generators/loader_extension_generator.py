@@ -249,16 +249,6 @@ class LoaderExtensionGenerator(BaseGenerator):
         self.OutputLayerInstanceDispatchTable(out)
         self.OutputLayerDeviceDispatchTable(out)
 
-    # Convert an XML dependency expression to a C expression, taking a callback to replace extension names
-    # See https://registry.khronos.org/vulkan/specs/1.4/registry.html#depends-expressions
-    @staticmethod
-    def ConvertDependencyExpression(expr, replace_func):
-        # '(' and ')' can pass through unchanged
-        expr = re.sub(',', ' || ', expr)
-        expr = re.sub(r'\+', ' && ', expr)
-        expr = re.sub(r'\w+', lambda match: replace_func(match.group()), expr)
-        return expr
-
     def DescribeBlock(self, command, current_block, out, custom_commands_string = ' commands', indent = '    '):
         effective_version_name = APISpecific.getEffectiveVersionName(self.targetApiName, command.version)
         if command.extensions != current_block and effective_version_name != current_block:
@@ -664,14 +654,11 @@ VKAPI_ATTR VkResult VKAPI_CALL vkDevExtError(VkDevice dev) {
                     out.append(f'#if defined({command.protect})\n')
 
                 current_block = self.DescribeBlock(command, current_block, out)
-                if command.name == 'vkGetDeviceGroupSurfacePresentModes2EXT': # command.extensions[0].depends in [x for x in self.vk.commands.values() if x.device]:
-                    # Hardcode the dependency expression as vulkan_object.py doesn't expose this information
-                    dep_expr = self.ConvertDependencyExpression('VK_KHR_device_group,VK_VERSION_1_1', lambda ext_name: f'dev->driver_extensions.{ext_name[3:].lower()}_enabled')
-                    out.append(f'    if (dev->driver_extensions.{command.extensions[0][3:].lower()}_enabled && ({dep_expr}))\n')
-                    out.append(f'       dispatch->{command.name[2:]} = (PFN_{(command.name)})gpda(dev->icd_device, "{(command.name)}");\n')
-                else:
-                    out.append(f'    if (dev->driver_extensions.{command.extensions[0][3:].lower()}_enabled)\n')
-                    out.append(f'       dispatch->{command.name[2:]} = (PFN_{(command.name)})gpda(dev->icd_device, "{(command.name)}");\n')
+                enable_extension_expressions = []
+                for ext in command.extensions:
+                    enable_extension_expressions.append(f'dev->driver_extensions.{ext[3:].lower()}_enabled')
+                out.append(f'    if ({" || ".join(enable_extension_expressions)})\n')
+                out.append(f'       dispatch->{command.name[2:]} = (PFN_{(command.name)})gpda(dev->icd_device, "{(command.name)}");\n')
 
                 if command.protect is not None:
                     out.append(f'#endif // {command.protect}\n')
@@ -1304,12 +1291,10 @@ VKAPI_ATTR VkResult VKAPI_CALL vkDevExtError(VkDevice dev) {
 
                 out.append(f'    if (!strcmp(name, "{command.name[2:]}")) {{\n')
                 out.append('        *found_name = true;\n')
-                if command.name == 'vkGetDeviceGroupSurfacePresentModes2EXT': # command.extensions[0].depends in [x for x in self.vk.commands.values() if x.device]:
-                    # Hardcode the dependency expression as vulkan_object.py doesn't expose this information
-                    dep_expr = self.ConvertDependencyExpression('VK_KHR_device_group,VK_VERSION_1_1', lambda ext_name: f'dev->driver_extensions.{ext_name[3:].lower()}_enabled')
-                    out.append(f'        return (dev->driver_extensions.{command.extensions[0][3:].lower()}_enabled && ({dep_expr})) ?\n')
-                else:
-                    out.append(f'        return dev->driver_extensions.{command.extensions[0][3:].lower()}_enabled ?\n')
+                enable_extension_expressions = []
+                for ext in command.extensions:
+                    enable_extension_expressions.append(f'dev->driver_extensions.{ext[3:].lower()}_enabled')
+                out.append(f'        return {" || ".join(enable_extension_expressions)} ?\n')
                 out.append(f'            (PFN_vkVoidFunction)terminator_{(command.name[2:])} : NULL;\n')
                 out.append('    }\n')
 
