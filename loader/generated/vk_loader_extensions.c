@@ -767,6 +767,9 @@ VKAPI_ATTR void VKAPI_CALL loader_init_device_extension_dispatch_table(struct lo
     table->GetPipelineBinaryDataKHR = (PFN_vkGetPipelineBinaryDataKHR)gdpa(dev, "vkGetPipelineBinaryDataKHR");
     table->ReleaseCapturedPipelineDataKHR = (PFN_vkReleaseCapturedPipelineDataKHR)gdpa(dev, "vkReleaseCapturedPipelineDataKHR");
 
+    // ---- VK_KHR_swapchain_maintenance1 extension commands
+    table->ReleaseSwapchainImagesKHR = (PFN_vkReleaseSwapchainImagesKHR)gdpa(dev, "vkReleaseSwapchainImagesKHR");
+
     // ---- VK_KHR_line_rasterization extension commands
     table->CmdSetLineStippleKHR = (PFN_vkCmdSetLineStippleKHR)gdpa(dev, "vkCmdSetLineStippleKHR");
 
@@ -2725,6 +2728,9 @@ VKAPI_ATTR void* VKAPI_CALL loader_lookup_device_dispatch_table(const VkLayerDis
     if (!strcmp(name, "GetPipelineKeyKHR")) return (void *)table->GetPipelineKeyKHR;
     if (!strcmp(name, "GetPipelineBinaryDataKHR")) return (void *)table->GetPipelineBinaryDataKHR;
     if (!strcmp(name, "ReleaseCapturedPipelineDataKHR")) return (void *)table->ReleaseCapturedPipelineDataKHR;
+
+    // ---- VK_KHR_swapchain_maintenance1 extension commands
+    if (!strcmp(name, "ReleaseSwapchainImagesKHR")) return (void *)table->ReleaseSwapchainImagesKHR;
 
     // ---- VK_KHR_line_rasterization extension commands
     if (!strcmp(name, "CmdSetLineStippleKHR")) return (void *)table->CmdSetLineStippleKHR;
@@ -5291,6 +5297,22 @@ VKAPI_ATTR VkResult VKAPI_CALL ReleaseCapturedPipelineDataKHR(
 }
 
 
+// ---- VK_KHR_swapchain_maintenance1 extension trampoline/terminators
+
+VKAPI_ATTR VkResult VKAPI_CALL ReleaseSwapchainImagesKHR(
+    VkDevice                                    device,
+    const VkReleaseSwapchainImagesInfoKHR*      pReleaseInfo) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkReleaseSwapchainImagesKHR: Invalid device "
+                   "[VUID-vkReleaseSwapchainImagesKHR-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    return disp->ReleaseSwapchainImagesKHR(device, pReleaseInfo);
+}
+
+
 // ---- VK_KHR_cooperative_matrix extension trampoline/terminators
 
 VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceCooperativeMatrixPropertiesKHR(
@@ -7736,7 +7758,7 @@ VKAPI_ATTR void VKAPI_CALL GetImageSubresourceLayout2EXT(
 
 VKAPI_ATTR VkResult VKAPI_CALL ReleaseSwapchainImagesEXT(
     VkDevice                                    device,
-    const VkReleaseSwapchainImagesInfoEXT*      pReleaseInfo) {
+    const VkReleaseSwapchainImagesInfoKHR*      pReleaseInfo) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(device);
     if (NULL == disp) {
         loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
@@ -11742,6 +11764,12 @@ bool extension_instance_gpa(struct loader_instance *ptr_instance, const char *na
         return true;
     }
 
+    // ---- VK_KHR_swapchain_maintenance1 extension commands
+    if (!strcmp("vkReleaseSwapchainImagesKHR", name)) {
+        *addr = (void *)ReleaseSwapchainImagesKHR;
+        return true;
+    }
+
     // ---- VK_KHR_cooperative_matrix extension commands
     if (!strcmp("vkGetPhysicalDeviceCooperativeMatrixPropertiesKHR", name)) {
         *addr = (void *)GetPhysicalDeviceCooperativeMatrixPropertiesKHR;
@@ -13534,6 +13562,9 @@ void fill_out_enabled_instance_extensions(uint32_t extension_count, const char *
     // ---- VK_KHR_portability_enumeration extension commands
         else if (0 == strcmp(extension_list[i], VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME)) { enables->khr_portability_enumeration = 1; }
 
+    // ---- VK_KHR_surface_maintenance1 extension commands
+        else if (0 == strcmp(extension_list[i], VK_KHR_SURFACE_MAINTENANCE_1_EXTENSION_NAME)) { enables->khr_surface_maintenance1 = 1; }
+
     // ---- VK_EXT_debug_report extension commands
         else if (0 == strcmp(extension_list[i], VK_EXT_DEBUG_REPORT_EXTENSION_NAME)) { enables->ext_debug_report = 1; }
 
@@ -14023,6 +14054,7 @@ const char *const LOADER_INSTANCE_EXTENSIONS[] = {
                                                   VK_KHR_GET_DISPLAY_PROPERTIES_2_EXTENSION_NAME,
                                                   VK_KHR_SURFACE_PROTECTED_CAPABILITIES_EXTENSION_NAME,
                                                   VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME,
+                                                  VK_KHR_SURFACE_MAINTENANCE_1_EXTENSION_NAME,
                                                   VK_EXT_DEBUG_REPORT_EXTENSION_NAME,
 #if defined(VK_USE_PLATFORM_GGP)
                                                   VK_GGP_STREAM_DESCRIPTOR_SURFACE_EXTENSION_NAME,

@@ -526,6 +526,7 @@ struct loader_instance_extension_enable_list {
     uint8_t khr_get_display_properties2;
     uint8_t khr_surface_protected_capabilities;
     uint8_t khr_portability_enumeration;
+    uint8_t khr_surface_maintenance1;
     uint8_t ext_debug_report;
 #if defined(VK_USE_PLATFORM_GGP)
     uint8_t ggp_stream_descriptor_surface;
