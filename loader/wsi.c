@@ -2585,58 +2585,54 @@ vkGetPhysicalDeviceSurfaceCapabilities2KHR(VkPhysicalDevice physicalDevice, cons
     return disp->GetPhysicalDeviceSurfaceCapabilities2KHR(unwrapped_phys_dev, pSurfaceInfo, pSurfaceCapabilities);
 }
 
-void emulate_VK_EXT_surface_maintenance1(struct loader_icd_term *icd_term, const VkPhysicalDeviceSurfaceInfo2KHR *pSurfaceInfo,
+void emulate_VK_KHR_surface_maintenance1(const VkPhysicalDeviceSurfaceInfo2KHR *pSurfaceInfo,
                                          VkSurfaceCapabilities2KHR *pSurfaceCapabilities) {
-    // Because VK_EXT_surface_maintenance1 is an instance extension, applications will use it to query info on drivers which do
+    // Because VK_KHR_surface_maintenance1 is an instance extension, applications will use it to query info on drivers which do
     // not support the extension. Thus we need to emulate the driver filling out the structs in that case.
-    if (!icd_term->enabled_instance_extensions.ext_surface_maintenance1) {
-        VkPresentModeKHR present_mode = VK_PRESENT_MODE_MAX_ENUM_KHR;
-        const void *void_pNext = pSurfaceInfo->pNext;
-        while (void_pNext) {
-            VkBaseOutStructure out_structure = {0};
-            memcpy(&out_structure, void_pNext, sizeof(VkBaseOutStructure));
-            if (out_structure.sType == VK_STRUCTURE_TYPE_SURFACE_PRESENT_MODE_EXT) {
-                VkSurfacePresentModeEXT *surface_present_mode = (VkSurfacePresentModeEXT *)void_pNext;
-                present_mode = surface_present_mode->presentMode;
-            }
-            void_pNext = out_structure.pNext;
+    VkPresentModeKHR present_mode = VK_PRESENT_MODE_MAX_ENUM_KHR;
+    const void *void_pNext = pSurfaceInfo->pNext;
+    while (void_pNext) {
+        VkBaseOutStructure out_structure = {0};
+        memcpy(&out_structure, void_pNext, sizeof(VkBaseOutStructure));
+        if (out_structure.sType == VK_STRUCTURE_TYPE_SURFACE_PRESENT_MODE_KHR) {
+            VkSurfacePresentModeKHR *surface_present_mode = (VkSurfacePresentModeKHR *)void_pNext;
+            present_mode = surface_present_mode->presentMode;
         }
-        // If no VkSurfacePresentModeEXT was present, return
-        if (present_mode == VK_PRESENT_MODE_MAX_ENUM_KHR) {
-            return;
-        }
+        void_pNext = out_structure.pNext;
+    }
+    // If no VkSurfacePresentModeKHR was present, return
+    if (present_mode == VK_PRESENT_MODE_MAX_ENUM_KHR) {
+        return;
+    }
 
-        void_pNext = pSurfaceCapabilities->pNext;
-        while (void_pNext) {
-            VkBaseOutStructure out_structure = {0};
-            memcpy(&out_structure, void_pNext, sizeof(VkBaseOutStructure));
-            if (out_structure.sType == VK_STRUCTURE_TYPE_SURFACE_PRESENT_MODE_COMPATIBILITY_EXT) {
-                VkSurfacePresentModeCompatibilityEXT *surface_present_mode_compatibility =
-                    (VkSurfacePresentModeCompatibilityEXT *)void_pNext;
-                if (surface_present_mode_compatibility->pPresentModes) {
-                    if (surface_present_mode_compatibility->presentModeCount != 0) {
-                        surface_present_mode_compatibility->pPresentModes[0] = present_mode;
-                        surface_present_mode_compatibility->presentModeCount = 1;
-                    }
-                } else {
+    void_pNext = pSurfaceCapabilities->pNext;
+    while (void_pNext) {
+        VkBaseOutStructure out_structure = {0};
+        memcpy(&out_structure, void_pNext, sizeof(VkBaseOutStructure));
+        if (out_structure.sType == VK_STRUCTURE_TYPE_SURFACE_PRESENT_MODE_COMPATIBILITY_KHR) {
+            VkSurfacePresentModeCompatibilityKHR *surface_present_mode_compatibility =
+                (VkSurfacePresentModeCompatibilityKHR *)void_pNext;
+            if (surface_present_mode_compatibility->pPresentModes) {
+                if (surface_present_mode_compatibility->presentModeCount != 0) {
+                    surface_present_mode_compatibility->pPresentModes[0] = present_mode;
                     surface_present_mode_compatibility->presentModeCount = 1;
                 }
-
-            } else if (out_structure.sType == VK_STRUCTURE_TYPE_SURFACE_PRESENT_SCALING_CAPABILITIES_EXT) {
-                // Because there is no way to fill out the information faithfully, set scaled max/min image extent to the
-                // surface capabilities max/min extent and the rest to zero.
-                VkSurfacePresentScalingCapabilitiesEXT *surface_present_scaling_capabilities =
-                    (VkSurfacePresentScalingCapabilitiesEXT *)void_pNext;
-                surface_present_scaling_capabilities->supportedPresentScaling = 0;
-                surface_present_scaling_capabilities->supportedPresentGravityX = 0;
-                surface_present_scaling_capabilities->supportedPresentGravityY = 0;
-                surface_present_scaling_capabilities->maxScaledImageExtent =
-                    pSurfaceCapabilities->surfaceCapabilities.maxImageExtent;
-                surface_present_scaling_capabilities->minScaledImageExtent =
-                    pSurfaceCapabilities->surfaceCapabilities.minImageExtent;
+            } else {
+                surface_present_mode_compatibility->presentModeCount = 1;
             }
-            void_pNext = out_structure.pNext;
+
+        } else if (out_structure.sType == VK_STRUCTURE_TYPE_SURFACE_PRESENT_SCALING_CAPABILITIES_KHR) {
+            // Because there is no way to fill out the information faithfully, set scaled max/min image extent to the
+            // surface capabilities max/min extent and the rest to zero.
+            VkSurfacePresentScalingCapabilitiesKHR *surface_present_scaling_capabilities =
+                (VkSurfacePresentScalingCapabilitiesKHR *)void_pNext;
+            surface_present_scaling_capabilities->supportedPresentScaling = 0;
+            surface_present_scaling_capabilities->supportedPresentGravityX = 0;
+            surface_present_scaling_capabilities->supportedPresentGravityY = 0;
+            surface_present_scaling_capabilities->maxScaledImageExtent = pSurfaceCapabilities->surfaceCapabilities.maxImageExtent;
+            surface_present_scaling_capabilities->minScaledImageExtent = pSurfaceCapabilities->surfaceCapabilities.minImageExtent;
         }
+        void_pNext = out_structure.pNext;
     }
 }
 
@@ -2684,8 +2680,9 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_GetPhysicalDeviceSurfaceCapabilities2K
 
         // Because VK_EXT_surface_maintenance1 is an instance extension, applications will use it to query info on drivers which do
         // not support the extension. Thus we need to emulate the driver filling out the structs in that case.
-        if (!icd_term->enabled_instance_extensions.ext_surface_maintenance1) {
-            emulate_VK_EXT_surface_maintenance1(icd_term, pSurfaceInfo, pSurfaceCapabilities);
+        if (!icd_term->enabled_instance_extensions.khr_surface_maintenance1 &&
+            !icd_term->enabled_instance_extensions.ext_surface_maintenance1) {
+            emulate_VK_KHR_surface_maintenance1(pSurfaceInfo, pSurfaceCapabilities);
         }
 
         return res;
@@ -2708,7 +2705,10 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_GetPhysicalDeviceSurfaceCapabilities2K
         VkResult res = icd_term->dispatch.GetPhysicalDeviceSurfaceCapabilitiesKHR(phys_dev_term->phys_dev, surface,
                                                                                   &pSurfaceCapabilities->surfaceCapabilities);
 
-        emulate_VK_EXT_surface_maintenance1(icd_term, pSurfaceInfo, pSurfaceCapabilities);
+        if (!icd_term->enabled_instance_extensions.khr_surface_maintenance1 &&
+            !icd_term->enabled_instance_extensions.ext_surface_maintenance1) {
+            emulate_VK_KHR_surface_maintenance1(pSurfaceInfo, pSurfaceCapabilities);
+        }
         return res;
     }
 }

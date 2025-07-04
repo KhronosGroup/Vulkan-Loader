@@ -729,6 +729,9 @@ typedef struct VkLayerDispatchTable_ {
     PFN_vkGetPipelineBinaryDataKHR GetPipelineBinaryDataKHR;
     PFN_vkReleaseCapturedPipelineDataKHR ReleaseCapturedPipelineDataKHR;
 
+    // ---- VK_KHR_swapchain_maintenance1 extension commands
+    PFN_vkReleaseSwapchainImagesKHR ReleaseSwapchainImagesKHR;
+
     // ---- VK_KHR_line_rasterization extension commands
     PFN_vkCmdSetLineStippleKHR CmdSetLineStippleKHR;
 
