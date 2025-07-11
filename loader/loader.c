@@ -387,6 +387,269 @@ void free_string_list(const struct loader_instance *inst, struct loader_string_l
     memset(string_list, 0, sizeof(struct loader_string_list));
 }
 
+// In place modify the passed in path to do the following:
+// If HAVE_REALPATH is defined, then this simply calls realpath() so its behavior is defined by realpath()
+// Else:
+// * Windows-only: Replace forward slashes with backwards slashes (platform correct directory separator)
+// * Replace contiguous directory separators with a single directory separator
+// * Replace "/./" separator with "/" (where / is the platform correct directory separator)
+// * Replace "/<directory_name>/../" with just "/" (where / is the platform correct directory separator)
+VkResult normalize_path(const struct loader_instance *inst, char **passed_in_path) {
+    // passed_in_path doesn't point to anything, can't modify inplace so just return
+    if (passed_in_path == NULL) {
+        return VK_SUCCESS;
+    }
+
+// POSIX systems has the realpath() function to do this for us, fallback to basic normalization on other platforms
+#if defined(HAVE_REALPATH)
+    char *path = loader_instance_heap_calloc(inst, PATH_MAX, VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
+    if (NULL == path) {
+        return VK_ERROR_OUT_OF_HOST_MEMORY;
+    }
+    char *ret = realpath(*passed_in_path, path);
+    if (NULL == ret) {
+        // error path
+        int error_code = errno;
+        loader_log(inst, VULKAN_LOADER_DEBUG_BIT, 0,
+                   "normalize_path: Call to realpath() failed with error code %d when given the path %s", error_code,
+                   *passed_in_path);
+        loader_instance_heap_free(inst, path);
+    } else {
+        // Replace string pointed to by passed_in_path with the one given to us by realpath()
+        loader_instance_heap_free(inst, *passed_in_path);
+        *passed_in_path = path;
+    }
+    return VK_SUCCESS;
+
+// Windows has GetFullPathName which does essentially the same thing. Note that we call GetFullPathNameA because the path has
+// already been converted from the wide char format when it was initially gotten
+#elif defined(WIN32)
+    VkResult res = VK_SUCCESS;
+    DWORD path_len = (DWORD)strlen(*passed_in_path) + 1;
+    char *path = loader_instance_heap_calloc(inst, (size_t)path_len, VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
+    if (NULL == path) {
+        res = VK_ERROR_OUT_OF_HOST_MEMORY;
+        goto out;
+    }
+    DWORD actual_len = GetFullPathNameA(*passed_in_path, path_len, path, NULL);
+    if (actual_len == 0) {
+        size_t last_error = (size_t)GetLastError();
+        loader_log(inst, VULKAN_LOADER_DEBUG_BIT, 0,
+                   "normalize_path: Call to GetFullPathNameA() failed with error code %llu when given the path %s", last_error,
+                   *passed_in_path);
+        res = VK_ERROR_INITIALIZATION_FAILED;
+        goto out;
+    }
+
+    // If path_len wasn't big enough, need to realloc and call again
+    // actual_len doesn't include null terminator
+    if (actual_len + 1 > path_len) {
+        path = loader_instance_heap_realloc(inst, path, path_len, actual_len + 1, VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
+        if (NULL == path) {
+            res = VK_ERROR_OUT_OF_HOST_MEMORY;
+            goto out;
+        }
+        // store the updated allocation size (sans null terminator)
+        path_len = actual_len + 1;
+
+        actual_len = GetFullPathNameA(*passed_in_path, path_len, path, NULL);
+        if (actual_len == 0) {
+            size_t last_error = (size_t)GetLastError();
+            loader_log(inst, VULKAN_LOADER_DEBUG_BIT, 0,
+                       "normalize_path: Call to GetFullPathNameA() failed with error code %llu when given the path %s", last_error,
+                       *passed_in_path);
+            res = VK_ERROR_INITIALIZATION_FAILED;
+            goto out;
+            // actual_len doesn't include null terminator
+        } else if (actual_len + 1 != path_len) {
+            loader_log(inst, VULKAN_LOADER_DEBUG_BIT, 0,
+                       "normalize_path: Call to GetFullPathNameA() with too small of a buffer when given the path %s after the "
+                       "initial call to GetFullPathNameA() failed for the same reason. Buffer size is %llu, actual size is %llu",
+                       *passed_in_path, (size_t)path_len, (size_t)actual_len);
+            res = VK_ERROR_INITIALIZATION_FAILED;
+            goto out;
+        }
+    }
+    // Replace string pointed to by passed_in_path with the one given to us by realpath()
+    loader_instance_heap_free(inst, *passed_in_path);
+    *passed_in_path = path;
+out:
+    if (VK_SUCCESS != res) {
+        if (NULL != path) {
+            loader_instance_heap_free(inst, path);
+        }
+    }
+    return res;
+
+#else
+    (void)inst;
+    char *path = *passed_in_path;
+    size_t path_len = strlen(path) + 1;
+
+    size_t output_index = 0;
+    // Iterate through the string up to the last character, excluding the null terminator
+    for (size_t i = 0; i < path_len - 1; i++) {
+        if (i + 1 < path_len && path[i] == DIRECTORY_SYMBOL && path[i + 1] == DIRECTORY_SYMBOL) {
+            continue;
+        } else if (i + 2 < path_len && path[i] == DIRECTORY_SYMBOL && path[i + 1] == '.' && path[i + 2] == DIRECTORY_SYMBOL) {
+            i += 1;
+        } else {
+            path[output_index++] = path[i];
+        }
+    }
+    // Add null terminator and set the new length
+    path[output_index++] = '\0';
+    path_len = output_index;
+
+    // Loop while there are still ..'s in the path. Easiest implementation resolves them one by one, which requires quadratic
+    // iteration through the string
+    char *directory_stack = loader_stack_alloc(path_len);
+    if (directory_stack == NULL) {
+        return VK_ERROR_OUT_OF_HOST_MEMORY;
+    }
+
+    size_t top_of_stack = 0;
+
+    // Iterate through the path, push characters as we see them, if we find a "..", pop off the top of the directory stack until the
+    // current directory is gone.
+    for (size_t i = 0; i < path_len - 1; i++) {
+        // if the next part of path is "/../" we need to pop from the directory stack until we hit the previous directory symbol.
+        if (i + 3 < path_len && path[i] == DIRECTORY_SYMBOL && path[i + 1] == '.' && path[i + 2] == '.' && path_len &&
+            path[i + 3] == DIRECTORY_SYMBOL) {
+            // Pop until we hit the next directory symbol in the stack
+            while (top_of_stack > 0 && directory_stack[top_of_stack - 1] != DIRECTORY_SYMBOL) {
+                top_of_stack--;
+                directory_stack[top_of_stack] = '\0';
+            }
+            // Amend the directory stack so that the top isn't a directory separator
+            if (top_of_stack > 0 && directory_stack[top_of_stack - 1] == DIRECTORY_SYMBOL) {
+                top_of_stack--;
+                directory_stack[top_of_stack] = '\0';
+            }
+            i += 2;  // need to skip the second dot & directory separator
+        } else {
+            // push characters as we come across them
+            directory_stack[top_of_stack++] = path[i];
+        }
+    }
+
+    // Can't forget the null terminator
+    directory_stack[top_of_stack] = '\0';
+
+    // We now have the path without any ..'s, so just copy it out
+    loader_strncpy(path, path_len, directory_stack, path_len);
+    path[top_of_stack] = '\0';
+    path_len = top_of_stack + 1;
+
+    return VK_SUCCESS;
+#endif
+}
+
+// Queries the path to the library that lib_handle & gipa are assoicated with, allocating a string to hold it and returning it in
+// out_path
+VkResult get_library_path_of_dl_handle(const struct loader_instance *inst, loader_platform_dl_handle lib_handle,
+                                       PFN_vkGetInstanceProcAddr gipa, char **out_path) {
+#if COMMON_UNIX_PLATFORMS
+    (void)lib_handle;
+    Dl_info dl_info = {0};
+    if (dladdr(gipa, &dl_info) != 0 && NULL != dl_info.dli_fname) {
+        return loader_copy_to_new_str(inst, dl_info.dli_fname, out_path);
+    }
+    return VK_SUCCESS;
+
+#elif defined(WIN32)
+    (void)gipa;
+    size_t module_file_name_len = MAX_PATH;  // start with reasonably large buffer
+    wchar_t *buffer_utf16 = (wchar_t *)loader_stack_alloc(module_file_name_len * sizeof(wchar_t));
+    DWORD ret = GetModuleFileNameW(lib_handle, buffer_utf16, (DWORD)module_file_name_len);
+    if (ret == 0) {
+        return VK_SUCCESS;
+    }
+    while (GetLastError() == ERROR_INSUFFICIENT_BUFFER) {
+        module_file_name_len *= 2;
+        buffer_utf16 = (wchar_t *)loader_stack_alloc(module_file_name_len * sizeof(wchar_t));
+        ret = GetModuleFileNameW(lib_handle, buffer_utf16, (DWORD)module_file_name_len);
+        if (ret == 0) {
+            return VK_SUCCESS;
+        }
+    }
+
+    // Need to convert from utf16 to utf8
+    int buffer_utf8_size = WideCharToMultiByte(CP_UTF8, 0, buffer_utf16, -1, NULL, 0, NULL, NULL);
+    if (buffer_utf8_size <= 0) {
+        return VK_SUCCESS;
+    }
+
+    char *buffer_utf8 = loader_instance_heap_calloc(inst, buffer_utf8_size, VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
+    if (NULL == buffer_utf8) {
+        return VK_ERROR_OUT_OF_HOST_MEMORY;
+    }
+    if (WideCharToMultiByte(CP_UTF8, 0, buffer_utf16, -1, buffer_utf8, buffer_utf8_size, NULL, NULL) != buffer_utf8_size) {
+        return VK_SUCCESS;
+    }
+
+    // Successfully got the 'real' path to the library.
+    *out_path = buffer_utf8;
+    return VK_SUCCESS;
+
+#else
+    // Do nothing, platform doesn't handle getting the path to a library
+#endif
+}
+
+// Find and replace the path that was loaded using the lib_name path with the real path of the library. This is done to provide
+// accurate logging info for users.
+// This function prints a warning if there is a mismatch between the lib_name path and the real path.
+VkResult fixup_library_binary_path(const struct loader_instance *inst, char **lib_name, loader_platform_dl_handle lib_handle,
+                                   PFN_vkGetInstanceProcAddr gipa) {
+    if (lib_name == NULL) {
+        // do nothing as we got an invalid lib_path pointer
+        return VK_SUCCESS;
+    }
+
+    bool system_path = true;
+    size_t lib_name_len = strlen(*lib_name) + 1;
+    for (size_t i = 0; i < lib_name_len; i++) {
+        if ((*lib_name)[i] == DIRECTORY_SYMBOL) {
+            system_path = false;
+            break;
+        }
+    }
+
+    if (!system_path) {
+        // The OS path we get for a binary is normalized, so we need to normalize the path passed into LoadLibrary/dlopen so that
+        // mismatches are minimized. EG, do not warn when we give dlopen/LoadLibrary "/foo/./bar" but get "/foo/bar" as the loaded
+        // binary path from the OS.
+        VkResult res = normalize_path(inst, lib_name);
+        if (res == VK_ERROR_OUT_OF_HOST_MEMORY) {
+            return res;
+        }
+    }
+    char *os_determined_lib_name = NULL;
+    VkResult res = get_library_path_of_dl_handle(inst, lib_handle, gipa, &os_determined_lib_name);
+    if (res == VK_ERROR_OUT_OF_HOST_MEMORY) {
+        return res;
+    }
+
+    if (NULL != os_determined_lib_name) {
+        if (0 != strcmp(os_determined_lib_name, *lib_name)) {
+            // Paths do not match, so we need to replace lib_name with the real path
+            if (!system_path) {
+                // Only warn when the library_path is relative or absolute, not system. EG lib_name had no directory separators
+                loader_log(inst, VULKAN_LOADER_WARN_BIT | VULKAN_LOADER_LAYER_BIT, 0,
+                           "Path to given binary %s was found to differ from OS loaded path %s", *lib_name, os_determined_lib_name);
+            }
+            loader_instance_heap_free(inst, *lib_name);
+            *lib_name = os_determined_lib_name;
+        } else {
+            // Paths match, so just need to free temporary allocation
+            loader_instance_heap_free(inst, os_determined_lib_name);
+        }
+    }
+
+    return res;
+}
+
 // Given string of three part form "maj.min.pat" convert to a vulkan version number.
 // Also can understand four part form "variant.major.minor.patch" if provided.
 uint32_t loader_parse_version_string(char *vers_str) {
@@ -1996,6 +2259,11 @@ VkResult loader_scanned_icd_add(const struct loader_instance *inst, struct loade
     }
     icd_tramp_list->count++;
 
+    // Uses OS calls to find the 'true' path to the binary, for more accurate logging later on.
+    res = fixup_library_binary_path(inst, &(new_scanned_icd->lib_name), new_scanned_icd->handle, fp_get_proc_addr);
+    if (res == VK_ERROR_OUT_OF_HOST_MEMORY) {
+        goto out;
+    }
 out:
     if (res != VK_SUCCESS) {
         if (NULL != handle) {
@@ -4806,6 +5074,11 @@ VkResult loader_create_instance_chain(const VkInstanceCreateInfo *pCreateInfo, c
             }
 
             chain_info.u.pLayerInfo = &layer_instance_link_info[num_activated_layers];
+
+            res = fixup_library_binary_path(inst, &(layer_prop->lib_name), layer_prop->lib_handle, cur_gipa);
+            if (res == VK_ERROR_OUT_OF_HOST_MEMORY) {
+                return res;
+            }
 
             activated_layers[num_activated_layers].name = layer_prop->info.layerName;
             activated_layers[num_activated_layers].manifest = layer_prop->manifest_file_name;
