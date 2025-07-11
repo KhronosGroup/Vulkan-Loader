@@ -258,6 +258,19 @@ if (NOT (WIN32 OR APPLE))
     endif()
 endif()
 
+if (NOT (WIN32))
+    # Check for the existance of the realpath() command
+    include(CheckFunctionExists)
+
+    check_function_exists(realpath HAVE_REALPATH)
+
+    if (HAVE_REALPATH)
+        target_compile_definitions(loader_common_options INTERFACE HAVE_REALPATH)
+    else()
+        message(INFO "Platform support for realpath() is missing. Using fallback path normalization implementation.")
+    endif()
+endif()
+
 option(LOADER_CODEGEN "Enable vulkan loader code generation")
 if(LOADER_CODEGEN)
     find_package(Python3 REQUIRED)
