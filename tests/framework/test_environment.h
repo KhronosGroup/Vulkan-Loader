@@ -57,6 +57,8 @@
 
 #include "layer/test_layer.h"
 
+#include "generated/vk_result_to_string_helper.h"
+
 #include FRAMEWORK_CONFIG_HEADER
 
 // Useful defines
