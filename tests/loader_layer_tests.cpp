@@ -27,6 +27,9 @@
 
 #include "test_environment.h"
 
+#include "util/test_defines.h"
+#include "util/get_executable_path.h"
+
 void CheckLogForLayerString(FrameworkEnvironment& env, const char* implicit_layer_name, bool check_for_enable) {
     {
         InstWrapper inst{env.vulkan_functions};
@@ -968,7 +971,8 @@ TEST(ImplicitLayers, DuplicateLayers) {
                                                                           .set_description("actually_layer_1")
                                                                           .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
                                                                           .set_disable_environment("if_you_can")),
-                                            "regular_layer_1.json"));
+                                            "regular_layer_1.json")
+                               .set_discovery_type(ManifestDiscoveryType::add_env_var));
     auto& layer1 = env.get_test_layer(0);
     layer1.set_description("actually_layer_1");
     layer1.set_make_spurious_log_in_create_instance("actually_layer_1");
@@ -979,17 +983,10 @@ TEST(ImplicitLayers, DuplicateLayers) {
                                                                           .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
                                                                           .set_disable_environment("if_you_can")),
                                             "regular_layer_1.json")
-                               // use override folder as just a folder and manually add it to the implicit layer search paths
-                               .set_discovery_type(ManifestDiscoveryType::override_folder));
+                               .set_discovery_type(ManifestDiscoveryType::generic));
     auto& layer2 = env.get_test_layer(1);
     layer2.set_description("actually_layer_2");
     layer2.set_make_spurious_log_in_create_instance("actually_layer_2");
-#if defined(WIN32)
-    env.platform_shim->add_manifest(ManifestCategory::implicit_layer, env.get_folder(ManifestLocation::override_layer).location());
-#elif COMMON_UNIX_PLATFORMS
-    env.platform_shim->redirect_path(std::filesystem::path(USER_LOCAL_SHARE_DIR "/vulkan/implicit_layer.d"),
-                                     env.get_folder(ManifestLocation::override_layer).location());
-#endif
 
     auto layer_props = env.GetLayerProperties(2);
     ASSERT_TRUE(string_eq(same_layer_name_1, layer_props[0].layerName));
@@ -1926,7 +1923,7 @@ TEST(OverrideMetaLayer, AppKeysDoesNotContainCurrentApplication) {
     }
 }
 
-TEST(OverrideMetaLayer, RunningWithElevatedPrivilegesFromSecureLocation) {
+TEST(OverrideMetaLayer, RunningWithRegularPrivilegesFromSecureLocation) {
     FrameworkEnvironment env;
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA)).add_physical_device({});
 
@@ -1950,38 +1947,58 @@ TEST(OverrideMetaLayer, RunningWithElevatedPrivilegesFromSecureLocation) {
                                                                          .add_override_path(override_layer_folder.location())),
         "meta_test_layer.json"});
 
-    {  // try with no elevated privileges
-        auto layer_props = env.GetLayerProperties(2);
-        EXPECT_TRUE(check_permutation({regular_layer_name, lunarg_meta_layer_name}, layer_props));
+    // try with no elevated privileges
+    auto layer_props = env.GetLayerProperties(2);
+    EXPECT_TRUE(check_permutation({regular_layer_name, lunarg_meta_layer_name}, layer_props));
 
-        InstWrapper inst{env.vulkan_functions};
-        inst.create_info.set_api_version(1, 1, 0);
-        FillDebugUtilsCreateDetails(inst.create_info, env.debug_log);
-        inst.CheckCreate();
-        ASSERT_TRUE(env.debug_log.find(std::string("Insert instance layer \"") + regular_layer_name));
-        auto active_layer_props = inst.GetActiveLayers(inst.GetPhysDev(), 2);
-        EXPECT_TRUE(check_permutation({regular_layer_name, lunarg_meta_layer_name}, layer_props));
-        env.debug_log.clear();
-    }
+    InstWrapper inst{env.vulkan_functions};
+    inst.create_info.set_api_version(1, 1, 0);
+    FillDebugUtilsCreateDetails(inst.create_info, env.debug_log);
+    inst.CheckCreate();
+    ASSERT_TRUE(env.debug_log.find(std::string("Insert instance layer \"") + regular_layer_name));
+    auto active_layer_props = inst.GetActiveLayers(inst.GetPhysDev(), 2);
+    EXPECT_TRUE(check_permutation({regular_layer_name, lunarg_meta_layer_name}, layer_props));
+}
 
-    env.platform_shim->set_elevated_privilege(true);
+TEST(OverrideMetaLayer, RunningWithElevatedPrivilegesFromSecureLocation) {
+    FrameworkEnvironment env{FrameworkSettings{}.set_run_as_if_with_elevated_privleges(true)};
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA)).add_physical_device({});
 
-    {  // try with elevated privileges
-        auto layer_props = env.GetLayerProperties(2);
-        EXPECT_TRUE(check_permutation({regular_layer_name, lunarg_meta_layer_name}, layer_props));
+    auto& override_layer_folder = env.get_folder(ManifestLocation::override_layer);
 
-        InstWrapper inst{env.vulkan_functions};
-        inst.create_info.set_api_version(1, 1, 0);
-        FillDebugUtilsCreateDetails(inst.create_info, env.debug_log);
-        inst.CheckCreate();
-        ASSERT_TRUE(env.debug_log.find(std::string("Insert instance layer \"") + regular_layer_name));
-        auto active_layer_props = inst.GetActiveLayers(inst.GetPhysDev(), 2);
-        EXPECT_TRUE(check_permutation({regular_layer_name, lunarg_meta_layer_name}, active_layer_props));
-    }
+    const char* regular_layer_name = "VK_LAYER_TestLayer_1";
+    override_layer_folder.write_manifest("regular_test_layer.json",
+                                         ManifestLayer{}
+                                             .add_layer(ManifestLayer::LayerDescription{}
+                                                            .set_name(regular_layer_name)
+                                                            .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                            .set_api_version(VK_MAKE_API_VERSION(0, 1, 1, 0)))
+                                             .get_manifest_str());
+    auto override_folder_location = override_layer_folder.location().string();
+    env.add_implicit_layer(TestLayerDetails{
+        ManifestLayer{}.set_file_format_version({1, 2, 0}).add_layer(ManifestLayer::LayerDescription{}
+                                                                         .set_name(lunarg_meta_layer_name)
+                                                                         .set_api_version(VK_MAKE_API_VERSION(0, 1, 1, 0))
+                                                                         .add_component_layer(regular_layer_name)
+                                                                         .set_disable_environment("DisableMeIfYouCan")
+                                                                         .add_override_path(override_layer_folder.location())),
+        "meta_test_layer.json"});
+
+    // try with elevated privileges
+    auto layer_props = env.GetLayerProperties(2);
+    EXPECT_TRUE(check_permutation({regular_layer_name, lunarg_meta_layer_name}, layer_props));
+
+    InstWrapper inst{env.vulkan_functions};
+    inst.create_info.set_api_version(1, 1, 0);
+    FillDebugUtilsCreateDetails(inst.create_info, env.debug_log);
+    inst.CheckCreate();
+    ASSERT_TRUE(env.debug_log.find(std::string("Insert instance layer \"") + regular_layer_name));
+    auto active_layer_props = inst.GetActiveLayers(inst.GetPhysDev(), 2);
+    EXPECT_TRUE(check_permutation({regular_layer_name, lunarg_meta_layer_name}, active_layer_props));
 }
 
 // Override layer should not be found and thus not loaded when running with elevated privileges
-TEST(OverrideMetaLayer, RunningWithElevatedPrivilegesFromUnsecureLocation) {
+TEST(OverrideMetaLayer, RunningWithRegularPrivilegesFromUnsecureLocation) {
     FrameworkEnvironment env;
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA)).add_physical_device({});
 
@@ -2005,32 +2022,51 @@ TEST(OverrideMetaLayer, RunningWithElevatedPrivilegesFromUnsecureLocation) {
         "meta_test_layer.json"}
                                .set_discovery_type(ManifestDiscoveryType::unsecured_generic));
 
-    {  // try with no elevated privileges
-        auto layer_props = env.GetLayerProperties(2);
-        EXPECT_TRUE(check_permutation({regular_layer_name, lunarg_meta_layer_name}, layer_props));
+    auto layer_props = env.GetLayerProperties(2);
+    EXPECT_TRUE(check_permutation({regular_layer_name, lunarg_meta_layer_name}, layer_props));
 
-        InstWrapper inst{env.vulkan_functions};
-        inst.create_info.set_api_version(1, 1, 0);
-        FillDebugUtilsCreateDetails(inst.create_info, env.debug_log);
-        inst.CheckCreate();
-        ASSERT_TRUE(env.debug_log.find(std::string("Insert instance layer \"") + regular_layer_name));
-        env.debug_log.clear();
-        auto active_layer_props = inst.GetActiveLayers(inst.GetPhysDev(), 2);
-        EXPECT_TRUE(check_permutation({regular_layer_name, lunarg_meta_layer_name}, active_layer_props));
-    }
+    InstWrapper inst{env.vulkan_functions};
+    inst.create_info.set_api_version(1, 1, 0);
+    FillDebugUtilsCreateDetails(inst.create_info, env.debug_log);
+    inst.CheckCreate();
+    ASSERT_TRUE(env.debug_log.find(std::string("Insert instance layer \"") + regular_layer_name));
+    env.debug_log.clear();
+    auto active_layer_props = inst.GetActiveLayers(inst.GetPhysDev(), 2);
+    EXPECT_TRUE(check_permutation({regular_layer_name, lunarg_meta_layer_name}, active_layer_props));
+}
 
-    env.platform_shim->set_elevated_privilege(true);
+TEST(OverrideMetaLayer, RunningWithElevatedPrivilegesFromUnsecureLocation) {
+    FrameworkEnvironment env{FrameworkSettings{}.set_run_as_if_with_elevated_privleges(true)};
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA)).add_physical_device({});
 
-    {  // try with no elevated privileges
-        ASSERT_NO_FATAL_FAILURE(env.GetLayerProperties(0));
+    auto& override_layer_folder = env.get_folder(ManifestLocation::override_layer);
 
-        InstWrapper inst{env.vulkan_functions};
-        inst.create_info.set_api_version(1, 1, 0);
-        FillDebugUtilsCreateDetails(inst.create_info, env.debug_log);
-        inst.CheckCreate();
-        ASSERT_FALSE(env.debug_log.find(std::string("Insert instance layer \"") + regular_layer_name));
-        ASSERT_NO_FATAL_FAILURE(inst.GetActiveLayers(inst.GetPhysDev(), 0));
-    }
+    const char* regular_layer_name = "VK_LAYER_TestLayer_1";
+    override_layer_folder.write_manifest("regular_test_layer.json",
+                                         ManifestLayer{}
+                                             .add_layer(ManifestLayer::LayerDescription{}
+                                                            .set_name(regular_layer_name)
+                                                            .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                            .set_api_version(VK_MAKE_API_VERSION(0, 1, 1, 0)))
+                                             .get_manifest_str());
+    env.add_implicit_layer(TestLayerDetails{
+        ManifestLayer{}.set_file_format_version({1, 2, 0}).add_layer(ManifestLayer::LayerDescription{}
+                                                                         .set_name(lunarg_meta_layer_name)
+                                                                         .set_api_version(VK_MAKE_API_VERSION(0, 1, 1, 0))
+                                                                         .add_component_layer(regular_layer_name)
+                                                                         .set_disable_environment("DisableMeIfYouCan")
+                                                                         .add_override_path(override_layer_folder.location())),
+        "meta_test_layer.json"}
+                               .set_discovery_type(ManifestDiscoveryType::unsecured_generic));
+
+    ASSERT_NO_FATAL_FAILURE(env.GetLayerProperties(0));
+
+    InstWrapper inst{env.vulkan_functions};
+    inst.create_info.set_api_version(1, 1, 0);
+    FillDebugUtilsCreateDetails(inst.create_info, env.debug_log);
+    inst.CheckCreate();
+    ASSERT_FALSE(env.debug_log.find(std::string("Insert instance layer \"") + regular_layer_name));
+    ASSERT_NO_FATAL_FAILURE(inst.GetActiveLayers(inst.GetPhysDev(), 0));
 }
 
 // Makes sure explicit layers can't override pre-instance functions even if enabled by the override layer
@@ -2823,6 +2859,16 @@ TEST(ExplicitLayers, CorrectOrderOfApplicationEnabledLayers) {
         ASSERT_TRUE(string_eq(layer_name_2, enabled_layer_props[0].layerName));
         ASSERT_TRUE(string_eq(layer_name_1, enabled_layer_props[1].layerName));
     }
+}
+
+// Helpers
+bool contains(std::vector<VkExtensionProperties> const& vec, const char* name) {
+    return std::any_of(std::begin(vec), std::end(vec),
+                       [name](VkExtensionProperties const& elem) { return string_eq(name, elem.extensionName); });
+}
+bool contains(std::vector<VkLayerProperties> const& vec, const char* name) {
+    return std::any_of(std::begin(vec), std::end(vec),
+                       [name](VkLayerProperties const& elem) { return string_eq(name, elem.layerName); });
 }
 
 TEST(LayerExtensions, ImplicitNoAdditionalInstanceExtension) {
@@ -5380,34 +5426,31 @@ TEST(TestLayers, AllowFilterWithImplicitLayer) {
         auto layers = inst.GetActiveLayers(inst.GetPhysDev(), 1);
         ASSERT_TRUE(string_eq(layers.at(0).layerName, layer_name));
     }
+    env.loader_settings.add_app_specific_setting(AppSpecificSettings{}.add_stderr_log_filter("all").add_layer_configuration(
+        LoaderSettingsLayerConfiguration{}
+            .set_name(layer_name)
+            .set_control("on")
+            .set_path(env.get_shimmed_layer_manifest_path(0))
+            .set_treat_as_implicit_manifest(true)));
+    env.update_loader_settings(env.loader_settings);
     {
-        env.loader_settings.add_app_specific_setting(AppSpecificSettings{}.add_stderr_log_filter("all").add_layer_configuration(
-            LoaderSettingsLayerConfiguration{}
-                .set_name(layer_name)
-                .set_control("on")
-                .set_path(env.get_shimmed_layer_manifest_path(0))
-                .set_treat_as_implicit_manifest(true)));
-        env.update_loader_settings(env.loader_settings);
-
         InstWrapper inst{env.vulkan_functions};
         inst.CheckCreate();
 
         auto layers = inst.GetActiveLayers(inst.GetPhysDev(), 1);
         ASSERT_TRUE(string_eq(layers.at(0).layerName, layer_name));
     }
+    env.loader_settings.app_specific_settings.at(0).layer_configurations.at(0).set_control("off");
+    env.update_loader_settings(env.loader_settings);
     {
-        env.loader_settings.app_specific_settings.at(0).layer_configurations.at(0).set_control("off");
-        env.update_loader_settings(env.loader_settings);
-
         InstWrapper inst{env.vulkan_functions};
         inst.CheckCreate();
 
         ASSERT_NO_FATAL_FAILURE(inst.GetActiveLayers(inst.GetPhysDev(), 0));
     }
+    env.loader_settings.app_specific_settings.at(0).layer_configurations.at(0).set_control("auto");
+    env.update_loader_settings(env.loader_settings);
     {
-        env.loader_settings.app_specific_settings.at(0).layer_configurations.at(0).set_control("auto");
-        env.update_loader_settings(env.loader_settings);
-
         InstWrapper inst{env.vulkan_functions};
         inst.CheckCreate();
 
@@ -5417,7 +5460,7 @@ TEST(TestLayers, AllowFilterWithImplicitLayer) {
 
     env.remove_loader_settings();
 
-    // Set the disable_environment variable
+    // Set the layer specific disable_environment variable - layer should never load if this is set
     EnvVarWrapper set_disable_env_var{disable_env_var, "1"};
 
     {
@@ -5441,7 +5484,6 @@ TEST(TestLayers, AllowFilterWithImplicitLayer) {
         InstWrapper inst{env.vulkan_functions};
         inst.CheckCreate();
 
-        // layer's disable_environment takes priority
         ASSERT_NO_FATAL_FAILURE(inst.GetActiveLayers(inst.GetPhysDev(), 0));
     }
     {

@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2021 The Khronos Group Inc.
- * Copyright (c) 2021 Valve Corporation
- * Copyright (c) 2021 LunarG, Inc.
+ * Copyright (c) 2025 The Khronos Group Inc.
+ * Copyright (c) 2025 Valve Corporation
+ * Copyright (c) 2025 LunarG, Inc.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and/or associated documentation files (the "Materials"), to
@@ -22,28 +22,11 @@
  * OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE MATERIALS OR THE
  * USE OR OTHER DEALINGS IN THE MATERIALS.
  *
- * Author: Charles Giessen <charles@lunarg.com>
  */
 
 #pragma once
 
-#include "builder_defines.h"
+#include <string>
 
-#include "vulkan_object_wrappers.h"
-
-struct LayerDefinition {
-    BUILDER_VALUE(std::string, layerName)
-    BUILDER_VALUE_WITH_DEFAULT(uint32_t, specVersion, VK_API_VERSION_1_0)
-    BUILDER_VALUE_WITH_DEFAULT(uint32_t, implementationVersion, VK_API_VERSION_1_0)
-    BUILDER_VALUE(std::string, description)
-    BUILDER_VECTOR(Extension, extensions, extension)
-
-    VkLayerProperties get() const noexcept {
-        VkLayerProperties props{};
-        layerName.copy(props.layerName, VK_MAX_EXTENSION_NAME_SIZE);
-        props.specVersion = specVersion;
-        props.implementationVersion = implementationVersion;
-        description.copy(props.description, VK_MAX_DESCRIPTION_SIZE);
-        return props;
-    }
-};
+// find application path + name. Path cannot be longer than 1024, returns NULL if it is greater than that.
+std::string test_platform_executable_path();

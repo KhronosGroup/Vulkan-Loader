@@ -68,6 +68,8 @@ endif()
 
 option(ENABLE_LIVE_VERIFICATION_TESTS "Enable tests which expect to run on live drivers. Meant for manual verification only" OFF)
 
+set(TEST_EXECUTION_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/executing_tests")
+
 include(GoogleTest)
 add_subdirectory(framework)
 
@@ -94,7 +96,11 @@ add_executable(
         loader_testing_main.cpp
         loader_fuzz_tests.cpp
 )
-target_link_libraries(test_fuzzing PUBLIC testing_dependencies vulkan)
+target_link_libraries(test_fuzzing PUBLIC testing_dependencies)
+# testing_dependencies already links to vulkan when linking statically
+if (NOT APPLE_STATIC_LOADER)
+    target_link_libraries(test_fuzzing PUBLIC vulkan)
+endif()
 target_include_directories(test_fuzzing PUBLIC ${CMAKE_SOURCE_DIR}/loader ${CMAKE_SOURCE_DIR}/loader/generated)
 
 # Threading tests live in separate executabe just for threading tests as it'll need support

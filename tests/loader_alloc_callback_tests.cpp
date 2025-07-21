@@ -440,7 +440,9 @@ TEST(Allocation, CreateInstanceIntentionalAllocFailInvalidManifests) {
         auto file_name = std::string("invalid_implicit_layer_") + std::to_string(i) + ".json";
         std::filesystem::path new_path =
             env.get_folder(ManifestLocation::implicit_layer).write_manifest(file_name, invalid_jsons[i]);
-        env.platform_shim->add_manifest(ManifestCategory::implicit_layer, new_path);
+#if defined(WIN32)
+        env.platform_shim->add_manifest_to_registry(ManifestCategory::implicit_layer, new_path);
+#endif
     }
 
     const char* layer_name = "VkLayerImplicit0";

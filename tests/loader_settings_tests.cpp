@@ -29,31 +29,33 @@
 
 #include <fstream>
 
-std::string get_settings_location_log_message([[maybe_unused]] FrameworkEnvironment const& env,
-                                              [[maybe_unused]] bool use_secure = false) {
+#include "util/get_executable_path.h"
+#include "util/json_writer.h"
+#include "util/test_defines.h"
+
+std::string get_settings_location_log_message([[maybe_unused]] FrameworkEnvironment const& env, bool use_secure = true) {
     std::string s = "Using layer configurations found in loader settings from ";
 #if defined(WIN32)
-    return s + (env.get_folder(ManifestLocation::settings_location).location() / "vk_loader_settings.json").string();
-#elif COMMON_UNIX_PLATFORMS
-    if (use_secure)
-        return s + "/etc/vulkan/loader_settings.d/vk_loader_settings.json";
-    else
-        return s + "/home/fake_home/.local/share/vulkan/loader_settings.d/vk_loader_settings.json";
+    ManifestLocation settings_location = use_secure ? ManifestLocation::settings_location : ManifestLocation::unsecured_settings;
+    return s + (env.get_folder(settings_location).location() / "vk_loader_settings.json").string();
+#elif TESTING_COMMON_UNIX_PLATFORMS
+    return s + (use_secure ? env.secure_manifest_base_location : env.unsecure_manifest_base_location) +
+           "/vulkan/loader_settings.d/vk_loader_settings.json";
 #endif
 }
+std::string get_unsecure_settings_location_log_message(FrameworkEnvironment const& env) {
+    return get_settings_location_log_message(env, false);
+}
 
-std::string get_settings_not_in_use_log_message([[maybe_unused]] FrameworkEnvironment const& env,
-                                                [[maybe_unused]] bool use_secure = false) {
+std::string get_settings_not_in_use_log_message([[maybe_unused]] FrameworkEnvironment const& env, bool use_secure) {
     std::string s = "vk_loader_settings.json file found at \"";
 #if defined(WIN32)
-    s += (env.get_folder(ManifestLocation::settings_location).location() / "vk_loader_settings.json").string();
-#elif COMMON_UNIX_PLATFORMS
-    if (use_secure)
-        s += "/etc/vulkan/loader_settings.d/vk_loader_settings.json";
-    else
-        s += "/home/fake_home/.local/share/vulkan/loader_settings.d/vk_loader_settings.json";
+    ManifestLocation settings_location = use_secure ? ManifestLocation::settings_location : ManifestLocation::unsecured_settings;
+    return s + (env.get_folder(settings_location).location() / "vk_loader_settings.json").string();
+#elif TESTING_COMMON_UNIX_PLATFORMS
+    return s + (use_secure ? env.secure_manifest_base_location : env.unsecure_manifest_base_location) +
+           "/vulkan/loader_settings.d/vk_loader_settings.json\" but did not contain any valid settings.";
 #endif
-    return s + "\" but did not contain any valid settings.";
 }
 enum class LayerType {
     exp,
@@ -124,39 +126,56 @@ TEST(SettingsFile, SettingsInUnsecuredLocation) {
             ManifestLayer::LayerDescription{}.set_name(regular_layer_name).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)),
         "regular_test_layer.json"}
                                .set_discovery_type(ManifestDiscoveryType::override_folder));
-    env.update_loader_settings(env.loader_settings.set_file_format_version({1, 0, 0}).add_app_specific_setting(
-        AppSpecificSettings{}.add_stderr_log_filter("all").add_layer_configuration(LoaderSettingsLayerConfiguration{}
-                                                                                       .set_name(regular_layer_name)
-                                                                                       .set_path(env.get_layer_manifest_path())
-                                                                                       .set_control("on"))));
-    {
-        auto layer_props = env.GetLayerProperties(1);
-        EXPECT_TRUE(string_eq(layer_props.at(0).layerName, regular_layer_name));
+    env.update_loader_settings(
+        env.loader_settings.set_file_format_version({1, 0, 0}).add_app_specific_setting(
+            AppSpecificSettings{}.add_stderr_log_filter("all").add_layer_configuration(LoaderSettingsLayerConfiguration{}
+                                                                                           .set_name(regular_layer_name)
+                                                                                           .set_path(env.get_layer_manifest_path())
+                                                                                           .set_control("on"))),
+        false);
 
-        InstWrapper inst{env.vulkan_functions};
-        FillDebugUtilsCreateDetails(inst.create_info, env.debug_log);
-        inst.CheckCreate();
+    auto layer_props = env.GetLayerProperties(1);
+    EXPECT_TRUE(string_eq(layer_props.at(0).layerName, regular_layer_name));
 
-        ASSERT_TRUE(env.debug_log.find(get_settings_location_log_message(env)));
-        env.debug_log.clear();
-        auto layers = inst.GetActiveLayers(inst.GetPhysDev(), 1);
-        ASSERT_TRUE(string_eq(layers.at(0).layerName, regular_layer_name));
-    }
-    env.platform_shim->set_elevated_privilege(true);
-    {
-        ASSERT_NO_FATAL_FAILURE(env.GetLayerProperties(0));
+    InstWrapper inst{env.vulkan_functions};
+    FillDebugUtilsCreateDetails(inst.create_info, env.debug_log);
+    inst.CheckCreate();
 
-        InstWrapper inst{env.vulkan_functions};
-        FillDebugUtilsCreateDetails(inst.create_info, env.debug_log);
-        inst.CheckCreate();
+    ASSERT_TRUE(env.debug_log.find(get_unsecure_settings_location_log_message(env)));
+    env.debug_log.clear();
+    auto layers = inst.GetActiveLayers(inst.GetPhysDev(), 1);
+    ASSERT_TRUE(string_eq(layers.at(0).layerName, regular_layer_name));
+}
 
-        ASSERT_FALSE(env.debug_log.find(get_settings_location_log_message(env)));
-        ASSERT_NO_FATAL_FAILURE(inst.GetActiveLayers(inst.GetPhysDev(), 0));
-    }
+TEST(SettingsFile, SettingsInUnsecuredLocationRunningWithElevatedPrivileges) {
+    FrameworkEnvironment env{FrameworkSettings{}.set_run_as_if_with_elevated_privleges(true)};
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2)).add_physical_device({});
+    const char* regular_layer_name = "VK_LAYER_TestLayer_0";
+    env.add_explicit_layer(TestLayerDetails{
+        ManifestLayer{}.add_layer(
+            ManifestLayer::LayerDescription{}.set_name(regular_layer_name).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)),
+        "regular_test_layer.json"}
+                               .set_discovery_type(ManifestDiscoveryType::override_folder));
+    env.update_loader_settings(
+        env.loader_settings.set_file_format_version({1, 0, 0}).add_app_specific_setting(
+            AppSpecificSettings{}.add_stderr_log_filter("all").add_layer_configuration(LoaderSettingsLayerConfiguration{}
+                                                                                           .set_name(regular_layer_name)
+                                                                                           .set_path(env.get_layer_manifest_path())
+                                                                                           .set_control("on"))),
+        false);
+
+    ASSERT_NO_FATAL_FAILURE(env.GetLayerProperties(0));
+
+    InstWrapper inst{env.vulkan_functions};
+    FillDebugUtilsCreateDetails(inst.create_info, env.debug_log);
+    inst.CheckCreate();
+
+    ASSERT_FALSE(env.debug_log.find(get_unsecure_settings_location_log_message(env)));
+    ASSERT_NO_FATAL_FAILURE(inst.GetActiveLayers(inst.GetPhysDev(), 0));
 }
 
 TEST(SettingsFile, SettingsInSecuredLocation) {
-    FrameworkEnvironment env{FrameworkSettings{}.set_secure_loader_settings(true)};
+    FrameworkEnvironment env{FrameworkSettings{}.set_run_as_if_with_elevated_privleges(true)};
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2)).add_physical_device({});
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
     const char* regular_layer_name = "VK_LAYER_TestLayer_0";
@@ -170,33 +189,18 @@ TEST(SettingsFile, SettingsInSecuredLocation) {
                                                                                        .set_name(regular_layer_name)
                                                                                        .set_path(env.get_layer_manifest_path())
                                                                                        .set_control("on"))));
-    {
-        auto layer_props = env.GetLayerProperties(1);
-        EXPECT_TRUE(string_eq(layer_props.at(0).layerName, regular_layer_name));
 
-        InstWrapper inst{env.vulkan_functions};
-        FillDebugUtilsCreateDetails(inst.create_info, env.debug_log);
-        inst.CheckCreate();
+    auto layer_props = env.GetLayerProperties(1);
+    EXPECT_TRUE(string_eq(layer_props.at(0).layerName, regular_layer_name));
 
-        ASSERT_TRUE(env.debug_log.find(get_settings_location_log_message(env, true)));
-        env.debug_log.clear();
-        auto layers = inst.GetActiveLayers(inst.GetPhysDev(), 1);
-        ASSERT_TRUE(string_eq(layers.at(0).layerName, regular_layer_name));
-    }
-    env.platform_shim->set_elevated_privilege(true);
-    {
-        auto layer_props = env.GetLayerProperties(1);
-        EXPECT_TRUE(string_eq(layer_props.at(0).layerName, regular_layer_name));
+    InstWrapper inst{env.vulkan_functions};
+    FillDebugUtilsCreateDetails(inst.create_info, env.debug_log);
+    inst.CheckCreate();
 
-        InstWrapper inst{env.vulkan_functions};
-        FillDebugUtilsCreateDetails(inst.create_info, env.debug_log);
-        inst.CheckCreate();
-
-        ASSERT_TRUE(env.debug_log.find(get_settings_location_log_message(env, true)));
-        env.debug_log.clear();
-        auto layers = inst.GetActiveLayers(inst.GetPhysDev(), 1);
-        ASSERT_TRUE(string_eq(layers.at(0).layerName, regular_layer_name));
-    }
+    ASSERT_TRUE(env.debug_log.find(get_settings_location_log_message(env)));
+    env.debug_log.clear();
+    auto layers = inst.GetActiveLayers(inst.GetPhysDev(), 1);
+    ASSERT_TRUE(string_eq(layers.at(0).layerName, regular_layer_name));
 }
 
 // Make sure settings file can have multiple sets of settings
@@ -505,7 +509,7 @@ TEST(SettingsFile, LayerListIsEmpty) {
     writer.EndArray();
     writer.EndObject();
     writer.EndObject();
-    env.write_settings_file(writer.output);
+    env.write_settings_file(writer.output, true);
 
     auto layer_props = env.GetLayerProperties(1);
     ASSERT_TRUE(string_eq(layer_props.at(0).layerName, implicit_layer_name));
@@ -513,7 +517,7 @@ TEST(SettingsFile, LayerListIsEmpty) {
     InstWrapper inst{env.vulkan_functions};
     FillDebugUtilsCreateDetails(inst.create_info, env.debug_log);
     inst.CheckCreate();
-    ASSERT_TRUE(env.debug_log.find(get_settings_not_in_use_log_message(env)));
+    ASSERT_TRUE(env.debug_log.find(get_settings_not_in_use_log_message(env, true)));
     auto actice_layer_props = inst.GetActiveLayers(inst.GetPhysDev(), 1);
     ASSERT_TRUE(string_eq(actice_layer_props.at(0).layerName, implicit_layer_name));
 }
@@ -552,7 +556,7 @@ TEST(SettingsFile, InvalidSettingsFile) {
         ASSERT_TRUE(fuzzer_output_json_file.is_open());
         std::stringstream fuzzer_output_json;
         fuzzer_output_json << fuzzer_output_json_file.rdbuf();
-        env.write_settings_file(fuzzer_output_json.str());
+        env.write_settings_file(fuzzer_output_json.str(), true);
 
         check_integrity();
     }
@@ -563,7 +567,7 @@ TEST(SettingsFile, InvalidSettingsFile) {
         writer.StartObject();
         writer.AddKeyedString("file_format_version", "0.0.0");
         writer.EndObject();
-        env.write_settings_file(writer.output);
+        env.write_settings_file(writer.output, true);
 
         check_integrity();
     }
@@ -577,7 +581,7 @@ TEST(SettingsFile, InvalidSettingsFile) {
         writer.StartKeyedObject("settings");
         writer.EndObject();
         writer.EndObject();
-        env.write_settings_file(writer.output);
+        env.write_settings_file(writer.output, true);
 
         check_integrity();
     }
@@ -594,7 +598,7 @@ TEST(SettingsFile, InvalidSettingsFile) {
             writer.EndObject();
         }
         writer.EndObject();
-        env.write_settings_file(writer.output);
+        env.write_settings_file(writer.output, true);
 
         check_integrity();
     }
@@ -1773,8 +1777,8 @@ TEST(SettingsFile, EnvVarsWork_VK_LOADER_LAYERS_DISABLE) {
 TEST(SettingsFile, MultipleKeysInRegistryInUnsecureLocation) {
     FrameworkEnvironment env{};
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2)).add_physical_device({});
-    env.platform_shim->add_unsecured_manifest(ManifestCategory::settings, "jank_path");
-    env.platform_shim->add_unsecured_manifest(ManifestCategory::settings, "jank_path2");
+    env.platform_shim->add_unsecured_manifest_to_registry(ManifestCategory::settings, "jank_path");
+    env.platform_shim->add_unsecured_manifest_to_registry(ManifestCategory::settings, "jank_path2");
 
     const char* regular_layer_name = "VK_LAYER_TestLayer_0";
     env.add_explicit_layer(TestLayerDetails{
@@ -1782,11 +1786,13 @@ TEST(SettingsFile, MultipleKeysInRegistryInUnsecureLocation) {
             ManifestLayer::LayerDescription{}.set_name(regular_layer_name).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)),
         "regular_test_layer.json"}
                                .set_discovery_type(ManifestDiscoveryType::override_folder));
-    env.update_loader_settings(env.loader_settings.set_file_format_version({1, 0, 0}).add_app_specific_setting(
-        AppSpecificSettings{}.add_stderr_log_filter("all").add_layer_configuration(LoaderSettingsLayerConfiguration{}
-                                                                                       .set_name(regular_layer_name)
-                                                                                       .set_path(env.get_layer_manifest_path())
-                                                                                       .set_control("on"))));
+    env.update_loader_settings(
+        env.loader_settings.set_file_format_version({1, 0, 0}).add_app_specific_setting(
+            AppSpecificSettings{}.add_stderr_log_filter("all").add_layer_configuration(LoaderSettingsLayerConfiguration{}
+                                                                                           .set_name(regular_layer_name)
+                                                                                           .set_path(env.get_layer_manifest_path())
+                                                                                           .set_control("on"))),
+        false);
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
 
     auto layer_props = env.GetLayerProperties(1);
@@ -1796,16 +1802,16 @@ TEST(SettingsFile, MultipleKeysInRegistryInUnsecureLocation) {
     FillDebugUtilsCreateDetails(inst.create_info, env.debug_log);
     inst.CheckCreate();
 
-    ASSERT_TRUE(env.debug_log.find(get_settings_location_log_message(env)));
+    ASSERT_TRUE(env.debug_log.find(get_unsecure_settings_location_log_message(env)));
     auto layers = inst.GetActiveLayers(inst.GetPhysDev(), 1);
     ASSERT_TRUE(string_eq(layers.at(0).layerName, regular_layer_name));
 }
 
 TEST(SettingsFile, MultipleKeysInRegistryInSecureLocation) {
-    FrameworkEnvironment env{FrameworkSettings{}.set_secure_loader_settings(true)};
+    FrameworkEnvironment env{FrameworkSettings{}.set_run_as_if_with_elevated_privleges(true)};
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2)).add_physical_device({});
-    env.platform_shim->add_manifest(ManifestCategory::settings, "jank_path");
-    env.platform_shim->add_manifest(ManifestCategory::settings, "jank_path2");
+    env.platform_shim->add_manifest_to_registry(ManifestCategory::settings, "jank_path");
+    env.platform_shim->add_manifest_to_registry(ManifestCategory::settings, "jank_path2");
 
     const char* regular_layer_name = "VK_LAYER_TestLayer_0";
     env.add_explicit_layer(TestLayerDetails{
@@ -1821,7 +1827,6 @@ TEST(SettingsFile, MultipleKeysInRegistryInSecureLocation) {
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
 
     // Make sure it works if the settings file is in the HKEY_LOCAL_MACHINE
-    env.platform_shim->set_elevated_privilege(true);
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
     {
         auto layer_props = env.GetLayerProperties(1);
@@ -2571,14 +2576,14 @@ TEST(SettingsFile, StderrLog_NoOutput) {
         ManifestLayer{}.add_layer(
             ManifestLayer::LayerDescription{}.set_name(explicit_layer_name).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)),
         "explicit_test_layer1.json"});
-    env.update_loader_settings(env.loader_settings.set_file_format_version({1, 0, 0}).add_app_specific_setting(
+    env.loader_settings.set_file_format_version({1, 0, 0}).add_app_specific_setting(
         AppSpecificSettings{}
             .add_layer_configuration(LoaderSettingsLayerConfiguration{}
                                          .set_name(explicit_layer_name)
                                          .set_path(env.get_shimmed_layer_manifest_path())
                                          .set_control("auto"))
             .add_layer_configuration(
-                LoaderSettingsLayerConfiguration{}.set_name("VK_LAYER_missing").set_path("/road/to/nowhere").set_control("auto"))));
+                LoaderSettingsLayerConfiguration{}.set_name("VK_LAYER_missing").set_path("/road/to/nowhere").set_control("auto")));
     env.loader_settings.app_specific_settings.at(0).stderr_log = {""};
     env.update_loader_settings(env.loader_settings);
 
@@ -2662,14 +2667,14 @@ TEST(SettingsFile, NoStderr_log_but_VK_LOADER_DEBUG) {
             ManifestLayer::LayerDescription{}.set_name(explicit_layer_name).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)),
         "explicit_test_layer1.json"});
 
-    env.update_loader_settings(env.loader_settings.set_file_format_version({1, 0, 0}).add_app_specific_setting(
+    env.loader_settings.set_file_format_version({1, 0, 0}).add_app_specific_setting(
         AppSpecificSettings{}
             .add_layer_configuration(LoaderSettingsLayerConfiguration{}
                                          .set_name(explicit_layer_name)
                                          .set_path(env.get_shimmed_layer_manifest_path())
                                          .set_control("auto"))
             .add_layer_configuration(
-                LoaderSettingsLayerConfiguration{}.set_name("VK_LAYER_missing").set_path("/road/to/nowhere").set_control("auto"))));
+                LoaderSettingsLayerConfiguration{}.set_name("VK_LAYER_missing").set_path("/road/to/nowhere").set_control("auto")));
     env.loader_settings.app_specific_settings.at(0).stderr_log = {};
     env.update_loader_settings(env.loader_settings);
 
@@ -3176,7 +3181,7 @@ TEST(SettingsFile, InvalidAdditionalDriversField) {
     writer.EndArray();
     writer.EndObject();
     writer.EndObject();
-    env.write_settings_file(writer.output);
+    env.write_settings_file(writer.output, true);
 
     InstWrapper inst{env.vulkan_functions};
     inst.CheckCreate();
@@ -3377,7 +3382,6 @@ TEST(SettingsFile, DriverConfigurationsAndAdditionalDrivers) {
         LoaderSettingsDeviceConfiguration{}.set_deviceUUID(uuids[1]));
     env.update_loader_settings(env.loader_settings);
 
-    env.update_loader_settings(env.loader_settings);
     InstWrapper inst{env.vulkan_functions};
     inst.create_info.set_api_version(VK_API_VERSION_1_1);
     inst.CheckCreate();

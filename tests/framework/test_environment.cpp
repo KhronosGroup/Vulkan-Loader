@@ -27,151 +27,11 @@
 
 #include "test_environment.h"
 
+#include <array>
 #include <fstream>
+#include <utility>
 
-std::filesystem::path get_loader_path() {
-    auto loader_path = std::filesystem::path(FRAMEWORK_VULKAN_LIBRARY_PATH);
-    auto env_var_res = get_env_var("VK_LOADER_TEST_LOADER_PATH", false);
-    if (!env_var_res.empty()) {
-        loader_path = std::filesystem::path(env_var_res);
-    }
-    return loader_path;
-}
-
-void init_vulkan_functions(VulkanFunctions& funcs) {
-#if defined(APPLE_STATIC_LOADER)
-#define GPA(name) name
-#else
-#define GPA(name) funcs.loader.get_symbol(#name)
-#endif
-
-    // clang-format off
-    funcs.vkGetInstanceProcAddr = GPA(vkGetInstanceProcAddr);
-    funcs.vkEnumerateInstanceExtensionProperties = GPA(vkEnumerateInstanceExtensionProperties);
-    funcs.vkEnumerateInstanceLayerProperties = GPA(vkEnumerateInstanceLayerProperties);
-    funcs.vkEnumerateInstanceVersion = GPA(vkEnumerateInstanceVersion);
-    funcs.vkCreateInstance = GPA(vkCreateInstance);
-    funcs.vkDestroyInstance = GPA(vkDestroyInstance);
-    funcs.vkEnumeratePhysicalDevices = GPA(vkEnumeratePhysicalDevices);
-    funcs.vkEnumeratePhysicalDeviceGroups = GPA(vkEnumeratePhysicalDeviceGroups);
-    funcs.vkGetPhysicalDeviceFeatures = GPA(vkGetPhysicalDeviceFeatures);
-    funcs.vkGetPhysicalDeviceFeatures2 = GPA(vkGetPhysicalDeviceFeatures2);
-    funcs.vkGetPhysicalDeviceFormatProperties = GPA(vkGetPhysicalDeviceFormatProperties);
-    funcs.vkGetPhysicalDeviceFormatProperties2 = GPA(vkGetPhysicalDeviceFormatProperties2);
-    funcs.vkGetPhysicalDeviceImageFormatProperties = GPA(vkGetPhysicalDeviceImageFormatProperties);
-    funcs.vkGetPhysicalDeviceImageFormatProperties2 = GPA(vkGetPhysicalDeviceImageFormatProperties2);
-    funcs.vkGetPhysicalDeviceSparseImageFormatProperties = GPA(vkGetPhysicalDeviceSparseImageFormatProperties);
-    funcs.vkGetPhysicalDeviceSparseImageFormatProperties2 = GPA(vkGetPhysicalDeviceSparseImageFormatProperties2);
-    funcs.vkGetPhysicalDeviceProperties = GPA(vkGetPhysicalDeviceProperties);
-    funcs.vkGetPhysicalDeviceProperties2 = GPA(vkGetPhysicalDeviceProperties2);
-    funcs.vkGetPhysicalDeviceQueueFamilyProperties = GPA(vkGetPhysicalDeviceQueueFamilyProperties);
-    funcs.vkGetPhysicalDeviceQueueFamilyProperties2 = GPA(vkGetPhysicalDeviceQueueFamilyProperties2);
-    funcs.vkGetPhysicalDeviceMemoryProperties = GPA(vkGetPhysicalDeviceMemoryProperties);
-    funcs.vkGetPhysicalDeviceMemoryProperties2 = GPA(vkGetPhysicalDeviceMemoryProperties2);
-    funcs.vkGetPhysicalDeviceSurfaceSupportKHR = GPA(vkGetPhysicalDeviceSurfaceSupportKHR);
-    funcs.vkGetPhysicalDeviceSurfaceFormatsKHR = GPA(vkGetPhysicalDeviceSurfaceFormatsKHR);
-    funcs.vkGetPhysicalDeviceSurfacePresentModesKHR = GPA(vkGetPhysicalDeviceSurfacePresentModesKHR);
-    funcs.vkGetPhysicalDeviceSurfaceCapabilitiesKHR = GPA(vkGetPhysicalDeviceSurfaceCapabilitiesKHR);
-    funcs.vkEnumerateDeviceExtensionProperties = GPA(vkEnumerateDeviceExtensionProperties);
-    funcs.vkEnumerateDeviceLayerProperties = GPA(vkEnumerateDeviceLayerProperties);
-    funcs.vkGetPhysicalDeviceExternalBufferProperties = GPA(vkGetPhysicalDeviceExternalBufferProperties);
-    funcs.vkGetPhysicalDeviceExternalFenceProperties = GPA(vkGetPhysicalDeviceExternalFenceProperties);
-    funcs.vkGetPhysicalDeviceExternalSemaphoreProperties = GPA(vkGetPhysicalDeviceExternalSemaphoreProperties);
-
-    funcs.vkDestroySurfaceKHR = GPA(vkDestroySurfaceKHR);
-    funcs.vkGetDeviceProcAddr = GPA(vkGetDeviceProcAddr);
-    funcs.vkCreateDevice = GPA(vkCreateDevice);
-
-    funcs.vkCreateHeadlessSurfaceEXT = GPA(vkCreateHeadlessSurfaceEXT);
-    funcs.vkCreateDisplayPlaneSurfaceKHR = GPA(vkCreateDisplayPlaneSurfaceKHR);
-    funcs.vkGetPhysicalDeviceDisplayPropertiesKHR = GPA(vkGetPhysicalDeviceDisplayPropertiesKHR);
-    funcs.vkGetPhysicalDeviceDisplayPlanePropertiesKHR = GPA(vkGetPhysicalDeviceDisplayPlanePropertiesKHR);
-    funcs.vkGetDisplayPlaneSupportedDisplaysKHR = GPA(vkGetDisplayPlaneSupportedDisplaysKHR);
-    funcs.vkGetDisplayModePropertiesKHR = GPA(vkGetDisplayModePropertiesKHR);
-    funcs.vkCreateDisplayModeKHR = GPA(vkCreateDisplayModeKHR);
-    funcs.vkGetDisplayPlaneCapabilitiesKHR = GPA(vkGetDisplayPlaneCapabilitiesKHR);
-    funcs.vkGetPhysicalDevicePresentRectanglesKHR = GPA(vkGetPhysicalDevicePresentRectanglesKHR);
-    funcs.vkGetPhysicalDeviceDisplayProperties2KHR = GPA(vkGetPhysicalDeviceDisplayProperties2KHR);
-    funcs.vkGetPhysicalDeviceDisplayPlaneProperties2KHR = GPA(vkGetPhysicalDeviceDisplayPlaneProperties2KHR);
-    funcs.vkGetDisplayModeProperties2KHR = GPA(vkGetDisplayModeProperties2KHR);
-    funcs.vkGetDisplayPlaneCapabilities2KHR = GPA(vkGetDisplayPlaneCapabilities2KHR);
-    funcs.vkGetPhysicalDeviceSurfaceCapabilities2KHR = GPA(vkGetPhysicalDeviceSurfaceCapabilities2KHR);
-    funcs.vkGetPhysicalDeviceSurfaceFormats2KHR = GPA(vkGetPhysicalDeviceSurfaceFormats2KHR);
-
-#if defined(VK_USE_PLATFORM_ANDROID_KHR)
-    funcs.vkCreateAndroidSurfaceKHR = GPA(vkCreateAndroidSurfaceKHR);
-#endif  // VK_USE_PLATFORM_ANDROID_KHR
-#if defined(VK_USE_PLATFORM_DIRECTFB_EXT)
-    funcs.vkCreateDirectFBSurfaceEXT = GPA(vkCreateDirectFBSurfaceEXT);
-    funcs.vkGetPhysicalDeviceDirectFBPresentationSupportEXT = GPA(vkGetPhysicalDeviceDirectFBPresentationSupportEXT);
-#endif  // VK_USE_PLATFORM_DIRECTFB_EXT
-#if defined(VK_USE_PLATFORM_FUCHSIA)
-    funcs.vkCreateImagePipeSurfaceFUCHSIA = GPA(vkCreateImagePipeSurfaceFUCHSIA);
-#endif  // VK_USE_PLATFORM_FUCHSIA
-#if defined(VK_USE_PLATFORM_GGP)
-    funcs.vkCreateStreamDescriptorSurfaceGGP = GPA(vkCreateStreamDescriptorSurfaceGGP);
-#endif  // VK_USE_PLATFORM_GGP
-#if defined(VK_USE_PLATFORM_IOS_MVK)
-    funcs.vkCreateIOSSurfaceMVK = GPA(vkCreateIOSSurfaceMVK);
-#endif  // VK_USE_PLATFORM_IOS_MVK
-#if defined(VK_USE_PLATFORM_MACOS_MVK)
-    funcs.vkCreateMacOSSurfaceMVK = GPA(vkCreateMacOSSurfaceMVK);
-#endif  // VK_USE_PLATFORM_MACOS_MVK
-#if defined(VK_USE_PLATFORM_METAL_EXT)
-    funcs.vkCreateMetalSurfaceEXT = GPA(vkCreateMetalSurfaceEXT);
-#endif  // VK_USE_PLATFORM_METAL_EXT
-#if defined(VK_USE_PLATFORM_SCREEN_QNX)
-    funcs.vkCreateScreenSurfaceQNX = GPA(vkCreateScreenSurfaceQNX);
-    funcs.vkGetPhysicalDeviceScreenPresentationSupportQNX = GPA(vkGetPhysicalDeviceScreenPresentationSupportQNX);
-#endif  // VK_USE_PLATFORM_SCREEN_QNX
-#if defined(VK_USE_PLATFORM_WAYLAND_KHR)
-    funcs.vkCreateWaylandSurfaceKHR = GPA(vkCreateWaylandSurfaceKHR);
-    funcs.vkGetPhysicalDeviceWaylandPresentationSupportKHR = GPA(vkGetPhysicalDeviceWaylandPresentationSupportKHR);
-#endif  // VK_USE_PLATFORM_WAYLAND_KHR
-#if defined(VK_USE_PLATFORM_XCB_KHR)
-    funcs.vkCreateXcbSurfaceKHR = GPA(vkCreateXcbSurfaceKHR);
-    funcs.vkGetPhysicalDeviceXcbPresentationSupportKHR = GPA(vkGetPhysicalDeviceXcbPresentationSupportKHR);
-#endif  // VK_USE_PLATFORM_XCB_KHR
-#if defined(VK_USE_PLATFORM_XLIB_KHR)
-    funcs.vkCreateXlibSurfaceKHR = GPA(vkCreateXlibSurfaceKHR);
-    funcs.vkGetPhysicalDeviceXlibPresentationSupportKHR = GPA(vkGetPhysicalDeviceXlibPresentationSupportKHR);
-#endif  // VK_USE_PLATFORM_XLIB_KHR
-#if defined(VK_USE_PLATFORM_WIN32_KHR)
-    funcs.vkCreateWin32SurfaceKHR = GPA(vkCreateWin32SurfaceKHR);
-    funcs.vkGetPhysicalDeviceWin32PresentationSupportKHR = GPA(vkGetPhysicalDeviceWin32PresentationSupportKHR);
-#endif  // VK_USE_PLATFORM_WIN32_KHR
-    funcs.vkDestroyDevice = GPA(vkDestroyDevice);
-    funcs.vkGetDeviceQueue = GPA(vkGetDeviceQueue);
-#undef GPA
-    // clang-format on
-}
-
-#if defined(APPLE_STATIC_LOADER)
-VulkanFunctions::VulkanFunctions() {
-#else
-VulkanFunctions::VulkanFunctions() : loader(get_loader_path()) {
-#endif
-    init_vulkan_functions(*this);
-}
-
-void VulkanFunctions::load_instance_functions(VkInstance instance) {
-    vkCreateDebugReportCallbackEXT = FromVoidStarFunc(vkGetInstanceProcAddr(instance, "vkCreateDebugReportCallbackEXT"));
-    vkDestroyDebugReportCallbackEXT = FromVoidStarFunc(vkGetInstanceProcAddr(instance, "vkDestroyDebugReportCallbackEXT"));
-    vkCreateDebugUtilsMessengerEXT = FromVoidStarFunc(vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT"));
-    vkDestroyDebugUtilsMessengerEXT = FromVoidStarFunc(vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT"));
-}
-
-DeviceFunctions::DeviceFunctions(const VulkanFunctions& vulkan_functions, VkDevice device) {
-    vkGetDeviceProcAddr = vulkan_functions.vkGetDeviceProcAddr;
-    vkDestroyDevice = load(device, "vkDestroyDevice");
-    vkGetDeviceQueue = load(device, "vkGetDeviceQueue");
-    vkCreateCommandPool = load(device, "vkCreateCommandPool");
-    vkAllocateCommandBuffers = load(device, "vkAllocateCommandBuffers");
-    vkDestroyCommandPool = load(device, "vkDestroyCommandPool");
-    vkCreateSwapchainKHR = load(device, "vkCreateSwapchainKHR");
-    vkGetSwapchainImagesKHR = load(device, "vkGetSwapchainImagesKHR");
-    vkDestroySwapchainKHR = load(device, "vkDestroySwapchainKHR");
-}
+#include "json_writer.h"
 
 InstWrapper::InstWrapper(VulkanFunctions& functions, VkAllocationCallbacks* callbacks) noexcept
     : functions(&functions), callbacks(callbacks) {}
@@ -341,138 +201,22 @@ bool FindPrefixPostfixStringOnLine(DebugUtilsLogger const& env_log, const char* 
     return env_log.find_prefix_then_postfix(prefix, postfix);
 }
 
-namespace fs {
-FolderManager::FolderManager(std::filesystem::path root_path, std::string name) noexcept : folder(root_path / name) {
-    clear();
-    // Don't actually create the folder yet, as we will do it on demand
-}
-FolderManager::~FolderManager() noexcept { clear(); }
-FolderManager::FolderManager(FolderManager&& other) noexcept : actually_created(other.actually_created), folder(other.folder) {
-    other.folder.clear();
-}
-FolderManager& FolderManager::operator=(FolderManager&& other) noexcept {
-    folder = other.folder;
-    actually_created = other.actually_created;
-    other.folder.clear();
-    return *this;
-}
-
-void FolderManager::check_if_first_use() {
-    if (!actually_created) {
-        if (!::testing::internal::InDeathTestChild()) {
-            std::error_code err;
-            if (!std::filesystem::create_directories(folder, err)) {
-                std::cerr << "Failed to create folder " << folder << " because " << err.message() << "\n";
-            }
-        }
-        actually_created = true;
-    }
-}
-
-std::filesystem::path FolderManager::write_manifest(std::filesystem::path const& name, std::string const& contents) {
-    check_if_first_use();
-    std::filesystem::path out_path = folder / name;
-    if (!::testing::internal::InDeathTestChild()) {
-        auto file = std::ofstream(out_path, std::ios_base::trunc | std::ios_base::out);
-        if (!file) {
-            std::cerr << "Failed to create manifest " << name << " at " << out_path << "\n";
-            return out_path;
-        }
-        file << contents << std::endl;
-    }
-    insert_file_to_tracking(name);
-    return out_path;
-}
-
-// close file handle, delete file, remove `name` from managed file list.
-void FolderManager::remove(std::filesystem::path const& name) {
-    check_if_first_use();
-    std::filesystem::path out_path = folder / name;
-    if (!::testing::internal::InDeathTestChild()) {
-        std::error_code err;
-        if (!std::filesystem::remove(out_path, err)) {
-            std::cerr << "Failed to remove file " << name << " at " << out_path << " because " << err.message() << "\n";
-        }
-    }
-
-    auto found = std::find(added_files.begin(), added_files.end(), name);
-    if (found != added_files.end()) {
-        added_files.erase(found);
-    } else {
-        std::cout << "File " << name << " not in tracked files of folder " << folder << ".\n";
-    }
-}
-
-// copy file into this folder
-std::filesystem::path FolderManager::copy_file(std::filesystem::path const& file, std::filesystem::path const& new_name) {
-    check_if_first_use();
-    insert_file_to_tracking(new_name);
-
-    auto new_filepath = folder / new_name;
-    if (!::testing::internal::InDeathTestChild()) {
-        std::error_code err;
-        if (!std::filesystem::copy_file(file, new_filepath, err)) {
-            std::cerr << "Failed to copy file " << file << " to " << new_filepath << " because " << err.message() << "\n";
-        }
-    }
-    return new_filepath;
-}
-
-std::vector<std::filesystem::path> FolderManager::get_files() const { return added_files; }
-
-std::filesystem::path FolderManager::add_symlink(std::filesystem::path const& target, std::filesystem::path const& link_name) {
-    check_if_first_use();
-
-    if (!::testing::internal::InDeathTestChild()) {
-        std::error_code err;
-        std::filesystem::create_symlink(target, folder / link_name, err);
-        if (err.value() != 0) {
-            std::cerr << "Failed to create symlink with target" << target << " with name " << folder / link_name << " because "
-                      << err.message() << "\n";
-        }
-    }
-    insert_file_to_tracking(link_name);
-    return folder / link_name;
-}
-void FolderManager::insert_file_to_tracking(std::filesystem::path const& name) {
-    auto found = std::find(added_files.begin(), added_files.end(), name);
-    if (found != added_files.end()) {
-        std::cout << "Overwriting manifest " << name << ". Was this intended?\n";
-    } else {
-        added_files.emplace_back(name);
-    }
-}
-
-void FolderManager::clear() const noexcept {
-    if (!::testing::internal::InDeathTestChild()) {
-        std::error_code err;
-        std::filesystem::remove_all(folder, err);
-        if (err.value() != 0) {
-            std::cerr << "Failed to remove folder " << folder << " because " << err.message() << "\n";
-        }
-    }
-}
-
-}  // namespace fs
-
-PlatformShimWrapper::PlatformShimWrapper(GetFoldersFunc get_folders_by_name_function, const char* log_filter) noexcept
+PlatformShimWrapper::PlatformShimWrapper(fs::FileSystemManager& file_system_manager, const char* log_filter) noexcept
     : loader_logging{"VK_LOADER_DEBUG"} {
 #if defined(WIN32) || defined(__APPLE__)
     shim_library = LibraryWrapper(SHIM_LIBRARY_NAME);
-    PFN_get_platform_shim get_platform_shim_func = shim_library.get_symbol(GET_PLATFORM_SHIM_STR);
-    assert(get_platform_shim_func != NULL && "Must be able to get \"platform_shim\"");
-    platform_shim = get_platform_shim_func(get_folders_by_name_function);
+    PFN_get_platform_shim get_platform_shim = shim_library.get_symbol(GET_PLATFORM_SHIM_STR);
+    assert(get_platform_shim != NULL && "Must be able to get \"platform_shim\"");
+    platform_shim = get_platform_shim();
 #elif defined(__linux__) || defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__GNU__)
-    platform_shim = get_platform_shim(get_folders_by_name_function);
+    platform_shim = get_platform_shim();
 #endif
-    platform_shim->reset();
+    platform_shim->file_system_manager = &file_system_manager;
 
     if (log_filter) {
         loader_logging.set_new_value(log_filter);
     }
 }
-
-PlatformShimWrapper::~PlatformShimWrapper() noexcept { platform_shim->reset(); }
 
 TestICDHandle::TestICDHandle() noexcept {}
 TestICDHandle::TestICDHandle(std::filesystem::path const& icd_path) noexcept : icd_library(icd_path) {
@@ -487,7 +231,7 @@ TestICD& TestICDHandle::reset_icd() noexcept {
     assert(proc_addr_reset_icd != NULL && "symbol must be loaded before use");
     return *proc_addr_reset_icd();
 }
-std::filesystem::path TestICDHandle::get_icd_full_path() noexcept { return icd_library.lib_path; }
+std::filesystem::path TestICDHandle::get_icd_full_path() noexcept { return icd_library.get_path(); }
 std::filesystem::path TestICDHandle::get_icd_manifest_path() noexcept { return manifest_path; }
 std::filesystem::path TestICDHandle::get_shimmed_manifest_path() noexcept { return shimmed_manifest_path; }
 
@@ -504,78 +248,101 @@ TestLayer& TestLayerHandle::reset_layer() noexcept {
     assert(proc_addr_reset_layer != NULL && "symbol must be loaded before use");
     return *proc_addr_reset_layer();
 }
-std::filesystem::path TestLayerHandle::get_layer_full_path() noexcept { return layer_library.lib_path; }
+std::filesystem::path TestLayerHandle::get_layer_full_path() noexcept { return layer_library.get_path(); }
 std::filesystem::path TestLayerHandle::get_layer_manifest_path() noexcept { return manifest_path; }
 std::filesystem::path TestLayerHandle::get_shimmed_manifest_path() noexcept { return shimmed_manifest_path; }
 
 FrameworkEnvironment::FrameworkEnvironment() noexcept : FrameworkEnvironment(FrameworkSettings{}) {}
 FrameworkEnvironment::FrameworkEnvironment(FrameworkSettings const& settings) noexcept
-    : settings(settings),
-      test_folder(std::filesystem::path(FRAMEWORK_BUILD_DIRECTORY),
-                  std::string(::testing::UnitTest::GetInstance()->GetInstance()->current_test_suite()->name()) + "_" +
-                      ::testing::UnitTest::GetInstance()->current_test_info()->name()),
-      platform_shim(
-          [this](const char* folder_name) -> std::vector<std::filesystem::path> {
-              for (auto& folder : folders) {
-                  if (folder.location() == folder_name) {
-                      return folder.get_files();
-                  }
-              }
-              return {};
-          },
-          settings.log_filter) {
-    // Clean out test folder in case a previous run's files are still around
-    test_folder.clear();
+    : settings(settings), platform_shim(file_system_manager, settings.log_filter) {
+    // Setup default path redirections
 
-    // This order is important, it matches the enum ManifestLocation, used to index the folders vector
-    folders.emplace_back(test_folder.location(), std::string("null_dir"));
-    folders.emplace_back(test_folder.location(), std::string("icd_manifests"));
-    folders.emplace_back(test_folder.location(), std::string("icd_env_vars_manifests"));
-    folders.emplace_back(test_folder.location(), std::string("explicit_layer_manifests"));
-    folders.emplace_back(test_folder.location(), std::string("explicit_env_var_layer_folder"));
-    folders.emplace_back(test_folder.location(), std::string("explicit_add_env_var_layer_folder"));
-    folders.emplace_back(test_folder.location(), std::string("implicit_layer_manifests"));
-    folders.emplace_back(test_folder.location(), std::string("implicit_env_var_layer_manifests"));
-    folders.emplace_back(test_folder.location(), std::string("implicit_add_env_var_layer_manifests"));
-    folders.emplace_back(test_folder.location(), std::string("override_layer_manifests"));
-    folders.emplace_back(test_folder.location(), std::string("app_package_manifests"));
-    folders.emplace_back(test_folder.location(), std::string("macos_bundle"));
-    folders.emplace_back(test_folder.location(), std::string("unsecured_location"));
-    folders.emplace_back(test_folder.location(), std::string("settings_location"));
+    platform_shim->set_elevated_privilege(settings.run_as_if_with_elevated_privleges);
 
-    platform_shim->redirect_all_paths(get_folder(ManifestLocation::null).location());
-    if (settings.enable_default_search_paths) {
-        platform_shim->set_fake_path(ManifestCategory::icd, get_folder(ManifestLocation::driver).location());
-        platform_shim->set_fake_path(ManifestCategory::explicit_layer, get_folder(ManifestLocation::explicit_layer).location());
-        platform_shim->set_fake_path(ManifestCategory::implicit_layer, get_folder(ManifestLocation::implicit_layer).location());
-#if COMMON_UNIX_PLATFORMS
-        auto home = get_env_var("HOME");
-        auto unsecured_location = get_folder(ManifestLocation::unsecured_location).location();
-        platform_shim->redirect_path(home + "/.local/share/vulkan/icd.d", unsecured_location);
-        platform_shim->redirect_path(home + "/.local/share/vulkan/implicit_layer.d", unsecured_location);
-        platform_shim->redirect_path(home + "/.local/share/vulkan/explicit_layer.d", unsecured_location);
+#if TESTING_COMMON_UNIX_PLATFORMS
+    if (!settings.home_env_var.empty()) env_var_home.set_new_value(settings.home_env_var);
+#if !defined(__APPLE__)
+    if (!settings.xdg_config_home_env_var.empty()) env_var_xdg_config_home.set_new_value(settings.xdg_config_home_env_var);
+    if (!settings.xdg_config_dirs_env_var.empty()) env_var_xdg_config_dirs.set_new_value(settings.xdg_config_dirs_env_var);
+    if (!settings.xdg_data_home_env_var.empty()) env_var_xdg_data_home.set_new_value(settings.xdg_data_home_env_var);
+    if (!settings.xdg_data_dirs_env_var.empty()) env_var_xdg_data_dirs.set_new_value(settings.xdg_data_dirs_env_var);
 #endif
+#endif
+
+    const std::array<std::pair<const char*, ManifestLocation>, 4> secured_redirection_map = {
+        std::pair{"icd.d", ManifestLocation::driver},
+        std::pair{"implicit_layer.d", ManifestLocation::implicit_layer},
+        std::pair{"explicit_layer.d", ManifestLocation::explicit_layer},
+        std::pair{"loader_settings.d", ManifestLocation::settings_location},
+    };
+
+    const std::array<std::pair<const char*, ManifestLocation>, 4> unsecured_redirection_map = {
+        std::pair{"icd.d", ManifestLocation::unsecured_driver},
+        std::pair{"implicit_layer.d", ManifestLocation::unsecured_implicit_layer},
+        std::pair{"explicit_layer.d", ManifestLocation::unsecured_explicit_layer},
+        std::pair{"loader_settings.d", ManifestLocation::unsecured_settings},
+    };
+
+#if TESTING_COMMON_UNIX_PLATFORMS && !defined(__APPLE__)
+    // Always are searching SYSCONFDIR on unix (but not apple, which is handled separately)
+    secure_manifest_base_location = SYSCONFDIR;
+
+    for (auto const& [redirect, location] : secured_redirection_map) {
+        file_system_manager.add_path_redirect(secure_manifest_base_location + "/vulkan/" + redirect, location);
     }
-#if COMMON_UNIX_PLATFORMS
-    if (settings.secure_loader_settings) {
-        platform_shim->redirect_path("/etc/vulkan/loader_settings.d", get_folder(ManifestLocation::settings_location).location());
-    } else {
-        platform_shim->redirect_path(get_env_var("HOME") + "/.local/share/vulkan/loader_settings.d",
-                                     get_folder(ManifestLocation::settings_location).location());
+
+    // Determines which unsecure path should be used
+    if (!settings.run_as_if_with_elevated_privleges) {
+        if (!settings.xdg_config_home_env_var.empty()) {
+            auto env_var_list = split_env_var_as_list(settings.xdg_config_home_env_var);
+            unsecure_manifest_base_location = env_var_list.at(0);
+            if (!env_var_list.empty()) {
+                for (auto const& [redirect, location] : unsecured_redirection_map) {
+                    file_system_manager.add_path_redirect(env_var_list.at(0) + "/vulkan/" + redirect, location);
+                }
+            }
+        } else if (!settings.xdg_data_home_env_var.empty()) {
+            auto env_var_list = split_env_var_as_list(settings.xdg_data_home_env_var);
+            if (!env_var_list.empty()) {
+                unsecure_manifest_base_location = env_var_list.at(0);
+                for (auto const& [redirect, location] : unsecured_redirection_map) {
+                    file_system_manager.add_path_redirect(env_var_list.at(0) + "/vulkan/" + redirect, location);
+                }
+            }
+        } else {
+            std::string home = settings.home_env_var;
+            for (auto const& [redirect, location] : unsecured_redirection_map) {
+                unsecure_manifest_base_location = home + "/.config";
+                file_system_manager.add_path_redirect(home + "/.config/vulkan/" + redirect, location);
+            }
+        }
     }
 #endif
 
 #if defined(__APPLE__)
+    // Since XDG env-var shouldn't ever be defined on apple, FALLBACK_DATA_DIRS takes over as the 'global' location to search, eg
+    // /usr/local/share
+    auto env_var_list = split_env_var_as_list(FALLBACK_DATA_DIRS);
+    assert(env_var_list.size() > 0 && "FALLBACK_DATA_DIRS was set to an empty path");
+    secure_manifest_base_location = env_var_list.at(0);
+    for (auto const& [redirect, location] : secured_redirection_map) {
+        file_system_manager.add_path_redirect(secure_manifest_base_location + "/vulkan/" + redirect, location);
+    }
+
+    std::string home = settings.home_env_var;
+    unsecure_manifest_base_location = home + "/.config";
+    for (auto const& [redirect, location] : unsecured_redirection_map) {
+        file_system_manager.add_path_redirect(home + "/.config/vulkan/" + redirect, location);
+    }
+
     // Necessary since bundles look in sub folders for manifests, not the test framework folder itself
     auto bundle_location = get_folder(ManifestLocation::macos_bundle).location();
-    platform_shim->redirect_path(bundle_location / "vulkan/icd.d", bundle_location);
-    platform_shim->redirect_path(bundle_location / "vulkan/explicit_layer.d", bundle_location);
-    platform_shim->redirect_path(bundle_location / "vulkan/implicit_layer.d", bundle_location);
+    file_system_manager.add_path_redirect(bundle_location / "vulkan/icd.d", ManifestLocation::macos_bundle);
+    file_system_manager.add_path_redirect(bundle_location / "vulkan/explicit_layer.d", ManifestLocation::macos_bundle);
+    file_system_manager.add_path_redirect(bundle_location / "vulkan/implicit_layer.d", ManifestLocation::macos_bundle);
 #endif
-    // only set the settings file if there are elements in the app_specific_settings vector
-    if (!settings.loader_settings.app_specific_settings.empty()) {
-        update_loader_settings(settings.loader_settings);
-    }
+
+    platform_shim->is_finished_setup = true;
 }
 
 FrameworkEnvironment::~FrameworkEnvironment() {
@@ -588,23 +355,27 @@ FrameworkEnvironment::~FrameworkEnvironment() {
 
 TestICD& FrameworkEnvironment::add_icd(TestICDDetails icd_details) noexcept {
     size_t cur_icd_index = icds.size();
-    fs::FolderManager* fs_ptr = &get_folder(ManifestLocation::driver);
+    fs::Folder* fs_ptr = &get_folder(ManifestLocation::driver);
     switch (icd_details.discovery_type) {
         case (ManifestDiscoveryType::env_var):
         case (ManifestDiscoveryType::add_env_var):
             fs_ptr = &get_folder(ManifestLocation::driver_env_var);
             break;
+#if defined(WIN32)
         case (ManifestDiscoveryType::windows_app_package):
             fs_ptr = &get_folder(ManifestLocation::windows_app_package);
             break;
+#endif
         case (ManifestDiscoveryType::override_folder):
             fs_ptr = &get_folder(ManifestLocation::override_layer);
             break;
+#if defined(__APPLE__)
         case (ManifestDiscoveryType::macos_bundle):
             fs_ptr = &get_folder(ManifestLocation::macos_bundle);
             break;
+#endif
         case (ManifestDiscoveryType::unsecured_generic):
-            fs_ptr = &get_folder(ManifestLocation::unsecured_location);
+            fs_ptr = &get_folder(ManifestLocation::unsecured_driver);
             break;
         case (ManifestDiscoveryType::null_dir):
         case (ManifestDiscoveryType::none):
@@ -623,12 +394,9 @@ TestICD& FrameworkEnvironment::add_icd(TestICDDetails icd_details) noexcept {
         new_lib_name += icd_details.icd_manifest.lib_path.extension();
         auto new_driver_location = folder.copy_file(icd_details.icd_manifest.lib_path, new_lib_name);
 
-#if COMMON_UNIX_PLATFORMS
+#if TESTING_COMMON_UNIX_PLATFORMS
         if (icd_details.library_path_type == LibraryPathType::default_search_paths) {
-            platform_shim->redirect_dlopen_name(new_lib_name, new_driver_location);
-        } else if (icd_details.library_path_type == LibraryPathType::relative) {
-            platform_shim->redirect_dlopen_name(std::filesystem::path(SYSCONFDIR) / "vulkan" / "icd.d" / "." / new_lib_name,
-                                                new_driver_location);
+            platform_shim->add_system_library(new_lib_name, new_driver_location);
         }
 #endif
 #if defined(WIN32)
@@ -658,10 +426,20 @@ TestICD& FrameworkEnvironment::add_icd(TestICDDetails icd_details) noexcept {
         icds.back().shimmed_manifest_path = icds.back().manifest_path;
         switch (icd_details.discovery_type) {
             case (ManifestDiscoveryType::generic):
-                platform_shim->add_manifest(ManifestCategory::icd, icds.back().manifest_path);
-#if COMMON_UNIX_PLATFORMS
+#if defined(WIN32)
+                platform_shim->add_manifest_to_registry(ManifestCategory::icd, icds.back().manifest_path);
+#elif TESTING_COMMON_UNIX_PLATFORMS
                 icds.back().shimmed_manifest_path =
-                    platform_shim->query_default_redirect_path(ManifestCategory::icd) / new_manifest_path;
+                    file_system_manager.get_path_redirect_by_manifest_location(ManifestLocation::driver) / new_manifest_path;
+#endif
+                break;
+            case (ManifestDiscoveryType::unsecured_generic):
+#if defined(WIN32)
+                platform_shim->add_unsecured_manifest_to_registry(ManifestCategory::icd, icds.back().manifest_path);
+#elif TESTING_COMMON_UNIX_PLATFORMS
+                icds.back().shimmed_manifest_path =
+                    file_system_manager.get_path_redirect_by_manifest_location(ManifestLocation::unsecured_driver) /
+                    new_manifest_path;
 #endif
                 break;
             case (ManifestDiscoveryType::env_var):
@@ -670,7 +448,6 @@ TestICD& FrameworkEnvironment::add_icd(TestICDDetails icd_details) noexcept {
                 } else {
                     env_var_vk_icd_filenames.add_to_list(folder.location() / new_manifest_path);
                 }
-                platform_shim->add_known_path(folder.location());
                 break;
             case (ManifestDiscoveryType::add_env_var):
                 if (icd_details.is_dir) {
@@ -678,18 +455,17 @@ TestICD& FrameworkEnvironment::add_icd(TestICDDetails icd_details) noexcept {
                 } else {
                     add_env_var_vk_icd_filenames.add_to_list(folder.location() / new_manifest_path);
                 }
-                platform_shim->add_known_path(folder.location());
                 break;
-            case (ManifestDiscoveryType::macos_bundle):
-                platform_shim->add_manifest(ManifestCategory::icd, icds.back().manifest_path);
                 break;
-            case (ManifestDiscoveryType::unsecured_generic):
-                platform_shim->add_unsecured_manifest(ManifestCategory::icd, icds.back().manifest_path);
-                break;
+
+#if defined(WIN32)
             case (ManifestDiscoveryType::windows_app_package):
                 platform_shim->set_app_package_path(folder.location());
                 break;
-
+#endif
+#if defined(__APPLE__)
+            case (ManifestDiscoveryType::macos_bundle):  // macos_bundle contents are always discoverable by the loader
+#endif
             case (ManifestDiscoveryType::override_folder):  // should be found through override layer/settings file, not 'normal'
                                                             // search paths
             case (ManifestDiscoveryType::null_dir):
@@ -720,7 +496,8 @@ void FrameworkEnvironment::add_explicit_layer(TestLayerDetails layer_details) no
 }
 
 void FrameworkEnvironment::add_layer_impl(TestLayerDetails layer_details, ManifestCategory category) {
-    fs::FolderManager* fs_ptr = &get_folder(ManifestLocation::explicit_layer);
+    fs::Folder* fs_ptr = &get_folder(ManifestLocation::explicit_layer);
+    EnvVarWrapper* env_var_to_use = nullptr;
     switch (layer_details.discovery_type) {
         case (ManifestDiscoveryType::generic):
             if (category == ManifestCategory::implicit_layer) fs_ptr = &get_folder(ManifestLocation::implicit_layer);
@@ -728,53 +505,48 @@ void FrameworkEnvironment::add_layer_impl(TestLayerDetails layer_details, Manife
         case (ManifestDiscoveryType::env_var):
             if (category == ManifestCategory::explicit_layer) {
                 fs_ptr = &get_folder(ManifestLocation::explicit_layer_env_var);
-                if (layer_details.is_dir) {
-                    env_var_vk_layer_paths.add_to_list(fs_ptr->location());
-                } else {
-                    env_var_vk_layer_paths.add_to_list(fs_ptr->location() / layer_details.json_name);
-                }
-            }
-            if (category == ManifestCategory::implicit_layer) {
+                env_var_to_use = &env_var_vk_layer_paths;
+            } else if (category == ManifestCategory::implicit_layer) {
                 fs_ptr = &get_folder(ManifestLocation::implicit_layer_env_var);
-                if (layer_details.is_dir) {
-                    env_var_vk_implicit_layer_paths.add_to_list(fs_ptr->location());
-                } else {
-                    env_var_vk_implicit_layer_paths.add_to_list(fs_ptr->location() / layer_details.json_name);
-                }
+                env_var_to_use = &env_var_vk_implicit_layer_paths;
             }
-            platform_shim->add_known_path(fs_ptr->location());
+            if (layer_details.is_dir) {
+                env_var_to_use->add_to_list(fs_ptr->location());
+            } else {
+                env_var_to_use->add_to_list(fs_ptr->location() / layer_details.json_name);
+            }
             break;
         case (ManifestDiscoveryType::add_env_var):
             if (category == ManifestCategory::explicit_layer) {
                 fs_ptr = &get_folder(ManifestLocation::explicit_layer_add_env_var);
-                if (layer_details.is_dir) {
-                    add_env_var_vk_layer_paths.add_to_list(fs_ptr->location());
-                } else {
-                    add_env_var_vk_layer_paths.add_to_list(fs_ptr->location() / layer_details.json_name);
-                }
-            }
-            if (category == ManifestCategory::implicit_layer) {
+                env_var_to_use = &add_env_var_vk_layer_paths;
+            } else if (category == ManifestCategory::implicit_layer) {
                 fs_ptr = &get_folder(ManifestLocation::implicit_layer_add_env_var);
-                if (layer_details.is_dir) {
-                    add_env_var_vk_implicit_layer_paths.add_to_list(fs_ptr->location());
-                } else {
-                    add_env_var_vk_implicit_layer_paths.add_to_list(fs_ptr->location() / layer_details.json_name);
-                }
+                env_var_to_use = &add_env_var_vk_implicit_layer_paths;
             }
-            platform_shim->add_known_path(fs_ptr->location());
+            if (layer_details.is_dir) {
+                env_var_to_use->add_to_list(fs_ptr->location());
+            } else {
+                env_var_to_use->add_to_list(fs_ptr->location() / layer_details.json_name);
+            }
             break;
         case (ManifestDiscoveryType::override_folder):
             fs_ptr = &get_folder(ManifestLocation::override_layer);
             break;
+#if defined(__APPLE__)
         case (ManifestDiscoveryType::macos_bundle):
             fs_ptr = &(get_folder(ManifestLocation::macos_bundle));
             break;
+#endif
         case (ManifestDiscoveryType::unsecured_generic):
-            fs_ptr = &(get_folder(ManifestLocation::unsecured_location));
+            fs_ptr = &(get_folder(category == ManifestCategory::implicit_layer ? ManifestLocation::unsecured_implicit_layer
+                                                                               : ManifestLocation::unsecured_explicit_layer));
             break;
+#if defined(WIN32)
         case (ManifestDiscoveryType::windows_app_package):
             fs_ptr = &(get_folder(ManifestLocation::windows_app_package));
             break;
+#endif
         case (ManifestDiscoveryType::none):
         case (ManifestDiscoveryType::null_dir):
             fs_ptr = &(get_folder(ManifestLocation::null));
@@ -791,14 +563,9 @@ void FrameworkEnvironment::add_layer_impl(TestLayerDetails layer_details, Manife
 
             auto new_layer_location = folder.copy_file(layer.lib_path, new_lib_path);
 
-#if COMMON_UNIX_PLATFORMS
+#if TESTING_COMMON_UNIX_PLATFORMS
             if (layer_details.library_path_type == LibraryPathType::default_search_paths) {
-                platform_shim->redirect_dlopen_name(new_lib_path, new_layer_location);
-            }
-            if (layer_details.library_path_type == LibraryPathType::relative) {
-                platform_shim->redirect_dlopen_name(
-                    std::filesystem::path(SYSCONFDIR) / "vulkan" / category_path_name(category) / "." / new_lib_path,
-                    new_layer_location);
+                platform_shim->add_system_library(new_lib_path, new_layer_location);
             }
 #endif
 #if defined(WIN32)
@@ -828,22 +595,28 @@ void FrameworkEnvironment::add_layer_impl(TestLayerDetails layer_details, Manife
     if (layer_details.discovery_type != ManifestDiscoveryType::none) {
         // Write a manifest file to a folder as long as the discovery type isn't none
         auto layer_manifest_loc = folder.write_manifest(layer_details.json_name, layer_details.layer_manifest.get_manifest_str());
+#if defined(WIN32)
         // only add the manifest to the registry if its a generic location (as if it was installed) - both system and user local
         if (layer_details.discovery_type == ManifestDiscoveryType::generic) {
-            platform_shim->add_manifest(category, layer_manifest_loc);
+            platform_shim->add_manifest_to_registry(category, layer_manifest_loc);
         }
         if (layer_details.discovery_type == ManifestDiscoveryType::unsecured_generic) {
-            platform_shim->add_unsecured_manifest(category, layer_manifest_loc);
+            platform_shim->add_unsecured_manifest_to_registry(category, layer_manifest_loc);
         }
         if (layer_details.discovery_type == ManifestDiscoveryType::windows_app_package) {
             platform_shim->set_app_package_path(folder.location());
         }
+#endif
         for (size_t i = new_layers_start; i < layers.size(); i++) {
             layers.at(i).manifest_path = layer_manifest_loc;
             layers.at(i).shimmed_manifest_path = layer_manifest_loc;
-#if COMMON_UNIX_PLATFORMS
+#if TESTING_COMMON_UNIX_PLATFORMS
             if (layer_details.discovery_type == ManifestDiscoveryType::generic) {
-                layers.at(i).shimmed_manifest_path = platform_shim->query_default_redirect_path(category) / layer_details.json_name;
+                layers.at(i).shimmed_manifest_path =
+                    ((category == ManifestCategory::implicit_layer)
+                         ? file_system_manager.get_path_redirect_by_manifest_location(ManifestLocation::implicit_layer)
+                         : file_system_manager.get_path_redirect_by_manifest_location(ManifestLocation::explicit_layer)) /
+                    layer_details.json_name;
             }
 #endif
         }
@@ -944,22 +717,33 @@ std::string get_loader_settings_file_contents(const LoaderSettings& loader_setti
     writer.EndObject();
     return writer.output;
 }
-void FrameworkEnvironment::write_settings_file(std::string const& file_contents) {
-    auto out_path = get_folder(ManifestLocation::settings_location).write_manifest("vk_loader_settings.json", file_contents);
+void FrameworkEnvironment::write_settings_file(std::string const& file_contents, bool write_to_secure_location) {
+    auto location = write_to_secure_location ? ManifestLocation::settings_location : ManifestLocation::unsecured_settings;
+    auto out_path = get_folder(location).write_manifest("vk_loader_settings.json", file_contents);
 #if defined(WIN32)
-    platform_shim->hkey_current_user_settings.clear();
-    platform_shim->hkey_local_machine_settings.clear();
+    if (write_to_secure_location) {
+        platform_shim->hkey_local_machine_settings.clear();
+        platform_shim->add_manifest_to_registry(ManifestCategory::settings, out_path);
+    } else {
+        platform_shim->hkey_current_user_settings.clear();
+        platform_shim->add_unsecured_manifest_to_registry(ManifestCategory::settings, out_path);
+    }
 #endif
-    if (settings.secure_loader_settings)
-        platform_shim->add_manifest(ManifestCategory::settings, out_path);
-    else
-        platform_shim->add_unsecured_manifest(ManifestCategory::settings, out_path);
 }
-void FrameworkEnvironment::update_loader_settings(const LoaderSettings& settings) noexcept {
-    write_settings_file(get_loader_settings_file_contents(settings));
+void FrameworkEnvironment::update_loader_settings(const LoaderSettings& settings, bool write_to_secure_location) noexcept {
+    write_settings_file(get_loader_settings_file_contents(settings), write_to_secure_location);
 }
 void FrameworkEnvironment::remove_loader_settings() {
     get_folder(ManifestLocation::settings_location).remove("vk_loader_settings.json");
+}
+void FrameworkEnvironment::write_file_from_string(std::string const& source_string, ManifestCategory category,
+                                                  ManifestLocation location, std::string const& file_name) {
+    auto out_path = get_folder(location).write_manifest(file_name, source_string);
+
+#if defined(WIN32)
+    // Only writes to the hkey_local_machine registries, doesn't support hkey_current_user registries
+    platform_shim->add_manifest_to_registry(category, out_path);
+#endif
 }
 void FrameworkEnvironment::write_file_from_source(const char* source_file, ManifestCategory category, ManifestLocation location,
                                                   std::string const& file_name) {
@@ -967,13 +751,7 @@ void FrameworkEnvironment::write_file_from_source(const char* source_file, Manif
     ASSERT_TRUE(file.is_open());
     std::stringstream file_stream;
     file_stream << file.rdbuf();
-
-    auto out_path = get_folder(location).write_manifest(file_name, file_stream.str());
-
-    if (settings.secure_loader_settings)
-        platform_shim->add_manifest(category, out_path);
-    else
-        platform_shim->add_unsecured_manifest(category, out_path);
+    write_file_from_string(file_stream.str(), category, location, file_name);
 }
 
 TestICD& FrameworkEnvironment::get_test_icd(size_t index) noexcept { return icds[index].get_test_icd(); }
@@ -998,18 +776,23 @@ std::filesystem::path FrameworkEnvironment::get_shimmed_layer_manifest_path(size
     return layers[index].get_shimmed_manifest_path();
 }
 
-fs::FolderManager& FrameworkEnvironment::get_folder(ManifestLocation location) noexcept {
-    // index it directly using the enum location since they will always be in that order
-    return folders.at(static_cast<size_t>(location));
+fs::Folder& FrameworkEnvironment::get_folder(ManifestLocation location) noexcept {
+    return file_system_manager.get_folder(location);
 }
-fs::FolderManager const& FrameworkEnvironment::get_folder(ManifestLocation location) const noexcept {
-    return folders.at(static_cast<size_t>(location));
+fs::Folder const& FrameworkEnvironment::get_folder(ManifestLocation location) const noexcept {
+    return file_system_manager.get_folder(location);
 }
 #if defined(__APPLE__)
 void FrameworkEnvironment::setup_macos_bundle() noexcept {
-    platform_shim->bundle_contents = get_folder(ManifestLocation::macos_bundle).location();
+    platform_shim->bundle_contents = file_system_manager.get_folder(ManifestLocation::macos_bundle).location();
 }
 #endif
+
+void FrameworkEnvironment::add_symlink(ManifestLocation location, std::filesystem::path const& target,
+                                       std::filesystem::path const& link_name) {
+    auto symlinked_path = get_folder(location).add_symlink(target, link_name);
+    file_system_manager.add_path_redirect(symlinked_path, location);
+}
 
 std::vector<VkExtensionProperties> FrameworkEnvironment::GetInstanceExtensions(uint32_t expected_count, const char* layer_name) {
     uint32_t count = 0;
