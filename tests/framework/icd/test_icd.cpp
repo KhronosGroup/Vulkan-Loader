@@ -29,6 +29,13 @@
 
 #include "test_icd.h"
 
+#include <assert.h>
+#include <cstring>
+
+#include <iostream>
+
+#include "equality_helpers.h"
+
 // export vk_icdGetInstanceProcAddr
 #if !defined(TEST_ICD_EXPORT_ICD_GIPA)
 #define TEST_ICD_EXPORT_ICD_GIPA 0

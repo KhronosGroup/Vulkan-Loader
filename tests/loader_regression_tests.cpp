@@ -3872,7 +3872,7 @@ TEST(DuplicateRegistryEntries, Layers) {
 
     auto null_path = env.get_folder(ManifestLocation::null).location() / "test_layer.json";
 
-    env.platform_shim->add_manifest(ManifestCategory::explicit_layer, null_path);
+    env.platform_shim->add_manifest_to_registry(ManifestCategory::explicit_layer, null_path);
 
     const char* layer_name = "TestLayer";
     env.add_explicit_layer(
@@ -3890,7 +3890,7 @@ TEST(DuplicateRegistryEntries, Layers) {
 TEST(DuplicateRegistryEntries, Drivers) {
     FrameworkEnvironment env{};
     auto null_path = env.get_folder(ManifestLocation::null).location() / "test_icd_0.json";
-    env.platform_shim->add_manifest(ManifestCategory::icd, null_path);
+    env.platform_shim->add_manifest_to_registry(ManifestCategory::icd, null_path);
 
     env.add_icd(TestICDDetails{TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA}.set_discovery_type(ManifestDiscoveryType::null_dir))
         .add_physical_device("physical_device_0")
@@ -3908,8 +3908,6 @@ TEST(DuplicateRegistryEntries, Drivers) {
 
 TEST(LibraryLoading, SystemLocations) {
     FrameworkEnvironment env{};
-    EnvVarWrapper ld_library_path("LD_LIBRARY_PATH", env.get_folder(ManifestLocation::driver).location().string());
-    ld_library_path.add_to_list(env.get_folder(ManifestLocation::explicit_layer).location());
 
     auto& driver = env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2).set_library_path_type(LibraryPathType::default_search_paths))
                        .add_physical_device({});
@@ -3941,16 +3939,13 @@ TEST(LibraryLoading, SystemLocations) {
 }
 
 #if defined(__linux__) || defined(__FreeBSD__) || defined(__OpenBSD__)
-// Check that valid symlinks do not cause the loader to crash when directly in an XDG env-var
-TEST(ManifestDiscovery, ValidSymlinkInXDGEnvVar) {
-    FrameworkEnvironment env{FrameworkSettings{}.set_enable_default_search_paths(false)};
+// Check that valid symlinks do not cause the loader to crash when found in an unsecure location
+TEST(ManifestDiscovery, ValidSymlinkInUnsecureLocation) {
+    FrameworkEnvironment env;
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA).set_discovery_type(ManifestDiscoveryType::override_folder))
         .add_physical_device({});
 
-    auto symlink_path =
-        env.get_folder(ManifestLocation::driver_env_var).add_symlink(env.get_icd_manifest_path(0), "symlink_to_driver.json");
-
-    EnvVarWrapper xdg_config_dirs_env_var{"XDG_CONFIG_DIRS", symlink_path};
+    env.add_symlink(ManifestLocation::unsecured_driver, env.get_icd_manifest_path(0), "symlink_to_driver.json");
 
     InstWrapper inst{env.vulkan_functions};
     FillDebugUtilsCreateDetails(inst.create_info, env.debug_log);
@@ -3959,29 +3954,23 @@ TEST(ManifestDiscovery, ValidSymlinkInXDGEnvVar) {
 
 // Check that valid symlinks do not cause the loader to crash
 TEST(ManifestDiscovery, ValidSymlink) {
-    FrameworkEnvironment env{FrameworkSettings{}.set_enable_default_search_paths(false)};
+    FrameworkEnvironment env{FrameworkSettings{}};
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA).set_discovery_type(ManifestDiscoveryType::override_folder))
         .add_physical_device({});
 
-    auto symlink_path =
-        env.get_folder(ManifestLocation::driver_env_var).add_symlink(env.get_icd_manifest_path(0), "symlink_to_driver.json");
-
-    env.platform_shim->set_fake_path(ManifestCategory::icd, env.get_folder(ManifestLocation::driver_env_var).location());
+    env.add_symlink(ManifestLocation::driver, env.get_icd_manifest_path(0), "symlink_to_driver.json");
 
     InstWrapper inst{env.vulkan_functions};
     FillDebugUtilsCreateDetails(inst.create_info, env.debug_log);
     inst.CheckCreate();
 }
 
-// Check that invalid symlinks do not cause the loader to crash when directly in an XDG env-var
-TEST(ManifestDiscovery, InvalidSymlinkXDGEnvVar) {
-    FrameworkEnvironment env{FrameworkSettings{}.set_enable_default_search_paths(false)};
+// Check that invalid symlinks do not cause the loader to crash when found in an unsecure location
+TEST(ManifestDiscovery, InvalidSymlinkInUnsecureLocation) {
+    FrameworkEnvironment env;
 
-    auto symlink_path =
-        env.get_folder(ManifestLocation::driver)
-            .add_symlink(env.get_folder(ManifestLocation::driver).location() / "nothing_here.json", "symlink_to_nothing.json");
-
-    EnvVarWrapper xdg_config_dirs_env_var{symlink_path};
+    env.add_symlink(ManifestLocation::unsecured_driver, env.get_folder(ManifestLocation::driver).location() / "nothing_here.json",
+                    "symlink_to_nothing.json");
 
     InstWrapper inst{env.vulkan_functions};
     FillDebugUtilsCreateDetails(inst.create_info, env.debug_log);
@@ -3990,13 +3979,10 @@ TEST(ManifestDiscovery, InvalidSymlinkXDGEnvVar) {
 
 // Check that invalid symlinks do not cause the loader to crash
 TEST(ManifestDiscovery, InvalidSymlink) {
-    FrameworkEnvironment env{FrameworkSettings{}.set_enable_default_search_paths(false)};
+    FrameworkEnvironment env;
 
-    auto symlink_path =
-        env.get_folder(ManifestLocation::driver_env_var)
-            .add_symlink(env.get_folder(ManifestLocation::driver).location() / "nothing_here.json", "symlink_to_nothing.json");
-
-    env.platform_shim->set_fake_path(ManifestCategory::icd, env.get_folder(ManifestLocation::driver_env_var).location());
+    env.add_symlink(ManifestLocation::driver, env.get_folder(ManifestLocation::driver).location() / "nothing_here.json",
+                    "symlink_to_nothing.json");
 
     InstWrapper inst{env.vulkan_functions};
     FillDebugUtilsCreateDetails(inst.create_info, env.debug_log);
@@ -4220,7 +4206,9 @@ TEST(InvalidManifest, ICD) {
     for (size_t i = 0; i < invalid_jsons.size(); i++) {
         auto file_name = std::string("invalid_driver_") + std::to_string(i) + ".json";
         std::filesystem::path new_path = env.get_folder(ManifestLocation::driver).write_manifest(file_name, invalid_jsons[i]);
-        env.platform_shim->add_manifest(ManifestCategory::icd, new_path);
+#if defined(WIN32)
+        env.platform_shim->add_manifest_to_registry(ManifestCategory::icd, new_path);
+#endif
     }
 
     InstWrapper inst{env.vulkan_functions};
@@ -4245,7 +4233,9 @@ TEST(InvalidManifest, Layer) {
         auto file_name = std::string("invalid_implicit_layer_") + std::to_string(i) + ".json";
         std::filesystem::path new_path =
             env.get_folder(ManifestLocation::implicit_layer).write_manifest(file_name, invalid_jsons[i]);
-        env.platform_shim->add_manifest(ManifestCategory::implicit_layer, new_path);
+#if defined(WIN32)
+        env.platform_shim->add_manifest_to_registry(ManifestCategory::implicit_layer, new_path);
+#endif
     }
 
     InstWrapper inst{env.vulkan_functions};

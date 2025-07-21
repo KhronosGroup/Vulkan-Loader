@@ -27,6 +27,8 @@
 
 #include "test_environment.h"
 
+#include "framework/util/dispatchable_handle.h"
+
 enum class TestConfig {
     add_layer_implementation,
     add_layer_interception,

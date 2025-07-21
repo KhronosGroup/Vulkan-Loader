@@ -27,7 +27,13 @@
 
 #pragma once
 
-#include "test_util.h"
+#include <array>
+#include <filesystem>
+#include <ostream>
+
+#include "util/dispatchable_handle.h"
+#include "util/platform_wsi.h"
+#include "util/functions.h"
 
 #include "layer/layer_util.h"
 
@@ -70,6 +76,9 @@ inline std::ostream& operator<<(std::ostream& os, const InterfaceVersionCheck& r
     }
     return os << static_cast<uint32_t>(result);
 }
+
+using VulkanUUID = std::array<uint8_t, VK_UUID_SIZE>;
+
 // clang-format on
 
 // Move only type because it holds a DispatchableHandle<VkPhysicalDevice>

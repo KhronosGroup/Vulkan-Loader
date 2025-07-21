@@ -46,10 +46,18 @@
 #endif
 #endif
 
-// Use the NDK's header on Android
 #include "gtest/gtest.h"
 
-#include "test_util.h"
+#include "util/builder_defines.h"
+#include "util/dispatch_table.h"
+#include "util/dynamic_library_wrapper.h"
+#include "util/env_var_wrapper.h"
+#include "util/equality_helpers.h"
+#include "util/folder_manager.h"
+#include "util/functions.h"
+#include "util/manifest_builders.h"
+#include "util/test_defines.h"
+#include "util/vulkan_object_wrappers.h"
 
 #include "shim/shim.h"
 
@@ -58,15 +66,6 @@
 #include "layer/test_layer.h"
 
 #include "generated/vk_result_to_string_helper.h"
-
-#include FRAMEWORK_CONFIG_HEADER
-
-// Useful defines
-#if COMMON_UNIX_PLATFORMS
-#define HOME_DIR "/home/fake_home"
-#define USER_LOCAL_SHARE_DIR HOME_DIR "/.local/share"
-#define ETC_DIR "/etc"
-#endif
 
 // handle checking
 template <typename T>
@@ -113,152 +112,26 @@ void handle_assert_equal(size_t count, T left[], T right[]) {
     }
 }
 
-// VulkanFunctions - loads vulkan functions for tests to use
-
-struct VulkanFunctions {
-#if !defined(APPLE_STATIC_LOADER)
-    LibraryWrapper loader;
-#endif
-    // Pre-Instance
-    PFN_vkGetInstanceProcAddr vkGetInstanceProcAddr = nullptr;
-    PFN_vkEnumerateInstanceExtensionProperties vkEnumerateInstanceExtensionProperties = nullptr;
-    PFN_vkEnumerateInstanceLayerProperties vkEnumerateInstanceLayerProperties = nullptr;
-    PFN_vkEnumerateInstanceVersion vkEnumerateInstanceVersion = nullptr;
-    PFN_vkCreateInstance vkCreateInstance = nullptr;
-
-    // Instance
-    PFN_vkDestroyInstance vkDestroyInstance = nullptr;
-    PFN_vkEnumeratePhysicalDevices vkEnumeratePhysicalDevices = nullptr;
-    PFN_vkEnumeratePhysicalDeviceGroups vkEnumeratePhysicalDeviceGroups = nullptr;
-    PFN_vkGetPhysicalDeviceFeatures vkGetPhysicalDeviceFeatures = nullptr;
-    PFN_vkGetPhysicalDeviceFeatures2 vkGetPhysicalDeviceFeatures2 = nullptr;
-    PFN_vkGetPhysicalDeviceFormatProperties vkGetPhysicalDeviceFormatProperties = nullptr;
-    PFN_vkGetPhysicalDeviceFormatProperties2 vkGetPhysicalDeviceFormatProperties2 = nullptr;
-    PFN_vkGetPhysicalDeviceImageFormatProperties vkGetPhysicalDeviceImageFormatProperties = nullptr;
-    PFN_vkGetPhysicalDeviceImageFormatProperties2 vkGetPhysicalDeviceImageFormatProperties2 = nullptr;
-    PFN_vkGetPhysicalDeviceSparseImageFormatProperties vkGetPhysicalDeviceSparseImageFormatProperties = nullptr;
-    PFN_vkGetPhysicalDeviceSparseImageFormatProperties2 vkGetPhysicalDeviceSparseImageFormatProperties2 = nullptr;
-    PFN_vkGetPhysicalDeviceProperties vkGetPhysicalDeviceProperties = nullptr;
-    PFN_vkGetPhysicalDeviceProperties2 vkGetPhysicalDeviceProperties2 = nullptr;
-    PFN_vkGetPhysicalDeviceQueueFamilyProperties vkGetPhysicalDeviceQueueFamilyProperties = nullptr;
-    PFN_vkGetPhysicalDeviceQueueFamilyProperties2 vkGetPhysicalDeviceQueueFamilyProperties2 = nullptr;
-    PFN_vkGetPhysicalDeviceMemoryProperties vkGetPhysicalDeviceMemoryProperties = nullptr;
-    PFN_vkGetPhysicalDeviceMemoryProperties2 vkGetPhysicalDeviceMemoryProperties2 = nullptr;
-    PFN_vkGetPhysicalDeviceSurfaceSupportKHR vkGetPhysicalDeviceSurfaceSupportKHR = nullptr;
-    PFN_vkGetPhysicalDeviceSurfaceFormatsKHR vkGetPhysicalDeviceSurfaceFormatsKHR = nullptr;
-    PFN_vkGetPhysicalDeviceSurfacePresentModesKHR vkGetPhysicalDeviceSurfacePresentModesKHR = nullptr;
-    PFN_vkGetPhysicalDeviceSurfaceCapabilitiesKHR vkGetPhysicalDeviceSurfaceCapabilitiesKHR = nullptr;
-    PFN_vkEnumerateDeviceExtensionProperties vkEnumerateDeviceExtensionProperties = nullptr;
-    PFN_vkEnumerateDeviceLayerProperties vkEnumerateDeviceLayerProperties = nullptr;
-    PFN_vkGetPhysicalDeviceExternalBufferProperties vkGetPhysicalDeviceExternalBufferProperties = nullptr;
-    PFN_vkGetPhysicalDeviceExternalFenceProperties vkGetPhysicalDeviceExternalFenceProperties = nullptr;
-    PFN_vkGetPhysicalDeviceExternalSemaphoreProperties vkGetPhysicalDeviceExternalSemaphoreProperties = nullptr;
-
-    PFN_vkGetDeviceProcAddr vkGetDeviceProcAddr = nullptr;
-    PFN_vkCreateDevice vkCreateDevice = nullptr;
-
-    // WSI
-    PFN_vkCreateHeadlessSurfaceEXT vkCreateHeadlessSurfaceEXT = nullptr;
-    PFN_vkCreateDisplayPlaneSurfaceKHR vkCreateDisplayPlaneSurfaceKHR = nullptr;
-    PFN_vkGetPhysicalDeviceDisplayPropertiesKHR vkGetPhysicalDeviceDisplayPropertiesKHR = nullptr;
-    PFN_vkGetPhysicalDeviceDisplayPlanePropertiesKHR vkGetPhysicalDeviceDisplayPlanePropertiesKHR = nullptr;
-    PFN_vkGetDisplayPlaneSupportedDisplaysKHR vkGetDisplayPlaneSupportedDisplaysKHR = nullptr;
-    PFN_vkGetDisplayModePropertiesKHR vkGetDisplayModePropertiesKHR = nullptr;
-    PFN_vkCreateDisplayModeKHR vkCreateDisplayModeKHR = nullptr;
-    PFN_vkGetDisplayPlaneCapabilitiesKHR vkGetDisplayPlaneCapabilitiesKHR = nullptr;
-    PFN_vkGetPhysicalDevicePresentRectanglesKHR vkGetPhysicalDevicePresentRectanglesKHR = nullptr;
-    PFN_vkGetPhysicalDeviceDisplayProperties2KHR vkGetPhysicalDeviceDisplayProperties2KHR = nullptr;
-    PFN_vkGetPhysicalDeviceDisplayPlaneProperties2KHR vkGetPhysicalDeviceDisplayPlaneProperties2KHR = nullptr;
-    PFN_vkGetDisplayModeProperties2KHR vkGetDisplayModeProperties2KHR = nullptr;
-    PFN_vkGetDisplayPlaneCapabilities2KHR vkGetDisplayPlaneCapabilities2KHR = nullptr;
-    PFN_vkGetPhysicalDeviceSurfaceCapabilities2KHR vkGetPhysicalDeviceSurfaceCapabilities2KHR = nullptr;
-    PFN_vkGetPhysicalDeviceSurfaceFormats2KHR vkGetPhysicalDeviceSurfaceFormats2KHR = nullptr;
-
-#if defined(VK_USE_PLATFORM_ANDROID_KHR)
-    PFN_vkCreateAndroidSurfaceKHR vkCreateAndroidSurfaceKHR = nullptr;
-#endif  // VK_USE_PLATFORM_ANDROID_KHR
-#if defined(VK_USE_PLATFORM_DIRECTFB_EXT)
-    PFN_vkCreateDirectFBSurfaceEXT vkCreateDirectFBSurfaceEXT = nullptr;
-    PFN_vkGetPhysicalDeviceDirectFBPresentationSupportEXT vkGetPhysicalDeviceDirectFBPresentationSupportEXT = nullptr;
-#endif  // VK_USE_PLATFORM_DIRECTFB_EXT
-#if defined(VK_USE_PLATFORM_FUCHSIA)
-    PFN_vkCreateImagePipeSurfaceFUCHSIA vkCreateImagePipeSurfaceFUCHSIA = nullptr;
-#endif  // VK_USE_PLATFORM_FUCHSIA
-#if defined(VK_USE_PLATFORM_GGP)
-    PFN_vkCreateStreamDescriptorSurfaceGGP vkCreateStreamDescriptorSurfaceGGP = nullptr;
-#endif  // VK_USE_PLATFORM_GGP
-#if defined(VK_USE_PLATFORM_IOS_MVK)
-    PFN_vkCreateIOSSurfaceMVK vkCreateIOSSurfaceMVK = nullptr;
-#endif  // VK_USE_PLATFORM_IOS_MVK
-#if defined(VK_USE_PLATFORM_MACOS_MVK)
-    PFN_vkCreateMacOSSurfaceMVK vkCreateMacOSSurfaceMVK = nullptr;
-#endif  // VK_USE_PLATFORM_MACOS_MVK
-#if defined(VK_USE_PLATFORM_METAL_EXT)
-    PFN_vkCreateMetalSurfaceEXT vkCreateMetalSurfaceEXT = nullptr;
-#endif  // VK_USE_PLATFORM_METAL_EXT
-#if defined(VK_USE_PLATFORM_SCREEN_QNX)
-    PFN_vkCreateScreenSurfaceQNX vkCreateScreenSurfaceQNX = nullptr;
-    PFN_vkGetPhysicalDeviceScreenPresentationSupportQNX vkGetPhysicalDeviceScreenPresentationSupportQNX = nullptr;
-#endif  // VK_USE_PLATFORM_SCREEN_QNX
-#if defined(VK_USE_PLATFORM_WAYLAND_KHR)
-    PFN_vkCreateWaylandSurfaceKHR vkCreateWaylandSurfaceKHR = nullptr;
-    PFN_vkGetPhysicalDeviceWaylandPresentationSupportKHR vkGetPhysicalDeviceWaylandPresentationSupportKHR = nullptr;
-#endif  // VK_USE_PLATFORM_WAYLAND_KHR
-#if defined(VK_USE_PLATFORM_XCB_KHR)
-    PFN_vkCreateXcbSurfaceKHR vkCreateXcbSurfaceKHR = nullptr;
-    PFN_vkGetPhysicalDeviceXcbPresentationSupportKHR vkGetPhysicalDeviceXcbPresentationSupportKHR = nullptr;
-#endif  // VK_USE_PLATFORM_XCB_KHR
-#if defined(VK_USE_PLATFORM_XLIB_KHR)
-    PFN_vkCreateXlibSurfaceKHR vkCreateXlibSurfaceKHR = nullptr;
-    PFN_vkGetPhysicalDeviceXlibPresentationSupportKHR vkGetPhysicalDeviceXlibPresentationSupportKHR = nullptr;
-#endif  // VK_USE_PLATFORM_XLIB_KHR
-#if defined(VK_USE_PLATFORM_WIN32_KHR)
-    PFN_vkCreateWin32SurfaceKHR vkCreateWin32SurfaceKHR = nullptr;
-    PFN_vkGetPhysicalDeviceWin32PresentationSupportKHR vkGetPhysicalDeviceWin32PresentationSupportKHR = nullptr;
-#endif  // VK_USE_PLATFORM_WIN32_KHR
-    PFN_vkDestroySurfaceKHR vkDestroySurfaceKHR = nullptr;
-
-    // instance extensions functions (can only be loaded with a valid instance)
-    PFN_vkCreateDebugUtilsMessengerEXT vkCreateDebugUtilsMessengerEXT = nullptr;    // Null unless the extension is enabled
-    PFN_vkDestroyDebugUtilsMessengerEXT vkDestroyDebugUtilsMessengerEXT = nullptr;  // Null unless the extension is enabled
-    PFN_vkCreateDebugReportCallbackEXT vkCreateDebugReportCallbackEXT = nullptr;    // Null unless the extension is enabled
-    PFN_vkDestroyDebugReportCallbackEXT vkDestroyDebugReportCallbackEXT = nullptr;  // Null unless the extension is enabled
-
-    // device functions
-    PFN_vkDestroyDevice vkDestroyDevice = nullptr;
-    PFN_vkGetDeviceQueue vkGetDeviceQueue = nullptr;
-
-    VulkanFunctions();
-
-    void load_instance_functions(VkInstance instance);
-
-    FromVoidStarFunc load(VkInstance inst, const char* func_name) const {
-        return FromVoidStarFunc(vkGetInstanceProcAddr(inst, func_name));
+template <typename T, size_t U>
+bool check_permutation(std::initializer_list<const char*> expected, std::array<T, U> const& returned) {
+    if (expected.size() != returned.size()) return false;
+    for (uint32_t i = 0; i < expected.size(); i++) {
+        auto found = std::find_if(std::begin(returned), std::end(returned),
+                                  [&](T elem) { return string_eq(*(expected.begin() + i), elem.layerName); });
+        if (found == std::end(returned)) return false;
     }
-
-    FromVoidStarFunc load(VkDevice device, const char* func_name) const {
-        return FromVoidStarFunc(vkGetDeviceProcAddr(device, func_name));
+    return true;
+}
+template <typename T>
+bool check_permutation(std::initializer_list<const char*> expected, std::vector<T> const& returned) {
+    if (expected.size() != returned.size()) return false;
+    for (uint32_t i = 0; i < expected.size(); i++) {
+        auto found = std::find_if(std::begin(returned), std::end(returned),
+                                  [&](T elem) { return string_eq(*(expected.begin() + i), elem.layerName); });
+        if (found == std::end(returned)) return false;
     }
-};
-
-struct DeviceFunctions {
-    PFN_vkGetDeviceProcAddr vkGetDeviceProcAddr = nullptr;
-    PFN_vkDestroyDevice vkDestroyDevice = nullptr;
-    PFN_vkGetDeviceQueue vkGetDeviceQueue = nullptr;
-    PFN_vkCreateCommandPool vkCreateCommandPool = nullptr;
-    PFN_vkAllocateCommandBuffers vkAllocateCommandBuffers = nullptr;
-    PFN_vkDestroyCommandPool vkDestroyCommandPool = nullptr;
-    PFN_vkCreateSwapchainKHR vkCreateSwapchainKHR = nullptr;
-    PFN_vkGetSwapchainImagesKHR vkGetSwapchainImagesKHR = nullptr;
-    PFN_vkDestroySwapchainKHR vkDestroySwapchainKHR = nullptr;
-
-    DeviceFunctions() = default;
-    DeviceFunctions(const VulkanFunctions& vulkan_functions, VkDevice device);
-
-    FromVoidStarFunc load(VkDevice device, const char* func_name) const {
-        return FromVoidStarFunc(vkGetDeviceProcAddr(device, func_name));
-    }
-};
+    return true;
+}
 
 // InstWrapper & DeviceWrapper - used to make creating instances & devices easier when writing tests
 struct InstWrapper {
@@ -465,50 +338,6 @@ VkResult CreateDebugUtilsMessenger(DebugUtilsWrapper& debug_utils);
 void FillDebugUtilsCreateDetails(InstanceCreateInfo& create_info, DebugUtilsLogger& logger);
 void FillDebugUtilsCreateDetails(InstanceCreateInfo& create_info, DebugUtilsWrapper& wrapper);
 
-namespace fs {
-
-int create_folder(std::filesystem::path const& path);
-int delete_folder(std::filesystem::path const& folder);
-
-class FolderManager {
-   public:
-    explicit FolderManager(std::filesystem::path root_path, std::string name) noexcept;
-    ~FolderManager() noexcept;
-    FolderManager(FolderManager const&) = delete;
-    FolderManager& operator=(FolderManager const&) = delete;
-    FolderManager(FolderManager&& other) noexcept;
-    FolderManager& operator=(FolderManager&& other) noexcept;
-
-    // Add a manifest to the folder
-    std::filesystem::path write_manifest(std::filesystem::path const& name, std::string const& contents);
-
-    // close file handle, delete file, remove `name` from managed file list.
-    void remove(std::filesystem::path const& name);
-
-    // Remove all contents in the path
-    void clear() const noexcept;
-
-    // copy file into this folder with name `new_name`. Returns the full path of the file that was copied
-    std::filesystem::path copy_file(std::filesystem::path const& file, std::filesystem::path const& new_name);
-
-    // location of the managed folder
-    std::filesystem::path location() const { return folder; }
-
-    std::vector<std::filesystem::path> get_files() const;
-
-    // Create a symlink in this folder to target with the filename set to link_name
-    std::filesystem::path add_symlink(std::filesystem::path const& target, std::filesystem::path const& link_name);
-
-   private:
-    bool actually_created = false;
-    std::filesystem::path folder;
-    std::vector<std::filesystem::path> added_files;
-
-    void insert_file_to_tracking(std::filesystem::path const& name);
-    void check_if_first_use();
-};
-}  // namespace fs
-
 struct LoaderSettingsLayerConfiguration {
     BUILDER_VALUE(std::string, name)
     BUILDER_VALUE(std::filesystem::path, path)
@@ -531,6 +360,8 @@ inline bool operator>=(LoaderSettingsLayerConfiguration const& a, LoaderSettings
 struct LoaderSettingsDriverConfiguration {
     BUILDER_VALUE(std::filesystem::path, path)
 };
+
+using VulkanUUID = std::array<uint8_t, VK_UUID_SIZE>;
 
 struct LoaderSettingsDeviceConfiguration {
     BUILDER_VALUE(VulkanUUID, deviceUUID)
@@ -560,8 +391,7 @@ struct LoaderSettings {
 struct FrameworkEnvironment;  // forward declaration
 
 struct PlatformShimWrapper {
-    PlatformShimWrapper(GetFoldersFunc get_folders_by_name_function, const char* log_filter) noexcept;
-    ~PlatformShimWrapper() noexcept;
+    PlatformShimWrapper(fs::FileSystemManager& file_system_manager, const char* log_filter) noexcept;
     PlatformShimWrapper(PlatformShimWrapper const&) = delete;
     PlatformShimWrapper& operator=(PlatformShimWrapper const&) = delete;
 
@@ -610,25 +440,6 @@ struct TestLayerHandle {
         shimmed_manifest_path;  // path to where the loader will find the manifest file (eg /usr/local/share/vulkan/<...>)
 };
 
-// Controls whether to create a manifest and where to put it
-enum class ManifestDiscoveryType {
-    generic,              // put the manifest in the regular locations
-    unsecured_generic,    // put the manifest in a user folder rather than system
-    none,                 // Do not write the manifest anywhere (for Direct Driver Loading)
-    null_dir,             // put the manifest in the 'null_dir' which the loader does not search in (D3DKMT for instance)
-    env_var,              // use the corresponding env-var for it
-    add_env_var,          // use the corresponding add-env-var for it
-    override_folder,      // add to a special folder for the override layer to use
-    windows_app_package,  // let the app package search find it
-    macos_bundle,         // place it in a location only accessible to macos bundles
-};
-
-enum class LibraryPathType {
-    absolute,              // default for testing - the exact path of the binary
-    relative,              // Relative to the manifest file
-    default_search_paths,  // Dont add any path information to the library_path - force the use of the default search paths
-};
-
 struct TestICDDetails {
     TestICDDetails(ManifestICD icd_manifest) noexcept : icd_manifest(icd_manifest) {}
     TestICDDetails(std::filesystem::path icd_binary_path, uint32_t api_version = VK_API_VERSION_1_0) noexcept {
@@ -657,30 +468,19 @@ struct TestLayerDetails {
     BUILDER_VALUE_WITH_DEFAULT(LibraryPathType, library_path_type, LibraryPathType::absolute);
 };
 
-// Locations manifests can go in the test framework
-// If this enum is added to - the contructor of FrameworkEnvironment also needs to be updated with the new enum value
-enum class ManifestLocation {
-    null = 0,
-    driver = 1,
-    driver_env_var = 2,
-    explicit_layer = 3,
-    explicit_layer_env_var = 4,
-    explicit_layer_add_env_var = 5,
-    implicit_layer = 6,
-    implicit_layer_env_var = 7,
-    implicit_layer_add_env_var = 8,
-    override_layer = 9,
-    windows_app_package = 10,
-    macos_bundle = 11,
-    unsecured_location = 12,
-    settings_location = 13,
-};
-
 struct FrameworkSettings {
     BUILDER_VALUE_WITH_DEFAULT(const char*, log_filter, "all");
-    BUILDER_VALUE_WITH_DEFAULT(bool, enable_default_search_paths, true);
-    BUILDER_VALUE(LoaderSettings, loader_settings);
-    BUILDER_VALUE(bool, secure_loader_settings);
+    BUILDER_VALUE_WITH_DEFAULT(bool, run_as_if_with_elevated_privleges, false);
+
+#if TESTING_COMMON_UNIX_PLATFORMS
+    BUILDER_VALUE_WITH_DEFAULT(std::string, home_env_var, "/home/fake_home");
+#if !defined(__APPLE__)
+    BUILDER_VALUE(std::string, xdg_config_home_env_var);
+    BUILDER_VALUE(std::string, xdg_config_dirs_env_var);
+    BUILDER_VALUE(std::string, xdg_data_home_env_var);
+    BUILDER_VALUE(std::string, xdg_data_dirs_env_var);
+#endif
+#endif
 };
 
 struct FrameworkEnvironment {
@@ -699,12 +499,20 @@ struct FrameworkEnvironment {
     void add_fake_implicit_layer(ManifestLayer layer_manifest, const std::string& json_name) noexcept;
     void add_fake_explicit_layer(ManifestLayer layer_manifest, const std::string& json_name) noexcept;
 
-    // resets the current settings with the values contained in loader_settings
-    void write_settings_file(std::string const& file_contents);
-    // apply any changes made to FrameworkEnvironment's loader_settings member
-    void update_loader_settings(const LoaderSettings& loader_settings) noexcept;
+    // Resets the current settings with the values contained in loader_settings.
+    // Write_to_secure_location determines whether to write to the secure or unsecure settings folder.
+    void write_settings_file(std::string const& file_contents, bool write_to_secure_location);
+
+    // Apply any changes made to FrameworkEnvironment's loader_settings member.
+    // By default writes to the secure settings location
+    void update_loader_settings(const LoaderSettings& loader_settings, bool write_to_secure_location = true) noexcept;
+
     void remove_loader_settings();
 
+    // Creates a file called `file_name` for the given `category` in the given `location` with `source_string` as the contents
+    void write_file_from_string(std::string const& source_string, ManifestCategory category, ManifestLocation location,
+                                std::string const& file_name);
+    // Creates a file called `file_name` for the given `category` in the given `location` with contents copied from `source_file`
     void write_file_from_source(const char* source_file, ManifestCategory category, ManifestLocation location,
                                 std::string const& file_name);
 
@@ -720,16 +528,18 @@ struct FrameworkEnvironment {
     std::filesystem::path get_layer_manifest_path(size_t index = 0) noexcept;
     std::filesystem::path get_shimmed_layer_manifest_path(size_t index = 0) noexcept;
 
-    fs::FolderManager& get_folder(ManifestLocation location) noexcept;
-    fs::FolderManager const& get_folder(ManifestLocation location) const noexcept;
+    fs::Folder& get_folder(ManifestLocation location) noexcept;
+    fs::Folder const& get_folder(ManifestLocation location) const noexcept;
 #if defined(__APPLE__)
     // Set the path of the app bundle to the appropriate test framework bundle
     void setup_macos_bundle() noexcept;
 #endif
 
+    void add_symlink(ManifestLocation location, std::filesystem::path const& target, std::filesystem::path const& link_name);
+
     FrameworkSettings settings;
 
-    fs::FolderManager test_folder;
+    fs::FileSystemManager file_system_manager;
 
     // Query the global extensions
     // Optional: use layer_name to query the extensions of a specific layer
@@ -738,7 +548,6 @@ struct FrameworkEnvironment {
     std::vector<VkLayerProperties> GetLayerProperties(uint32_t count);
 
     PlatformShimWrapper platform_shim;
-    std::vector<fs::FolderManager> folders;
 
     std::vector<TestICDHandle> icds;
     std::vector<TestLayerHandle> layers;
@@ -752,6 +561,18 @@ struct FrameworkEnvironment {
     EnvVarWrapper add_env_var_vk_layer_paths{"VK_ADD_LAYER_PATH"};
     EnvVarWrapper env_var_vk_implicit_layer_paths{"VK_IMPLICIT_LAYER_PATH"};
     EnvVarWrapper add_env_var_vk_implicit_layer_paths{"VK_ADD_IMPLICIT_LAYER_PATH"};
+
+#if TESTING_COMMON_UNIX_PLATFORMS
+    EnvVarWrapper env_var_home{"HOME", "/home/fake_home"};
+#if !defined(__APPLE__)
+    EnvVarWrapper env_var_xdg_config_home{"XDG_CONFIG_HOME"};
+    EnvVarWrapper env_var_xdg_config_dirs{"XDG_CONFIG_DIRS"};
+    EnvVarWrapper env_var_xdg_data_home{"XDG_DATA_HOME"};
+    EnvVarWrapper env_var_xdg_data_dirs{"XDG_DATA_DIRS"};
+#endif
+    std::string secure_manifest_base_location;
+    std::string unsecure_manifest_base_location;
+#endif
 
     LoaderSettings loader_settings;  // the current settings written to disk
    private:
