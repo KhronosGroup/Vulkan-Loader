@@ -3270,7 +3270,7 @@ void copy_data_file_info(const char *cur_path, const char *relative_path, size_t
         char *cur_write = *output_path;
 
         while (cur_path[start] != '\0') {
-            while (cur_path[start] == PATH_SEPARATOR) {
+            while (cur_path[start] == PATH_SEPARATOR && cur_path[start] != '\0') {
                 start++;
             }
             stop = start;

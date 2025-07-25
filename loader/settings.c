@@ -387,46 +387,131 @@ out:
     return res;
 }
 
+#if COMMON_UNIX_PLATFORMS
+// Given a base and suffix path, determine if a file at that location exists, and if it is return success.
+// Since base may contain multiple paths seperated by PATH_SEPARATOR, we must extract each segment and check segment + suffix
+// individually
 VkResult check_if_settings_path_exists(const struct loader_instance* inst, const char* base, const char* suffix,
                                        char** settings_file_path) {
     if (NULL == base || NULL == suffix) {
         return VK_ERROR_INITIALIZATION_FAILED;
     }
+
     size_t base_len = strlen(base);
     size_t suffix_len = strlen(suffix);
-    size_t path_len = base_len + suffix_len + 1;
-    *settings_file_path = loader_instance_heap_calloc(inst, path_len, VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
-    if (NULL == *settings_file_path) {
-        return VK_ERROR_OUT_OF_HOST_MEMORY;
-    }
-    loader_strncpy(*settings_file_path, path_len, base, base_len);
-    loader_strncat(*settings_file_path, path_len, suffix, suffix_len);
 
-    if (!loader_platform_file_exists(*settings_file_path)) {
+    uint32_t start = 0;
+    uint32_t stop = 0;
+    while (base[start] != '\0' && start < base_len && stop < base_len) {
+        start = stop;
+        stop = start + 1;
+        while (base[stop] != PATH_SEPARATOR && base[stop] != '\0' && stop < base_len) {
+            stop++;
+        }
+
+        size_t segment_len = (stop - start);
+        if (segment_len <= 1) {
+            // segment is *just* a PATH_SEPARATOR, skip it
+            continue;
+        }
+        size_t path_len = segment_len + suffix_len + 1;
+        *settings_file_path = loader_instance_heap_calloc(inst, path_len, VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
+        if (NULL == *settings_file_path) {
+            return VK_ERROR_OUT_OF_HOST_MEMORY;
+        }
+        loader_strncpy(*settings_file_path, path_len, base + start, segment_len);
+        loader_strncat(*settings_file_path, path_len, suffix, suffix_len);
+
+        if (loader_platform_file_exists(*settings_file_path)) {
+            return VK_SUCCESS;
+        }
         loader_instance_heap_free(inst, *settings_file_path);
         *settings_file_path = NULL;
-        return VK_ERROR_INITIALIZATION_FAILED;
     }
-    return VK_SUCCESS;
+
+    return VK_ERROR_INITIALIZATION_FAILED;
 }
+
+// Follow the logic of read_data_files_in_search_paths but only look for "/vulkan/loader_settings.d/" VK_LOADER_SETTINGS_FILENAME
 VkResult get_unix_settings_path(const struct loader_instance* inst, char** settings_file_path) {
-    VkResult res =
-        check_if_settings_path_exists(inst, loader_secure_getenv("HOME", inst),
-                                      "/.local/share/vulkan/loader_settings.d/" VK_LOADER_SETTINGS_FILENAME, settings_file_path);
+    // First, get XDG env-vars we use. Don't need to worry about free'ing because on linux getenv is non-allocating
+    char* xdg_config_home = loader_secure_getenv("XDG_CONFIG_HOME", inst);
+    char* xdg_config_dirs = loader_secure_getenv("XDG_CONFIG_DIRS", inst);
+    char* xdg_data_home = loader_secure_getenv("XDG_DATA_HOME", inst);
+    char* xdg_data_dirs = loader_secure_getenv("XDG_DATA_DIRS", inst);
+
+    // Use fallback directories for xdg_config_dirs and xdg_data_dirs if they are NULL.
+#if !defined(__Fuchsia__) && !defined(__QNX__)
+    if (NULL == xdg_config_dirs || '\0' == xdg_config_dirs[0]) {
+        xdg_config_dirs = FALLBACK_CONFIG_DIRS;
+    }
+#endif
+
+#if !defined(__Fuchsia__) && !defined(__QNX__)
+    if (NULL == xdg_data_dirs || '\0' == xdg_data_dirs[0]) {
+        xdg_data_dirs = FALLBACK_DATA_DIRS;
+    }
+#endif
+
+    VkResult res = check_if_settings_path_exists(inst, xdg_config_home, "/vulkan/loader_settings.d/" VK_LOADER_SETTINGS_FILENAME,
+                                                 settings_file_path);
     if (res == VK_SUCCESS) {
         return res;
     }
-    // If HOME isn't set, fallback to XDG_DATA_HOME
-    res = check_if_settings_path_exists(inst, loader_secure_getenv("XDG_DATA_HOME", inst),
-                                        "/vulkan/loader_settings.d/" VK_LOADER_SETTINGS_FILENAME, settings_file_path);
+
+    res = check_if_settings_path_exists(inst, xdg_data_home, "/vulkan/loader_settings.d/" VK_LOADER_SETTINGS_FILENAME,
+                                        settings_file_path);
     if (res == VK_SUCCESS) {
         return res;
     }
-    // if XDG_DATA_HOME isn't set, fallback to /etc.
-    // note that the settings_fil_path_suffix stays the same since its the same layout as for XDG_DATA_HOME
-    return check_if_settings_path_exists(inst, "/etc", "/vulkan/loader_settings.d/" VK_LOADER_SETTINGS_FILENAME,
-                                         settings_file_path);
+
+    // Check home if either xdg_config_home or xdg_data_home wasn't set
+    char* home = loader_secure_getenv("HOME", inst);
+    if (home != NULL) {
+        if (NULL == xdg_config_home || '\0' == xdg_config_home[0]) {
+            res = check_if_settings_path_exists(inst, home, "/.config/vulkan/loader_settings.d/" VK_LOADER_SETTINGS_FILENAME,
+                                                settings_file_path);
+            if (res == VK_SUCCESS) {
+                return res;
+            }
+        }
+        if (NULL == xdg_data_home || '\0' == xdg_data_home[0]) {
+            res = check_if_settings_path_exists(inst, home, "/.local/share/vulkan/loader_settings.d/" VK_LOADER_SETTINGS_FILENAME,
+                                                settings_file_path);
+            if (res == VK_SUCCESS) {
+                return res;
+            }
+        }
+    }
+
+    res = check_if_settings_path_exists(inst, xdg_config_dirs, "/vulkan/loader_settings.d/" VK_LOADER_SETTINGS_FILENAME,
+                                        settings_file_path);
+    if (res == VK_SUCCESS) {
+        return res;
+    }
+
+    res = check_if_settings_path_exists(inst, SYSCONFDIR, "/vulkan/loader_settings.d/" VK_LOADER_SETTINGS_FILENAME,
+                                        settings_file_path);
+    if (res == VK_SUCCESS) {
+        return res;
+    }
+#if defined(EXTRASYSCONFDIR)
+
+    res = check_if_settings_path_exists(inst, EXTRASYSCONFDIR, "/vulkan/loader_settings.d/" VK_LOADER_SETTINGS_FILENAME,
+                                        settings_file_path);
+    if (res == VK_SUCCESS) {
+        return res;
+    }
+#endif
+    res = check_if_settings_path_exists(inst, xdg_data_dirs, "/vulkan/loader_settings.d/" VK_LOADER_SETTINGS_FILENAME,
+                                        settings_file_path);
+    if (res == VK_SUCCESS) {
+        return res;
+    }
+
+    return VK_ERROR_INITIALIZATION_FAILED;
 }
+#endif
 
 bool check_if_layer_configurations_are_equal(loader_settings_layer_configuration* a, loader_settings_layer_configuration* b) {
     if (!a->name || !b->name || 0 != strcmp(a->name, b->name)) {
