@@ -127,7 +127,7 @@ TEST(WsiTests, GetPhysicalDeviceWin32PresentNoICDSupport) {
     cur_icd.set_min_icd_interface_version(5);
     cur_icd.add_instance_extension({VK_KHR_SURFACE_EXTENSION_NAME});
     cur_icd.add_instance_extension({VK_KHR_WIN32_SURFACE_EXTENSION_NAME});
-    cur_icd.physical_devices.emplace_back("physical_device_0");
+    cur_icd.add_and_get_physical_device("physical_device_0");
     cur_icd.enable_icd_wsi = false;
 
     InstWrapper inst{env.vulkan_functions};
@@ -154,7 +154,7 @@ TEST(WsiTests, GetPhysicalDeviceWin32PresentICDSupport) {
     cur_icd.set_min_icd_interface_version(5);
     cur_icd.add_instance_extension({VK_KHR_SURFACE_EXTENSION_NAME});
     cur_icd.add_instance_extension({VK_KHR_WIN32_SURFACE_EXTENSION_NAME});
-    cur_icd.physical_devices.emplace_back("physical_device_0");
+    cur_icd.add_and_get_physical_device("physical_device_0");
     cur_icd.enable_icd_wsi = true;
 
     InstWrapper inst{env.vulkan_functions};
@@ -181,8 +181,8 @@ TEST(WsiTests, Win32GetPhysicalDeviceSurfaceSupportKHR) {
         cur_icd.set_min_icd_interface_version(5);
         cur_icd.add_instance_extensions({first_ext, second_ext});
         std::string dev_name = "phys_dev_" + std::to_string(icd);
-        cur_icd.physical_devices.emplace_back(dev_name.c_str());
-        cur_icd.physical_devices.back().add_queue_family_properties({{VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}}, true});
+        cur_icd.add_and_get_physical_device(dev_name.c_str())
+            .add_queue_family_properties({{VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}}, true});
         cur_icd.enable_icd_wsi = true;
     }
 
@@ -311,7 +311,7 @@ TEST(WsiTests, GetPhysicalDeviceXcbPresentNoICDSupport) {
     cur_icd.set_min_icd_interface_version(5);
     cur_icd.add_instance_extension({VK_KHR_SURFACE_EXTENSION_NAME});
     cur_icd.add_instance_extension({VK_KHR_XCB_SURFACE_EXTENSION_NAME});
-    cur_icd.physical_devices.emplace_back("physical_device_0");
+    cur_icd.add_and_get_physical_device("physical_device_0");
     cur_icd.enable_icd_wsi = false;
 
     InstWrapper inst{env.vulkan_functions};
@@ -338,7 +338,7 @@ TEST(WsiTests, GetPhysicalDeviceXcbPresentICDSupport) {
     cur_icd.set_min_icd_interface_version(5);
     cur_icd.add_instance_extension({VK_KHR_SURFACE_EXTENSION_NAME});
     cur_icd.add_instance_extension({VK_KHR_XCB_SURFACE_EXTENSION_NAME});
-    cur_icd.physical_devices.emplace_back("physical_device_0");
+    cur_icd.add_and_get_physical_device("physical_device_0");
     cur_icd.enable_icd_wsi = true;
 
     InstWrapper inst{env.vulkan_functions};
@@ -365,8 +365,8 @@ TEST(WsiTests, XcbGetPhysicalDeviceSurfaceSupportKHR) {
         cur_icd.set_min_icd_interface_version(5);
         cur_icd.add_instance_extensions({first_ext, second_ext});
         std::string dev_name = "phys_dev_" + std::to_string(icd);
-        cur_icd.physical_devices.emplace_back(dev_name.c_str());
-        cur_icd.physical_devices.back().add_queue_family_properties({{VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}}, true});
+        cur_icd.add_and_get_physical_device(dev_name.c_str())
+            .add_queue_family_properties({{VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}}, true});
         cur_icd.enable_icd_wsi = true;
     }
 
@@ -495,7 +495,7 @@ TEST(WsiTests, GetPhysicalDeviceXlibPresentNoICDSupport) {
     cur_icd.set_min_icd_interface_version(5);
     cur_icd.add_instance_extension({VK_KHR_SURFACE_EXTENSION_NAME});
     cur_icd.add_instance_extension({VK_KHR_XLIB_SURFACE_EXTENSION_NAME});
-    cur_icd.physical_devices.emplace_back("physical_device_0");
+    cur_icd.add_and_get_physical_device("physical_device_0");
     cur_icd.enable_icd_wsi = false;
 
     InstWrapper inst{env.vulkan_functions};
@@ -522,7 +522,7 @@ TEST(WsiTests, GetPhysicalDeviceXlibPresentICDSupport) {
     cur_icd.set_min_icd_interface_version(5);
     cur_icd.add_instance_extension({VK_KHR_SURFACE_EXTENSION_NAME});
     cur_icd.add_instance_extension({VK_KHR_XLIB_SURFACE_EXTENSION_NAME});
-    cur_icd.physical_devices.emplace_back("physical_device_0");
+    cur_icd.add_and_get_physical_device("physical_device_0");
     cur_icd.enable_icd_wsi = true;
 
     InstWrapper inst{env.vulkan_functions};
@@ -549,8 +549,8 @@ TEST(WsiTests, XlibGetPhysicalDeviceSurfaceSupportKHR) {
         cur_icd.set_min_icd_interface_version(5);
         cur_icd.add_instance_extensions({first_ext, second_ext});
         std::string dev_name = "phys_dev_" + std::to_string(icd);
-        cur_icd.physical_devices.emplace_back(dev_name.c_str());
-        cur_icd.physical_devices.back().add_queue_family_properties({{VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}}, true});
+        cur_icd.add_and_get_physical_device(dev_name.c_str())
+            .add_queue_family_properties({{VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}}, true});
         cur_icd.enable_icd_wsi = true;
     }
 
@@ -679,7 +679,7 @@ TEST(WsiTests, GetPhysicalDeviceWaylandPresentNoICDSupport) {
     cur_icd.set_min_icd_interface_version(5);
     cur_icd.add_instance_extension({VK_KHR_SURFACE_EXTENSION_NAME});
     cur_icd.add_instance_extension({VK_KHR_WAYLAND_SURFACE_EXTENSION_NAME});
-    cur_icd.physical_devices.emplace_back("physical_device_0");
+    cur_icd.add_and_get_physical_device("physical_device_0");
     cur_icd.enable_icd_wsi = false;
 
     InstWrapper inst{env.vulkan_functions};
@@ -706,7 +706,7 @@ TEST(WsiTests, GetPhysicalDeviceWaylandPresentICDSupport) {
     cur_icd.set_min_icd_interface_version(5);
     cur_icd.add_instance_extension({VK_KHR_SURFACE_EXTENSION_NAME});
     cur_icd.add_instance_extension({VK_KHR_WAYLAND_SURFACE_EXTENSION_NAME});
-    cur_icd.physical_devices.emplace_back("physical_device_0");
+    cur_icd.add_and_get_physical_device("physical_device_0");
     cur_icd.enable_icd_wsi = true;
 
     InstWrapper inst{env.vulkan_functions};
@@ -733,8 +733,8 @@ TEST(WsiTests, WaylandGetPhysicalDeviceSurfaceSupportKHR) {
         cur_icd.set_min_icd_interface_version(5);
         cur_icd.add_instance_extensions({first_ext, second_ext});
         std::string dev_name = "phys_dev_" + std::to_string(icd);
-        cur_icd.physical_devices.emplace_back(dev_name.c_str());
-        cur_icd.physical_devices.back().add_queue_family_properties({{VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}}, true});
+        cur_icd.add_and_get_physical_device(dev_name.c_str())
+            .add_queue_family_properties({{VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}}, true});
         cur_icd.enable_icd_wsi = true;
     }
 
@@ -925,15 +925,15 @@ TEST(WsiTests, EXTSurfaceMaintenance1) {
     VkSurfaceCapabilitiesKHR surface_caps{};
     surface_caps.maxImageExtent = VkExtent2D{300, 300};
     surface_caps.minImageExtent = VkExtent2D{100, 100};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2))
-        .setup_WSI()
-        .add_instance_extension(VK_KHR_GET_SURFACE_CAPABILITIES_2_EXTENSION_NAME)
-        .add_physical_device(PhysicalDevice{}
-                                 .add_extension("VK_KHR_swapchain")
-                                 .set_deviceName("no")
-                                 .set_surface_capabilities(surface_caps)
-                                 .add_surface_present_modes(present_modes)
-                                 .finish());
+    auto& test_physical_device_0 = env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2))
+                                       .setup_WSI()
+                                       .add_instance_extension(VK_KHR_GET_SURFACE_CAPABILITIES_2_EXTENSION_NAME)
+                                       .add_and_get_physical_device(PhysicalDevice{}
+                                                                        .add_extension("VK_KHR_swapchain")
+                                                                        .set_deviceName("no")
+                                                                        .set_surface_capabilities(surface_caps)
+                                                                        .add_surface_present_modes(present_modes)
+                                                                        .finish());
     VkSurfacePresentScalingCapabilitiesEXT scaling_capabilities{};
     scaling_capabilities.supportedPresentScaling = VK_PRESENT_SCALING_ONE_TO_ONE_BIT_EXT;
     scaling_capabilities.supportedPresentGravityX = VK_PRESENT_SCALING_ASPECT_RATIO_STRETCH_BIT_EXT;
@@ -943,21 +943,22 @@ TEST(WsiTests, EXTSurfaceMaintenance1) {
     auto& icd2 = env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2))
                      .setup_WSI()
                      .add_instance_extension(VK_EXT_SURFACE_MAINTENANCE_1_EXTENSION_NAME)
-                     .add_instance_extension(VK_KHR_GET_SURFACE_CAPABILITIES_2_EXTENSION_NAME)
-                     .add_physical_device(PhysicalDevice{}
-                                              .add_extension("VK_KHR_swapchain")
-                                              .set_deviceName("yes")
-                                              .set_surface_capabilities(surface_caps)
-                                              .add_surface_present_modes(present_modes)
-                                              .set_surface_present_scaling_capabilities(scaling_capabilities)
-                                              .finish());
+                     .add_instance_extension(VK_KHR_GET_SURFACE_CAPABILITIES_2_EXTENSION_NAME);
+    auto& test_physical_device_1 =
+        icd2.add_and_get_physical_device(PhysicalDevice{}
+                                             .add_extension("VK_KHR_swapchain")
+                                             .set_deviceName("yes")
+                                             .set_surface_capabilities(surface_caps)
+                                             .add_surface_present_modes(present_modes)
+                                             .set_surface_present_scaling_capabilities(scaling_capabilities)
+                                             .finish());
     std::vector<std::vector<VkPresentModeKHR>> compatible_present_modes{
         {VK_PRESENT_MODE_FIFO_KHR, VK_PRESENT_MODE_FIFO_RELAXED_KHR},
         {VK_PRESENT_MODE_IMMEDIATE_KHR, VK_PRESENT_MODE_MAILBOX_KHR},
         {VK_PRESENT_MODE_MAILBOX_KHR, VK_PRESENT_MODE_IMMEDIATE_KHR},
         {VK_PRESENT_MODE_FIFO_RELAXED_KHR, VK_PRESENT_MODE_FIFO_KHR},
     };
-    icd2.physical_devices[0].surface_present_mode_compatibility = compatible_present_modes;
+    test_physical_device_1.surface_present_mode_compatibility = compatible_present_modes;
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2))
         .setup_WSI()
         .add_physical_device(PhysicalDevice{}

@@ -714,8 +714,7 @@ TEST(Allocation, CreateInstanceDeviceIntentionalAllocFail) {
                         .set_library_arch(sizeof(void*) == 8 ? "64" : "32"))
             .set_icd_api_version(VK_API_VERSION_1_1)
             .add_instance_extension("VK_KHR_get_physical_device_properties2")
-            .add_physical_device("physical_device_0")
-            .physical_devices.at(0)
+            .add_and_get_physical_device("physical_device_0")
             .add_queue_family_properties({{VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}}, false})
             .add_extensions({"VK_EXT_one", "VK_EXT_two", "VK_EXT_three", "VK_EXT_four", "VK_EXT_five"});
     }
@@ -880,7 +879,7 @@ TEST(Allocation, EnumeratePhysicalDevicesIntentionalAllocFail) {
         auto& driver = env.reset_icd();
 
         for (uint32_t i = 0; i < physical_dev_count; i++) {
-            driver.physical_devices.emplace_back(std::string("physical_device_") + std::to_string(i))
+            driver.add_and_get_physical_device(std::string("physical_device_") + std::to_string(i))
                 .add_queue_family_properties({{VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}}, false});
         }
         MemoryTracker tracker{{false, 0, true, fail_index}};
@@ -902,7 +901,7 @@ TEST(Allocation, EnumeratePhysicalDevicesIntentionalAllocFail) {
         ASSERT_EQ(physical_dev_count, returned_physical_count);
 
         for (uint32_t i = 0; i < 2; i++) {
-            driver.physical_devices.emplace_back(std::string("physical_device_") + std::to_string(physical_dev_count))
+            driver.add_and_get_physical_device(std::string("physical_device_") + std::to_string(physical_dev_count))
                 .add_queue_family_properties({{VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}}, false});
             physical_dev_count += 1;
         }
@@ -976,7 +975,7 @@ TEST(Allocation, CreateInstanceDeviceWithDXGIDriverIntentionalAllocFail) {
 
     for (uint32_t i = 0; i < 2; i++) {
         auto& driver = env.get_test_icd(i);
-        driver.physical_devices.emplace_back(std::string("physical_device_") + std::to_string(i))
+        driver.add_and_get_physical_device(std::string("physical_device_") + std::to_string(i))
             .add_queue_family_properties({{VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}}, false});
     }
 
