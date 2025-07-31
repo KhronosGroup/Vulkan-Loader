@@ -256,7 +256,7 @@ TEST(EnvVarICDOverrideSetup, XDGContainsJsonFile) {
 TEST(EnvVarICDOverrideSetup, TestOnlyAddDriverEnvVar) {
     FrameworkEnvironment env{};
     env.add_icd(TestICDDetails(TEST_ICD_PATH_EXPORT_NONE).set_discovery_type(ManifestDiscoveryType::add_env_var));
-    env.get_test_icd(0).physical_devices.emplace_back("pd0");
+    env.get_test_icd(0).add_and_get_physical_device("pd0");
 
     InstWrapper inst{env.vulkan_functions};
     FillDebugUtilsCreateDetails(inst.create_info, env.debug_log);
@@ -272,7 +272,7 @@ TEST(EnvVarICDOverrideSetup, TestOnlyAddDriverEnvVar) {
 TEST(EnvVarICDOverrideSetup, TestOnlyAddDriverEnvVarRunningWithElevatedPrivileges) {
     FrameworkEnvironment env{FrameworkSettings{}.set_run_as_if_with_elevated_privleges(true)};
     env.add_icd(TestICDDetails(TEST_ICD_PATH_EXPORT_NONE).set_discovery_type(ManifestDiscoveryType::add_env_var));
-    env.get_test_icd(0).physical_devices.emplace_back("pd0");
+    env.get_test_icd(0).add_and_get_physical_device("pd0");
 
     InstWrapper inst{env.vulkan_functions};
     FillDebugUtilsCreateDetails(inst.create_info, env.debug_log);

@@ -4803,6 +4803,7 @@ TEST(LayerPhysDeviceMod, AddPhysicalDevices) {
         VkPhysicalDeviceProperties properties{};
         properties.apiVersion = VK_API_VERSION_1_2;
         properties.vendorID = 0x11000000 + (icd << 6);
+        std::array<PhysicalDevice*, 3> added_phys_devs;
         for (uint32_t dev = 0; dev < 3; ++dev) {
             properties.deviceID = properties.vendorID + dev;
             properties.deviceType = VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU;
@@ -4812,12 +4813,11 @@ TEST(LayerPhysDeviceMod, AddPhysicalDevices) {
 #else
             strncpy(properties.deviceName, dev_name.c_str(), VK_MAX_PHYSICAL_DEVICE_NAME_SIZE);
 #endif
-            cur_icd.add_physical_device({});
-            cur_icd.physical_devices.back().set_properties(properties);
+            added_phys_devs[dev] = &cur_icd.add_and_get_physical_device({}).set_properties(properties);
         }
-        cur_icd.physical_device_groups.emplace_back(cur_icd.physical_devices[0]);
-        cur_icd.physical_device_groups.emplace_back(cur_icd.physical_devices[1]);
-        cur_icd.physical_device_groups.back().use_physical_device(cur_icd.physical_devices[2]);
+        cur_icd.physical_device_groups.emplace_back(added_phys_devs[0]);
+        cur_icd.physical_device_groups.emplace_back(added_phys_devs[1]);
+        cur_icd.physical_device_groups.back().use_physical_device(added_phys_devs[2]);
     }
     const uint32_t icd_devices = 6;
 
@@ -4880,6 +4880,7 @@ TEST(LayerPhysDeviceMod, RemovePhysicalDevices) {
         VkPhysicalDeviceProperties properties{};
         properties.apiVersion = VK_API_VERSION_1_2;
         properties.vendorID = 0x11000000 + (icd << 6);
+        std::array<PhysicalDevice*, 3> added_phys_devs;
         for (uint32_t dev = 0; dev < 3; ++dev) {
             properties.deviceID = properties.vendorID + dev;
             properties.deviceType = VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU;
@@ -4889,12 +4890,11 @@ TEST(LayerPhysDeviceMod, RemovePhysicalDevices) {
 #else
             strncpy(properties.deviceName, dev_name.c_str(), VK_MAX_PHYSICAL_DEVICE_NAME_SIZE);
 #endif
-            cur_icd.add_physical_device({});
-            cur_icd.physical_devices.back().set_properties(properties);
+            added_phys_devs[dev] = &cur_icd.add_and_get_physical_device({}).set_properties(properties);
         }
-        cur_icd.physical_device_groups.emplace_back(cur_icd.physical_devices[0]);
-        cur_icd.physical_device_groups.emplace_back(cur_icd.physical_devices[1]);
-        cur_icd.physical_device_groups.back().use_physical_device(cur_icd.physical_devices[2]);
+        cur_icd.physical_device_groups.emplace_back(added_phys_devs[0]);
+        cur_icd.physical_device_groups.emplace_back(added_phys_devs[1]);
+        cur_icd.physical_device_groups.back().use_physical_device(added_phys_devs[2]);
     }
     const uint32_t icd_devices = 6;
 
@@ -4930,6 +4930,7 @@ TEST(LayerPhysDeviceMod, ReorderPhysicalDevices) {
         VkPhysicalDeviceProperties properties{};
         properties.apiVersion = VK_API_VERSION_1_2;
         properties.vendorID = 0x11000000 + (icd << 6);
+        std::array<PhysicalDevice*, 3> added_phys_devs;
         for (uint32_t dev = 0; dev < 3; ++dev) {
             properties.deviceID = properties.vendorID + dev;
             properties.deviceType = VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU;
@@ -4939,12 +4940,11 @@ TEST(LayerPhysDeviceMod, ReorderPhysicalDevices) {
 #else
             strncpy(properties.deviceName, dev_name.c_str(), VK_MAX_PHYSICAL_DEVICE_NAME_SIZE);
 #endif
-            cur_icd.add_physical_device({});
-            cur_icd.physical_devices.back().set_properties(properties);
+            added_phys_devs[dev] = &cur_icd.add_and_get_physical_device({}).set_properties(properties);
         }
-        cur_icd.physical_device_groups.emplace_back(cur_icd.physical_devices[0]);
-        cur_icd.physical_device_groups.emplace_back(cur_icd.physical_devices[1]);
-        cur_icd.physical_device_groups.back().use_physical_device(cur_icd.physical_devices[2]);
+        cur_icd.physical_device_groups.emplace_back(added_phys_devs[0]);
+        cur_icd.physical_device_groups.emplace_back(added_phys_devs[1]);
+        cur_icd.physical_device_groups.back().use_physical_device(added_phys_devs[2]);
     }
     const uint32_t icd_devices = 6;
 
@@ -4980,6 +4980,7 @@ TEST(LayerPhysDeviceMod, AddRemoveAndReorderPhysicalDevices) {
         VkPhysicalDeviceProperties properties{};
         properties.apiVersion = VK_API_VERSION_1_2;
         properties.vendorID = 0x11000000 + (icd << 6);
+        std::array<PhysicalDevice*, 3> added_phys_devs;
         for (uint32_t dev = 0; dev < 3; ++dev) {
             properties.deviceID = properties.vendorID + dev;
             properties.deviceType = VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU;
@@ -4989,12 +4990,11 @@ TEST(LayerPhysDeviceMod, AddRemoveAndReorderPhysicalDevices) {
 #else
             strncpy(properties.deviceName, dev_name.c_str(), VK_MAX_PHYSICAL_DEVICE_NAME_SIZE);
 #endif
-            cur_icd.add_physical_device({});
-            cur_icd.physical_devices.back().set_properties(properties);
+            added_phys_devs[dev] = &cur_icd.add_and_get_physical_device({}).set_properties(properties);
         }
-        cur_icd.physical_device_groups.emplace_back(cur_icd.physical_devices[0]);
-        cur_icd.physical_device_groups.emplace_back(cur_icd.physical_devices[1]);
-        cur_icd.physical_device_groups.back().use_physical_device(cur_icd.physical_devices[2]);
+        cur_icd.physical_device_groups.emplace_back(added_phys_devs[0]);
+        cur_icd.physical_device_groups.emplace_back(added_phys_devs[1]);
+        cur_icd.physical_device_groups.back().use_physical_device(added_phys_devs[2]);
     }
     const uint32_t icd_devices = 6;
 
@@ -5056,6 +5056,7 @@ TEST(LayerPhysDeviceMod, AddPhysicalDeviceGroups) {
         VkPhysicalDeviceProperties properties{};
         properties.apiVersion = VK_API_VERSION_1_2;
         properties.vendorID = 0x11000000 + (icd << 6);
+        std::array<PhysicalDevice*, 3> added_phys_devs;
         for (uint32_t dev = 0; dev < 3; ++dev) {
             properties.deviceID = properties.vendorID + dev;
             properties.deviceType = VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU;
@@ -5065,12 +5066,11 @@ TEST(LayerPhysDeviceMod, AddPhysicalDeviceGroups) {
 #else
             strncpy(properties.deviceName, dev_name.c_str(), VK_MAX_PHYSICAL_DEVICE_NAME_SIZE);
 #endif
-            cur_icd.add_physical_device({});
-            cur_icd.physical_devices.back().set_properties(properties);
+            added_phys_devs[dev] = &cur_icd.add_and_get_physical_device({}).set_properties(properties);
         }
-        cur_icd.physical_device_groups.emplace_back(cur_icd.physical_devices[0]);
-        cur_icd.physical_device_groups.emplace_back(cur_icd.physical_devices[1]);
-        cur_icd.physical_device_groups.back().use_physical_device(cur_icd.physical_devices[2]);
+        cur_icd.physical_device_groups.emplace_back(added_phys_devs[0]);
+        cur_icd.physical_device_groups.emplace_back(added_phys_devs[1]);
+        cur_icd.physical_device_groups.back().use_physical_device(added_phys_devs[2]);
     }
     const uint32_t icd_groups = 4;
 
@@ -5143,6 +5143,7 @@ TEST(LayerPhysDeviceMod, RemovePhysicalDeviceGroups) {
         VkPhysicalDeviceProperties properties{};
         properties.apiVersion = VK_API_VERSION_1_2;
         properties.vendorID = 0x11000000 + (icd << 6);
+        std::array<PhysicalDevice*, 3> added_phys_devs;
         for (uint32_t dev = 0; dev < 3; ++dev) {
             properties.deviceID = properties.vendorID + dev;
             properties.deviceType = VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU;
@@ -5152,12 +5153,11 @@ TEST(LayerPhysDeviceMod, RemovePhysicalDeviceGroups) {
 #else
             strncpy(properties.deviceName, dev_name.c_str(), VK_MAX_PHYSICAL_DEVICE_NAME_SIZE);
 #endif
-            cur_icd.add_physical_device({});
-            cur_icd.physical_devices.back().set_properties(properties);
+            added_phys_devs[dev] = &cur_icd.add_and_get_physical_device({}).set_properties(properties);
         }
-        cur_icd.physical_device_groups.emplace_back(cur_icd.physical_devices[0]);
-        cur_icd.physical_device_groups.emplace_back(cur_icd.physical_devices[1]);
-        cur_icd.physical_device_groups.back().use_physical_device(cur_icd.physical_devices[2]);
+        cur_icd.physical_device_groups.emplace_back(added_phys_devs[0]);
+        cur_icd.physical_device_groups.emplace_back(added_phys_devs[1]);
+        cur_icd.physical_device_groups.back().use_physical_device(added_phys_devs[2]);
     }
     const uint32_t icd_groups = 3;
 
@@ -5195,6 +5195,7 @@ TEST(LayerPhysDeviceMod, ReorderPhysicalDeviceGroups) {
         VkPhysicalDeviceProperties properties{};
         properties.apiVersion = VK_API_VERSION_1_2;
         properties.vendorID = 0x11000000 + (icd << 6);
+        std::array<PhysicalDevice*, 3> added_phys_devs;
         for (uint32_t dev = 0; dev < 3; ++dev) {
             properties.deviceID = properties.vendorID + dev;
             properties.deviceType = VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU;
@@ -5204,12 +5205,11 @@ TEST(LayerPhysDeviceMod, ReorderPhysicalDeviceGroups) {
 #else
             strncpy(properties.deviceName, dev_name.c_str(), VK_MAX_PHYSICAL_DEVICE_NAME_SIZE);
 #endif
-            cur_icd.add_physical_device({});
-            cur_icd.physical_devices.back().set_properties(properties);
+            added_phys_devs[dev] = &cur_icd.add_and_get_physical_device({}).set_properties(properties);
         }
-        cur_icd.physical_device_groups.emplace_back(cur_icd.physical_devices[0]);
-        cur_icd.physical_device_groups.emplace_back(cur_icd.physical_devices[1]);
-        cur_icd.physical_device_groups.back().use_physical_device(cur_icd.physical_devices[2]);
+        cur_icd.physical_device_groups.emplace_back(added_phys_devs[0]);
+        cur_icd.physical_device_groups.emplace_back(added_phys_devs[1]);
+        cur_icd.physical_device_groups.back().use_physical_device(added_phys_devs[2]);
     }
     const uint32_t icd_groups = 4;
 
@@ -5247,6 +5247,7 @@ TEST(LayerPhysDeviceMod, AddRemoveAndReorderPhysicalDeviceGroups) {
         VkPhysicalDeviceProperties properties{};
         properties.apiVersion = VK_API_VERSION_1_2;
         properties.vendorID = 0x11000000 + (icd << 6);
+        std::array<PhysicalDevice*, 3> added_phys_devs;
         for (uint32_t dev = 0; dev < 3; ++dev) {
             properties.deviceID = properties.vendorID + dev;
             properties.deviceType = VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU;
@@ -5256,12 +5257,11 @@ TEST(LayerPhysDeviceMod, AddRemoveAndReorderPhysicalDeviceGroups) {
 #else
             strncpy(properties.deviceName, dev_name.c_str(), VK_MAX_PHYSICAL_DEVICE_NAME_SIZE);
 #endif
-            cur_icd.add_physical_device({});
-            cur_icd.physical_devices.back().set_properties(properties);
+            added_phys_devs[dev] = &cur_icd.add_and_get_physical_device({}).set_properties(properties);
         }
-        cur_icd.physical_device_groups.emplace_back(cur_icd.physical_devices[0]);
-        cur_icd.physical_device_groups.back().use_physical_device(cur_icd.physical_devices[1]);
-        cur_icd.physical_device_groups.emplace_back(cur_icd.physical_devices[2]);
+        cur_icd.physical_device_groups.emplace_back(added_phys_devs[0]);
+        cur_icd.physical_device_groups.back().use_physical_device(added_phys_devs[1]);
+        cur_icd.physical_device_groups.emplace_back(added_phys_devs[2]);
     }
     const uint32_t icd_groups = 4;
 

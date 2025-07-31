@@ -202,8 +202,9 @@ TEST(GetProcAddr, Verify10FunctionsLoadWithMultipleDrivers) {
 // and return VK_SUCCESS to maintain previous behavior.
 TEST(GetDeviceProcAddr, SwapchainFuncsWithTerminator) {
     FrameworkEnvironment env{};
-    auto& driver =
-        env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA)).setup_WSI().add_physical_device("physical_device_0");
+    auto& test_physical_device = env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA))
+                                     .setup_WSI()
+                                     .add_and_get_physical_device("physical_device_0");
 
     InstWrapper inst(env.vulkan_functions);
     inst.create_info.add_extension("VK_EXT_debug_utils");
@@ -250,7 +251,7 @@ TEST(GetDeviceProcAddr, SwapchainFuncsWithTerminator) {
         log.logger.clear();
         ASSERT_FALSE(dev_funcs.vkDestroySwapchainKHR);
     }
-    driver.physical_devices.at(0).add_extensions({"VK_KHR_swapchain", "VK_KHR_display_swapchain", "VK_EXT_debug_marker"});
+    test_physical_device.add_extensions({"VK_KHR_swapchain", "VK_KHR_display_swapchain", "VK_EXT_debug_marker"});
     {
         DeviceWrapper dev{inst};
         dev.create_info.add_extensions({"VK_KHR_swapchain", "VK_KHR_display_swapchain", "VK_EXT_debug_marker"});
@@ -328,15 +329,15 @@ TEST(GetProcAddr, PreserveLayerGettingVkCreateDeviceWithNullInstance) {
 
 TEST(GetDeviceProcAddr, AppQueries11FunctionsWhileOnlyEnabling10) {
     FrameworkEnvironment env{};
-    auto& driver =
+    auto& test_physical_device =
         env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2, VK_API_VERSION_1_1))
             .set_icd_api_version(VK_API_VERSION_1_1)
-            .add_physical_device(
+            .add_and_get_physical_device(
                 PhysicalDevice{}.set_api_version(VK_API_VERSION_1_1).add_extension(VK_KHR_MAINTENANCE_5_EXTENSION_NAME).finish());
 
     std::vector<const char*> functions = {"vkGetDeviceQueue2", "vkCmdDispatchBase", "vkCreateDescriptorUpdateTemplate"};
     for (const auto& f : functions) {
-        driver.physical_devices.back().add_device_function(VulkanFunction{f, [] {}});
+        test_physical_device.add_device_function(VulkanFunction{f, [] {}});
     }
     {  // doesn't enable the feature or extension
         InstWrapper inst{env.vulkan_functions};
@@ -382,15 +383,15 @@ TEST(GetDeviceProcAddr, AppQueries11FunctionsWhileOnlyEnabling10) {
 
 TEST(GetDeviceProcAddr, AppQueries12FunctionsWhileOnlyEnabling11) {
     FrameworkEnvironment env{};
-    auto& driver =
+    auto& test_physical_device =
         env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2, VK_API_VERSION_1_2))
             .set_icd_api_version(VK_API_VERSION_1_2)
-            .add_physical_device(
+            .add_and_get_physical_device(
                 PhysicalDevice{}.set_api_version(VK_API_VERSION_1_2).add_extension(VK_KHR_MAINTENANCE_5_EXTENSION_NAME).finish());
     std::vector<const char*> functions = {"vkCmdDrawIndirectCount", "vkCmdNextSubpass2", "vkGetBufferDeviceAddress",
                                           "vkGetDeviceMemoryOpaqueCaptureAddress"};
     for (const auto& f : functions) {
-        driver.physical_devices.back().add_device_function(VulkanFunction{f, [] {}});
+        test_physical_device.add_device_function(VulkanFunction{f, [] {}});
     }
     {  // doesn't enable the feature or extension
         InstWrapper inst{env.vulkan_functions};
@@ -439,16 +440,16 @@ TEST(GetDeviceProcAddr, AppQueries12FunctionsWhileOnlyEnabling11) {
 
 TEST(GetDeviceProcAddr, AppQueries13FunctionsWhileOnlyEnabling12) {
     FrameworkEnvironment env{};
-    auto& driver =
+    auto& test_physical_device =
         env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2, VK_API_VERSION_1_3))
             .set_icd_api_version(VK_API_VERSION_1_3)
-            .add_physical_device(
+            .add_and_get_physical_device(
                 PhysicalDevice{}.set_api_version(VK_API_VERSION_1_3).add_extension(VK_KHR_MAINTENANCE_5_EXTENSION_NAME).finish());
     std::vector<const char*> functions = {"vkCreatePrivateDataSlot", "vkGetDeviceBufferMemoryRequirements", "vkCmdWaitEvents2",
                                           "vkGetDeviceImageSparseMemoryRequirements"};
 
     for (const auto& f : functions) {
-        driver.physical_devices.back().add_device_function(VulkanFunction{f, [] {}});
+        test_physical_device.add_device_function(VulkanFunction{f, [] {}});
     }
     {  // doesn't enable the feature or extension
         InstWrapper inst{env.vulkan_functions};

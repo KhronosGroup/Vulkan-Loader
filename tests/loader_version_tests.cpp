@@ -101,8 +101,8 @@ TEST(ICDInterfaceVersion2Plus, l5_icd5) {
 TEST(ICDInterfaceVersion2PlusEnumerateAdapterPhysicalDevices, version_6_in_drivers_registry) {
     FrameworkEnvironment env{};
     auto& driver = env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_ENUMERATE_ADAPTER_PHYSICAL_DEVICES));
-    driver.physical_devices.emplace_back("physical_device_1");
-    driver.physical_devices.emplace_back("physical_device_0");
+    driver.add_and_get_physical_device("physical_device_1");
+    driver.add_and_get_physical_device("physical_device_0");
     uint32_t physical_count = static_cast<uint32_t>(driver.physical_devices.size());
     uint32_t returned_physical_count = static_cast<uint32_t>(driver.physical_devices.size());
     std::vector<VkPhysicalDevice> physical_device_handles = std::vector<VkPhysicalDevice>(physical_count);
@@ -132,8 +132,8 @@ TEST(ICDInterfaceVersion2PlusEnumerateAdapterPhysicalDevices, version_6) {
     // The loader will only attempt to sort physical devices on an ICD if version 6 of the interface is supported.
     // This version provides the vk_icdEnumerateAdapterPhysicalDevices function.
     auto& driver = env.get_test_icd(0);
-    driver.physical_devices.emplace_back("physical_device_1");
-    driver.physical_devices.emplace_back("physical_device_0");
+    driver.add_and_get_physical_device("physical_device_1");
+    driver.add_and_get_physical_device("physical_device_0");
     uint32_t physical_count = 2;
     uint32_t returned_physical_count = physical_count;
     std::vector<VkPhysicalDevice> physical_device_handles{physical_count};
@@ -183,8 +183,8 @@ TEST(ICDInterfaceVersion2, EnumAdapters2) {
     auto& driver =
         env.add_icd(TestICDDetails{TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA}.set_discovery_type(ManifestDiscoveryType::null_dir));
     InstWrapper inst{env.vulkan_functions};
-    driver.physical_devices.emplace_back("physical_device_1");
-    driver.physical_devices.emplace_back("physical_device_0");
+    driver.add_and_get_physical_device("physical_device_1");
+    driver.add_and_get_physical_device("physical_device_0");
     uint32_t physical_count = static_cast<uint32_t>(driver.physical_devices.size());
     uint32_t returned_physical_count = static_cast<uint32_t>(driver.physical_devices.size());
     std::vector<VkPhysicalDevice> physical_device_handles = std::vector<VkPhysicalDevice>(physical_count);
@@ -212,7 +212,7 @@ TEST(ICDInterfaceVersion2PlusEnumerateAdapterPhysicalDevices, VerifyPhysDevResul
             .set_icd_api_version(VK_API_VERSION_1_1);
     const std::vector<std::string> physical_device_names = {"physical_device_4", "physical_device_3", "physical_device_2",
                                                             "physical_device_1", "physical_device_0"};
-    for (const auto& dev_name : physical_device_names) driver.physical_devices.push_back(dev_name);
+    for (const auto& dev_name : physical_device_names) driver.add_physical_device(dev_name);
 
     auto& known_driver = known_driver_list.at(2);  // which drive this test pretends to be
     DXGI_ADAPTER_DESC1 desc1{};
@@ -256,13 +256,16 @@ TEST(ICDInterfaceVersion2PlusEnumerateAdapterPhysicalDevices, VerifyGroupResults
             .set_icd_api_version(VK_API_VERSION_1_1);
     const std::vector<std::string> physical_device_names = {"physical_device_4", "physical_device_3", "physical_device_2",
                                                             "physical_device_1", "physical_device_0"};
-    for (const auto& dev_name : physical_device_names) {
-        driver.physical_devices.push_back(dev_name);
-    }
 
-    driver.physical_device_groups.emplace_back(driver.physical_devices[0]).use_physical_device(driver.physical_devices[1]);
-    driver.physical_device_groups.emplace_back(driver.physical_devices[2]);
-    driver.physical_device_groups.emplace_back(driver.physical_devices[3]).use_physical_device(driver.physical_devices[4]);
+    auto& test_physical_device_0 = driver.add_and_get_physical_device(physical_device_names[0]);
+    auto& test_physical_device_1 = driver.add_and_get_physical_device(physical_device_names[1]);
+    auto& test_physical_device_2 = driver.add_and_get_physical_device(physical_device_names[2]);
+    auto& test_physical_device_3 = driver.add_and_get_physical_device(physical_device_names[3]);
+    auto& test_physical_device_4 = driver.add_and_get_physical_device(physical_device_names[4]);
+
+    driver.physical_device_groups.emplace_back(test_physical_device_0).use_physical_device(test_physical_device_1);
+    driver.physical_device_groups.emplace_back(test_physical_device_2);
+    driver.physical_device_groups.emplace_back(test_physical_device_3).use_physical_device(test_physical_device_4);
 
     auto& known_driver = known_driver_list.at(2);  // which driver this test pretends to be
     DXGI_ADAPTER_DESC1 desc1{};
@@ -330,17 +333,17 @@ TEST(MultipleICDConfig, Basic) {
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
 
-    env.get_test_icd(0).physical_devices.emplace_back("physical_device_0");
-    env.get_test_icd(1).physical_devices.emplace_back("physical_device_1");
-    env.get_test_icd(2).physical_devices.emplace_back("physical_device_2");
+    auto& phys_dev_0 = env.get_test_icd(0).add_and_get_physical_device("physical_device_0");
+    auto& phys_dev_1 = env.get_test_icd(1).add_and_get_physical_device("physical_device_1");
+    auto& phys_dev_2 = env.get_test_icd(2).add_and_get_physical_device("physical_device_2");
 
-    env.get_test_icd(0).physical_devices.at(0).properties.deviceType = VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU;
-    env.get_test_icd(1).physical_devices.at(0).properties.deviceType = VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU;
-    env.get_test_icd(2).physical_devices.at(0).properties.deviceType = VK_PHYSICAL_DEVICE_TYPE_CPU;
+    phys_dev_0.properties.deviceType = VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU;
+    phys_dev_1.properties.deviceType = VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU;
+    phys_dev_2.properties.deviceType = VK_PHYSICAL_DEVICE_TYPE_CPU;
 
-    std::string("dev0").copy(env.get_test_icd(0).physical_devices.at(0).properties.deviceName, VK_MAX_EXTENSION_NAME_SIZE);
-    std::string("dev1").copy(env.get_test_icd(1).physical_devices.at(0).properties.deviceName, VK_MAX_EXTENSION_NAME_SIZE);
-    std::string("dev2").copy(env.get_test_icd(2).physical_devices.at(0).properties.deviceName, VK_MAX_EXTENSION_NAME_SIZE);
+    std::string("dev0").copy(phys_dev_0.properties.deviceName, VK_MAX_EXTENSION_NAME_SIZE);
+    std::string("dev1").copy(phys_dev_1.properties.deviceName, VK_MAX_EXTENSION_NAME_SIZE);
+    std::string("dev2").copy(phys_dev_2.properties.deviceName, VK_MAX_EXTENSION_NAME_SIZE);
 
     InstWrapper inst{env.vulkan_functions};
     inst.CheckCreate();
@@ -349,9 +352,9 @@ TEST(MultipleICDConfig, Basic) {
     uint32_t phys_dev_count = 3;
     ASSERT_EQ(env.vulkan_functions.vkEnumeratePhysicalDevices(inst, &phys_dev_count, phys_devs_array.data()), VK_SUCCESS);
     ASSERT_EQ(phys_dev_count, 3U);
-    ASSERT_EQ(env.get_test_icd(0).physical_devices.at(0).properties.deviceType, VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU);
-    ASSERT_EQ(env.get_test_icd(1).physical_devices.at(0).properties.deviceType, VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU);
-    ASSERT_EQ(env.get_test_icd(2).physical_devices.at(0).properties.deviceType, VK_PHYSICAL_DEVICE_TYPE_CPU);
+    ASSERT_EQ(phys_dev_0.properties.deviceType, VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU);
+    ASSERT_EQ(phys_dev_1.properties.deviceType, VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU);
+    ASSERT_EQ(phys_dev_2.properties.deviceType, VK_PHYSICAL_DEVICE_TYPE_CPU);
 }
 
 TEST(MultipleDriverConfig, DifferentICDInterfaceVersions) {
@@ -361,11 +364,11 @@ TEST(MultipleDriverConfig, DifferentICDInterfaceVersions) {
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
 
     TestICD& icd0 = env.get_test_icd(0);
-    icd0.physical_devices.emplace_back("physical_device_0");
+    icd0.add_and_get_physical_device("physical_device_0");
     icd0.max_icd_interface_version = 1;
 
     TestICD& icd1 = env.get_test_icd(1);
-    icd1.physical_devices.emplace_back("physical_device_1");
+    icd1.add_and_get_physical_device("physical_device_1");
     icd1.min_icd_interface_version = 2;
     icd1.max_icd_interface_version = 5;
 
@@ -388,18 +391,18 @@ TEST(MultipleDriverConfig, DifferentICDsWithDevices) {
     // tests add multiple devices to a single ICD, this just makes sure the loader combines
     // device info across multiple drivers properly.
     TestICD& icd0 = env.get_test_icd(0);
-    icd0.physical_devices.emplace_back("physical_device_0");
+    icd0.add_and_get_physical_device("physical_device_0");
     icd0.min_icd_interface_version = 5;
     icd0.max_icd_interface_version = 5;
 
     TestICD& icd1 = env.get_test_icd(1);
-    icd1.physical_devices.emplace_back("physical_device_1");
-    icd1.physical_devices.emplace_back("physical_device_2");
+    icd1.add_and_get_physical_device("physical_device_1");
+    icd1.add_and_get_physical_device("physical_device_2");
     icd1.min_icd_interface_version = 5;
     icd1.max_icd_interface_version = 5;
 
     TestICD& icd2 = env.get_test_icd(2);
-    icd2.physical_devices.emplace_back("physical_device_3");
+    icd2.add_and_get_physical_device("physical_device_3");
     icd2.min_icd_interface_version = 5;
     icd2.max_icd_interface_version = 5;
 
@@ -426,26 +429,26 @@ TEST(MultipleDriverConfig, DifferentICDsWithDevicesAndGroups) {
 
     // ICD 0 :  No 1.1 support (so 1 device will become 1 group in loader)
     TestICD& icd0 = env.get_test_icd(0);
-    icd0.physical_devices.emplace_back("physical_device_0");
+    icd0.add_and_get_physical_device("physical_device_0");
     icd0.min_icd_interface_version = 5;
     icd0.max_icd_interface_version = 5;
     icd0.set_icd_api_version(VK_API_VERSION_1_0);
 
     // ICD 1 :  1.1 support (with 1 group with 2 devices)
     TestICD& icd1 = env.get_test_icd(1);
-    icd1.physical_devices.emplace_back("physical_device_1").set_api_version(VK_API_VERSION_1_1);
-    icd1.physical_devices.emplace_back("physical_device_2").set_api_version(VK_API_VERSION_1_1);
-    icd1.physical_device_groups.emplace_back(icd1.physical_devices[0]);
-    icd1.physical_device_groups.back().use_physical_device(icd1.physical_devices[1]);
+    auto& pd1 = icd1.add_and_get_physical_device("physical_device_1").set_api_version(VK_API_VERSION_1_1);
+    auto& pd2 = icd1.add_and_get_physical_device("physical_device_2").set_api_version(VK_API_VERSION_1_1);
+    icd1.physical_device_groups.emplace_back(pd1);
+    icd1.physical_device_groups.back().use_physical_device(pd2);
     icd1.min_icd_interface_version = 5;
     icd1.max_icd_interface_version = 5;
     icd1.set_icd_api_version(VK_API_VERSION_1_1);
 
     // ICD 2 :  No 1.1 support (so 3 devices will become 3 groups in loader)
     TestICD& icd2 = env.get_test_icd(2);
-    icd2.physical_devices.emplace_back("physical_device_3");
-    icd2.physical_devices.emplace_back("physical_device_4");
-    icd2.physical_devices.emplace_back("physical_device_5");
+    icd2.add_and_get_physical_device("physical_device_3");
+    icd2.add_and_get_physical_device("physical_device_4");
+    icd2.add_and_get_physical_device("physical_device_5");
     icd2.min_icd_interface_version = 5;
     icd2.max_icd_interface_version = 5;
     icd2.set_icd_api_version(VK_API_VERSION_1_0);
@@ -489,20 +492,15 @@ TEST(MultipleICDConfig, version_5_and_version_6) {
         driver_5.set_max_icd_interface_version(5);
         driver_5.set_min_icd_interface_version(5);
         driver_5.setup_WSI();
-        driver_5.physical_devices.push_back({});
-        driver_5.physical_devices.back().queue_family_properties.push_back(family_props);
-        driver_5.physical_devices.push_back({});
-        driver_5.physical_devices.back().queue_family_properties.push_back(family_props);
-        driver_5.physical_devices.push_back({});
-        driver_5.physical_devices.back().queue_family_properties.push_back(family_props);
+        driver_5.add_and_get_physical_device({}).queue_family_properties.push_back(family_props);
+        driver_5.add_and_get_physical_device({}).queue_family_properties.push_back(family_props);
+        driver_5.add_and_get_physical_device({}).queue_family_properties.push_back(family_props);
         physical_count += static_cast<uint32_t>(driver_5.physical_devices.size());
 
         auto& driver_6 = env.get_test_icd(i * 2);
         driver_6.setup_WSI();
-        driver_6.physical_devices.emplace_back("physical_device_0");
-        driver_6.physical_devices.back().queue_family_properties.push_back(family_props);
-        driver_6.physical_devices.emplace_back("physical_device_1");
-        driver_6.physical_devices.back().queue_family_properties.push_back(family_props);
+        driver_6.add_and_get_physical_device("physical_device_0").queue_family_properties.push_back(family_props);
+        driver_6.add_and_get_physical_device("physical_device_1").queue_family_properties.push_back(family_props);
         physical_count += static_cast<uint32_t>(driver_6.physical_devices.size());
 
         driver_6.set_max_icd_interface_version(6);
@@ -589,8 +587,9 @@ VkResult test_vkSetPrivateData(VkDevice, VkObjectType, uint64_t, VkPrivateDataSl
 
 TEST(MinorVersionUpdate, Version1_3) {
     FrameworkEnvironment env{};
-    auto& driver = env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA)).add_physical_device({});
-    driver.physical_devices.back().known_device_functions = {
+    auto& driver = env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
+    auto& pd = driver.add_and_get_physical_device({});
+    pd.known_device_functions = {
         VulkanFunction{"vkCmdBeginRendering", to_vkVoidFunction(test_vkCmdBeginRendering)},
         VulkanFunction{"vkCmdBindVertexBuffers2", to_vkVoidFunction(test_vkCmdBindVertexBuffers2)},
         VulkanFunction{"vkCmdBlitImage2", to_vkVoidFunction(test_vkCmdBlitImage2)},
@@ -629,7 +628,7 @@ TEST(MinorVersionUpdate, Version1_3) {
         VulkanFunction{"vkQueueSubmit2", to_vkVoidFunction(test_vkQueueSubmit2)},
         VulkanFunction{"vkSetPrivateData", to_vkVoidFunction(test_vkSetPrivateData)},
     };
-    driver.physical_devices.back().add_extension({"VK_SOME_EXT_haha"});
+    pd.add_extension({"VK_SOME_EXT_haha"});
     InstWrapper inst{env.vulkan_functions};
     inst.create_info.set_api_version(1, 3, 0);
     inst.CheckCreate();
@@ -937,8 +936,7 @@ void CheckDirectDriverLoading(FrameworkEnvironment& env, std::vector<DriverInfo>
 
     for (auto const& driver : direct_drivers) {
         auto& direct_driver_icd = env.add_icd(driver.icd_details);
-        direct_driver_icd.physical_devices.push_back({});
-        direct_driver_icd.physical_devices.at(0).properties.driverVersion = driver.driver_version;
+        direct_driver_icd.add_and_get_physical_device({}).properties.driverVersion = driver.driver_version;
         VkDirectDriverLoadingInfoLUNARG ddl_info{};
         ddl_info.sType = VK_STRUCTURE_TYPE_DIRECT_DRIVER_LOADING_INFO_LUNARG;
         ddl_info.pfnGetInstanceProcAddr = env.icds.back().icd_library.get_symbol("vk_icdGetInstanceProcAddr");
@@ -950,8 +948,7 @@ void CheckDirectDriverLoading(FrameworkEnvironment& env, std::vector<DriverInfo>
 
     for (auto const& driver : normal_drivers) {
         auto& direct_driver_icd = env.add_icd(driver.icd_details);
-        direct_driver_icd.physical_devices.push_back({});
-        direct_driver_icd.physical_devices.at(0).properties.driverVersion = driver.driver_version;
+        direct_driver_icd.add_and_get_physical_device({}).properties.driverVersion = driver.driver_version;
         if (!exclusive && driver.expect_to_find) {
             expected_driver_count++;
         }
@@ -1148,7 +1145,7 @@ TEST(DirectDriverLoading, ExtensionNotEnabled) {
     FrameworkEnvironment env{};
 
     auto& direct_driver_icd = env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_7).set_discovery_type(ManifestDiscoveryType::none));
-    direct_driver_icd.physical_devices.push_back({});
+    direct_driver_icd.add_physical_device({});
 
     VkDirectDriverLoadingInfoLUNARG ddl_info{};
     ddl_info.sType = VK_STRUCTURE_TYPE_DIRECT_DRIVER_LOADING_INFO_LUNARG;

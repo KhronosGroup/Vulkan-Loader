@@ -88,7 +88,7 @@ TEST(Threading, InstanceCreateDestroyLoop) {
     uint32_t num_loops_try_get_instance_proc_addr = 5;
     uint32_t num_loops_try_get_device_proc_addr = 100;
 
-    driver.physical_devices.emplace_back("physical_device_0")
+    driver.add_and_get_physical_device("physical_device_0")
         .known_device_functions.push_back({"vkCmdBindPipeline", to_vkVoidFunction(test_vkCmdBindPipeline)});
 
     std::vector<std::thread> instance_creation_threads;
@@ -112,7 +112,7 @@ TEST(Threading, DeviceCreateDestroyLoop) {
     uint32_t num_loops_create_destroy_device = 1000;
     uint32_t num_loops_try_get_device_proc_addr = 5;
 
-    driver.physical_devices.emplace_back("physical_device_0").known_device_functions = {
+    driver.add_and_get_physical_device("physical_device_0").known_device_functions = {
         {"vkCmdBindPipeline", to_vkVoidFunction(test_vkCmdBindPipeline)},
         {"vkCmdBindDescriptorSets", to_vkVoidFunction(test_vkCmdBindDescriptorSets)},
         {"vkCmdBindVertexBuffers", to_vkVoidFunction(test_vkCmdBindVertexBuffers)},

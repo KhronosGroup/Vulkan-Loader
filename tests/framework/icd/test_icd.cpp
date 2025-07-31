@@ -99,7 +99,7 @@ bool IsInstanceExtensionEnabled(const char* extension_name) {
 }
 
 bool IsPhysicalDeviceExtensionAvailable(const char* extension_name) {
-    for (auto& phys_dev : icd.physical_devices) {
+    for (auto const& [phys_dev_handle, phys_dev] : icd.physical_devices) {
         if (phys_dev.extensions.end() !=
             std::find_if(phys_dev.extensions.begin(), phys_dev.extensions.end(),
                          [extension_name](Extension const& ext) { return ext.extensionName == extension_name; })) {
@@ -110,21 +110,12 @@ bool IsPhysicalDeviceExtensionAvailable(const char* extension_name) {
 }
 
 PhysicalDevice& GetPhysDevice(VkPhysicalDevice physicalDevice) {
-    for (auto& phys_dev : icd.physical_devices) {
-        if (phys_dev.vk_physical_device.handle == physicalDevice) return phys_dev;
+    if (icd.physical_devices.count(physicalDevice) > 0) {
+        return icd.physical_devices.at(physicalDevice);
     }
     assert(false && "vkPhysicalDevice not found!");
-    return icd.physical_devices[0];
+    return icd.physical_devices.at(icd.physical_devices.begin()->first);
 }
-
-std::vector<PhysicalDevice>::iterator find_physical_device(VkPhysicalDevice physicalDevice) {
-    auto found = std::find_if(icd.physical_devices.begin(), icd.physical_devices.end(), [physicalDevice](PhysicalDevice& phys_dev) {
-        return phys_dev.vk_physical_device.handle == physicalDevice;
-    });
-    return found;
-}
-
-bool is_physical_device_found(std::vector<PhysicalDevice>::iterator found) { return found != icd.physical_devices.end(); }
 
 bool is_valid_surface(VkSurfaceKHR surface_to_check) {
     uint64_t surf_handle = (uint64_t)(surface_to_check);
@@ -134,22 +125,24 @@ bool is_valid_surface(VkSurfaceKHR surface_to_check) {
 
 struct FindDevice {
     bool found = false;
-    uint32_t phys_dev_index = 0;
+    VkPhysicalDevice phys_dev = 0;
     uint32_t dev_index = 0;
 };
 
 FindDevice lookup_device(VkDevice device) {
     FindDevice fd{};
-    for (uint32_t p = 0; p < icd.physical_devices.size(); p++) {
-        auto const& phys_dev = icd.physical_devices.at(p);
+    auto it = icd.device_to_physical_device_map.find(device);
+    if (it != icd.device_to_physical_device_map.end()) {
+        auto& phys_dev = icd.physical_devices.at(it->second);
+        fd.found = true;
+        fd.phys_dev = phys_dev.vk_physical_device.handle;
         for (uint32_t d = 0; d < phys_dev.device_handles.size(); d++) {
             if (phys_dev.device_handles.at(d) == device) {
-                fd.found = true;
-                fd.phys_dev_index = p;
                 fd.dev_index = d;
-                return fd;
+                break;
             }
         }
+        return fd;
     }
     return fd;
 }
@@ -289,15 +282,22 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vkEnumeratePhysicalDevices([[maybe_unused]] 
     if (pPhysicalDevices == nullptr) {
         *pPhysicalDeviceCount = static_cast<uint32_t>(icd.physical_devices.size());
     } else {
+        using SortPair = std::pair<size_t, VkPhysicalDevice>;
+        std::vector<SortPair> in_order_phys_dev;
+        for (auto const& [phys_dev_handle, phys_dev] : icd.physical_devices) {
+            in_order_phys_dev.push_back({phys_dev.iteration_order, phys_dev_handle});
+        }
+
+        std::sort(in_order_phys_dev.begin(), in_order_phys_dev.end(),
+                  [](SortPair const& a, SortPair const& b) { return a.first < b.first; });
+
         uint32_t handles_written = 0;
-        for (size_t i = 0; i < icd.physical_devices.size(); i++) {
-            if (i < *pPhysicalDeviceCount) {
-                handles_written++;
-                pPhysicalDevices[i] = icd.physical_devices[i].vk_physical_device.handle;
-            } else {
+        for (auto const& phys_dev : in_order_phys_dev) {
+            if (handles_written + 1 > *pPhysicalDeviceCount) {
                 *pPhysicalDeviceCount = handles_written;
                 return VK_INCOMPLETE;
             }
+            pPhysicalDevices[handles_written++] = phys_dev.second;
         }
         *pPhysicalDeviceCount = handles_written;
     }
@@ -337,10 +337,15 @@ test_vkEnumeratePhysicalDeviceGroups([[maybe_unused]] VkInstance instance, uint3
                     result = VK_INCOMPLETE;
                     break;
                 }
+
                 pPhysicalDeviceGroupProperties[device_group].subsetAllocation = false;
                 pPhysicalDeviceGroupProperties[device_group].physicalDeviceCount = 1;
-                pPhysicalDeviceGroupProperties[device_group].physicalDevices[0] =
-                    icd.physical_devices[device_group].vk_physical_device.handle;
+                for (auto const& [phys_dev_handle, phys_dev] : icd.physical_devices) {
+                    if (phys_dev.iteration_order == device_group) {
+                        pPhysicalDeviceGroupProperties[device_group].physicalDevices[0] = phys_dev_handle;
+                        break;
+                    }
+                }
                 for (size_t i = 1; i < VK_MAX_DEVICE_GROUP_SIZE; i++) {
                     pPhysicalDeviceGroupProperties[device_group].physicalDevices[i] = {};
                 }
@@ -479,7 +484,7 @@ VKAPI_ATTR void VKAPI_CALL test_vkDestroyDebugReportCallbackEXT([[maybe_unused]]
 VKAPI_ATTR VkResult VKAPI_CALL test_vkDebugMarkerSetObjectTagEXT(VkDevice dev, const VkDebugMarkerObjectTagInfoEXT* pTagInfo) {
     if (pTagInfo && pTagInfo->objectType == VK_DEBUG_REPORT_OBJECT_TYPE_PHYSICAL_DEVICE_EXT) {
         VkPhysicalDevice pd = (VkPhysicalDevice)(uintptr_t)(pTagInfo->object);
-        if (pd != icd.physical_devices.at(lookup_device(dev).phys_dev_index).vk_physical_device.handle) return VK_ERROR_DEVICE_LOST;
+        if (pd != lookup_device(dev).phys_dev) return VK_ERROR_DEVICE_LOST;
     }
     if (pTagInfo && pTagInfo->objectType == VK_DEBUG_REPORT_OBJECT_TYPE_SURFACE_KHR_EXT) {
         if (pTagInfo->object != icd.surface_handles.at(0)) return VK_ERROR_DEVICE_LOST;
@@ -492,7 +497,7 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vkDebugMarkerSetObjectTagEXT(VkDevice dev, c
 VKAPI_ATTR VkResult VKAPI_CALL test_vkDebugMarkerSetObjectNameEXT(VkDevice dev, const VkDebugMarkerObjectNameInfoEXT* pNameInfo) {
     if (pNameInfo && pNameInfo->objectType == VK_DEBUG_REPORT_OBJECT_TYPE_PHYSICAL_DEVICE_EXT) {
         VkPhysicalDevice pd = (VkPhysicalDevice)(uintptr_t)(pNameInfo->object);
-        if (pd != icd.physical_devices.at(lookup_device(dev).phys_dev_index).vk_physical_device.handle) return VK_ERROR_DEVICE_LOST;
+        if (pd != lookup_device(dev).phys_dev) return VK_ERROR_DEVICE_LOST;
     }
     if (pNameInfo && pNameInfo->objectType == VK_DEBUG_REPORT_OBJECT_TYPE_SURFACE_KHR_EXT) {
         if (pNameInfo->object != icd.surface_handles.at(0)) return VK_ERROR_DEVICE_LOST;
@@ -509,7 +514,7 @@ VKAPI_ATTR void VKAPI_CALL test_vkCmdDebugMarkerInsertEXT(VkCommandBuffer, const
 VKAPI_ATTR VkResult VKAPI_CALL test_vkSetDebugUtilsObjectNameEXT(VkDevice dev, const VkDebugUtilsObjectNameInfoEXT* pNameInfo) {
     if (pNameInfo && pNameInfo->objectType == VK_OBJECT_TYPE_PHYSICAL_DEVICE) {
         VkPhysicalDevice pd = (VkPhysicalDevice)(uintptr_t)(pNameInfo->objectHandle);
-        if (pd != icd.physical_devices.at(lookup_device(dev).phys_dev_index).vk_physical_device.handle) return VK_ERROR_DEVICE_LOST;
+        if (pd != lookup_device(dev).phys_dev) return VK_ERROR_DEVICE_LOST;
     }
     if (pNameInfo && pNameInfo->objectType == VK_OBJECT_TYPE_SURFACE_KHR) {
         if (pNameInfo->objectHandle != icd.surface_handles.at(0)) return VK_ERROR_DEVICE_LOST;
@@ -522,7 +527,7 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vkSetDebugUtilsObjectNameEXT(VkDevice dev, c
 VKAPI_ATTR VkResult VKAPI_CALL test_vkSetDebugUtilsObjectTagEXT(VkDevice dev, const VkDebugUtilsObjectTagInfoEXT* pTagInfo) {
     if (pTagInfo && pTagInfo->objectType == VK_OBJECT_TYPE_PHYSICAL_DEVICE) {
         VkPhysicalDevice pd = (VkPhysicalDevice)(uintptr_t)(pTagInfo->objectHandle);
-        if (pd != icd.physical_devices.at(lookup_device(dev).phys_dev_index).vk_physical_device.handle) return VK_ERROR_DEVICE_LOST;
+        if (pd != lookup_device(dev).phys_dev) return VK_ERROR_DEVICE_LOST;
     }
     if (pTagInfo && pTagInfo->objectType == VK_OBJECT_TYPE_SURFACE_KHR) {
         if (pTagInfo->objectHandle != icd.surface_handles.at(0)) return VK_ERROR_DEVICE_LOST;
@@ -570,19 +575,19 @@ VKAPI_ATTR void VKAPI_CALL test_vkGetPhysicalDeviceQueueFamilyProperties(VkPhysi
 VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateDevice(VkPhysicalDevice physicalDevice, const VkDeviceCreateInfo* pCreateInfo,
                                                    const VkAllocationCallbacks* pAllocator, VkDevice* pDevice) {
     check_allocator_handle(pAllocator);
-    auto found = find_physical_device(physicalDevice);
-    if (!is_physical_device_found(found)) {
+    if (icd.physical_devices.count(physicalDevice) == 0) {
         return VK_ERROR_INITIALIZATION_FAILED;
     }
+    auto& found = icd.physical_devices.at(physicalDevice);
     auto device_handle = DispatchableHandle<VkDevice>();
     *pDevice = device_handle.handle;
-    found->device_handles.push_back(device_handle.handle);
-    found->device_create_infos.push_back(DeviceCreateInfo{pCreateInfo});
+    found.device_handles.push_back(device_handle.handle);
+    found.device_create_infos.emplace_back(pCreateInfo);
     for (uint32_t i = 0; i < pCreateInfo->queueCreateInfoCount; i++) {
-        found->queue_handles.emplace_back();
+        found.queue_handles.emplace_back();
     }
+    icd.device_to_physical_device_map.emplace(device_handle.handle, physicalDevice);
     icd.device_handles.emplace_back(std::move(device_handle));
-
     return VK_SUCCESS;
 }
 
@@ -592,9 +597,10 @@ VKAPI_ATTR void VKAPI_CALL test_vkDestroyDevice(VkDevice device, const VkAllocat
     if (found != icd.device_handles.end()) icd.device_handles.erase(found);
     auto fd = lookup_device(device);
     if (!fd.found) return;
-    auto& phys_dev = icd.physical_devices.at(fd.phys_dev_index);
+    auto& phys_dev = icd.physical_devices.at(fd.phys_dev);
     phys_dev.device_handles.erase(phys_dev.device_handles.begin() + fd.dev_index);
     phys_dev.device_create_infos.erase(phys_dev.device_create_infos.begin() + fd.dev_index);
+    icd.device_to_physical_device_map.erase(device);
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL generic_tool_props_function([[maybe_unused]] VkPhysicalDevice physicalDevice, uint32_t* pToolCount,
@@ -877,9 +883,8 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vkGetPhysicalDeviceSurfaceSupportKHR(VkPhysi
         }
     }
     if (nullptr != pSupported) {
-        auto found = find_physical_device(physicalDevice);
-        if (is_physical_device_found(found)) {
-            *pSupported = found->queue_family_properties.at(queueFamilyIndex).support_present;
+        if (icd.physical_devices.count(physicalDevice) > 0) {
+            *pSupported = icd.physical_devices.at(physicalDevice).queue_family_properties.at(queueFamilyIndex).support_present;
         } else {
             *pSupported = VK_FALSE;
             return VK_SUCCESS;
@@ -1139,7 +1144,7 @@ VKAPI_ATTR void VKAPI_CALL test_vkGetDeviceQueue([[maybe_unused]] VkDevice devic
                                                  uint32_t queueIndex, VkQueue* pQueue) {
     auto fd = lookup_device(device);
     if (fd.found) {
-        *pQueue = icd.physical_devices.at(fd.phys_dev_index).queue_handles[queueIndex].handle;
+        *pQueue = icd.physical_devices.at(fd.phys_dev).queue_handles[queueIndex].handle;
     }
 }
 
@@ -1667,7 +1672,7 @@ VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL get_physical_device_func([[maybe_unused
             return to_vkVoidFunction(test_vkGetPhysicalDeviceToolPropertiesEXT);
     }
 
-    for (auto& phys_dev : icd.physical_devices) {
+    for (auto const& [phys_dev_handle, phys_dev] : icd.physical_devices) {
         for (auto& func : phys_dev.custom_physical_device_functions) {
             if (func.name == pName) {
                 return to_vkVoidFunction(func.function);
@@ -1703,9 +1708,9 @@ PFN_vkVoidFunction get_instance_func(VkInstance instance, const char* pName) {
     return nullptr;
 }
 
-bool should_check(std::vector<const char*> const& exts, VkDevice device, const char* ext_name) {
-    if (device == NULL) return true;  // always look if device is NULL
-    for (auto const& ext : exts) {
+bool should_check(std::vector<const char*>* exts, VkDevice device, const char* ext_name) {
+    if (exts == nullptr || device == VK_NULL_HANDLE) return true;  // always look if device is NULL
+    for (auto const& ext : *exts) {
         if (string_eq(ext, ext_name)) {
             return true;
         }
@@ -1714,18 +1719,20 @@ bool should_check(std::vector<const char*> const& exts, VkDevice device, const c
 }
 
 PFN_vkVoidFunction get_device_func(VkDevice device, const char* pName) {
-    DeviceCreateInfo create_info{};
+    std::vector<const char*>* enabled_extensions;
+    FindDevice found_device{};
     if (device != nullptr) {
-        auto fd = lookup_device(device);
-        if (!fd.found) return NULL;
-        create_info = icd.physical_devices.at(fd.phys_dev_index).device_create_infos.at(fd.dev_index);
+        found_device = lookup_device(device);
+        if (!found_device.found) return NULL;
+        enabled_extensions =
+            &icd.physical_devices.at(found_device.phys_dev).device_create_infos.at(found_device.dev_index).enabled_extensions;
     }
     if (string_eq(pName, "vkCreateCommandPool")) return to_vkVoidFunction(test_vkCreateCommandPool);
     if (string_eq(pName, "vkAllocateCommandBuffers")) return to_vkVoidFunction(test_vkAllocateCommandBuffers);
     if (string_eq(pName, "vkDestroyCommandPool")) return to_vkVoidFunction(test_vkDestroyCommandPool);
     if (string_eq(pName, "vkGetDeviceQueue")) return to_vkVoidFunction(test_vkGetDeviceQueue);
     if (string_eq(pName, "vkDestroyDevice")) return to_vkVoidFunction(test_vkDestroyDevice);
-    if (should_check(create_info.enabled_extensions, device, "VK_KHR_swapchain")) {
+    if (should_check(enabled_extensions, device, "VK_KHR_swapchain")) {
         if (string_eq(pName, "vkCreateSwapchainKHR")) return to_vkVoidFunction(test_vkCreateSwapchainKHR);
         if (string_eq(pName, "vkGetSwapchainImagesKHR")) return to_vkVoidFunction(test_vkGetSwapchainImagesKHR);
         if (string_eq(pName, "vkDestroySwapchainKHR")) return to_vkVoidFunction(test_vkDestroySwapchainKHR);
@@ -1733,14 +1740,14 @@ PFN_vkVoidFunction get_device_func(VkDevice device, const char* pName) {
         if (icd.icd_api_version >= VK_API_VERSION_1_1 && string_eq(pName, "vkGetDeviceGroupSurfacePresentModesKHR"))
             return to_vkVoidFunction(test_vkGetDeviceGroupSurfacePresentModesKHR);
     }
-    if (should_check(create_info.enabled_extensions, device, "VK_KHR_display_swapchain")) {
+    if (should_check(enabled_extensions, device, "VK_KHR_display_swapchain")) {
         if (string_eq(pName, "vkCreateSharedSwapchainsKHR")) return to_vkVoidFunction(test_vkCreateSharedSwapchainsKHR);
     }
-    if (should_check(create_info.enabled_extensions, device, "VK_KHR_device_group")) {
+    if (should_check(enabled_extensions, device, "VK_KHR_device_group")) {
         if (string_eq(pName, "vkGetDeviceGroupSurfacePresentModesKHR"))
             return to_vkVoidFunction(test_vkGetDeviceGroupSurfacePresentModesKHR);
     }
-    if (should_check(create_info.enabled_extensions, device, "VK_EXT_debug_marker")) {
+    if (should_check(enabled_extensions, device, "VK_EXT_debug_marker")) {
         if (string_eq(pName, "vkDebugMarkerSetObjectTagEXT")) return to_vkVoidFunction(test_vkDebugMarkerSetObjectTagEXT);
         if (string_eq(pName, "vkDebugMarkerSetObjectNameEXT")) return to_vkVoidFunction(test_vkDebugMarkerSetObjectNameEXT);
         if (string_eq(pName, "vkCmdDebugMarkerBeginEXT")) return to_vkVoidFunction(test_vkCmdDebugMarkerBeginEXT);
@@ -1757,11 +1764,19 @@ PFN_vkVoidFunction get_device_func(VkDevice device, const char* pName) {
         if (string_eq(pName, "vkCmdEndDebugUtilsLabelEXT")) return to_vkVoidFunction(test_vkCmdEndDebugUtilsLabelEXT);
         if (string_eq(pName, "vkCmdInsertDebugUtilsLabelEXT")) return to_vkVoidFunction(test_vkCmdInsertDebugUtilsLabelEXT);
     }
-    // look for device functions setup from a test
-    for (const auto& phys_dev : icd.physical_devices) {
-        for (const auto& function : phys_dev.known_device_functions) {
+    if (found_device.found) {
+        // look for device functions setup from a test
+        for (const auto& function : icd.physical_devices.at(found_device.phys_dev).known_device_functions) {
             if (function.name == pName) {
                 return to_vkVoidFunction(function.function);
+            }
+        }
+    } else {
+        for (const auto& [handle, phys_dev] : icd.physical_devices) {
+            for (const auto& function : phys_dev.known_device_functions) {
+                if (function.name == pName) {
+                    return to_vkVoidFunction(function.function);
+                }
             }
         }
     }
