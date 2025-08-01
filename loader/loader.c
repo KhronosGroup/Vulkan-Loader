@@ -435,7 +435,7 @@ VkResult normalize_path(const struct loader_instance *inst, char **passed_in_pat
     if (actual_len == 0) {
         size_t last_error = (size_t)GetLastError();
         loader_log(inst, VULKAN_LOADER_DEBUG_BIT, 0,
-                   "normalize_path: Call to GetFullPathNameA() failed with error code %llu when given the path %s", last_error,
+                   "normalize_path: Call to GetFullPathNameA() failed with error code %zu when given the path %s", last_error,
                    *passed_in_path);
         res = VK_ERROR_INITIALIZATION_FAILED;
         goto out;
@@ -456,7 +456,7 @@ VkResult normalize_path(const struct loader_instance *inst, char **passed_in_pat
         if (actual_len == 0) {
             size_t last_error = (size_t)GetLastError();
             loader_log(inst, VULKAN_LOADER_DEBUG_BIT, 0,
-                       "normalize_path: Call to GetFullPathNameA() failed with error code %llu when given the path %s", last_error,
+                       "normalize_path: Call to GetFullPathNameA() failed with error code %zu when given the path %s", last_error,
                        *passed_in_path);
             res = VK_ERROR_INITIALIZATION_FAILED;
             goto out;
@@ -464,7 +464,7 @@ VkResult normalize_path(const struct loader_instance *inst, char **passed_in_pat
         } else if (actual_len + 1 != path_len) {
             loader_log(inst, VULKAN_LOADER_DEBUG_BIT, 0,
                        "normalize_path: Call to GetFullPathNameA() with too small of a buffer when given the path %s after the "
-                       "initial call to GetFullPathNameA() failed for the same reason. Buffer size is %llu, actual size is %llu",
+                       "initial call to GetFullPathNameA() failed for the same reason. Buffer size is %zu, actual size is %zu",
                        *passed_in_path, (size_t)path_len, (size_t)actual_len);
             res = VK_ERROR_INITIALIZATION_FAILED;
             goto out;
