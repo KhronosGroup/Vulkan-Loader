@@ -7191,7 +7191,7 @@ VkResult loader_apply_settings_device_configurations(struct loader_instance *ins
                     inst, VULKAN_LOADER_WARN_BIT, 0,
                     "loader_apply_settings_device_configurations: settings file contained device_configuration which does not "
                     "appear in the enumerated VkPhysicalDevices. Missing VkPhysicalDevice with deviceName: \"%s\" and deviceUUID: "
-                    "%x%x%x%x-%x%x-%x%x-%x%x-%x%x%x%x%x%x",
+                    "%02x%02x%02x%02x-%02x%02x-%02x%02x-%02x%02x-%02x%02x%02x%02x%02x%02x",
                     inst->settings.device_configurations[i].deviceName, id[0], id[1], id[2], id[3], id[4], id[5], id[6], id[7],
                     id[8], id[9], id[10], id[11], id[12], id[13], id[14], id[15]);
             } else {
@@ -7199,7 +7199,7 @@ VkResult loader_apply_settings_device_configurations(struct loader_instance *ins
                     inst, VULKAN_LOADER_WARN_BIT, 0,
                     "loader_apply_settings_device_configurations: settings file contained device_configuration which does not "
                     "appear in the enumerated VkPhysicalDevices. Missing VkPhysicalDevice with deviceUUID: "
-                    "%x%x%x%x-%x%x-%x%x-%x%x-%x%x%x%x%x%x",
+                    "%02x%02x%02x%02x-%02x%02x-%02x%02x-%02x%02x-%02x%02x%02x%02x%02x%02x",
                     id[0], id[1], id[2], id[3], id[4], id[5], id[6], id[7], id[8], id[9], id[10], id[11], id[12], id[13], id[14],
                     id[15]);
             }
