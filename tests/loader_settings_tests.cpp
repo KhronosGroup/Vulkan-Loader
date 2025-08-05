@@ -3302,7 +3302,7 @@ TEST(SettingsFile, MissingDriverConfiguration) {
 
     InstWrapper inst{env.vulkan_functions};
     inst.CheckCreate();
-    auto pd = inst.GetPhysDev();
+    inst.GetPhysDev(VK_ERROR_INITIALIZATION_FAILED);
 }
 
 // Three drivers, second on has the matching UUID in the settings file.
@@ -3433,7 +3433,7 @@ TEST(SettingsFile, InvalidDriverConfigurations) {
 
     InstWrapper inst{env.vulkan_functions};
     inst.CheckCreate();
-    auto pd = inst.GetPhysDev();
+    auto pd = inst.GetPhysDev(VK_ERROR_INITIALIZATION_FAILED);
 }
 
 TEST(SettingsFile, DeviceConfigurationReordersAdditionalDrivers) {
