@@ -306,6 +306,11 @@ VkResult parse_device_configuration(const struct loader_instance* inst, cJSON* d
         res = VK_ERROR_INITIALIZATION_FAILED;
         goto out;
     }
+
+    if (deviceUUID_array->type != cJSON_Array) {
+        res = VK_ERROR_INITIALIZATION_FAILED;
+        goto out;
+    }
     if (VK_UUID_SIZE != loader_cJSON_GetArraySize(deviceUUID_array)) {
         res = VK_ERROR_INITIALIZATION_FAILED;
         goto out;
