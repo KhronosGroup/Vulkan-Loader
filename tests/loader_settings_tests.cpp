@@ -3398,3 +3398,168 @@ TEST(SettingsFile, DriverConfigurationsAndAdditionalDrivers) {
 
     ASSERT_TRUE(0 == memcmp(vulkan_11_props.deviceUUID, uuids[1].data(), VK_UUID_SIZE * sizeof(uint8_t)));
 }
+
+TEST(SettingsFile, InvalidDriverConfigurations) {
+    FrameworkEnvironment env{};
+    std::vector<VulkanUUID> uuids{3, VulkanUUID{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15}};
+
+    // Mix up the uuid's so that they are all unique
+    int count = 1;
+    for (auto& uuid : uuids) {
+        std::rotate(uuid.begin(), uuid.begin() + count, uuid.end());
+        count++;
+    }
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2))
+        .set_icd_api_version(VK_API_VERSION_1_1)
+        .add_physical_device(PhysicalDevice{}
+                                 .set_api_version(VK_API_VERSION_1_1)
+                                 .set_deviceName("regular_driver")
+                                 .set_deviceUUID(uuids[0])
+                                 .finish());
+
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2).set_discovery_type(ManifestDiscoveryType::override_folder))
+        .add_physical_device(PhysicalDevice{}
+                                 .set_api_version(VK_API_VERSION_1_1)
+                                 .set_deviceName("additional_device")
+                                 .set_deviceUUID(uuids[2])
+                                 .finish());
+
+    env.loader_settings.set_file_format_version({1, 0, 0}).add_app_specific_setting(
+        AppSpecificSettings{}
+            .set_additional_drivers_use_exclusively(true)
+            .add_driver_configuration(LoaderSettingsDriverConfiguration{}.set_path(env.get_icd_manifest_path(1)))
+            .add_device_configuration(LoaderSettingsDeviceConfiguration{}.set_deviceUUID(uuids[1])));
+    env.update_loader_settings(env.loader_settings);
+
+    InstWrapper inst{env.vulkan_functions};
+    inst.CheckCreate();
+    auto pd = inst.GetPhysDev();
+}
+
+TEST(SettingsFile, DeviceConfigurationReordersAdditionalDrivers) {
+    FrameworkEnvironment env{};
+    std::vector<VulkanUUID> uuids{3, VulkanUUID{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15}};
+
+    // Mix up the uuid's so that they are all unique
+    int count = 1;
+    for (auto& uuid : uuids) {
+        std::rotate(uuid.begin(), uuid.begin() + count, uuid.end());
+        count++;
+    }
+
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2))
+        .set_icd_api_version(VK_API_VERSION_1_1)
+        .add_physical_device(PhysicalDevice{}
+                                 .set_api_version(VK_API_VERSION_1_1)
+                                 .set_deviceName("regular_driverA")
+                                 .set_deviceUUID(uuids[0])
+                                 .finish());
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2))
+        .set_icd_api_version(VK_API_VERSION_1_1)
+        .add_physical_device(PhysicalDevice{}
+                                 .set_api_version(VK_API_VERSION_1_1)
+                                 .set_deviceName("regular_driverB")
+                                 .set_deviceUUID(uuids[1])
+                                 .finish());
+
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2).set_discovery_type(ManifestDiscoveryType::override_folder))
+        .set_icd_api_version(VK_API_VERSION_1_1)
+        .add_physical_device(PhysicalDevice{}
+                                 .set_api_version(VK_API_VERSION_1_1)
+                                 .set_deviceName("additional_device")
+                                 .set_deviceUUID(uuids[2])
+                                 .finish());
+
+    env.loader_settings.set_file_format_version({1, 0, 0}).add_app_specific_setting(
+        AppSpecificSettings{}
+            .add_driver_configuration(LoaderSettingsDriverConfiguration{}.set_path(env.get_icd_manifest_path(2)))
+            .add_device_configuration(LoaderSettingsDeviceConfiguration{}.set_deviceUUID(uuids[2]))
+            .add_device_configuration(LoaderSettingsDeviceConfiguration{}.set_deviceUUID(uuids[0]))
+            .add_device_configuration(LoaderSettingsDeviceConfiguration{}.set_deviceUUID(uuids[1])));
+    env.update_loader_settings(env.loader_settings);
+    {
+        InstWrapper inst{env.vulkan_functions};
+        inst.CheckCreate();
+        auto pd = inst.GetPhysDevs(3).at(0);
+        VkPhysicalDeviceProperties props{};
+        env.vulkan_functions.vkGetPhysicalDeviceProperties(pd, &props);
+        ASSERT_TRUE(string_eq(props.deviceName, "additional_device"));
+    }
+    {  // do the same check but with 1.1 so we can check that the UUID matches
+        InstWrapper inst{env.vulkan_functions};
+        inst.create_info.set_api_version(VK_API_VERSION_1_1);
+        inst.CheckCreate();
+        auto pd = inst.GetPhysDevs(3).at(0);
+        VkPhysicalDeviceProperties props{};
+        env.vulkan_functions.vkGetPhysicalDeviceProperties(pd, &props);
+        ASSERT_TRUE(string_eq(props.deviceName, "additional_device"));
+
+        VkPhysicalDeviceVulkan11Properties vulkan_11_props{};
+        vulkan_11_props.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_PROPERTIES;
+        VkPhysicalDeviceProperties2 props2{};
+        props2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
+        props2.pNext = &vulkan_11_props;
+        inst->vkGetPhysicalDeviceProperties2(pd, &props2);
+
+        ASSERT_TRUE(0 == memcmp(vulkan_11_props.deviceUUID, uuids[2].data(), VK_UUID_SIZE * sizeof(uint8_t)));
+    }
+}
+
+TEST(SettingsFile, DeviceConfigurationReordersExclusiveAdditionalDrivers) {
+    FrameworkEnvironment env{};
+    std::vector<VulkanUUID> uuids{3, VulkanUUID{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15}};
+
+    // Mix up the uuid's so that they are all unique
+    int count = 1;
+    for (auto& uuid : uuids) {
+        std::rotate(uuid.begin(), uuid.begin() + count, uuid.end());
+        count++;
+    }
+
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2))
+        .set_icd_api_version(VK_API_VERSION_1_1)
+        .add_physical_device(PhysicalDevice{}
+                                 .set_api_version(VK_API_VERSION_1_1)
+                                 .set_deviceName("regular_driverA")
+                                 .set_deviceUUID(uuids[0])
+                                 .finish());
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2))
+        .set_icd_api_version(VK_API_VERSION_1_1)
+        .add_physical_device(PhysicalDevice{}
+                                 .set_api_version(VK_API_VERSION_1_1)
+                                 .set_deviceName("regular_driverB")
+                                 .set_deviceUUID(uuids[1])
+                                 .finish());
+
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2).set_discovery_type(ManifestDiscoveryType::override_folder))
+        .set_icd_api_version(VK_API_VERSION_1_1)
+        .add_physical_device(PhysicalDevice{}
+                                 .set_api_version(VK_API_VERSION_1_1)
+                                 .set_deviceName("additional_device")
+                                 .set_deviceUUID(uuids[2])
+                                 .finish());
+
+    env.loader_settings.set_file_format_version({1, 0, 0}).add_app_specific_setting(
+        AppSpecificSettings{}
+            .set_additional_drivers_use_exclusively(true)
+            .add_driver_configuration(LoaderSettingsDriverConfiguration{}.set_path(env.get_icd_manifest_path(2)))
+            .add_device_configuration(LoaderSettingsDeviceConfiguration{}.set_deviceUUID(uuids[2])));
+    env.update_loader_settings(env.loader_settings);
+
+    InstWrapper inst{env.vulkan_functions};
+    inst.create_info.set_api_version(VK_API_VERSION_1_1);
+    inst.CheckCreate();
+    auto pd = inst.GetPhysDev();
+    VkPhysicalDeviceProperties props{};
+    env.vulkan_functions.vkGetPhysicalDeviceProperties(pd, &props);
+    ASSERT_TRUE(string_eq(props.deviceName, "additional_device"));
+
+    VkPhysicalDeviceVulkan11Properties vulkan_11_props{};
+    vulkan_11_props.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_PROPERTIES;
+    VkPhysicalDeviceProperties2 props2{};
+    props2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
+    props2.pNext = &vulkan_11_props;
+    inst->vkGetPhysicalDeviceProperties2(pd, &props2);
+
+    ASSERT_TRUE(0 == memcmp(vulkan_11_props.deviceUUID, uuids[2].data(), VK_UUID_SIZE * sizeof(uint8_t)));
+}
