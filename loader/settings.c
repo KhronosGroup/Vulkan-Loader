@@ -368,10 +368,13 @@ VkResult parse_device_configurations(const struct loader_instance* inst, cJSON* 
             res = VK_ERROR_INITIALIZATION_FAILED;
             goto out;
         }
-        res = parse_device_configuration(inst, device, &(loader_settings->device_configurations[i++]));
-        if (VK_SUCCESS != res) {
+        res = parse_device_configuration(inst, device, &(loader_settings->device_configurations[i]));
+        if (res == VK_ERROR_OUT_OF_HOST_MEMORY) {
             goto out;
+        } else if (res != VK_SUCCESS) {
+            continue;
         }
+        i++;
     }
 out:
     if (res != VK_SUCCESS) {
