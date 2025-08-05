@@ -7122,6 +7122,15 @@ out:
 // device_configurations in the settings file.
 VkResult loader_apply_settings_device_configurations(struct loader_instance *inst, uint32_t *pPhysicalDeviceCount,
                                                      VkPhysicalDevice *pPhysicalDevices) {
+    loader_log(inst, VULKAN_LOADER_INFO_BIT, 0,
+               "Reordering the output of vkEnumeratePhysicalDevices to match the loader settings device configurations list");
+
+    bool *pd_was_added = loader_stack_alloc(inst->phys_dev_count_term * sizeof(bool));
+    if (NULL == pd_was_added) {
+        return VK_ERROR_OUT_OF_HOST_MEMORY;
+    }
+    memset(pd_was_added, 0, inst->phys_dev_count_term * sizeof(bool));
+
     bool *pd_supports_11 = loader_stack_alloc(inst->phys_dev_count_term * sizeof(bool));
     if (NULL == pd_supports_11) {
         return VK_ERROR_OUT_OF_HOST_MEMORY;
@@ -7177,9 +7186,10 @@ VkResult loader_apply_settings_device_configurations(struct loader_instance *ins
                     *pPhysicalDeviceCount = written_output_index;  // write out how many were written
                     return VK_INCOMPLETE;
                 }
+                loader_log(inst, VULKAN_LOADER_DEBUG_BIT, 0, "pPhysicalDevices array index %d is set to \"%s\" ",
+                           written_output_index, pd_props[j].deviceName);
                 pPhysicalDevices[written_output_index++] = (VkPhysicalDevice)inst->phys_devs_term[j];
-                loader_log(inst, VULKAN_LOADER_INFO_BIT, 0, "Insert VkPhysicalDevice \"%s\" to the pPhysicalDevices list",
-                           pd_props[j].deviceName);
+                pd_was_added[j] = true;
                 break;
             }
         }
@@ -7205,6 +7215,23 @@ VkResult loader_apply_settings_device_configurations(struct loader_instance *ins
             }
         }
     }
+
+    for (uint32_t j = 0; j < inst->phys_dev_count_term; j++) {
+        if (!pd_was_added[j]) {
+            loader_log(inst, VULKAN_LOADER_INFO_BIT, 0,
+                       "VkPhysicalDevice \"%s\" did not appear in the settings file device configurations list, so was not added "
+                       "to the pPhysicalDevices array",
+                       pd_props[j].deviceName);
+        }
+    }
+
+    if (written_output_index == 0) {
+        loader_log(inst, VULKAN_LOADER_WARN_BIT, 0,
+                   "loader_apply_settings_device_configurations: None of the settings file device configurations had "
+                   "deviceUUID's that corresponded to enumerated VkPhysicalDevices. Returning VK_ERROR_INITIALIZATION_FAILED");
+        return VK_ERROR_INITIALIZATION_FAILED;
+    }
+
     *pPhysicalDeviceCount = written_output_index;  // update with how many were written
     return VK_SUCCESS;
 }
