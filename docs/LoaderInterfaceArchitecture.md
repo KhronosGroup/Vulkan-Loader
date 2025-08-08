@@ -888,9 +888,7 @@ discovery.
         Known layers are those which are found by the loader taking into account
         default search paths and other environment variables
         (like <i>VK_LAYER_PATH</i>).
-        <br/>
-        This has replaced the older deprecated environment variable
-        <i>VK_INSTANCE_LAYERS</i>
+        </i>
     </small></td>
     <td><small>
         This functionality is only available with Loaders built with version
@@ -1045,8 +1043,7 @@ may be removed in a future loader release.
         <i>ppEnabledLayerNames</i>.
     </small></td>
     <td><small>
-        This has been deprecated by <i>VK_LOADER_LAYERS_ENABLE</i>.
-        It also overrides any layers disabled with
+        It overrides any layers disabled with
         <i>VK_LOADER_LAYERS_DISABLE</i>.
     </small></td>
     <td><small>
