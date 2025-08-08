@@ -448,20 +448,20 @@ bool check_name_matches_filter_environment_var(const char *name, const struct lo
 
 // Get the layer name(s) from the env_name environment variable. If layer is found in
 // search_list then add it to layer_list.  But only add it to layer_list if type_flags matches.
-VkResult loader_add_environment_layers(struct loader_instance *inst, const enum layer_type_flags type_flags,
+VkResult loader_add_environment_layers(struct loader_instance *inst, const char *enabled_layers_env,
                                        const struct loader_envvar_all_filters *filters,
                                        struct loader_pointer_layer_list *target_list,
                                        struct loader_pointer_layer_list *expanded_target_list,
                                        const struct loader_layer_list *source_list) {
     VkResult res = VK_SUCCESS;
-    char *layer_env = loader_getenv(ENABLED_LAYERS_ENV, inst);
+    const enum layer_type_flags type_flags = VK_LAYER_TYPE_FLAG_EXPLICIT_LAYER;
 
     // If the layer environment variable is present (i.e. VK_INSTANCE_LAYERS), we will always add it to the layer list.
-    if (layer_env != NULL) {
-        size_t layer_env_len = strlen(layer_env) + 1;
+    if (enabled_layers_env != NULL) {
+        size_t layer_env_len = strlen(enabled_layers_env) + 1;
         char *name = loader_stack_alloc(layer_env_len);
         if (name != NULL) {
-            loader_strncpy(name, layer_env_len, layer_env, layer_env_len);
+            loader_strncpy(name, layer_env_len, enabled_layers_env, layer_env_len);
 
             loader_log(inst, VULKAN_LOADER_WARN_BIT | VULKAN_LOADER_LAYER_BIT, 0, "env var \'%s\' defined and adding layers \"%s\"",
                        ENABLED_LAYERS_ENV, name);
@@ -559,10 +559,6 @@ VkResult loader_add_environment_layers(struct loader_instance *inst, const enum 
     }
 
 out:
-
-    if (layer_env != NULL) {
-        loader_free_getenv(layer_env, inst);
-    }
 
     return res;
 }
