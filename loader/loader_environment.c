@@ -566,3 +566,56 @@ out:
 
     return res;
 }
+
+void parse_id_filter_enviroment_var(const struct loader_instance *inst, const char *env_var_name,
+                                    struct loader_envvar_id_filter *filter_struct) {
+    memset(filter_struct, 0, sizeof(struct loader_envvar_id_filter));
+    char *parsing_string = NULL;
+    char *env_var_value = loader_secure_getenv(env_var_name, inst);
+    if (NULL == env_var_value) {
+        return;
+    }
+    const size_t env_var_len = strlen(env_var_value);
+    if (env_var_len == 0) {
+        goto out;
+    }
+    // Allocate a separate string since scan_for_next_comma modifies the original string
+    parsing_string = loader_stack_alloc(env_var_len + 1);
+    for (uint32_t iii = 0; iii < env_var_len; ++iii) {
+        parsing_string[iii] = (char)tolower(env_var_value[iii]);
+    }
+    parsing_string[env_var_len] = '\0';
+
+    filter_struct->count = 0;
+    char *context = NULL;
+    char *token = thread_safe_strtok(parsing_string, ",", &context);
+    while (NULL != token) {
+        struct loader_envvar_id_filter_value *filter_value = &filter_struct->filters[filter_struct->count];
+
+        char *pEnd;
+        filter_value->begin = (uint32_t)strtoul(token, &pEnd, 0);
+
+        if (*pEnd != '\0') {
+            pEnd++;
+            filter_value->end = (uint32_t)strtoul(pEnd, NULL, 0);
+        } else {
+            filter_value->end = filter_value->begin;
+        }
+
+        filter_struct->count++;
+        token = thread_safe_strtok(NULL, ",", &context);
+    }
+
+out:
+
+    loader_free_getenv(env_var_value, inst);
+}
+
+bool check_id_matches_filter_environment_var(const uint32_t id, const struct loader_envvar_id_filter *filter_struct) {
+    for (uint32_t i = 0; i < filter_struct->count; i++) {
+        if ((filter_struct->filters[i].begin <= id) && (id <= filter_struct->filters[i].end)) {
+            return true;
+        }
+    }
+    return false;
+}

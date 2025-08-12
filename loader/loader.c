@@ -7986,3 +7986,133 @@ out:
     }
     return res;
 }
+
+VkResult get_device_driver_id(VkPhysicalDevice physicalDevice, VkDriverId *driverId) {
+    VkPhysicalDeviceDriverProperties physical_device_driver_props = {0};
+    physical_device_driver_props.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DRIVER_PROPERTIES;
+
+    VkPhysicalDeviceProperties2 props2 = {0};
+    props2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
+    props2.pNext = &physical_device_driver_props;
+
+    struct loader_physical_device_term *phys_dev_term = (struct loader_physical_device_term *)physicalDevice;
+    struct loader_icd_term *icd_term = phys_dev_term->this_icd_term;
+    const struct loader_instance *inst = icd_term->this_instance;
+
+    assert(inst != NULL);
+
+    // Get the function pointer to use to call into the ICD. This could be the core or KHR version
+    PFN_vkGetPhysicalDeviceProperties2 fpGetPhysicalDeviceProperties2 = NULL;
+    if (loader_check_version_meets_required(LOADER_VERSION_1_1_0, inst->app_api_version)) {
+        fpGetPhysicalDeviceProperties2 = icd_term->dispatch.GetPhysicalDeviceProperties2;
+    }
+    if (fpGetPhysicalDeviceProperties2 == NULL && inst->enabled_extensions.khr_get_physical_device_properties2) {
+        fpGetPhysicalDeviceProperties2 = icd_term->dispatch.GetPhysicalDeviceProperties2KHR;
+    }
+
+    if (fpGetPhysicalDeviceProperties2 == NULL) {
+        *driverId = 0;
+        return VK_ERROR_UNKNOWN;
+    }
+
+    fpGetPhysicalDeviceProperties2(phys_dev_term->phys_dev, &props2);
+
+    *driverId = physical_device_driver_props.driverID;
+    return VK_SUCCESS;
+}
+
+VkResult loader_filter_enumerated_physical_device(const struct loader_instance *inst,
+                                                  const struct loader_envvar_id_filter *device_id_filter,
+                                                  const struct loader_envvar_id_filter *vendor_id_filter,
+                                                  const struct loader_envvar_id_filter *driver_id_filter,
+                                                  const uint32_t in_PhysicalDeviceCount,
+                                                  const VkPhysicalDevice *in_pPhysicalDevices, uint32_t *out_pPhysicalDeviceCount,
+                                                  VkPhysicalDevice *out_pPhysicalDevices) {
+    uint32_t filtered_physical_device_count = 0;
+    for (uint32_t i = 0; i < in_PhysicalDeviceCount; i++) {
+        VkPhysicalDeviceProperties dev_props = {0};
+        inst->disp->layer_inst_disp.GetPhysicalDeviceProperties(in_pPhysicalDevices[i], &dev_props);
+
+        if ((0 != device_id_filter->count) && !check_id_matches_filter_environment_var(dev_props.deviceID, device_id_filter)) {
+            continue;
+        }
+
+        if ((0 != vendor_id_filter->count) && !check_id_matches_filter_environment_var(dev_props.vendorID, vendor_id_filter)) {
+            continue;
+        }
+
+        if (0 != driver_id_filter->count) {
+            VkDriverId driver_id;
+            VkResult res = get_device_driver_id(in_pPhysicalDevices[i], &driver_id);
+
+            if ((res != VK_SUCCESS) || !check_id_matches_filter_environment_var(driver_id, driver_id_filter)) {
+                continue;
+            }
+        }
+
+        if ((NULL != out_pPhysicalDevices) && (filtered_physical_device_count < *out_pPhysicalDeviceCount)) {
+            out_pPhysicalDevices[filtered_physical_device_count] = in_pPhysicalDevices[i];
+        }
+        filtered_physical_device_count++;
+    }
+
+    if ((NULL == out_pPhysicalDevices) || (filtered_physical_device_count < *out_pPhysicalDeviceCount)) {
+        *out_pPhysicalDeviceCount = filtered_physical_device_count;
+    }
+
+    return (*out_pPhysicalDeviceCount < filtered_physical_device_count) ? VK_INCOMPLETE : VK_SUCCESS;
+}
+
+VkResult loader_filter_enumerated_physical_device_groups(
+    const struct loader_instance *inst, const struct loader_envvar_id_filter *device_id_filter,
+    const struct loader_envvar_id_filter *vendor_id_filter, const struct loader_envvar_id_filter *driver_id_filter,
+    const uint32_t in_PhysicalDeviceGroupCount, const VkPhysicalDeviceGroupProperties *in_pPhysicalDeviceGroupProperties,
+    uint32_t *out_PhysicalDeviceGroupCount, VkPhysicalDeviceGroupProperties *out_pPhysicalDeviceGroupProperties) {
+    uint32_t filtered_physical_device_group_count = 0;
+    for (uint32_t i = 0; i < in_PhysicalDeviceGroupCount; i++) {
+        const VkPhysicalDeviceGroupProperties *device_group = &in_pPhysicalDeviceGroupProperties[i];
+
+        bool skip_group = false;
+        for (uint32_t j = 0; j < device_group->physicalDeviceCount; j++) {
+            VkPhysicalDeviceProperties dev_props = {0};
+            inst->disp->layer_inst_disp.GetPhysicalDeviceProperties(device_group->physicalDevices[j], &dev_props);
+
+            if ((0 != device_id_filter->count) && !check_id_matches_filter_environment_var(dev_props.deviceID, device_id_filter)) {
+                skip_group = true;
+                break;
+            }
+
+            if ((0 != vendor_id_filter->count) && !check_id_matches_filter_environment_var(dev_props.vendorID, vendor_id_filter)) {
+                skip_group = true;
+                break;
+            }
+
+            if (0 != driver_id_filter->count) {
+                VkDriverId driver_id;
+                VkResult res = get_device_driver_id(device_group->physicalDevices[j], &driver_id);
+
+                if ((res != VK_SUCCESS) || !check_id_matches_filter_environment_var(driver_id, driver_id_filter)) {
+                    skip_group = true;
+                    break;
+                }
+            }
+        }
+
+        if (skip_group) {
+            continue;
+        }
+
+        if ((NULL != out_pPhysicalDeviceGroupProperties) &&
+            (filtered_physical_device_group_count < *out_PhysicalDeviceGroupCount)) {
+            out_pPhysicalDeviceGroupProperties[filtered_physical_device_group_count] = *device_group;
+        }
+
+        filtered_physical_device_group_count++;
+    }
+
+    if ((NULL == out_pPhysicalDeviceGroupProperties) || (filtered_physical_device_group_count < *out_PhysicalDeviceGroupCount)) {
+        *out_PhysicalDeviceGroupCount = filtered_physical_device_group_count;
+    }
+
+    return (*out_PhysicalDeviceGroupCount < filtered_physical_device_group_count) ? VK_INCOMPLETE : VK_SUCCESS;
+}

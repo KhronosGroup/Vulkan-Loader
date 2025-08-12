@@ -94,6 +94,7 @@ struct PhysicalDevice {
     BUILDER_VALUE(VkPhysicalDeviceProperties, properties)
     BUILDER_VALUE(VkPhysicalDeviceFeatures, features)
     BUILDER_VALUE(VkPhysicalDeviceMemoryProperties, memory_properties)
+    BUILDER_VALUE(VkPhysicalDeviceDriverProperties, driver_properties)
     BUILDER_VALUE(VkImageFormatProperties, image_format_properties)
     BUILDER_VALUE(VkExternalMemoryProperties, external_memory_properties)
     BUILDER_VALUE(VkExternalSemaphoreProperties, external_semaphore_properties)

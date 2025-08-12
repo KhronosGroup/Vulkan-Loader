@@ -1232,6 +1232,10 @@ VKAPI_ATTR void VKAPI_CALL test_vkGetPhysicalDeviceProperties2(VkPhysicalDevice 
                 auto* vulkan_11_props = reinterpret_cast<VkPhysicalDeviceVulkan11Properties*>(pNext);
                 memcpy(vulkan_11_props->deviceUUID, phys_dev.deviceUUID.data(), VK_UUID_SIZE);
             }
+            if (pNext->sType == VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DRIVER_PROPERTIES) {
+                auto* device_driver_props = reinterpret_cast<VkPhysicalDeviceDriverProperties*>(pNext);
+                *device_driver_props = phys_dev.driver_properties;
+            }
             pNext = reinterpret_cast<VkBaseInStructure*>(const_cast<VkBaseInStructure*>(pNext->pNext));
         }
     }

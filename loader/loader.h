@@ -237,6 +237,20 @@ loader_api_version loader_combine_version(uint32_t major, uint32_t minor, uint32
 // Helper macros for determining if a version is valid or not
 bool loader_check_version_meets_required(loader_api_version required, loader_api_version version);
 
+VkResult loader_filter_enumerated_physical_device(const struct loader_instance *inst,
+                                                  const struct loader_envvar_id_filter *device_id_filter,
+                                                  const struct loader_envvar_id_filter *vendor_id_filter,
+                                                  const struct loader_envvar_id_filter *driver_id_filter,
+                                                  const uint32_t in_PhysicalDeviceCount,
+                                                  const VkPhysicalDevice *in_pPhysicalDevices, uint32_t *out_pPhysicalDeviceCount,
+                                                  VkPhysicalDevice *out_pPhysicalDevices);
+
+VkResult loader_filter_enumerated_physical_device_groups(
+    const struct loader_instance *inst, const struct loader_envvar_id_filter *device_id_filter,
+    const struct loader_envvar_id_filter *vendor_id_filter, const struct loader_envvar_id_filter *driver_id_filter,
+    const uint32_t in_PhysicalDeviceGroupCount, const VkPhysicalDeviceGroupProperties *in_pPhysicalDeviceGroupProperties,
+    uint32_t *out_PhysicalDeviceGroupCount, VkPhysicalDeviceGroupProperties *out_pPhysicalDeviceGroupProperties);
+
 // Convenience macros for common versions
 #if !defined(LOADER_VERSION_1_0_0)
 #define LOADER_VERSION_1_0_0 loader_combine_version(1, 0, 0)
