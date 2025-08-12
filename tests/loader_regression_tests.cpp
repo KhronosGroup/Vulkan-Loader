@@ -1223,6 +1223,213 @@ TEST(EnumeratePhysicalDevices, TwoDriversOneWithWrongErrorCodes) {
     }
 }
 
+TEST(EnumeratePhysicalDevices, DeviceFiltering) {
+    FrameworkEnvironment env{};
+    auto& driver = env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2)).set_min_icd_interface_version(5);
+
+    for (uint32_t i = 0; i < 10; i++) {
+        auto& physical_device = driver.add_and_get_physical_device("physical_device_" + std::to_string(i));
+        physical_device.properties.deviceID = 0x1000 + i;
+        physical_device.properties.vendorID = 0x2000 + i;
+    }
+
+    InstWrapper inst{env.vulkan_functions};
+    inst.CheckCreate();
+
+    uint32_t physical_count = static_cast<uint32_t>(driver.physical_devices.size());
+
+    // filter multiple device by device id
+    {
+        env.env_var_vk_loader_device_id_filter.set_new_value("0x1001-0x1003,0x1006");
+
+        uint32_t returned_physical_count = static_cast<uint32_t>(driver.physical_devices.size());
+        std::vector<VkPhysicalDevice> physical_device_handles = std::vector<VkPhysicalDevice>(physical_count);
+        ASSERT_EQ(VK_SUCCESS, inst->vkEnumeratePhysicalDevices(inst, &returned_physical_count, physical_device_handles.data()));
+        ASSERT_EQ(4, returned_physical_count);
+
+        env.env_var_vk_loader_device_id_filter.remove_value();
+    }
+
+    // filter multiple device by vendor id
+    {
+        env.env_var_vk_loader_vendor_id_filter.set_new_value("0x2001-0x2003,0x2006");
+
+        uint32_t returned_physical_count = static_cast<uint32_t>(driver.physical_devices.size());
+        std::vector<VkPhysicalDevice> physical_device_handles = std::vector<VkPhysicalDevice>(physical_count);
+        ASSERT_EQ(VK_SUCCESS, inst->vkEnumeratePhysicalDevices(inst, &returned_physical_count, physical_device_handles.data()));
+        ASSERT_EQ(4, returned_physical_count);
+
+        env.env_var_vk_loader_vendor_id_filter.remove_value();
+    }
+
+    // filter multiple device by vendor id and device id
+    {
+        env.env_var_vk_loader_device_id_filter.set_new_value("0x1002-0x1004");
+        env.env_var_vk_loader_vendor_id_filter.set_new_value("0x2003-0x2007");
+
+        uint32_t returned_physical_count = static_cast<uint32_t>(driver.physical_devices.size());
+        std::vector<VkPhysicalDevice> physical_device_handles = std::vector<VkPhysicalDevice>(physical_count);
+        ASSERT_EQ(VK_SUCCESS, inst->vkEnumeratePhysicalDevices(inst, &returned_physical_count, physical_device_handles.data()));
+        ASSERT_EQ(2, returned_physical_count);
+
+        env.env_var_vk_loader_vendor_id_filter.remove_value();
+        env.env_var_vk_loader_device_id_filter.remove_value();
+    }
+
+    // return value change by device filter
+    {
+        uint32_t returned_physical_count = 5;
+        std::vector<VkPhysicalDevice> physical_device_handles = std::vector<VkPhysicalDevice>(physical_count);
+        ASSERT_EQ(VK_INCOMPLETE, inst->vkEnumeratePhysicalDevices(inst, &returned_physical_count, physical_device_handles.data()));
+        ASSERT_EQ(5, returned_physical_count);
+
+        env.env_var_vk_loader_device_id_filter.set_new_value("0x1003-0x1004");
+
+        ASSERT_EQ(VK_SUCCESS, inst->vkEnumeratePhysicalDevices(inst, &returned_physical_count, physical_device_handles.data()));
+        ASSERT_EQ(2, returned_physical_count);
+
+        env.env_var_vk_loader_device_id_filter.remove_value();
+    }
+
+    // return value change by vendor filter
+    {
+        uint32_t returned_physical_count = 5;
+        std::vector<VkPhysicalDevice> physical_device_handles = std::vector<VkPhysicalDevice>(physical_count);
+        ASSERT_EQ(VK_INCOMPLETE, inst->vkEnumeratePhysicalDevices(inst, &returned_physical_count, physical_device_handles.data()));
+        ASSERT_EQ(5, returned_physical_count);
+
+        env.env_var_vk_loader_vendor_id_filter.set_new_value("0x2005-0x2006");
+
+        ASSERT_EQ(VK_SUCCESS, inst->vkEnumeratePhysicalDevices(inst, &returned_physical_count, physical_device_handles.data()));
+        ASSERT_EQ(2, returned_physical_count);
+
+        env.env_var_vk_loader_vendor_id_filter.remove_value();
+    }
+
+    // incomplete result with device filter
+    {
+        env.env_var_vk_loader_device_id_filter.set_new_value("0x1001-0x1006");
+
+        uint32_t returned_physical_count = 3;
+        std::vector<VkPhysicalDevice> physical_device_handles = std::vector<VkPhysicalDevice>(physical_count);
+        ASSERT_EQ(VK_INCOMPLETE, inst->vkEnumeratePhysicalDevices(inst, &returned_physical_count, physical_device_handles.data()));
+        ASSERT_EQ(3, returned_physical_count);
+
+        env.env_var_vk_loader_device_id_filter.remove_value();
+    }
+
+    // filter all device
+    {
+        env.env_var_vk_loader_device_id_filter.set_new_value("0x2002-0x2003");
+
+        uint32_t returned_physical_count = static_cast<uint32_t>(driver.physical_devices.size());
+        std::vector<VkPhysicalDevice> physical_device_handles = std::vector<VkPhysicalDevice>(physical_count);
+        ASSERT_EQ(VK_SUCCESS, inst->vkEnumeratePhysicalDevices(inst, &returned_physical_count, physical_device_handles.data()));
+        ASSERT_EQ(0, returned_physical_count);
+
+        env.env_var_vk_loader_device_id_filter.remove_value();
+    }
+
+    // no device filtering
+    {
+        env.env_var_vk_loader_vendor_id_filter.remove_value();
+        env.env_var_vk_loader_device_id_filter.remove_value();
+
+        uint32_t returned_physical_count = static_cast<uint32_t>(driver.physical_devices.size());
+        std::vector<VkPhysicalDevice> physical_device_handles = std::vector<VkPhysicalDevice>(physical_count);
+        ASSERT_EQ(VK_SUCCESS, inst->vkEnumeratePhysicalDevices(inst, &returned_physical_count, physical_device_handles.data()));
+        ASSERT_EQ(physical_count, returned_physical_count);
+    }
+}
+
+TEST(EnumeratePhysicalDevices, DeviceFilteringByDriverId) {
+    FrameworkEnvironment env{};
+    auto& driver = env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2, VK_API_VERSION_1_1))
+                       .set_min_icd_interface_version(5)
+                       .set_icd_api_version(VK_API_VERSION_1_1)
+                       .add_instance_extension({VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME});
+
+    for (uint32_t i = 0; i < 10; i++) {
+        auto& physical_device = driver.add_and_get_physical_device("physical_device_" + std::to_string(i));
+        physical_device.extensions.push_back({VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME, 0});
+        physical_device.driver_properties.driverID = VkDriverId(100 + i);
+    }
+
+    InstWrapper inst{env.vulkan_functions};
+    inst.create_info.set_api_version(VK_API_VERSION_1_1);
+    inst.CheckCreate();
+
+    uint32_t physical_count = static_cast<uint32_t>(driver.physical_devices.size());
+
+    // filter multiple device by driver id
+    {
+        env.env_var_vk_loader_driver_id_filter.set_new_value("103-105,107");
+
+        uint32_t returned_physical_count = static_cast<uint32_t>(driver.physical_devices.size());
+        std::vector<VkPhysicalDevice> physical_device_handles = std::vector<VkPhysicalDevice>(physical_count);
+        ASSERT_EQ(VK_SUCCESS, inst->vkEnumeratePhysicalDevices(inst, &returned_physical_count, physical_device_handles.data()));
+        ASSERT_EQ(4, returned_physical_count);
+
+        env.env_var_vk_loader_driver_id_filter.remove_value();
+    }
+
+    // return value change by driver filter
+    {
+        uint32_t returned_physical_count = 5;
+        std::vector<VkPhysicalDevice> physical_device_handles = std::vector<VkPhysicalDevice>(physical_count);
+        ASSERT_EQ(VK_INCOMPLETE, inst->vkEnumeratePhysicalDevices(inst, &returned_physical_count, physical_device_handles.data()));
+        ASSERT_EQ(5, returned_physical_count);
+
+        env.env_var_vk_loader_driver_id_filter.set_new_value("103-104");
+
+        ASSERT_EQ(VK_SUCCESS, inst->vkEnumeratePhysicalDevices(inst, &returned_physical_count, physical_device_handles.data()));
+        ASSERT_EQ(2, returned_physical_count);
+
+        env.env_var_vk_loader_driver_id_filter.remove_value();
+    }
+
+    // incomplete result with driver filter
+    {
+        env.env_var_vk_loader_driver_id_filter.set_new_value("102-105");
+
+        uint32_t returned_physical_count = 3;
+        std::vector<VkPhysicalDevice> physical_device_handles = std::vector<VkPhysicalDevice>(physical_count);
+        ASSERT_EQ(VK_INCOMPLETE, inst->vkEnumeratePhysicalDevices(inst, &returned_physical_count, physical_device_handles.data()));
+        ASSERT_EQ(3, returned_physical_count);
+
+        env.env_var_vk_loader_driver_id_filter.remove_value();
+    }
+
+    // filter all device
+    {
+        env.env_var_vk_loader_driver_id_filter.set_new_value("50");
+
+        uint32_t returned_physical_count = static_cast<uint32_t>(driver.physical_devices.size());
+        std::vector<VkPhysicalDevice> physical_device_handles = std::vector<VkPhysicalDevice>(physical_count);
+        ASSERT_EQ(VK_SUCCESS, inst->vkEnumeratePhysicalDevices(inst, &returned_physical_count, physical_device_handles.data()));
+        ASSERT_EQ(0, returned_physical_count);
+
+        env.env_var_vk_loader_driver_id_filter.remove_value();
+    }
+
+    InstWrapper inst_1_0{env.vulkan_functions};
+    inst_1_0.create_info.set_api_version(VK_API_VERSION_1_0);
+    inst_1_0.CheckCreate();
+
+    // Unsupported device filtering by driver id
+    {
+        env.env_var_vk_loader_driver_id_filter.set_new_value("103-105,107");
+
+        uint32_t returned_physical_count = static_cast<uint32_t>(driver.physical_devices.size());
+        std::vector<VkPhysicalDevice> physical_device_handles = std::vector<VkPhysicalDevice>(physical_count);
+        ASSERT_EQ(VK_SUCCESS,
+                  inst_1_0->vkEnumeratePhysicalDevices(inst_1_0, &returned_physical_count, physical_device_handles.data()));
+        ASSERT_EQ(0, returned_physical_count);
+
+        env.env_var_vk_loader_driver_id_filter.remove_value();
+    }
+}
+
 TEST(CreateDevice, ExtensionNotPresent) {
     FrameworkEnvironment env{};
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2)).add_physical_device("physical_device_0");
@@ -2703,6 +2910,266 @@ TEST(EnumeratePhysicalDeviceGroups, FakePNext) {
     // Value should get written to 0xDECAFBADD by the fake ICD
     for (uint32_t group = 0; group < max_phys_dev_groups; ++group) {
         ASSERT_EQ(fake_structs[group].value, 0xDECAFBAD);
+    }
+}
+
+TEST(EnumeratePhysicalDeviceGroups, DeviceFiltering) {
+    FrameworkEnvironment env{};
+    auto& driver = env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2, VK_API_VERSION_1_1))
+                       .set_min_icd_interface_version(5)
+                       .set_icd_api_version(VK_API_VERSION_1_1)
+                       .add_instance_extension({VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME});
+
+    // ICD contains 10 devices in 5 groups
+    std::array<PhysicalDevice*, 10> phys_devices;
+    for (size_t i = 0; i < phys_devices.size(); i++) {
+        auto& physical_device = driver.add_and_get_physical_device(std::string("physical_device_") + std::to_string(i));
+        physical_device.properties.apiVersion = VK_API_VERSION_1_1;
+
+        physical_device.properties.deviceID = 0x1000 + i;
+        physical_device.properties.vendorID = 0x2000 + i;
+
+        phys_devices[i] = &physical_device;
+    }
+
+    for (size_t i = 0; i < 5; i++) {
+        driver.physical_device_groups.emplace_back(phys_devices[2 * i]);
+        driver.physical_device_groups.back().use_physical_device(phys_devices[2 * i + 1]);
+    }
+
+    InstWrapper inst{env.vulkan_functions};
+    inst.CheckCreate();
+
+    uint32_t physical_device_group_count = static_cast<uint32_t>(driver.physical_device_groups.size());
+
+    // filter multiple device by device id
+    {
+        env.env_var_vk_loader_device_id_filter.set_new_value("0x1000-0x1002,0x1006-0x1010");
+
+        uint32_t returned_physical_device_group_count = static_cast<uint32_t>(driver.physical_device_groups.size());
+        std::vector<VkPhysicalDeviceGroupProperties> physical_device_group_properties =
+            std::vector<VkPhysicalDeviceGroupProperties>(physical_device_group_count);
+        ASSERT_EQ(VK_SUCCESS, inst->vkEnumeratePhysicalDeviceGroups(inst, &returned_physical_device_group_count,
+                                                                    physical_device_group_properties.data()));
+        ASSERT_EQ(3, returned_physical_device_group_count);
+
+        env.env_var_vk_loader_device_id_filter.remove_value();
+    }
+
+    // filter multiple device by vendor id
+    {
+        env.env_var_vk_loader_vendor_id_filter.set_new_value("0x200-0x2002,0x2006-0x2010");
+
+        uint32_t returned_physical_device_group_count = static_cast<uint32_t>(driver.physical_device_groups.size());
+        std::vector<VkPhysicalDeviceGroupProperties> physical_device_group_properties =
+            std::vector<VkPhysicalDeviceGroupProperties>(physical_device_group_count);
+        ASSERT_EQ(VK_SUCCESS, inst->vkEnumeratePhysicalDeviceGroups(inst, &returned_physical_device_group_count,
+                                                                    physical_device_group_properties.data()));
+        ASSERT_EQ(3, returned_physical_device_group_count);
+
+        env.env_var_vk_loader_vendor_id_filter.remove_value();
+    }
+
+    // filter multiple device by vendor id and device id
+    {
+        env.env_var_vk_loader_device_id_filter.set_new_value("0x1000-0x1007");
+        env.env_var_vk_loader_vendor_id_filter.set_new_value("0x2004-0x2009");
+
+        uint32_t returned_physical_device_group_count = static_cast<uint32_t>(driver.physical_device_groups.size());
+        std::vector<VkPhysicalDeviceGroupProperties> physical_device_group_properties =
+            std::vector<VkPhysicalDeviceGroupProperties>(physical_device_group_count);
+        ASSERT_EQ(VK_SUCCESS, inst->vkEnumeratePhysicalDeviceGroups(inst, &returned_physical_device_group_count,
+                                                                    physical_device_group_properties.data()));
+        ASSERT_EQ(2, returned_physical_device_group_count);
+
+        env.env_var_vk_loader_vendor_id_filter.remove_value();
+        env.env_var_vk_loader_device_id_filter.remove_value();
+    }
+
+    // return value change by device filter
+    {
+        uint32_t returned_physical_group_count = 3;
+        std::vector<VkPhysicalDeviceGroupProperties> physical_device_group_properties =
+            std::vector<VkPhysicalDeviceGroupProperties>(physical_device_group_count);
+        ASSERT_EQ(VK_INCOMPLETE, inst->vkEnumeratePhysicalDeviceGroups(inst, &returned_physical_group_count,
+                                                                       physical_device_group_properties.data()));
+        ASSERT_EQ(3, returned_physical_group_count);
+
+        env.env_var_vk_loader_device_id_filter.set_new_value("0x1000-0x1001,0x1004-0x1005");
+
+        ASSERT_EQ(VK_SUCCESS, inst->vkEnumeratePhysicalDeviceGroups(inst, &returned_physical_group_count,
+                                                                    physical_device_group_properties.data()));
+        ASSERT_EQ(2, returned_physical_group_count);
+
+        env.env_var_vk_loader_device_id_filter.remove_value();
+    }
+
+    // return value change by vendor filter
+    {
+        uint32_t returned_physical_group_count = 3;
+        std::vector<VkPhysicalDeviceGroupProperties> physical_device_group_properties =
+            std::vector<VkPhysicalDeviceGroupProperties>(physical_device_group_count);
+        ASSERT_EQ(VK_INCOMPLETE, inst->vkEnumeratePhysicalDeviceGroups(inst, &returned_physical_group_count,
+                                                                       physical_device_group_properties.data()));
+        ASSERT_EQ(3, returned_physical_group_count);
+
+        env.env_var_vk_loader_vendor_id_filter.set_new_value("0x2002-0x2005");
+
+        ASSERT_EQ(VK_SUCCESS, inst->vkEnumeratePhysicalDeviceGroups(inst, &returned_physical_group_count,
+                                                                    physical_device_group_properties.data()));
+        ASSERT_EQ(2, returned_physical_group_count);
+
+        env.env_var_vk_loader_vendor_id_filter.remove_value();
+    }
+
+    // incomplete result with device filter
+    {
+        env.env_var_vk_loader_device_id_filter.set_new_value("0x1000-0x1007");
+
+        uint32_t returned_physical_group_count = 2;
+        std::vector<VkPhysicalDeviceGroupProperties> physical_device_group_properties =
+            std::vector<VkPhysicalDeviceGroupProperties>(physical_device_group_count);
+        ASSERT_EQ(VK_INCOMPLETE, inst->vkEnumeratePhysicalDeviceGroups(inst, &returned_physical_group_count,
+                                                                       physical_device_group_properties.data()));
+        ASSERT_EQ(2, returned_physical_group_count);
+
+        env.env_var_vk_loader_device_id_filter.remove_value();
+    }
+
+    // filter all device
+    {
+        env.env_var_vk_loader_device_id_filter.set_new_value("0x2002-0x2003");
+
+        uint32_t returned_physical_group_count = static_cast<uint32_t>(driver.physical_device_groups.size());
+        std::vector<VkPhysicalDeviceGroupProperties> physical_device_group_properties =
+            std::vector<VkPhysicalDeviceGroupProperties>(physical_device_group_count);
+        ASSERT_EQ(VK_SUCCESS, inst->vkEnumeratePhysicalDeviceGroups(inst, &returned_physical_group_count,
+                                                                    physical_device_group_properties.data()));
+        ASSERT_EQ(0, returned_physical_group_count);
+
+        env.env_var_vk_loader_device_id_filter.remove_value();
+    }
+
+    // no device filtering
+    {
+        env.env_var_vk_loader_vendor_id_filter.remove_value();
+        env.env_var_vk_loader_device_id_filter.remove_value();
+
+        uint32_t returned_physical_group_count = static_cast<uint32_t>(driver.physical_device_groups.size());
+        std::vector<VkPhysicalDeviceGroupProperties> physical_device_group_properties =
+            std::vector<VkPhysicalDeviceGroupProperties>(physical_device_group_count);
+        ASSERT_EQ(VK_SUCCESS, inst->vkEnumeratePhysicalDeviceGroups(inst, &returned_physical_group_count,
+                                                                    physical_device_group_properties.data()));
+        ASSERT_EQ(physical_device_group_count, returned_physical_group_count);
+    }
+}
+
+TEST(EnumeratePhysicalDeviceGroups, DeviceFilteringByDriverId) {
+    FrameworkEnvironment env{};
+    auto& driver = env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2, VK_API_VERSION_1_1))
+                       .set_min_icd_interface_version(5)
+                       .set_icd_api_version(VK_API_VERSION_1_1)
+                       .add_instance_extension({VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME});
+
+    // ICD contains 10 devices in 5 groups
+    std::array<PhysicalDevice*, 10> phys_devices;
+    for (size_t i = 0; i < phys_devices.size(); i++) {
+        auto& physical_device = driver.add_and_get_physical_device(std::string("physical_device_") + std::to_string(i));
+        physical_device.properties.apiVersion = VK_API_VERSION_1_1;
+
+        physical_device.extensions.push_back({VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME, 0});
+        physical_device.driver_properties.driverID = VkDriverId(100 + i);
+
+        phys_devices[i] = &physical_device;
+    }
+
+    for (size_t i = 0; i < 5; i++) {
+        driver.physical_device_groups.emplace_back(phys_devices[2 * i]);
+        driver.physical_device_groups.back().use_physical_device(phys_devices[2 * i + 1]);
+    }
+
+    InstWrapper inst{env.vulkan_functions};
+    inst.create_info.set_api_version(VK_API_VERSION_1_1);
+    inst.CheckCreate();
+
+    uint32_t physical_device_group_count = static_cast<uint32_t>(driver.physical_device_groups.size());
+
+    // filter multiple device by device id
+    {
+        env.env_var_vk_loader_driver_id_filter.set_new_value("102-105,108-109");
+
+        uint32_t returned_physical_device_group_count = static_cast<uint32_t>(driver.physical_device_groups.size());
+        std::vector<VkPhysicalDeviceGroupProperties> physical_device_group_properties =
+            std::vector<VkPhysicalDeviceGroupProperties>(physical_device_group_count);
+        ASSERT_EQ(VK_SUCCESS, inst->vkEnumeratePhysicalDeviceGroups(inst, &returned_physical_device_group_count,
+                                                                    physical_device_group_properties.data()));
+        ASSERT_EQ(3, returned_physical_device_group_count);
+
+        env.env_var_vk_loader_driver_id_filter.remove_value();
+    }
+
+    // return value change by driver filter
+    {
+        uint32_t returned_physical_group_count = 3;
+        std::vector<VkPhysicalDeviceGroupProperties> physical_device_group_properties =
+            std::vector<VkPhysicalDeviceGroupProperties>(physical_device_group_count);
+        ASSERT_EQ(VK_INCOMPLETE, inst->vkEnumeratePhysicalDeviceGroups(inst, &returned_physical_group_count,
+                                                                       physical_device_group_properties.data()));
+        ASSERT_EQ(3, returned_physical_group_count);
+
+        env.env_var_vk_loader_driver_id_filter.set_new_value("102-103,106-107");
+
+        ASSERT_EQ(VK_SUCCESS, inst->vkEnumeratePhysicalDeviceGroups(inst, &returned_physical_group_count,
+                                                                    physical_device_group_properties.data()));
+        ASSERT_EQ(2, returned_physical_group_count);
+
+        env.env_var_vk_loader_driver_id_filter.remove_value();
+    }
+
+    // incomplete result with driver filter
+    {
+        env.env_var_vk_loader_driver_id_filter.set_new_value("102-109");
+
+        uint32_t returned_physical_group_count = 2;
+        std::vector<VkPhysicalDeviceGroupProperties> physical_device_group_properties =
+            std::vector<VkPhysicalDeviceGroupProperties>(physical_device_group_count);
+        ASSERT_EQ(VK_INCOMPLETE, inst->vkEnumeratePhysicalDeviceGroups(inst, &returned_physical_group_count,
+                                                                       physical_device_group_properties.data()));
+        ASSERT_EQ(2, returned_physical_group_count);
+
+        env.env_var_vk_loader_driver_id_filter.remove_value();
+    }
+
+    // filter all device
+    {
+        env.env_var_vk_loader_driver_id_filter.set_new_value("50");
+
+        uint32_t returned_physical_group_count = static_cast<uint32_t>(driver.physical_device_groups.size());
+        std::vector<VkPhysicalDeviceGroupProperties> physical_device_group_properties =
+            std::vector<VkPhysicalDeviceGroupProperties>(physical_device_group_count);
+        ASSERT_EQ(VK_SUCCESS, inst->vkEnumeratePhysicalDeviceGroups(inst, &returned_physical_group_count,
+                                                                    physical_device_group_properties.data()));
+        ASSERT_EQ(0, returned_physical_group_count);
+
+        env.env_var_vk_loader_driver_id_filter.remove_value();
+    }
+
+    InstWrapper inst_1_0{env.vulkan_functions};
+    inst_1_0.create_info.set_api_version(VK_API_VERSION_1_0);
+    inst_1_0.CheckCreate();
+
+    // Unsupported device filtering by driver id
+    {
+        env.env_var_vk_loader_driver_id_filter.set_new_value("102-105,108-109");
+
+        uint32_t returned_physical_device_group_count = static_cast<uint32_t>(driver.physical_device_groups.size());
+        std::vector<VkPhysicalDeviceGroupProperties> physical_device_group_properties =
+            std::vector<VkPhysicalDeviceGroupProperties>(physical_device_group_count);
+        ASSERT_EQ(VK_SUCCESS, inst_1_0->vkEnumeratePhysicalDeviceGroups(inst_1_0, &returned_physical_device_group_count,
+                                                                        physical_device_group_properties.data()));
+        ASSERT_EQ(0, returned_physical_device_group_count);
+
+        env.env_var_vk_loader_driver_id_filter.remove_value();
     }
 }
 

@@ -36,6 +36,7 @@
 #include "loader_environment.h"
 #include "log.h"
 #include "settings.h"
+#include "stack_allocation.h"
 #include "vk_loader_extensions.h"
 #include "vk_loader_platform.h"
 #include "wsi.h"
@@ -852,8 +853,34 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumeratePhysicalDevices(VkInstan
         goto out;
     }
 
+    struct loader_envvar_id_filter device_id_filter;
+    struct loader_envvar_id_filter vendor_id_filter;
+    struct loader_envvar_id_filter driver_id_filter;
+
+    parse_id_filter_enviroment_var(inst, VK_DEVICE_ID_FILTER_ENV_VAR, &device_id_filter);
+    parse_id_filter_enviroment_var(inst, VK_VENDOR_ID_FILTER_ENV_VAR, &vendor_id_filter);
+    parse_id_filter_enviroment_var(inst, VK_DRIVER_ID_FILTER_ENV_VAR, &driver_id_filter);
+
     // Call down the chain to get the physical device info
-    res = inst->disp->layer_inst_disp.EnumeratePhysicalDevices(inst->instance, pPhysicalDeviceCount, pPhysicalDevices);
+    if ((0 == device_id_filter.count) && (0 == vendor_id_filter.count) && (0 == driver_id_filter.count)) {
+        res = inst->disp->layer_inst_disp.EnumeratePhysicalDevices(inst->instance, pPhysicalDeviceCount, pPhysicalDevices);
+    } else {
+        uint32_t physical_device_count = 0;
+        res = inst->disp->layer_inst_disp.EnumeratePhysicalDevices(inst->instance, &physical_device_count, NULL);
+        if (res != VK_SUCCESS) {
+            goto out;
+        }
+
+        VkPhysicalDevice *physical_devices = loader_stack_alloc(physical_device_count * sizeof(VkPhysicalDevice));
+        res = inst->disp->layer_inst_disp.EnumeratePhysicalDevices(inst->instance, &physical_device_count, physical_devices);
+        if (res != VK_SUCCESS) {
+            goto out;
+        }
+
+        res = loader_filter_enumerated_physical_device(inst, &device_id_filter, &vendor_id_filter, &driver_id_filter,
+                                                       physical_device_count, physical_devices, pPhysicalDeviceCount,
+                                                       pPhysicalDevices);
+    }
 
     if (NULL != pPhysicalDevices && (VK_SUCCESS == res || VK_INCOMPLETE == res)) {
         // Wrap the PhysDev object for loader usage, return wrapped objects
@@ -2586,9 +2613,40 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumeratePhysicalDeviceGroups(
         goto out;
     }
 
+    struct loader_envvar_id_filter device_id_filter;
+    struct loader_envvar_id_filter vendor_id_filter;
+    struct loader_envvar_id_filter driver_id_filter;
+
+    parse_id_filter_enviroment_var(inst, VK_DEVICE_ID_FILTER_ENV_VAR, &device_id_filter);
+    parse_id_filter_enviroment_var(inst, VK_VENDOR_ID_FILTER_ENV_VAR, &vendor_id_filter);
+    parse_id_filter_enviroment_var(inst, VK_DRIVER_ID_FILTER_ENV_VAR, &driver_id_filter);
+
     // Call down the chain to get the physical device group info.
-    res = inst->disp->layer_inst_disp.EnumeratePhysicalDeviceGroups(inst->instance, pPhysicalDeviceGroupCount,
-                                                                    pPhysicalDeviceGroupProperties);
+    if ((0 == device_id_filter.count) && (0 == vendor_id_filter.count) && (0 == driver_id_filter.count)) {
+        res = inst->disp->layer_inst_disp.EnumeratePhysicalDeviceGroups(inst->instance, pPhysicalDeviceGroupCount,
+                                                                        pPhysicalDeviceGroupProperties);
+    } else {
+        uint32_t physical_device_group_count = 0;
+        res = inst->disp->layer_inst_disp.EnumeratePhysicalDeviceGroups(inst->instance, &physical_device_group_count, NULL);
+        if (res != VK_SUCCESS) {
+            goto out;
+        }
+
+        VkPhysicalDeviceGroupProperties *physical_device_group_properties =
+            loader_stack_alloc(physical_device_group_count * sizeof(VkPhysicalDeviceGroupProperties));
+        memset(physical_device_group_properties, 0, physical_device_group_count * sizeof(VkPhysicalDeviceGroupProperties));
+
+        res = inst->disp->layer_inst_disp.EnumeratePhysicalDeviceGroups(inst->instance, &physical_device_group_count,
+                                                                        physical_device_group_properties);
+        if (res != VK_SUCCESS) {
+            goto out;
+        }
+
+        res = loader_filter_enumerated_physical_device_groups(inst, &device_id_filter, &vendor_id_filter, &driver_id_filter,
+                                                              physical_device_group_count, physical_device_group_properties,
+                                                              pPhysicalDeviceGroupCount, pPhysicalDeviceGroupProperties);
+    }
+
     if (NULL != pPhysicalDeviceGroupProperties && (VK_SUCCESS == res || VK_INCOMPLETE == res)) {
         // Wrap the PhysDev object for loader usage, return wrapped objects
         VkResult update_res = setup_loader_tramp_phys_dev_groups(inst, *pPhysicalDeviceGroupCount, pPhysicalDeviceGroupProperties);
