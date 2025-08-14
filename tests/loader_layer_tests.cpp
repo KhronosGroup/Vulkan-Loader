@@ -1176,6 +1176,55 @@ TEST(ImplicitLayers, DuplicateLayersInVK_ADD_IMPLICIT_LAYER_PATH) {
     ASSERT_FALSE(env.debug_log.find("actually_layer_2"));
 }
 
+TEST(ImplicitLayers, OrderedByVK_INSTANCE_LAYERS) {
+    FrameworkEnvironment env;
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA)).add_physical_device({});
+    const char* implicit_layer_name = "VK_LAYER_implicit";
+    env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                         .set_name(implicit_layer_name)
+
+                                                         .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                         .set_disable_environment("foo")),
+                           "implicit_layer.json");
+    const char* explicit_layer_name = "VK_LAYER_explicit";
+    env.add_explicit_layer(
+        ManifestLayer{}.add_layer(
+            ManifestLayer::LayerDescription{}.set_name(explicit_layer_name).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)),
+        "explicit_layer.json");
+    // Only enable the explicit layer through the env-var
+    {
+        EnvVarWrapper env_var("VK_INSTANCE_LAYERS");
+        env_var.add_to_list(explicit_layer_name);
+        InstWrapper inst{env.vulkan_functions};
+        inst.CheckCreate();
+        auto active_layers = inst.GetActiveLayers(inst.GetPhysDev(), 2);
+        ASSERT_TRUE(string_eq(active_layers.at(0).layerName, implicit_layer_name));
+        ASSERT_TRUE(string_eq(active_layers.at(1).layerName, explicit_layer_name));
+    }
+    // Enable both layers, implicit then explicit
+    {
+        EnvVarWrapper env_var("VK_INSTANCE_LAYERS");
+        env_var.add_to_list(implicit_layer_name);
+        env_var.add_to_list(explicit_layer_name);
+        InstWrapper inst{env.vulkan_functions};
+        inst.CheckCreate();
+        auto active_layers = inst.GetActiveLayers(inst.GetPhysDev(), 2);
+        ASSERT_TRUE(string_eq(active_layers.at(0).layerName, implicit_layer_name));
+        ASSERT_TRUE(string_eq(active_layers.at(1).layerName, explicit_layer_name));
+    }
+    // Enable both layers, explicit then implicit
+    {
+        EnvVarWrapper env_var("VK_INSTANCE_LAYERS");
+        env_var.add_to_list(explicit_layer_name);
+        env_var.add_to_list(implicit_layer_name);
+        InstWrapper inst{env.vulkan_functions};
+        inst.CheckCreate();
+        auto active_layers = inst.GetActiveLayers(inst.GetPhysDev(), 2);
+        ASSERT_TRUE(string_eq(active_layers.at(0).layerName, explicit_layer_name));
+        ASSERT_TRUE(string_eq(active_layers.at(1).layerName, implicit_layer_name));
+    }
+}
+
 // Meta layer which contains component layers that do not exist.
 TEST(MetaLayers, InvalidComponentLayer) {
     FrameworkEnvironment env;
