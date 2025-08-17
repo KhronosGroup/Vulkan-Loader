@@ -393,6 +393,10 @@ if(WIN32)
         set_target_properties(vulkan
                               PROPERTIES
                               PREFIX "")
+        # let the linker just fix up the stdcall mangling, like on msvc
+        if(CMAKE_SIZEOF_VOID_P EQUAL 4)
+            target_link_options(vulkan PRIVATE "-Wl,--enable-stdcall-fixup")
+        endif()
     endif()
 
     if(MSVC AND ENABLE_WIN10_ONECORE)
