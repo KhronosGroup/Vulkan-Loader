@@ -563,8 +563,8 @@ out:
     return res;
 }
 
-void parse_id_filter_enviroment_var(const struct loader_instance *inst, const char *env_var_name,
-                                    struct loader_envvar_id_filter *filter_struct) {
+void parse_id_filter_environment_var(const struct loader_instance *inst, const char *env_var_name,
+                                     struct loader_envvar_id_filter *filter_struct) {
     memset(filter_struct, 0, sizeof(struct loader_envvar_id_filter));
     char *parsing_string = NULL;
     char *env_var_value = loader_secure_getenv(env_var_name, inst);

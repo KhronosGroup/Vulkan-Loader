@@ -5280,7 +5280,7 @@ TEST(DriverUnloadingFromZeroPhysDevs, HandleRecreation) {
         surfaces.emplace_back(surface, inst.inst, env.vulkan_functions.vkDestroySurfaceKHR);
     }
     // Remove some elements arbitrarily - remove 15 of each
-    // Do it backwards so the indexes are 'corect'
+    // Do it backwards so the indexes are 'correct'
     for (uint32_t i = 31; i > 2; i -= 2) {
         messengers.erase(messengers.begin() + i);
         surfaces.erase(surfaces.begin() + i);

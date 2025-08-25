@@ -306,7 +306,7 @@ VkResult create_string_list(const struct loader_instance *inst, uint32_t allocat
     return VK_SUCCESS;
 }
 
-VkResult incrase_str_capacity_by_at_least_one(const struct loader_instance *inst, struct loader_string_list *string_list) {
+VkResult increase_str_capacity_by_at_least_one(const struct loader_instance *inst, struct loader_string_list *string_list) {
     assert(string_list);
     if (string_list->allocated_count == 0) {
         string_list->allocated_count = 32;
@@ -329,7 +329,7 @@ VkResult incrase_str_capacity_by_at_least_one(const struct loader_instance *inst
 
 VkResult append_str_to_string_list(const struct loader_instance *inst, struct loader_string_list *string_list, char *str) {
     assert(string_list && str);
-    VkResult res = incrase_str_capacity_by_at_least_one(inst, string_list);
+    VkResult res = increase_str_capacity_by_at_least_one(inst, string_list);
     if (res == VK_ERROR_OUT_OF_HOST_MEMORY) {
         loader_instance_heap_free(inst, str);  // Must clean up in case of failure
         return res;
@@ -340,7 +340,7 @@ VkResult append_str_to_string_list(const struct loader_instance *inst, struct lo
 
 VkResult prepend_str_to_string_list(const struct loader_instance *inst, struct loader_string_list *string_list, char *str) {
     assert(string_list && str);
-    VkResult res = incrase_str_capacity_by_at_least_one(inst, string_list);
+    VkResult res = increase_str_capacity_by_at_least_one(inst, string_list);
     if (res == VK_ERROR_OUT_OF_HOST_MEMORY) {
         loader_instance_heap_free(inst, str);  // Must clean up in case of failure
         return res;
@@ -546,7 +546,7 @@ out:
 #endif
 }
 
-// Queries the path to the library that lib_handle & gipa are assoicated with, allocating a string to hold it and returning it in
+// Queries the path to the library that lib_handle & gipa are associated with, allocating a string to hold it and returning it in
 // out_path
 VkResult get_library_path_of_dl_handle(const struct loader_instance *inst, loader_platform_dl_handle lib_handle,
                                        PFN_vkGetInstanceProcAddr gipa, char **out_path) {
@@ -2539,7 +2539,7 @@ bool verify_meta_layer_component_layers(const struct loader_instance *inst, size
             }
             if (comp_prop_index != INT32_MAX && already_checked_meta_layers[comp_prop_index]) {
                 loader_log(inst, VULKAN_LOADER_WARN_BIT, 0,
-                           "verify_meta_layer_component_layers: Recursive depedency between Meta-layer %s and  Meta-layer %s.  "
+                           "verify_meta_layer_component_layers: Recursive dependency between Meta-layer %s and  Meta-layer %s.  "
                            "Skipping this layer.",
                            instance_layers->list[prop_index].info.layerName, comp_prop->info.layerName);
                 return false;
