@@ -97,7 +97,7 @@ typedef enum VulkanObjectType {
     kVulkanObjectTypeIndirectExecutionSetEXT = 56,
     kVulkanObjectTypeIndirectCommandsLayoutEXT = 57,
     kVulkanObjectTypeMax = 58,
-    // Aliases for backwards compatibilty of "promoted" types
+    // Aliases for backwards compatibility of "promoted" types
     kVulkanObjectTypeSamplerYcbcrConversionKHR = kVulkanObjectTypeSamplerYcbcrConversion,
     kVulkanObjectTypeDescriptorUpdateTemplateKHR = kVulkanObjectTypeDescriptorUpdateTemplate,
     kVulkanObjectTypePrivateDataSlotEXT = kVulkanObjectTypePrivateDataSlot,

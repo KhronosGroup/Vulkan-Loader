@@ -857,9 +857,9 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumeratePhysicalDevices(VkInstan
     struct loader_envvar_id_filter vendor_id_filter;
     struct loader_envvar_id_filter driver_id_filter;
 
-    parse_id_filter_enviroment_var(inst, VK_DEVICE_ID_FILTER_ENV_VAR, &device_id_filter);
-    parse_id_filter_enviroment_var(inst, VK_VENDOR_ID_FILTER_ENV_VAR, &vendor_id_filter);
-    parse_id_filter_enviroment_var(inst, VK_DRIVER_ID_FILTER_ENV_VAR, &driver_id_filter);
+    parse_id_filter_environment_var(inst, VK_DEVICE_ID_FILTER_ENV_VAR, &device_id_filter);
+    parse_id_filter_environment_var(inst, VK_VENDOR_ID_FILTER_ENV_VAR, &vendor_id_filter);
+    parse_id_filter_environment_var(inst, VK_DRIVER_ID_FILTER_ENV_VAR, &driver_id_filter);
 
     // Call down the chain to get the physical device info
     if ((0 == device_id_filter.count) && (0 == vendor_id_filter.count) && (0 == driver_id_filter.count)) {
@@ -2617,9 +2617,9 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumeratePhysicalDeviceGroups(
     struct loader_envvar_id_filter vendor_id_filter;
     struct loader_envvar_id_filter driver_id_filter;
 
-    parse_id_filter_enviroment_var(inst, VK_DEVICE_ID_FILTER_ENV_VAR, &device_id_filter);
-    parse_id_filter_enviroment_var(inst, VK_VENDOR_ID_FILTER_ENV_VAR, &vendor_id_filter);
-    parse_id_filter_enviroment_var(inst, VK_DRIVER_ID_FILTER_ENV_VAR, &driver_id_filter);
+    parse_id_filter_environment_var(inst, VK_DEVICE_ID_FILTER_ENV_VAR, &device_id_filter);
+    parse_id_filter_environment_var(inst, VK_VENDOR_ID_FILTER_ENV_VAR, &vendor_id_filter);
+    parse_id_filter_environment_var(inst, VK_DRIVER_ID_FILTER_ENV_VAR, &driver_id_filter);
 
     // Call down the chain to get the physical device group info.
     if ((0 == device_id_filter.count) && (0 == vendor_id_filter.count) && (0 == driver_id_filter.count)) {

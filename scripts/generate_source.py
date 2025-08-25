@@ -122,7 +122,7 @@ def RunGenerators(api: str, registry: str, directory: str, styleFile: str, targe
     for index, target in enumerate(targets, start=1):
         print(f'[{index}|{len(targets)}] Generating {target}')
 
-        # First grab a class contructor object and create an instance
+        # First grab a class constructor object and create an instance
         generator = generators[target]['generator']
         gen = generator()
 

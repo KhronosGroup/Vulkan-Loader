@@ -146,7 +146,7 @@ typedef int cJSON_bool;
 #define CJSON_CIRCULAR_LIMIT 10000
 #endif
 
-/* Memory Management: the caller is always responsible to free instthe results from all variants of loader_cJSON_Parse (with
+/* Memory Management: the caller is always responsible to free the results from all variants of loader_cJSON_Parse (with
  * loader_cJSON_Delete) and loader_loader_cJSON_Print (with stdlib free, cJSON_Hooks.free_fn, or cJSON_free as appropriate). The
  * exception is cJSON_PrintPreallocated, where the caller has full responsibility of the buffer. */
 /* Supply a block of JSON, and this returns a cJSON object you can interrogate. */

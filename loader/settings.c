@@ -397,7 +397,7 @@ out:
 
 #if COMMON_UNIX_PLATFORMS
 // Given a base and suffix path, determine if a file at that location exists, and if it is return success.
-// Since base may contain multiple paths seperated by PATH_SEPARATOR, we must extract each segment and check segment + suffix
+// Since base may contain multiple paths separated by PATH_SEPARATOR, we must extract each segment and check segment + suffix
 // individually
 VkResult check_if_settings_path_exists(const struct loader_instance* inst, const char* base, const char* suffix,
                                        char** settings_file_path) {
