@@ -212,6 +212,10 @@ TEST(BadJsonInput, ClusterFuzzTestCase_6465902356791296) {
     // Causes an integer overflow - instance_enumerate_fuzzer: Integer-overflow in parse_value
     execute_instance_enumerate_fuzzer("clusterfuzz-testcase-minimized-instance_enumerate_fuzzer-6465902356791296");
 }
+TEST(BadJsonInput, ClusterFuzzTestCase_6740380288876544) {
+    // Does crash with ASAN
+    execute_instance_enumerate_fuzzer("clusterfuzz-testcase-minimized-instance_enumerate_fuzzer-6740380288876544");
+}
 TEST(BadJsonInput, ClusterFuzzTestCase_4512865114259456) {
     // Does crash with UBSAN and ASAN
     // malloc(): invalid size (unsorted)
