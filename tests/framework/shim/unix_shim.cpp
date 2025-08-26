@@ -27,6 +27,8 @@
 
 #include "shim.h"
 
+#include <cstring>
+
 #include <algorithm>
 #include <iostream>
 
@@ -266,17 +268,32 @@ FRAMEWORK_EXPORT FILE* FOPEN_FUNC_NAME(const char* in_filename, const char* mode
     if (platform_shim.is_during_destruction || !platform_shim.is_finished_setup) {
         return real_fopen(in_filename, mode);
     }
-
+    FILE* out_file = nullptr;
     std::filesystem::path path{in_filename};
     if (!path.has_parent_path()) {
-        return real_fopen(in_filename, mode);
+        out_file = real_fopen(in_filename, mode);
     } else if (auto real_path = platform_shim.file_system_manager->get_real_path_of_redirected_path(path.parent_path());
                !real_path.empty()) {
         real_path /= path.filename();
-        return real_fopen(real_path.c_str(), mode);
+        out_file = real_fopen(real_path.c_str(), mode);
     } else {
-        return real_fopen(in_filename, mode);
+        out_file = real_fopen(in_filename, mode);
     }
+
+    // Fuzz tests have sub files embedded in the input data file. This
+    if (!platform_shim.fuzz_data.empty() && out_file == NULL) {
+        fprintf(stderr, "create_callback_file: Creating file %s\n", in_filename);
+        FILE* fp = fopen(in_filename, "wb");
+        if (nullptr == fp) {
+            abort();
+        }
+        fwrite(platform_shim.fuzz_data.data(), platform_shim.fuzz_data.size(), 1, fp);
+        fclose(fp);
+        platform_shim.temp_fuzz_files.emplace_back(in_filename);
+
+        out_file = fopen(in_filename, "rb");
+    }
+    return out_file;
 }
 
 FRAMEWORK_EXPORT void* DLOPEN_FUNC_NAME(const char* in_filename, int flags) {
