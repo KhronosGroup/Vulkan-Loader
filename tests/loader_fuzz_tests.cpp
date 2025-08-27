@@ -40,7 +40,7 @@ void execute_instance_enumerate_fuzzer(std::filesystem::path const& filename) {
     env.write_file_from_source((std::filesystem::path(CLUSTERFUZZ_TESTCASE_DIRECTORY) / filename).string().c_str(),
                                ManifestCategory::settings, ManifestLocation::settings_location, "vk_loader_settings.json");
 
-    uint32_t pPropertyCount;
+    uint32_t pPropertyCount = 1;
     VkExtensionProperties pProperties = {0};
 
     env.vulkan_functions.vkEnumerateInstanceExtensionProperties("test_auto", &pPropertyCount, &pProperties);
