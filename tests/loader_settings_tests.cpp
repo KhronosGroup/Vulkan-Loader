@@ -1001,6 +1001,55 @@ TEST(SettingsFile, MetaLayerAlsoActivates) {
     }
 }
 
+TEST(SettingsFile, DuplicateMetaLayers) {
+    FrameworkEnvironment env{};
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2)).add_physical_device({});
+
+    const char* explicit_layer_name = "VK_LAYER_Regular_TestLayer";
+    env.add_explicit_layer(
+        ManifestLayer{}.add_layer(
+            ManifestLayer::LayerDescription{}.set_name(explicit_layer_name).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)),
+        "explicit_test_layer.json");
+    // Add an implicit layer and a meta layer that share a name
+    const char* meta_layer_name = "VK_LAYER_meta_layer";
+    env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                         .set_name(meta_layer_name)
+                                                         .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                         .set_disable_environment("NotGonnaWork")),
+                           "implicit_layer.json");
+    env.add_implicit_layer(
+        ManifestLayer{}.set_file_format_version({1, 1, 2}).add_layer(ManifestLayer::LayerDescription{}
+                                                                         .set_name(meta_layer_name)
+                                                                         .add_component_layer(explicit_layer_name)
+                                                                         .set_disable_environment("NotGonnaWork")),
+        "meta_test_layer.json");
+
+    env.update_loader_settings(env.loader_settings.set_file_format_version({1, 0, 0}).add_app_specific_setting(
+        AppSpecificSettings{}
+            .add_stderr_log_filter("all")
+            .add_layer_configuration(LoaderSettingsLayerConfiguration{}
+                                         .set_name(explicit_layer_name)
+                                         .set_path(env.get_shimmed_layer_manifest_path(0))
+                                         .set_control("auto")
+                                         .set_treat_as_implicit_manifest(false))
+            .add_layer_configuration(LoaderSettingsLayerConfiguration{}.set_control("unordered_layer_location"))
+            .add_layer_configuration(
+                LoaderSettingsLayerConfiguration{}
+                    .set_name(meta_layer_name)
+                    .set_path(env.get_folder(ManifestLocation::implicit_layer).location() / "meta_test_layer.json")
+                    .set_control("auto")
+                    .set_treat_as_implicit_manifest(true))
+            .add_layer_configuration(LoaderSettingsLayerConfiguration{}
+                                         .set_name(meta_layer_name)
+                                         .set_path(env.get_shimmed_layer_manifest_path(1))
+                                         .set_control("auto")
+                                         .set_treat_as_implicit_manifest(true))
+
+            ));
+    InstWrapper inst{env.vulkan_functions};
+    inst.CheckCreate();
+}
+
 // Layers are correctly ordered by settings file.
 TEST(SettingsFile, LayerOrdering) {
     FrameworkEnvironment env{};
