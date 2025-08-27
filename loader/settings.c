@@ -763,14 +763,14 @@ VkResult get_loader_settings(const struct loader_instance* inst, loader_settings
         cJSON_ArrayForEach(log_element, logs_to_use) {
             // bool is_valid = true;
             struct loader_string_list log_destinations = {0};
-            res = loader_parse_json_array_of_strings(inst, log_element, "destinations", &log_destinations);
-            if (res != VK_SUCCESS) {
+            VkResult parse_dest_res = loader_parse_json_array_of_strings(inst, log_element, "destinations", &log_destinations);
+            if (parse_dest_res != VK_SUCCESS) {
                 // is_valid = false;
             }
             free_string_list(inst, &log_destinations);
             struct loader_string_list log_filters = {0};
-            res = loader_parse_json_array_of_strings(inst, log_element, "filters", &log_filters);
-            if (res != VK_SUCCESS) {
+            VkResult parse_filters_res = loader_parse_json_array_of_strings(inst, log_element, "filters", &log_filters);
+            if (parse_filters_res != VK_SUCCESS) {
                 // is_valid = false;
             }
             free_string_list(inst, &log_filters);
