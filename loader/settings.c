@@ -973,6 +973,7 @@ TEST_FUNCTION_EXPORT VkResult get_settings_layers(const struct loader_instance* 
             if (0 ==
                 strncmp(settings_layers->list[j].info.layerName, newly_added_layer->info.layerName, VK_MAX_EXTENSION_NAME_SIZE)) {
                 if (0 == (newly_added_layer->type_flags & VK_LAYER_TYPE_FLAG_META_LAYER) &&
+                    settings_layers->list[j].lib_name != NULL && newly_added_layer->lib_name != NULL &&
                     strcmp(settings_layers->list[j].lib_name, newly_added_layer->lib_name) == 0) {
                     should_remove = true;
                     break;
