@@ -748,8 +748,10 @@ VkResult get_loader_settings(const struct loader_instance* inst, loader_settings
     cJSON* stderr_filter = loader_cJSON_GetObjectItem(settings_to_use, "stderr_log");
     if (NULL != stderr_filter) {
         struct loader_string_list stderr_log = {0};
-        res = loader_parse_json_array_of_strings(inst, settings_to_use, "stderr_log", &stderr_log);
-        if (VK_ERROR_OUT_OF_HOST_MEMORY == res) {
+        VkResult stderr_log_result = VK_SUCCESS;
+        stderr_log_result = loader_parse_json_array_of_strings(inst, settings_to_use, "stderr_log", &stderr_log);
+        if (VK_ERROR_OUT_OF_HOST_MEMORY == stderr_log_result) {
+            res = VK_ERROR_OUT_OF_HOST_MEMORY;
             goto out;
         }
         loader_settings->debug_level = parse_log_filters_from_strings(&stderr_log);

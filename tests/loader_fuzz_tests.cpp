@@ -287,3 +287,6 @@ TEST(BadJsonInput, ClusterFuzzTestCase_5123849246867456) {
     // Causes a leak - settings_fuzzer: Direct-leak in loader_append_layer_property
     execute_setting_fuzzer("clusterfuzz-testcase-minimized-settings_fuzzer-5123849246867456");
 }
+TEST(BadJsonInput, ClusterFuzzTestCase_4626669072875520) {
+    execute_setting_fuzzer("clusterfuzz-testcase-minimized-settings_fuzzer-4626669072875520");
+}
