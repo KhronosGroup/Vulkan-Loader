@@ -187,20 +187,18 @@ FileSystemManager::FileSystemManager()
 fs::Folder& FileSystemManager::get_folder(ManifestLocation location) noexcept { return folders.at(location); }
 fs::Folder const& FileSystemManager::get_folder(ManifestLocation location) const noexcept { return folders.at(location); }
 
-Folder* FileSystemManager::get_folder_for_given_path(std::filesystem::path const& given_path) noexcept {
-    auto normalized_path = given_path.lexically_normal();
+Folder* FileSystemManager::get_folder_for_given_path(std::string_view given_path) noexcept {
     for (auto const& [manifest_location, folder] : folders) {
-        if (folder.location() == normalized_path) {
+        if (folder.location() == given_path) {
             return &folders.at(manifest_location);
         }
     }
-    if (redirected_paths.count(given_path.string()) > 0) {
-        return &folders.at(redirected_paths.at(normalized_path.string()));
-    }
-    for (auto const& [redirected_path_str, redirected_location] : redirected_paths) {
-        std::filesystem::path redirected_path = redirected_path_str;
+    for (auto const& [redirected_path, redirected_location] : redirected_paths) {
+        if (redirected_path == given_path) {
+            return &folders.at(redirected_location);
+        }
         const auto mismatch_pair =
-            std::mismatch(normalized_path.begin(), normalized_path.end(), redirected_path.begin(), redirected_path.end());
+            std::mismatch(given_path.begin(), given_path.end(), redirected_path.begin(), redirected_path.end());
         if (mismatch_pair.second == redirected_path.end()) return &folders.at(redirected_location);
     }
     return nullptr;
