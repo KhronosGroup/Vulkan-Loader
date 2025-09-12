@@ -1723,7 +1723,7 @@ bool should_check(std::vector<const char*>* exts, VkDevice device, const char* e
 }
 
 PFN_vkVoidFunction get_device_func(VkDevice device, const char* pName) {
-    std::vector<const char*>* enabled_extensions;
+    std::vector<const char*>* enabled_extensions = nullptr;
     FindDevice found_device{};
     if (device != nullptr) {
         found_device = lookup_device(device);
