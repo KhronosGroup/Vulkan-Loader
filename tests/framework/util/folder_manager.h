@@ -28,6 +28,7 @@
 
 #include <filesystem>
 #include <string>
+#include <string_view>
 #include <unordered_map>
 #include <vector>
 
@@ -87,7 +88,7 @@ class FileSystemManager {
     Folder const& get_folder(ManifestLocation location) const noexcept;
 
     // Gets a pointer to the folder that given_path points to. This includes redirected paths as well as the exact path of folders
-    Folder* get_folder_for_given_path(std::filesystem::path const& given_path) noexcept;
+    Folder* get_folder_for_given_path(std::string_view given_path) noexcept;
 
     bool is_folder_path(std::filesystem::path const& path) const noexcept;
 
