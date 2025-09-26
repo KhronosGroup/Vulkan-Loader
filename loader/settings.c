@@ -297,44 +297,70 @@ out:
     return res;
 }
 
-VkResult parse_device_configuration(const struct loader_instance* inst, cJSON* device_configuration_json,
-                                    loader_settings_device_configuration* device_configuration) {
-    (void)inst;
-    VkResult res = VK_SUCCESS;
-    cJSON* deviceUUID_array = loader_cJSON_GetObjectItem(device_configuration_json, "deviceUUID");
-    if (NULL == deviceUUID_array) {
-        res = VK_ERROR_INITIALIZATION_FAILED;
-        goto out;
+VkResult parse_uuid_array(cJSON* device_configuration_json, const char* uuid_name, uint8_t uuid[16]) {
+    cJSON* uuid_array = loader_cJSON_GetObjectItem(device_configuration_json, uuid_name);
+    if (NULL == uuid_array) {
+        return VK_ERROR_INITIALIZATION_FAILED;
     }
 
-    if (deviceUUID_array->type != cJSON_Array) {
-        res = VK_ERROR_INITIALIZATION_FAILED;
-        goto out;
+    if (uuid_array->type != cJSON_Array) {
+        return VK_ERROR_INITIALIZATION_FAILED;
     }
-    if (VK_UUID_SIZE != loader_cJSON_GetArraySize(deviceUUID_array)) {
-        res = VK_ERROR_INITIALIZATION_FAILED;
-        goto out;
+    if (VK_UUID_SIZE != loader_cJSON_GetArraySize(uuid_array)) {
+        return VK_ERROR_INITIALIZATION_FAILED;
     }
 
     cJSON* uuid_field = NULL;
     size_t i = 0;
-    cJSON_ArrayForEach(uuid_field, deviceUUID_array) {
+    cJSON_ArrayForEach(uuid_field, uuid_array) {
+        if (i >= VK_UUID_SIZE) {
+            break;
+        }
         if (uuid_field->type != cJSON_Number) {
-            res = VK_ERROR_INITIALIZATION_FAILED;
-            goto out;
+            return VK_ERROR_INITIALIZATION_FAILED;
         }
         if (uuid_field->valueint < 0 || uuid_field->valueint > 255) {
-            res = VK_ERROR_INITIALIZATION_FAILED;
-            goto out;
+            return VK_ERROR_INITIALIZATION_FAILED;
         }
-        device_configuration->deviceUUID[i] = (uint8_t)uuid_field->valueint;
+
+        uuid[i] = (uint8_t)uuid_field->valueint;
         i++;
     }
+    return VK_SUCCESS;
+}
+
+VkResult parse_device_configuration(const struct loader_instance* inst, cJSON* device_configuration_json,
+                                    loader_settings_device_configuration* device_configuration) {
+    (void)inst;
+    VkResult res = VK_SUCCESS;
+
+    res = parse_uuid_array(device_configuration_json, "deviceUUID", device_configuration->deviceUUID);
+    if (VK_SUCCESS != res) {
+        goto out;
+    }
+
+    res = parse_uuid_array(device_configuration_json, "driverUUID", device_configuration->driverUUID);
+    if (VK_SUCCESS != res) {
+        goto out;
+    }
+
+    cJSON* driverVersion_json = loader_cJSON_GetObjectItem(device_configuration_json, "driverVersion");
+    if (NULL == driverVersion_json || driverVersion_json->type != cJSON_Number) {
+        return VK_ERROR_INITIALIZATION_FAILED;
+    }
+    device_configuration->driverVersion = driverVersion_json->valueint;
 
     VkResult deviceNameRes = loader_parse_json_string_to_existing_str(
         device_configuration_json, "deviceName", VK_MAX_PHYSICAL_DEVICE_NAME_SIZE, device_configuration->deviceName);
     if (VK_ERROR_OUT_OF_HOST_MEMORY == deviceNameRes) {
         res = deviceNameRes;
+        goto out;
+    }
+
+    VkResult driverNameRes = loader_parse_json_string_to_existing_str(
+        device_configuration_json, "driverName", VK_MAX_PHYSICAL_DEVICE_NAME_SIZE, device_configuration->driverName);
+    if (VK_ERROR_OUT_OF_HOST_MEMORY == driverNameRes) {
+        res = driverNameRes;
         goto out;
     }
 out:
@@ -542,6 +568,10 @@ bool check_if_device_configurations_are_equal(loader_settings_device_configurati
     for (uint32_t i = 0; i < VK_UUID_SIZE; i++) {
         if (a->deviceUUID[i] != b->deviceUUID[i]) return false;
     }
+    for (uint32_t i = 0; i < VK_UUID_SIZE; i++) {
+        if (a->driverUUID[i] != b->driverUUID[i]) return false;
+    }
+    if (a->driverVersion != b->driverVersion) return false;
     return true;
 }
 
@@ -613,12 +643,18 @@ void log_settings(const struct loader_instance* inst, loader_settings* settings)
         loader_log(inst, VULKAN_LOADER_DEBUG_BIT, 0, "Device Configurations count = %d", settings->device_configuration_count);
         for (uint32_t i = 0; i < settings->device_configuration_count; i++) {
             loader_log(inst, VULKAN_LOADER_DEBUG_BIT, 0, "---- Device Configuration [%d] ----", i);
-            uint8_t* id = settings->device_configurations[i].deviceUUID;
-            loader_log(inst, VULKAN_LOADER_DEBUG_BIT, 0,
-                       "deviceUUID: %02x%02x%02x%02x-%02x%02x-%02x%02x-%02x%02x-%02x%02x%02x%02x%02x%02x", id[0], id[1], id[2],
-                       id[3], id[4], id[5], id[6], id[7], id[8], id[9], id[10], id[11], id[12], id[13], id[14], id[15]);
+            char device_uuid_str[UUID_STR_LEN] = {0};
+            loader_log_generate_uuid_string(settings->device_configurations[i].deviceUUID, device_uuid_str);
+            char driver_uuid_str[UUID_STR_LEN] = {0};
+            loader_log_generate_uuid_string(settings->device_configurations[i].driverUUID, driver_uuid_str);
+            loader_log(inst, VULKAN_LOADER_DEBUG_BIT, 0, "deviceUUID: %s", device_uuid_str);
+            loader_log(inst, VULKAN_LOADER_DEBUG_BIT, 0, "driverUUID: %s", driver_uuid_str);
+            loader_log(inst, VULKAN_LOADER_DEBUG_BIT, 0, "driverVersion: %d", settings->device_configurations[i].driverVersion);
             if ('\0' != settings->device_configurations[i].deviceName[0]) {
                 loader_log(inst, VULKAN_LOADER_DEBUG_BIT, 0, "deviceName: %s", settings->device_configurations[i].deviceName);
+            }
+            if ('\0' != settings->device_configurations[i].driverName[0]) {
+                loader_log(inst, VULKAN_LOADER_DEBUG_BIT, 0, "driverName: %s", settings->device_configurations[i].driverName);
             }
         }
     }

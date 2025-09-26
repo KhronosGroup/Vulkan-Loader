@@ -699,11 +699,21 @@ std::string get_loader_settings_file_contents(const LoaderSettings& loader_setti
                 if (!device.deviceName.empty()) {
                     writer.AddKeyedString("deviceName", device.deviceName);
                 }
+                if (!device.driverName.empty()) {
+                    writer.AddKeyedString("driverName", device.driverName);
+                }
                 writer.StartKeyedArray("deviceUUID");
                 for (const auto& u : device.deviceUUID) {
                     writer.AddInteger(u);
                 }
                 writer.EndArray();
+
+                writer.StartKeyedArray("driverUUID");
+                for (const auto& u : device.driverUUID) {
+                    writer.AddInteger(u);
+                }
+                writer.EndArray();
+                writer.AddKeyedInteger("driverVersion", device.driverVersion);
                 writer.EndObject();
             }
             writer.EndArray();
