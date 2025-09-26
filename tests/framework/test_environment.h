@@ -365,7 +365,10 @@ using VulkanUUID = std::array<uint8_t, VK_UUID_SIZE>;
 
 struct LoaderSettingsDeviceConfiguration {
     BUILDER_VALUE(VulkanUUID, deviceUUID)
+    BUILDER_VALUE(VulkanUUID, driverUUID)
+    BUILDER_VALUE(uint32_t, driverVersion)
     BUILDER_VALUE(std::string, deviceName)
+    BUILDER_VALUE(std::string, driverName)
 };
 
 // Log files and their associated filter

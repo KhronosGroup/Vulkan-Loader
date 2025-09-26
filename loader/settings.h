@@ -67,8 +67,11 @@ typedef struct loader_settings_driver_configuration {
 } loader_settings_driver_configuration;
 
 typedef struct loader_settings_device_configuration {
-    char deviceName[VK_MAX_PHYSICAL_DEVICE_NAME_SIZE];
     uint8_t deviceUUID[VK_UUID_SIZE];
+    uint8_t driverUUID[VK_UUID_SIZE];
+    uint32_t driverVersion;
+    char deviceName[VK_MAX_PHYSICAL_DEVICE_NAME_SIZE];
+    char driverName[VK_MAX_PHYSICAL_DEVICE_NAME_SIZE];
 } loader_settings_device_configuration;
 
 typedef struct loader_settings {

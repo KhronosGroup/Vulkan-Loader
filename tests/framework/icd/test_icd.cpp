@@ -1231,6 +1231,12 @@ VKAPI_ATTR void VKAPI_CALL test_vkGetPhysicalDeviceProperties2(VkPhysicalDevice 
             if (pNext->sType == VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_PROPERTIES) {
                 auto* vulkan_11_props = reinterpret_cast<VkPhysicalDeviceVulkan11Properties*>(pNext);
                 memcpy(vulkan_11_props->deviceUUID, phys_dev.deviceUUID.data(), VK_UUID_SIZE);
+                memcpy(vulkan_11_props->driverUUID, phys_dev.driverUUID.data(), VK_UUID_SIZE);
+            }
+            if (pNext->sType == VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ID_PROPERTIES) {
+                auto* device_id_props = reinterpret_cast<VkPhysicalDeviceIDProperties*>(pNext);
+                memcpy(device_id_props->deviceUUID, phys_dev.deviceUUID.data(), VK_UUID_SIZE);
+                memcpy(device_id_props->driverUUID, phys_dev.driverUUID.data(), VK_UUID_SIZE);
             }
             if (pNext->sType == VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DRIVER_PROPERTIES) {
                 auto* device_driver_props = reinterpret_cast<VkPhysicalDeviceDriverProperties*>(pNext);

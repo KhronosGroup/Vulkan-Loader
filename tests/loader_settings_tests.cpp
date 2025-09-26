@@ -3354,6 +3354,57 @@ TEST(SettingsFile, MissingDriverConfiguration) {
     inst.GetPhysDev(VK_ERROR_INITIALIZATION_FAILED);
 }
 
+TEST(SettingsFile, DeviceConfigurationWithSameDriver) {
+    FrameworkEnvironment env{};
+    VulkanUUID device_uuid = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15};
+    VulkanUUID driver_uuid = {10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25};
+
+    auto& icd0 = env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2)).set_icd_api_version(VK_API_VERSION_1_1);
+    auto& phys_dev_0 = icd0.add_and_get_physical_device(PhysicalDevice()
+                                                            .set_api_version(VK_API_VERSION_1_2)
+                                                            .set_deviceUUID(device_uuid)
+                                                            .set_driverUUID(driver_uuid)
+                                                            .set_deviceName("foobar")
+                                                            .finish());
+    phys_dev_0.properties.driverVersion = 1000;
+    std::string("Fake Driver XYZ").copy(phys_dev_0.driver_properties.driverName, VK_MAX_EXTENSION_NAME_SIZE);
+
+    auto& icd1 = env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2)).set_icd_api_version(VK_API_VERSION_1_1);
+    auto& phys_dev_1 = icd1.add_and_get_physical_device(PhysicalDevice()
+                                                            .set_api_version(VK_API_VERSION_1_2)
+                                                            .set_deviceUUID(device_uuid)
+                                                            .set_driverUUID(driver_uuid)
+                                                            .set_deviceName("foobar")
+                                                            .finish());
+    phys_dev_1.properties.driverVersion = 30;
+    std::string("Fake Driver XYZ, but differently named").copy(phys_dev_1.driver_properties.driverName, VK_MAX_EXTENSION_NAME_SIZE);
+
+    env.loader_settings.set_file_format_version({1, 0, 0}).add_app_specific_setting(AppSpecificSettings{});
+
+    env.loader_settings.app_specific_settings.at(0).device_configurations.clear();
+    env.loader_settings.app_specific_settings.at(0).add_device_configuration(
+        LoaderSettingsDeviceConfiguration{}
+            .set_deviceUUID(device_uuid)
+            .set_driverUUID(driver_uuid)
+            .set_driverVersion(phys_dev_1.properties.driverVersion));
+    env.loader_settings.app_specific_settings.at(0).add_device_configuration(
+        LoaderSettingsDeviceConfiguration{}
+            .set_deviceUUID(device_uuid)
+            .set_driverUUID(driver_uuid)
+            .set_driverVersion(phys_dev_0.properties.driverVersion));
+    env.update_loader_settings(env.loader_settings);
+
+    InstWrapper inst{env.vulkan_functions};
+    inst.CheckCreate();
+    auto phys_devs = inst.GetPhysDevs(2);
+    VkPhysicalDeviceProperties props1{};
+    VkPhysicalDeviceProperties props2{};
+    inst->vkGetPhysicalDeviceProperties(phys_devs.at(0), &props1);
+    inst->vkGetPhysicalDeviceProperties(phys_devs.at(1), &props2);
+    ASSERT_EQ(props1.driverVersion, phys_dev_1.properties.driverVersion);
+    ASSERT_EQ(props2.driverVersion, phys_dev_0.properties.driverVersion);
+}
+
 // Three drivers, second on has the matching UUID in the settings file.
 TEST(SettingsFile, DriverConfigurationIgnoresDriverEnvVars) {
     FrameworkEnvironment env{};
