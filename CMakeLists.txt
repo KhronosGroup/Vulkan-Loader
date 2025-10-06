@@ -52,7 +52,7 @@ if(WIN32)
     set(BUILD_DLL_VERSIONINFO "" CACHE STRING "Set the version to be used in the loader.rc file. Default value is the currently generated header version")
 endif()
 
-find_package(VulkanHeaders ${CMAKE_PROJECT_VERSION} CONFIG QUIET)
+find_package(VulkanHeaders ${PROJECT_VERSION} CONFIG QUIET)
 
 include(GNUInstallDirs)
 
