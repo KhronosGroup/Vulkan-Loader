@@ -68,6 +68,7 @@ endif()
 set(NORMAL_LOADER_SRCS
     allocation.c
     allocation.h
+    asm_offsets.c
     cJSON.c
     cJSON.h
     debug_utils.c
@@ -215,30 +216,12 @@ end
     endif()
 
     if(ASM_COMPILER_WORKS)
-        add_executable(asm_offset asm_offset.c)
-        target_link_libraries(asm_offset PRIVATE loader_specific_options)
-        # If am emulator is provided (Like Wine), or running on native, run asm_offset to generate gen_defines.asm
-        if (CMAKE_CROSSCOMPILING_EMULATOR OR NOT CMAKE_CROSSCOMPILING)
-            add_custom_command(OUTPUT gen_defines.asm DEPENDS asm_offset COMMAND asm_offset ${LOADER_ASM_DIALECT})
-        else()
-            # Forces compiler to write the intermediate asm file, needed so that we can get sizeof/offset of info out of it.
-            target_compile_options(asm_offset PRIVATE "/Fa$<TARGET_FILE_DIR:asm_offset>/asm_offset.asm" /FA)
-            # Force off optimization so that the output assembly includes all the necessary info - optimizer would get rid of it otherwise.
-            target_compile_options(asm_offset PRIVATE /Od)
-
-            find_package(Python3 REQUIRED QUIET)
-            # Run parse_asm_values.py on asm_offset's assembly file to generate the gen_defines.asm, which the asm code depends on
-            add_custom_command(TARGET asm_offset POST_BUILD
-                COMMAND Python3::Interpreter ${PROJECT_SOURCE_DIR}/scripts/parse_asm_values.py "${CMAKE_CURRENT_BINARY_DIR}/gen_defines.asm"
-                    "$<TARGET_FILE_DIR:asm_offset>/asm_offset.asm" "${LOADER_ASM_DIALECT}" "${CMAKE_C_COMPILER_ID}" "${SYSTEM_PROCESSOR}"
-                BYPRODUCTS gen_defines.asm
-            )
-        endif()
-        add_custom_target(loader_asm_gen_files DEPENDS gen_defines.asm)
-        set_target_properties(loader_asm_gen_files PROPERTIES FOLDER ${LOADER_HELPER_FOLDER})
-
         if(SYSTEM_PROCESSOR MATCHES "arm")
-            list(APPEND OPT_LOADER_SRCS unknown_ext_chain_marmasm.asm)
+            if(SYSTEM_PROCESSOR MATCHES "aarch64|arm64")
+                list(APPEND OPT_LOADER_SRCS unknown_ext_chain_marmasm64.asm)
+            else()
+                list(APPEND OPT_LOADER_SRCS unknown_ext_chain_marmasm32.asm)
+            endif()
         else()
             list(APPEND OPT_LOADER_SRCS unknown_ext_chain_masm.asm)
         endif()
@@ -296,67 +279,14 @@ elseif(UNIX OR MINGW OR (WIN32 AND USE_GAS)) # i.e.: Linux & Apple & MinGW & Win
         endif()
     endif()
 
-    # When compiling for x86 on x64, we can't use CMAKE_SYSTEM_PROCESSOR to determine which architecture to use,
-    # Instead, check the size of void* and if its 4, set ASM_OFFSET_SYSTEM_PROCESSOR to x86 if we aren't on arm
-    if("${CMAKE_SIZEOF_VOID_P}" EQUAL "8")
-        set(ASM_OFFSET_SYSTEM_PROCESSOR ${SYSTEM_PROCESSOR}) # x86_64 or aarch64/arm64
-        string(REPLACE amd64 x86_64 ASM_OFFSET_SYSTEM_PROCESSOR "${ASM_OFFSET_SYSTEM_PROCESSOR}")
-    else()
-        if(${SYSTEM_PROCESSOR} MATCHES "86")
-            set(ASM_OFFSET_SYSTEM_PROCESSOR "x86")
-        else()
-            set(ASM_OFFSET_SYSTEM_PROCESSOR ${SYSTEM_PROCESSOR})
-        endif()
-    endif()
-
     if(ASSEMBLER_WORKS)
-        add_executable(asm_offset asm_offset.c)
-        target_link_libraries(asm_offset loader_specific_options)
-        # If not cross compiling, run asm_offset to generate gen_defines.asm
-        if (NOT CMAKE_CROSSCOMPILING)
-            add_custom_command(OUTPUT gen_defines.asm DEPENDS asm_offset COMMAND asm_offset GAS)
-        else()
-            # Forces compiler to write the intermediate asm file, needed so that we can get sizeof/offset of info out of it.
-            # If with lto, compiler will output IR instead of asm, so we need to explicitly disable lto here.
-            if(CMAKE_C_COMPILER_ID STREQUAL "GNU")
-                target_compile_options(asm_offset PRIVATE -save-temps=obj -fno-lto)
-            elseif(CMAKE_C_COMPILER_ID STREQUAL "Clang" OR CMAKE_C_COMPILER_ID STREQUAL "AppleClang")
-                target_compile_options(asm_offset PRIVATE -save-temps=obj -fno-lto -fno-whole-program-vtables -fno-virtual-function-elimination)
-            else()
-                target_compile_options(asm_offset PRIVATE -save-temps=obj)
-            endif()
-            if(CMAKE_C_COMPILER_ID STREQUAL "GNU")
-                set(ASM_OFFSET_EXECUTABLE_LOCATION "$<TARGET_FILE_DIR:asm_offset>/gen_defines.asm")
-                set(ASM_OFFSET_INTERMEDIATE_LOCATION "$<TARGET_FILE_DIR:asm_offset>/CMakeFiles/asm_offset.dir/asm_offset.c.s")
-            elseif(CMAKE_C_COMPILER_ID STREQUAL "Clang")
-                set(ASM_OFFSET_EXECUTABLE_LOCATION "$<TARGET_FILE_DIR:asm_offset>/gen_defines.asm")
-                set(ASM_OFFSET_INTERMEDIATE_LOCATION "$<TARGET_FILE_DIR:asm_offset>/CMakeFiles/asm_offset.dir/asm_offset.s")
-            elseif(CMAKE_C_COMPILER_ID STREQUAL "AppleClang")
-            # Need to use the current binary dir since the asm_offset.s file is in that folder rather than the bundle
-                set(ASM_OFFSET_EXECUTABLE_LOCATION "${CMAKE_CURRENT_BINARY_DIR}/gen_defines.asm")
-                set(ASM_OFFSET_INTERMEDIATE_LOCATION "${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/asm_offset.dir/asm_offset.s")
-            else()
-                message(FATAL_ERROR "C_COMPILER_ID not supported!")
-            endif()
-            message(STATUS "CMAKE_CROSSCOMPILING FALSE")
-
-            find_package(Python3 REQUIRED QUIET)
-            # Run parse_asm_values.py on asm_offset's assembly file to generate the gen_defines.asm, which the asm code depends on
-            add_custom_command(TARGET asm_offset POST_BUILD
-                COMMAND Python3::Interpreter ${PROJECT_SOURCE_DIR}/scripts/parse_asm_values.py "${ASM_OFFSET_EXECUTABLE_LOCATION}"
-                    "${ASM_OFFSET_INTERMEDIATE_LOCATION}" "GAS" "${CMAKE_C_COMPILER_ID}" "${ASM_OFFSET_SYSTEM_PROCESSOR}"
-                BYPRODUCTS gen_defines.asm
-            )
-        endif()
-        add_custom_target(loader_asm_gen_files DEPENDS gen_defines.asm)
-
         if (APPLE)
             set(MODIFY_UNKNOWN_FUNCTION_DECLS ON)
         endif()
         set(UNKNOWN_FUNCTIONS_SUPPORTED ON)
     else()
         if(USE_GAS)
-            message(WARNING "Could not find working ${ASM_OFFSET_SYSTEM_PROCESSOR} GAS assembler\n${ASM_FAILURE_MSG}")
+            message(WARNING "Could not find working ${SYSTEM_PROCESSOR} GAS assembler\n${ASM_FAILURE_MSG}")
         else()
             message(WARNING "Assembly sources have been disabled\n${ASM_FAILURE_MSG}")
         endif()
@@ -455,10 +385,6 @@ else()
         add_library(vulkan-framework SHARED)
         target_sources(vulkan-framework PRIVATE ${NORMAL_LOADER_SRCS} ${FRAMEWORK_HEADERS})
 
-        if (UNKNOWN_FUNCTIONS_SUPPORTED)
-            add_dependencies(vulkan-framework loader_asm_gen_files)
-        endif()
-
         target_link_libraries(vulkan-framework ${CMAKE_DL_LIBS} Threads::Threads -lm "-framework CoreFoundation")
         target_link_libraries(vulkan-framework loader_specific_options)
 
@@ -514,7 +440,6 @@ add_library(Vulkan::Loader ALIAS vulkan)
 
 if (UNKNOWN_FUNCTIONS_SUPPORTED)
     target_compile_definitions(vulkan PRIVATE UNKNOWN_FUNCTIONS_SUPPORTED)
-    add_dependencies(vulkan loader_asm_gen_files)
 endif()
 
 if (BUILD_TESTS)
