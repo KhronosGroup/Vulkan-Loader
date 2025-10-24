@@ -49,23 +49,23 @@ typedef enum VulkanObjectType {
     kVulkanObjectTypeCommandBuffer = 8,
     kVulkanObjectTypeFence = 9,
     kVulkanObjectTypeDeviceMemory = 10,
-    kVulkanObjectTypeEvent = 11,
-    kVulkanObjectTypeQueryPool = 12,
-    kVulkanObjectTypeBufferView = 13,
-    kVulkanObjectTypeImageView = 14,
-    kVulkanObjectTypeShaderModule = 15,
-    kVulkanObjectTypePipelineCache = 16,
-    kVulkanObjectTypePipelineLayout = 17,
-    kVulkanObjectTypePipeline = 18,
-    kVulkanObjectTypeRenderPass = 19,
-    kVulkanObjectTypeDescriptorSetLayout = 20,
-    kVulkanObjectTypeSampler = 21,
-    kVulkanObjectTypeDescriptorSet = 22,
-    kVulkanObjectTypeDescriptorPool = 23,
-    kVulkanObjectTypeFramebuffer = 24,
-    kVulkanObjectTypeCommandPool = 25,
-    kVulkanObjectTypeSamplerYcbcrConversion = 26,
-    kVulkanObjectTypeDescriptorUpdateTemplate = 27,
+    kVulkanObjectTypeQueryPool = 11,
+    kVulkanObjectTypeImageView = 12,
+    kVulkanObjectTypeCommandPool = 13,
+    kVulkanObjectTypeRenderPass = 14,
+    kVulkanObjectTypeFramebuffer = 15,
+    kVulkanObjectTypeEvent = 16,
+    kVulkanObjectTypeBufferView = 17,
+    kVulkanObjectTypeShaderModule = 18,
+    kVulkanObjectTypePipelineCache = 19,
+    kVulkanObjectTypePipelineLayout = 20,
+    kVulkanObjectTypePipeline = 21,
+    kVulkanObjectTypeDescriptorSetLayout = 22,
+    kVulkanObjectTypeSampler = 23,
+    kVulkanObjectTypeDescriptorSet = 24,
+    kVulkanObjectTypeDescriptorPool = 25,
+    kVulkanObjectTypeDescriptorUpdateTemplate = 26,
+    kVulkanObjectTypeSamplerYcbcrConversion = 27,
     kVulkanObjectTypePrivateDataSlot = 28,
     kVulkanObjectTypeSurfaceKHR = 29,
     kVulkanObjectTypeSwapchainKHR = 30,
@@ -98,8 +98,8 @@ typedef enum VulkanObjectType {
     kVulkanObjectTypeIndirectCommandsLayoutEXT = 57,
     kVulkanObjectTypeMax = 58,
     // Aliases for backwards compatibility of "promoted" types
-    kVulkanObjectTypeSamplerYcbcrConversionKHR = kVulkanObjectTypeSamplerYcbcrConversion,
     kVulkanObjectTypeDescriptorUpdateTemplateKHR = kVulkanObjectTypeDescriptorUpdateTemplate,
+    kVulkanObjectTypeSamplerYcbcrConversionKHR = kVulkanObjectTypeSamplerYcbcrConversion,
     kVulkanObjectTypePrivateDataSlotEXT = kVulkanObjectTypePrivateDataSlot,
 } VulkanObjectType;
 
@@ -116,23 +116,23 @@ static const char * const object_string[kVulkanObjectTypeMax] = {
     "CommandBuffer",
     "Fence",
     "DeviceMemory",
-    "Event",
     "QueryPool",
-    "BufferView",
     "ImageView",
+    "CommandPool",
+    "RenderPass",
+    "Framebuffer",
+    "Event",
+    "BufferView",
     "ShaderModule",
     "PipelineCache",
     "PipelineLayout",
     "Pipeline",
-    "RenderPass",
     "DescriptorSetLayout",
     "Sampler",
     "DescriptorSet",
     "DescriptorPool",
-    "Framebuffer",
-    "CommandPool",
-    "SamplerYcbcrConversion",
     "DescriptorUpdateTemplate",
+    "SamplerYcbcrConversion",
     "PrivateDataSlot",
     "SurfaceKHR",
     "SwapchainKHR",
@@ -178,23 +178,23 @@ const VkDebugReportObjectTypeEXT get_debug_report_enum[] = {
     VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,   // kVulkanObjectTypeCommandBuffer
     VK_DEBUG_REPORT_OBJECT_TYPE_FENCE_EXT,   // kVulkanObjectTypeFence
     VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_MEMORY_EXT,   // kVulkanObjectTypeDeviceMemory
-    VK_DEBUG_REPORT_OBJECT_TYPE_EVENT_EXT,   // kVulkanObjectTypeEvent
     VK_DEBUG_REPORT_OBJECT_TYPE_QUERY_POOL_EXT,   // kVulkanObjectTypeQueryPool
-    VK_DEBUG_REPORT_OBJECT_TYPE_BUFFER_VIEW_EXT,   // kVulkanObjectTypeBufferView
     VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_VIEW_EXT,   // kVulkanObjectTypeImageView
+    VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_POOL_EXT,   // kVulkanObjectTypeCommandPool
+    VK_DEBUG_REPORT_OBJECT_TYPE_RENDER_PASS_EXT,   // kVulkanObjectTypeRenderPass
+    VK_DEBUG_REPORT_OBJECT_TYPE_FRAMEBUFFER_EXT,   // kVulkanObjectTypeFramebuffer
+    VK_DEBUG_REPORT_OBJECT_TYPE_EVENT_EXT,   // kVulkanObjectTypeEvent
+    VK_DEBUG_REPORT_OBJECT_TYPE_BUFFER_VIEW_EXT,   // kVulkanObjectTypeBufferView
     VK_DEBUG_REPORT_OBJECT_TYPE_SHADER_MODULE_EXT,   // kVulkanObjectTypeShaderModule
     VK_DEBUG_REPORT_OBJECT_TYPE_PIPELINE_CACHE_EXT,   // kVulkanObjectTypePipelineCache
     VK_DEBUG_REPORT_OBJECT_TYPE_PIPELINE_LAYOUT_EXT,   // kVulkanObjectTypePipelineLayout
     VK_DEBUG_REPORT_OBJECT_TYPE_PIPELINE_EXT,   // kVulkanObjectTypePipeline
-    VK_DEBUG_REPORT_OBJECT_TYPE_RENDER_PASS_EXT,   // kVulkanObjectTypeRenderPass
     VK_DEBUG_REPORT_OBJECT_TYPE_DESCRIPTOR_SET_LAYOUT_EXT,   // kVulkanObjectTypeDescriptorSetLayout
     VK_DEBUG_REPORT_OBJECT_TYPE_SAMPLER_EXT,   // kVulkanObjectTypeSampler
     VK_DEBUG_REPORT_OBJECT_TYPE_DESCRIPTOR_SET_EXT,   // kVulkanObjectTypeDescriptorSet
     VK_DEBUG_REPORT_OBJECT_TYPE_DESCRIPTOR_POOL_EXT,   // kVulkanObjectTypeDescriptorPool
-    VK_DEBUG_REPORT_OBJECT_TYPE_FRAMEBUFFER_EXT,   // kVulkanObjectTypeFramebuffer
-    VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_POOL_EXT,   // kVulkanObjectTypeCommandPool
-    VK_DEBUG_REPORT_OBJECT_TYPE_SAMPLER_YCBCR_CONVERSION_EXT,   // kVulkanObjectTypeSamplerYcbcrConversion
     VK_DEBUG_REPORT_OBJECT_TYPE_DESCRIPTOR_UPDATE_TEMPLATE_EXT,   // kVulkanObjectTypeDescriptorUpdateTemplate
+    VK_DEBUG_REPORT_OBJECT_TYPE_SAMPLER_YCBCR_CONVERSION_EXT,   // kVulkanObjectTypeSamplerYcbcrConversion
     VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT,   // kVulkanObjectTypePrivateDataSlot
     VK_DEBUG_REPORT_OBJECT_TYPE_SURFACE_KHR_EXT,   // kVulkanObjectTypeSurfaceKHR
     VK_DEBUG_REPORT_OBJECT_TYPE_SWAPCHAIN_KHR_EXT,   // kVulkanObjectTypeSwapchainKHR
@@ -240,23 +240,23 @@ const VkObjectType get_object_type_enum[] = {
     VK_OBJECT_TYPE_COMMAND_BUFFER,   // kVulkanObjectTypeCommandBuffer
     VK_OBJECT_TYPE_FENCE,   // kVulkanObjectTypeFence
     VK_OBJECT_TYPE_DEVICE_MEMORY,   // kVulkanObjectTypeDeviceMemory
-    VK_OBJECT_TYPE_EVENT,   // kVulkanObjectTypeEvent
     VK_OBJECT_TYPE_QUERY_POOL,   // kVulkanObjectTypeQueryPool
-    VK_OBJECT_TYPE_BUFFER_VIEW,   // kVulkanObjectTypeBufferView
     VK_OBJECT_TYPE_IMAGE_VIEW,   // kVulkanObjectTypeImageView
+    VK_OBJECT_TYPE_COMMAND_POOL,   // kVulkanObjectTypeCommandPool
+    VK_OBJECT_TYPE_RENDER_PASS,   // kVulkanObjectTypeRenderPass
+    VK_OBJECT_TYPE_FRAMEBUFFER,   // kVulkanObjectTypeFramebuffer
+    VK_OBJECT_TYPE_EVENT,   // kVulkanObjectTypeEvent
+    VK_OBJECT_TYPE_BUFFER_VIEW,   // kVulkanObjectTypeBufferView
     VK_OBJECT_TYPE_SHADER_MODULE,   // kVulkanObjectTypeShaderModule
     VK_OBJECT_TYPE_PIPELINE_CACHE,   // kVulkanObjectTypePipelineCache
     VK_OBJECT_TYPE_PIPELINE_LAYOUT,   // kVulkanObjectTypePipelineLayout
     VK_OBJECT_TYPE_PIPELINE,   // kVulkanObjectTypePipeline
-    VK_OBJECT_TYPE_RENDER_PASS,   // kVulkanObjectTypeRenderPass
     VK_OBJECT_TYPE_DESCRIPTOR_SET_LAYOUT,   // kVulkanObjectTypeDescriptorSetLayout
     VK_OBJECT_TYPE_SAMPLER,   // kVulkanObjectTypeSampler
     VK_OBJECT_TYPE_DESCRIPTOR_SET,   // kVulkanObjectTypeDescriptorSet
     VK_OBJECT_TYPE_DESCRIPTOR_POOL,   // kVulkanObjectTypeDescriptorPool
-    VK_OBJECT_TYPE_FRAMEBUFFER,   // kVulkanObjectTypeFramebuffer
-    VK_OBJECT_TYPE_COMMAND_POOL,   // kVulkanObjectTypeCommandPool
-    VK_OBJECT_TYPE_SAMPLER_YCBCR_CONVERSION,   // kVulkanObjectTypeSamplerYcbcrConversion
     VK_OBJECT_TYPE_DESCRIPTOR_UPDATE_TEMPLATE,   // kVulkanObjectTypeDescriptorUpdateTemplate
+    VK_OBJECT_TYPE_SAMPLER_YCBCR_CONVERSION,   // kVulkanObjectTypeSamplerYcbcrConversion
     VK_OBJECT_TYPE_PRIVATE_DATA_SLOT,   // kVulkanObjectTypePrivateDataSlot
     VK_OBJECT_TYPE_SURFACE_KHR,   // kVulkanObjectTypeSurfaceKHR
     VK_OBJECT_TYPE_SWAPCHAIN_KHR,   // kVulkanObjectTypeSwapchainKHR
@@ -345,10 +345,10 @@ static inline VkObjectType convertDebugReportObjectToCoreObject(VkDebugReportObj
         return VK_OBJECT_TYPE_FRAMEBUFFER;
     } else if (debug_report_obj == VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_POOL_EXT) {
         return VK_OBJECT_TYPE_COMMAND_POOL;
-    } else if (debug_report_obj == VK_DEBUG_REPORT_OBJECT_TYPE_SAMPLER_YCBCR_CONVERSION_EXT) {
-        return VK_OBJECT_TYPE_SAMPLER_YCBCR_CONVERSION;
     } else if (debug_report_obj == VK_DEBUG_REPORT_OBJECT_TYPE_DESCRIPTOR_UPDATE_TEMPLATE_EXT) {
         return VK_OBJECT_TYPE_DESCRIPTOR_UPDATE_TEMPLATE;
+    } else if (debug_report_obj == VK_DEBUG_REPORT_OBJECT_TYPE_SAMPLER_YCBCR_CONVERSION_EXT) {
+        return VK_OBJECT_TYPE_SAMPLER_YCBCR_CONVERSION;
     } else if (debug_report_obj == VK_DEBUG_REPORT_OBJECT_TYPE_SURFACE_KHR_EXT) {
         return VK_OBJECT_TYPE_SURFACE_KHR;
     } else if (debug_report_obj == VK_DEBUG_REPORT_OBJECT_TYPE_SWAPCHAIN_KHR_EXT) {
@@ -435,10 +435,10 @@ static inline VkDebugReportObjectTypeEXT convertCoreObjectToDebugReportObject(Vk
         return VK_DEBUG_REPORT_OBJECT_TYPE_FRAMEBUFFER_EXT;
     } else if (core_report_obj == VK_OBJECT_TYPE_COMMAND_POOL) {
         return VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_POOL_EXT;
-    } else if (core_report_obj == VK_OBJECT_TYPE_SAMPLER_YCBCR_CONVERSION) {
-        return VK_DEBUG_REPORT_OBJECT_TYPE_SAMPLER_YCBCR_CONVERSION_EXT;
     } else if (core_report_obj == VK_OBJECT_TYPE_DESCRIPTOR_UPDATE_TEMPLATE) {
         return VK_DEBUG_REPORT_OBJECT_TYPE_DESCRIPTOR_UPDATE_TEMPLATE_EXT;
+    } else if (core_report_obj == VK_OBJECT_TYPE_SAMPLER_YCBCR_CONVERSION) {
+        return VK_DEBUG_REPORT_OBJECT_TYPE_SAMPLER_YCBCR_CONVERSION_EXT;
     } else if (core_report_obj == VK_OBJECT_TYPE_SURFACE_KHR) {
         return VK_DEBUG_REPORT_OBJECT_TYPE_SURFACE_KHR_EXT;
     } else if (core_report_obj == VK_OBJECT_TYPE_SWAPCHAIN_KHR) {
