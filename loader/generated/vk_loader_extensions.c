@@ -331,6 +331,9 @@ VKAPI_ATTR bool VKAPI_CALL loader_icd_init_entries(struct loader_instance* inst,
     // ---- VK_NV_cooperative_matrix2 extension commands
     LOOKUP_GIPA(GetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV);
 
+    // ---- VK_ARM_performance_counters_by_region extension commands
+    LOOKUP_GIPA(EnumeratePhysicalDeviceQueueFamilyPerformanceCountersByRegionARM);
+
 #undef LOOKUP_REQUIRED_GIPA
 #undef LOOKUP_GIPA
 
@@ -1183,6 +1186,14 @@ VKAPI_ATTR void VKAPI_CALL loader_init_device_extension_dispatch_table(struct lo
     table->CmdUpdatePipelineIndirectBufferNV = (PFN_vkCmdUpdatePipelineIndirectBufferNV)gdpa(dev, "vkCmdUpdatePipelineIndirectBufferNV");
     table->GetPipelineIndirectDeviceAddressNV = (PFN_vkGetPipelineIndirectDeviceAddressNV)gdpa(dev, "vkGetPipelineIndirectDeviceAddressNV");
 
+    // ---- VK_OHOS_external_memory extension commands
+#if defined(VK_USE_PLATFORM_OHOS)
+    table->GetNativeBufferPropertiesOHOS = (PFN_vkGetNativeBufferPropertiesOHOS)gdpa(dev, "vkGetNativeBufferPropertiesOHOS");
+#endif // VK_USE_PLATFORM_OHOS
+#if defined(VK_USE_PLATFORM_OHOS)
+    table->GetMemoryNativeBufferOHOS = (PFN_vkGetMemoryNativeBufferOHOS)gdpa(dev, "vkGetMemoryNativeBufferOHOS");
+#endif // VK_USE_PLATFORM_OHOS
+
     // ---- VK_EXT_extended_dynamic_state3 extension commands
     table->CmdSetDepthClampEnableEXT = (PFN_vkCmdSetDepthClampEnableEXT)gdpa(dev, "vkCmdSetDepthClampEnableEXT");
     table->CmdSetPolygonModeEXT = (PFN_vkCmdSetPolygonModeEXT)gdpa(dev, "vkCmdSetPolygonModeEXT");
@@ -1641,6 +1652,9 @@ VKAPI_ATTR void VKAPI_CALL loader_init_instance_extension_dispatch_table(VkLayer
 
     // ---- VK_NV_cooperative_matrix2 extension commands
     table->GetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV = (PFN_vkGetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV)gpa(inst, "vkGetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV");
+
+    // ---- VK_ARM_performance_counters_by_region extension commands
+    table->EnumeratePhysicalDeviceQueueFamilyPerformanceCountersByRegionARM = (PFN_vkEnumeratePhysicalDeviceQueueFamilyPerformanceCountersByRegionARM)gpa(inst, "vkEnumeratePhysicalDeviceQueueFamilyPerformanceCountersByRegionARM");
 }
 
 // Functions that required a terminator need to have a separate dispatch table which contains their corresponding
@@ -3167,6 +3181,14 @@ VKAPI_ATTR void* VKAPI_CALL loader_lookup_device_dispatch_table(const VkLayerDis
     if (!strcmp(name, "CmdUpdatePipelineIndirectBufferNV")) return (void *)table->CmdUpdatePipelineIndirectBufferNV;
     if (!strcmp(name, "GetPipelineIndirectDeviceAddressNV")) return (void *)table->GetPipelineIndirectDeviceAddressNV;
 
+    // ---- VK_OHOS_external_memory extension commands
+#if defined(VK_USE_PLATFORM_OHOS)
+    if (!strcmp(name, "GetNativeBufferPropertiesOHOS")) return (void *)table->GetNativeBufferPropertiesOHOS;
+#endif // VK_USE_PLATFORM_OHOS
+#if defined(VK_USE_PLATFORM_OHOS)
+    if (!strcmp(name, "GetMemoryNativeBufferOHOS")) return (void *)table->GetMemoryNativeBufferOHOS;
+#endif // VK_USE_PLATFORM_OHOS
+
     // ---- VK_EXT_extended_dynamic_state3 extension commands
     if (!strcmp(name, "CmdSetDepthClampEnableEXT")) return (void *)table->CmdSetDepthClampEnableEXT;
     if (!strcmp(name, "CmdSetPolygonModeEXT")) return (void *)table->CmdSetPolygonModeEXT;
@@ -3630,6 +3652,9 @@ VKAPI_ATTR void* VKAPI_CALL loader_lookup_instance_dispatch_table(const VkLayerI
 
     // ---- VK_NV_cooperative_matrix2 extension commands
     if (!strcmp(name, "GetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV")) return (void *)table->GetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV;
+
+    // ---- VK_ARM_performance_counters_by_region extension commands
+    if (!strcmp(name, "EnumeratePhysicalDeviceQueueFamilyPerformanceCountersByRegionARM")) return (void *)table->EnumeratePhysicalDeviceQueueFamilyPerformanceCountersByRegionARM;
 
     *found_name = false;
     return NULL;
@@ -9290,6 +9315,41 @@ VKAPI_ATTR VkDeviceAddress VKAPI_CALL GetPipelineIndirectDeviceAddressNV(
 }
 
 
+// ---- VK_OHOS_external_memory extension trampoline/terminators
+
+#if defined(VK_USE_PLATFORM_OHOS)
+VKAPI_ATTR VkResult VKAPI_CALL GetNativeBufferPropertiesOHOS(
+    VkDevice                                    device,
+    const struct OH_NativeBuffer*               buffer,
+    VkNativeBufferPropertiesOHOS*               pProperties) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkGetNativeBufferPropertiesOHOS: Invalid device "
+                   "[VUID-vkGetNativeBufferPropertiesOHOS-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    return disp->GetNativeBufferPropertiesOHOS(device, buffer, pProperties);
+}
+
+#endif // VK_USE_PLATFORM_OHOS
+#if defined(VK_USE_PLATFORM_OHOS)
+VKAPI_ATTR VkResult VKAPI_CALL GetMemoryNativeBufferOHOS(
+    VkDevice                                    device,
+    const VkMemoryGetNativeBufferInfoOHOS*      pInfo,
+    struct OH_NativeBuffer**                    pBuffer) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkGetMemoryNativeBufferOHOS: Invalid device "
+                   "[VUID-vkGetMemoryNativeBufferOHOS-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    return disp->GetMemoryNativeBufferOHOS(device, pInfo, pBuffer);
+}
+
+#endif // VK_USE_PLATFORM_OHOS
+
 // ---- VK_EXT_extended_dynamic_state3 extension trampoline/terminators
 
 VKAPI_ATTR void VKAPI_CALL CmdSetDepthClampEnableEXT(
@@ -10946,6 +11006,43 @@ VKAPI_ATTR VkResult VKAPI_CALL GetMemoryMetalHandlePropertiesEXT(
 }
 
 #endif // VK_USE_PLATFORM_METAL_EXT
+
+// ---- VK_ARM_performance_counters_by_region extension trampoline/terminators
+
+VKAPI_ATTR VkResult VKAPI_CALL EnumeratePhysicalDeviceQueueFamilyPerformanceCountersByRegionARM(
+    VkPhysicalDevice                            physicalDevice,
+    uint32_t                                    queueFamilyIndex,
+    uint32_t*                                   pCounterCount,
+    VkPerformanceCounterARM*                    pCounters,
+    VkPerformanceCounterDescriptionARM*         pCounterDescriptions) {
+    const VkLayerInstanceDispatchTable *disp;
+    VkPhysicalDevice unwrapped_phys_dev = loader_unwrap_physical_device(physicalDevice);
+    if (VK_NULL_HANDLE == unwrapped_phys_dev) {
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkEnumeratePhysicalDeviceQueueFamilyPerformanceCountersByRegionARM: Invalid physicalDevice "
+                   "[VUID-vkEnumeratePhysicalDeviceQueueFamilyPerformanceCountersByRegionARM-physicalDevice-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    disp = loader_get_instance_layer_dispatch(physicalDevice);
+    return disp->EnumeratePhysicalDeviceQueueFamilyPerformanceCountersByRegionARM(unwrapped_phys_dev, queueFamilyIndex, pCounterCount, pCounters, pCounterDescriptions);
+}
+
+VKAPI_ATTR VkResult VKAPI_CALL terminator_EnumeratePhysicalDeviceQueueFamilyPerformanceCountersByRegionARM(
+    VkPhysicalDevice                            physicalDevice,
+    uint32_t                                    queueFamilyIndex,
+    uint32_t*                                   pCounterCount,
+    VkPerformanceCounterARM*                    pCounters,
+    VkPerformanceCounterDescriptionARM*         pCounterDescriptions) {
+    struct loader_physical_device_term *phys_dev_term = (struct loader_physical_device_term *)physicalDevice;
+    struct loader_icd_term *icd_term = phys_dev_term->this_icd_term;
+    if (NULL == icd_term->dispatch.EnumeratePhysicalDeviceQueueFamilyPerformanceCountersByRegionARM) {
+        loader_log(icd_term->this_instance, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT, 0,
+                   "ICD associated with VkPhysicalDevice does not support EnumeratePhysicalDeviceQueueFamilyPerformanceCountersByRegionARM");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    return icd_term->dispatch.EnumeratePhysicalDeviceQueueFamilyPerformanceCountersByRegionARM(phys_dev_term->phys_dev, queueFamilyIndex, pCounterCount, pCounters, pCounterDescriptions);
+}
+
 
 // ---- VK_EXT_fragment_density_map_offset extension trampoline/terminators
 
@@ -13134,6 +13231,20 @@ bool extension_instance_gpa(struct loader_instance *ptr_instance, const char *na
         return true;
     }
 
+    // ---- VK_OHOS_external_memory extension commands
+#if defined(VK_USE_PLATFORM_OHOS)
+    if (!strcmp("vkGetNativeBufferPropertiesOHOS", name)) {
+        *addr = (void *)GetNativeBufferPropertiesOHOS;
+        return true;
+    }
+#endif // VK_USE_PLATFORM_OHOS
+#if defined(VK_USE_PLATFORM_OHOS)
+    if (!strcmp("vkGetMemoryNativeBufferOHOS", name)) {
+        *addr = (void *)GetMemoryNativeBufferOHOS;
+        return true;
+    }
+#endif // VK_USE_PLATFORM_OHOS
+
     // ---- VK_EXT_extended_dynamic_state3 extension commands
     if (!strcmp("vkCmdSetDepthClampEnableEXT", name)) {
         *addr = (void *)CmdSetDepthClampEnableEXT;
@@ -13609,6 +13720,12 @@ bool extension_instance_gpa(struct loader_instance *ptr_instance, const char *na
         return true;
     }
 #endif // VK_USE_PLATFORM_METAL_EXT
+
+    // ---- VK_ARM_performance_counters_by_region extension commands
+    if (!strcmp("vkEnumeratePhysicalDeviceQueueFamilyPerformanceCountersByRegionARM", name)) {
+        *addr = (void *)EnumeratePhysicalDeviceQueueFamilyPerformanceCountersByRegionARM;
+        return true;
+    }
 
     // ---- VK_EXT_fragment_density_map_offset extension commands
     if (!strcmp("vkCmdEndRendering2EXT", name)) {
@@ -14245,6 +14362,9 @@ const VkLayerInstanceDispatchTable instance_disp = {
 
     // ---- VK_NV_cooperative_matrix2 extension commands
     .GetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV = terminator_GetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV,
+
+    // ---- VK_ARM_performance_counters_by_region extension commands
+    .EnumeratePhysicalDeviceQueueFamilyPerformanceCountersByRegionARM = terminator_EnumeratePhysicalDeviceQueueFamilyPerformanceCountersByRegionARM,
 };
 
 // A null-terminated list of all of the instance extensions supported by the loader.

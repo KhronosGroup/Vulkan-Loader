@@ -497,6 +497,9 @@ struct loader_icd_term_dispatch {
 
     // ---- VK_NV_cooperative_matrix2 extension commands
     PFN_vkGetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV GetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV;
+
+    // ---- VK_ARM_performance_counters_by_region extension commands
+    PFN_vkEnumeratePhysicalDeviceQueueFamilyPerformanceCountersByRegionARM EnumeratePhysicalDeviceQueueFamilyPerformanceCountersByRegionARM;
 };
 
 struct loader_instance_extension_enable_list {

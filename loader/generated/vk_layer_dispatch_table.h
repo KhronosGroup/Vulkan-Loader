@@ -309,6 +309,9 @@ typedef struct VkLayerInstanceDispatchTable_ {
 
     // ---- VK_NV_cooperative_matrix2 extension commands
     PFN_vkGetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV GetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV;
+
+    // ---- VK_ARM_performance_counters_by_region extension commands
+    PFN_vkEnumeratePhysicalDeviceQueueFamilyPerformanceCountersByRegionARM EnumeratePhysicalDeviceQueueFamilyPerformanceCountersByRegionARM;
 } VkLayerInstanceDispatchTable;
 
 // Device function pointer dispatch table
@@ -1144,6 +1147,14 @@ typedef struct VkLayerDispatchTable_ {
     PFN_vkGetPipelineIndirectMemoryRequirementsNV GetPipelineIndirectMemoryRequirementsNV;
     PFN_vkCmdUpdatePipelineIndirectBufferNV CmdUpdatePipelineIndirectBufferNV;
     PFN_vkGetPipelineIndirectDeviceAddressNV GetPipelineIndirectDeviceAddressNV;
+
+    // ---- VK_OHOS_external_memory extension commands
+#if defined(VK_USE_PLATFORM_OHOS)
+    PFN_vkGetNativeBufferPropertiesOHOS GetNativeBufferPropertiesOHOS;
+#endif // VK_USE_PLATFORM_OHOS
+#if defined(VK_USE_PLATFORM_OHOS)
+    PFN_vkGetMemoryNativeBufferOHOS GetMemoryNativeBufferOHOS;
+#endif // VK_USE_PLATFORM_OHOS
 
     // ---- VK_EXT_extended_dynamic_state3 extension commands
     PFN_vkCmdSetDepthClampEnableEXT CmdSetDepthClampEnableEXT;
