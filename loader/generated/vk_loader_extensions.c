@@ -9872,7 +9872,7 @@ VKAPI_ATTR void VKAPI_CALL GetDeviceTensorMemoryRequirementsARM(
 
 VKAPI_ATTR void VKAPI_CALL CmdCopyTensorARM(
     VkCommandBuffer                             commandBuffer,
-     const VkCopyTensorInfoARM*                 pCopyTensorInfo) {
+    const VkCopyTensorInfoARM*                  pCopyTensorInfo) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
     if (NULL == disp) {
         loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
