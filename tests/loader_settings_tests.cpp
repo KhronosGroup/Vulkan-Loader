@@ -40,7 +40,7 @@ std::string get_settings_location_log_message([[maybe_unused]] FrameworkEnvironm
     return s + (env.get_folder(settings_location).location() / "vk_loader_settings.json").string();
 #elif TESTING_COMMON_UNIX_PLATFORMS
     return s + (use_secure ? env.secure_manifest_base_location : env.unsecure_manifest_base_location) +
-           "/vulkan/loader_settings.d/vk_loader_settings.json";
+           "/" TESTING_VULKAN_DIR "/loader_settings.d/vk_loader_settings.json";
 #endif
 }
 std::string get_unsecure_settings_location_log_message(FrameworkEnvironment const& env) {
@@ -54,7 +54,7 @@ std::string get_settings_not_in_use_log_message([[maybe_unused]] FrameworkEnviro
     return s + (env.get_folder(settings_location).location() / "vk_loader_settings.json").string();
 #elif TESTING_COMMON_UNIX_PLATFORMS
     return s + (use_secure ? env.secure_manifest_base_location : env.unsecure_manifest_base_location) +
-           "/vulkan/loader_settings.d/vk_loader_settings.json\" but did not contain any valid settings.";
+           "/" TESTING_VULKAN_DIR "/loader_settings.d/vk_loader_settings.json\" but did not contain any valid settings.";
 #endif
 }
 enum class LayerType {
