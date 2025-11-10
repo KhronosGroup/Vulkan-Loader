@@ -487,13 +487,13 @@ VkResult get_unix_settings_path(const struct loader_instance* inst, char** setti
     }
 #endif
 
-    VkResult res = check_if_settings_path_exists(inst, xdg_config_home, "/vulkan/loader_settings.d/" VK_LOADER_SETTINGS_FILENAME,
-                                                 settings_file_path);
+    VkResult res = check_if_settings_path_exists(
+        inst, xdg_config_home, "/" VULKAN_DIR "/loader_settings.d/" VK_LOADER_SETTINGS_FILENAME, settings_file_path);
     if (res == VK_SUCCESS) {
         return res;
     }
 
-    res = check_if_settings_path_exists(inst, xdg_data_home, "/vulkan/loader_settings.d/" VK_LOADER_SETTINGS_FILENAME,
+    res = check_if_settings_path_exists(inst, xdg_data_home, "/" VULKAN_DIR "/loader_settings.d/" VK_LOADER_SETTINGS_FILENAME,
                                         settings_file_path);
     if (res == VK_SUCCESS) {
         return res;
@@ -503,41 +503,41 @@ VkResult get_unix_settings_path(const struct loader_instance* inst, char** setti
     char* home = loader_secure_getenv("HOME", inst);
     if (home != NULL) {
         if (NULL == xdg_config_home || '\0' == xdg_config_home[0]) {
-            res = check_if_settings_path_exists(inst, home, "/.config/vulkan/loader_settings.d/" VK_LOADER_SETTINGS_FILENAME,
-                                                settings_file_path);
+            res = check_if_settings_path_exists(
+                inst, home, "/.config/" VULKAN_DIR "/loader_settings.d/" VK_LOADER_SETTINGS_FILENAME, settings_file_path);
             if (res == VK_SUCCESS) {
                 return res;
             }
         }
         if (NULL == xdg_data_home || '\0' == xdg_data_home[0]) {
-            res = check_if_settings_path_exists(inst, home, "/.local/share/vulkan/loader_settings.d/" VK_LOADER_SETTINGS_FILENAME,
-                                                settings_file_path);
+            res = check_if_settings_path_exists(
+                inst, home, "/.local/share/" VULKAN_DIR "/loader_settings.d/" VK_LOADER_SETTINGS_FILENAME, settings_file_path);
             if (res == VK_SUCCESS) {
                 return res;
             }
         }
     }
 
-    res = check_if_settings_path_exists(inst, xdg_config_dirs, "/vulkan/loader_settings.d/" VK_LOADER_SETTINGS_FILENAME,
+    res = check_if_settings_path_exists(inst, xdg_config_dirs, "/" VULKAN_DIR "/loader_settings.d/" VK_LOADER_SETTINGS_FILENAME,
                                         settings_file_path);
     if (res == VK_SUCCESS) {
         return res;
     }
 
-    res = check_if_settings_path_exists(inst, SYSCONFDIR, "/vulkan/loader_settings.d/" VK_LOADER_SETTINGS_FILENAME,
+    res = check_if_settings_path_exists(inst, SYSCONFDIR, "/" VULKAN_DIR "/loader_settings.d/" VK_LOADER_SETTINGS_FILENAME,
                                         settings_file_path);
     if (res == VK_SUCCESS) {
         return res;
     }
 #if defined(EXTRASYSCONFDIR)
 
-    res = check_if_settings_path_exists(inst, EXTRASYSCONFDIR, "/vulkan/loader_settings.d/" VK_LOADER_SETTINGS_FILENAME,
+    res = check_if_settings_path_exists(inst, EXTRASYSCONFDIR, "/" VULKAN_DIR "/loader_settings.d/" VK_LOADER_SETTINGS_FILENAME,
                                         settings_file_path);
     if (res == VK_SUCCESS) {
         return res;
     }
 #endif
-    res = check_if_settings_path_exists(inst, xdg_data_dirs, "/vulkan/loader_settings.d/" VK_LOADER_SETTINGS_FILENAME,
+    res = check_if_settings_path_exists(inst, xdg_data_dirs, "/" VULKAN_DIR "/loader_settings.d/" VK_LOADER_SETTINGS_FILENAME,
                                         settings_file_path);
     if (res == VK_SUCCESS) {
         return res;
