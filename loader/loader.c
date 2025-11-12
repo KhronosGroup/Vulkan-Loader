@@ -2258,13 +2258,16 @@ VkResult loader_scanned_icd_add(const struct loader_instance *inst, struct loade
         loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0, "loader_scanned_icd_add: Out of memory can't add ICD %s", filename);
         goto out;
     }
-    icd_tramp_list->count++;
 
     // Uses OS calls to find the 'true' path to the binary, for more accurate logging later on.
     res = fixup_library_binary_path(inst, &(new_scanned_icd->lib_name), new_scanned_icd->handle, fp_get_proc_addr);
     if (res == VK_ERROR_OUT_OF_HOST_MEMORY) {
+        loader_instance_heap_free(inst, new_scanned_icd->lib_name);
         goto out;
     }
+
+    icd_tramp_list->count++;
+
 out:
     if (res != VK_SUCCESS) {
         if (NULL != handle) {
