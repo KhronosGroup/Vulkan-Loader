@@ -282,16 +282,19 @@ FRAMEWORK_EXPORT FILE* FOPEN_FUNC_NAME(const char* in_filename, const char* mode
 
     // Fuzz tests have sub files embedded in the input data file. This
     if (!platform_shim.fuzz_data.empty() && out_file == NULL) {
-        fprintf(stderr, "create_callback_file: Creating file %s\n", in_filename);
-        FILE* fp = fopen(in_filename, "wb");
+        FILE* fp = fopen(path.c_str(), "wb");
         if (nullptr == fp) {
-            abort();
+            path.replace_filename("callback_file_" + std::to_string(platform_shim.temp_fuzz_files.size()));
+            fp = fopen(path.c_str(), "wb");
+            if (nullptr == fp) {
+                abort();
+            }
         }
         fwrite(platform_shim.fuzz_data.data(), platform_shim.fuzz_data.size(), 1, fp);
         fclose(fp);
-        platform_shim.temp_fuzz_files.emplace_back(in_filename);
+        platform_shim.temp_fuzz_files.emplace_back(path.c_str());
 
-        out_file = fopen(in_filename, "rb");
+        out_file = fopen(path.c_str(), "rb");
     }
     return out_file;
 }
