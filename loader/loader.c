@@ -2765,6 +2765,7 @@ VkResult loader_read_layer_json(const struct loader_instance *inst, struct loade
         loader_log(inst, VULKAN_LOADER_WARN_BIT, 0,
                    "Layer located at %s didn't find required layer value \"type\" in manifest JSON file, skipping this layer",
                    filename);
+        result = VK_ERROR_INITIALIZATION_FAILED;
         goto out;
     }
 
