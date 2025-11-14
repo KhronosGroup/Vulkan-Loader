@@ -323,7 +323,9 @@ VKAPI_ATTR void VKAPI_CALL terminator_DestroySurfaceKHR(VkInstance instance, VkS
                 // The real_icd_surface for any ICD not supporting the
                 // proper interface version should be NULL.  If not, then
                 // we have a problem.
-                assert((VkSurfaceKHR)(uintptr_t)NULL == icd_term->surface_list.list[icd_surface->surface_index]);
+                assert(!(icd_term->enabled_instance_extensions.khr_surface &&
+                         icd_term->scanned_icd->interface_version >= ICD_VER_SUPPORTS_ICD_SURFACE_KHR) ||
+                       (VkSurfaceKHR)(uintptr_t)NULL == icd_term->surface_list.list[icd_surface->surface_index]);
             }
         }
         if (NULL != icd_surface->create_info) {
