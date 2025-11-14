@@ -1346,6 +1346,9 @@ VKAPI_ATTR void VKAPI_CALL loader_init_device_extension_dispatch_table(struct lo
     // ---- VK_EXT_fragment_density_map_offset extension commands
     table->CmdEndRendering2EXT = (PFN_vkCmdEndRendering2EXT)gdpa(dev, "vkCmdEndRendering2EXT");
 
+    // ---- VK_EXT_custom_resolve extension commands
+    table->CmdBeginCustomResolveEXT = (PFN_vkCmdBeginCustomResolveEXT)gdpa(dev, "vkCmdBeginCustomResolveEXT");
+
     // ---- VK_KHR_acceleration_structure extension commands
     table->CreateAccelerationStructureKHR = (PFN_vkCreateAccelerationStructureKHR)gdpa(dev, "vkCreateAccelerationStructureKHR");
     table->DestroyAccelerationStructureKHR = (PFN_vkDestroyAccelerationStructureKHR)gdpa(dev, "vkDestroyAccelerationStructureKHR");
@@ -3340,6 +3343,9 @@ VKAPI_ATTR void* VKAPI_CALL loader_lookup_device_dispatch_table(const VkLayerDis
 
     // ---- VK_EXT_fragment_density_map_offset extension commands
     if (!strcmp(name, "CmdEndRendering2EXT")) return (void *)table->CmdEndRendering2EXT;
+
+    // ---- VK_EXT_custom_resolve extension commands
+    if (!strcmp(name, "CmdBeginCustomResolveEXT")) return (void *)table->CmdBeginCustomResolveEXT;
 
     // ---- VK_KHR_acceleration_structure extension commands
     if (!strcmp(name, "CreateAccelerationStructureKHR")) return (void *)table->CreateAccelerationStructureKHR;
@@ -11060,6 +11066,22 @@ VKAPI_ATTR void VKAPI_CALL CmdEndRendering2EXT(
 }
 
 
+// ---- VK_EXT_custom_resolve extension trampoline/terminators
+
+VKAPI_ATTR void VKAPI_CALL CmdBeginCustomResolveEXT(
+    VkCommandBuffer                             commandBuffer,
+    const VkBeginCustomResolveInfoEXT*          pBeginCustomResolveInfo) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkCmdBeginCustomResolveEXT: Invalid commandBuffer "
+                   "[VUID-vkCmdBeginCustomResolveEXT-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    disp->CmdBeginCustomResolveEXT(commandBuffer, pBeginCustomResolveInfo);
+}
+
+
 // ---- VK_KHR_acceleration_structure extension trampoline/terminators
 
 VKAPI_ATTR VkResult VKAPI_CALL CreateAccelerationStructureKHR(
@@ -13730,6 +13752,12 @@ bool extension_instance_gpa(struct loader_instance *ptr_instance, const char *na
     // ---- VK_EXT_fragment_density_map_offset extension commands
     if (!strcmp("vkCmdEndRendering2EXT", name)) {
         *addr = (void *)CmdEndRendering2EXT;
+        return true;
+    }
+
+    // ---- VK_EXT_custom_resolve extension commands
+    if (!strcmp("vkCmdBeginCustomResolveEXT", name)) {
+        *addr = (void *)CmdBeginCustomResolveEXT;
         return true;
     }
 

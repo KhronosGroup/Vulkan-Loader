@@ -1308,6 +1308,9 @@ typedef struct VkLayerDispatchTable_ {
     // ---- VK_EXT_fragment_density_map_offset extension commands
     PFN_vkCmdEndRendering2EXT CmdEndRendering2EXT;
 
+    // ---- VK_EXT_custom_resolve extension commands
+    PFN_vkCmdBeginCustomResolveEXT CmdBeginCustomResolveEXT;
+
     // ---- VK_KHR_acceleration_structure extension commands
     PFN_vkCreateAccelerationStructureKHR CreateAccelerationStructureKHR;
     PFN_vkDestroyAccelerationStructureKHR DestroyAccelerationStructureKHR;
