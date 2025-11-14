@@ -633,6 +633,12 @@ VkResult fixup_library_binary_path(const struct loader_instance *inst, char **li
     }
 
     if (NULL != os_determined_lib_name) {
+        // Normalize the path so that the comparison doesn't yield false positives
+        res = normalize_path(inst, &os_determined_lib_name);
+        if (res == VK_ERROR_OUT_OF_HOST_MEMORY) {
+            return res;
+        }
+
         if (0 != strcmp(os_determined_lib_name, *lib_name)) {
             // Paths do not match, so we need to replace lib_name with the real path
             if (!system_path) {
