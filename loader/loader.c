@@ -445,11 +445,13 @@ VkResult normalize_path(const struct loader_instance *inst, char **passed_in_pat
     // If path_len wasn't big enough, need to realloc and call again
     // actual_len doesn't include null terminator
     if (actual_len + 1 > path_len) {
-        path = loader_instance_heap_realloc(inst, path, path_len, actual_len + 1, VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
-        if (NULL == path) {
+        char *new_path = loader_instance_heap_realloc(inst, path, path_len, actual_len + 1, VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
+        if (NULL == new_path) {
+            loader_instance_heap_free(inst, path);
             res = VK_ERROR_OUT_OF_HOST_MEMORY;
             goto out;
         }
+        path = new_path;
         // store the updated allocation size (sans null terminator)
         path_len = actual_len + 1;
 
