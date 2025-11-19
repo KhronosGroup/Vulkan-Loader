@@ -817,12 +817,13 @@ VkResult enumerate_adapter_physical_devices(struct loader_instance *inst, struct
 
     // Get the actual physical devices
     do {
-        next_icd_phys_devs->physical_devices = loader_instance_heap_realloc(
-            inst, next_icd_phys_devs->physical_devices, next_icd_phys_devs->device_count * sizeof(VkPhysicalDevice),
-            count * sizeof(VkPhysicalDevice), VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
-        if (next_icd_phys_devs->physical_devices == NULL) {
+        void *new_ptr = loader_instance_heap_realloc(inst, next_icd_phys_devs->physical_devices,
+                                                     next_icd_phys_devs->device_count * sizeof(VkPhysicalDevice),
+                                                     count * sizeof(VkPhysicalDevice), VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
+        if (new_ptr == NULL) {
             return VK_ERROR_OUT_OF_HOST_MEMORY;
         }
+        next_icd_phys_devs->physical_devices = new_ptr;
         next_icd_phys_devs->device_count = count;
     } while ((res = icd_term->scanned_icd->EnumerateAdapterPhysicalDevices(icd_term->instance, luid, &count,
                                                                            next_icd_phys_devs->physical_devices)) == VK_INCOMPLETE);
@@ -978,13 +979,14 @@ VkResult windows_read_sorted_physical_devices(struct loader_instance *inst, uint
 
             if (icd_phys_devs_array_size <= *icd_phys_devs_array_count) {
                 uint32_t old_size = icd_phys_devs_array_size * sizeof(struct loader_icd_physical_devices);
-                *icd_phys_devs_array = loader_instance_heap_realloc(inst, *icd_phys_devs_array, old_size, 2 * old_size,
-                                                                    VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
+                void *new_ptr = loader_instance_heap_realloc(inst, *icd_phys_devs_array, old_size, 2 * old_size,
+                                                             VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
                 if (*icd_phys_devs_array == NULL) {
                     adapter->lpVtbl->Release(adapter);
                     res = VK_ERROR_OUT_OF_HOST_MEMORY;
                     goto out;
                 }
+                *icd_phys_devs_array = new_ptr;
                 icd_phys_devs_array_size *= 2;
             }
             (*icd_phys_devs_array)[*icd_phys_devs_array_count].device_count = 0;
