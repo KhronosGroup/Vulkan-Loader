@@ -232,6 +232,12 @@ if(CMAKE_C_COMPILER_ID MATCHES "MSVC" OR (CMAKE_C_COMPILER_ID STREQUAL "Clang" A
         target_link_options(loader_common_options INTERFACE "LINKER:/cetcompat")
     endif()
 
+    # Enable EH Continuation Metadata for 64-bit architectures
+    if (CMAKE_SIZEOF_VOID_P EQUAL 8)
+        target_compile_options(loader_common_options INTERFACE $<$<COMPILE_LANGUAGE::CXX,C>:/guard:ehcont>)
+        target_link_options(loader_common_options INTERFACE "LINKER:/guard:ehcont")
+    endif()
+
     # Prevent <windows.h> from polluting the code. guards against things like MIN and MAX
     target_compile_definitions(loader_common_options INTERFACE WIN32_LEAN_AND_MEAN)
 
