@@ -5285,17 +5285,13 @@ void loader_activate_instance_layer_extensions(struct loader_instance *inst, VkI
                                                   created_inst);
 }
 
-#if defined(__APPLE__)
-VkResult loader_create_device_chain(const VkPhysicalDevice pd, const VkDeviceCreateInfo *pCreateInfo,
-                                    const VkAllocationCallbacks *pAllocator, const struct loader_instance *inst,
-                                    struct loader_device *dev, PFN_vkGetInstanceProcAddr callingLayer,
-                                    PFN_vkGetDeviceProcAddr *layerNextGDPA) __attribute__((optnone)) {
-#else
+#if defined(__APPLE__) || defined(__GNUC__)
+__attribute__((optimize("O0")))
+#endif
 VkResult loader_create_device_chain(const VkPhysicalDevice pd, const VkDeviceCreateInfo *pCreateInfo,
                                     const VkAllocationCallbacks *pAllocator, const struct loader_instance *inst,
                                     struct loader_device *dev, PFN_vkGetInstanceProcAddr callingLayer,
                                     PFN_vkGetDeviceProcAddr *layerNextGDPA) {
-#endif
     uint32_t num_activated_layers = 0;
     struct activated_layer_info *activated_layers = NULL;
     VkLayerDeviceLink *layer_device_link_info;
@@ -6303,10 +6299,10 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateDevice(VkPhysicalDevice physical
 
                     // Before calling down, replace the incoming physical device values (which are really loader terminator
                     // physical devices) with the ICDs physical device values.
-                    struct loader_physical_device_term *cur_term;
+                    struct loader_physical_device_tramp *cur_tramp;
                     for (uint32_t phys_dev = 0; phys_dev < cur_struct->physicalDeviceCount; phys_dev++) {
-                        cur_term = (struct loader_physical_device_term *)cur_struct->pPhysicalDevices[phys_dev];
-                        phys_dev_array[phys_dev] = cur_term->phys_dev;
+                        cur_tramp = (struct loader_physical_device_tramp *)cur_struct->pPhysicalDevices[phys_dev];
+                        phys_dev_array[phys_dev] = cur_tramp->phys_dev;
                     }
                     temp_struct->pPhysicalDevices = phys_dev_array;
 
