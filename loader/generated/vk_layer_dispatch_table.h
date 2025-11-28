@@ -921,6 +921,12 @@ typedef struct VkLayerDispatchTable_ {
     PFN_vkGetQueueCheckpointDataNV GetQueueCheckpointDataNV;
     PFN_vkGetQueueCheckpointData2NV GetQueueCheckpointData2NV;
 
+    // ---- VK_EXT_present_timing extension commands
+    PFN_vkSetSwapchainPresentTimingQueueSizeEXT SetSwapchainPresentTimingQueueSizeEXT;
+    PFN_vkGetSwapchainTimingPropertiesEXT GetSwapchainTimingPropertiesEXT;
+    PFN_vkGetSwapchainTimeDomainPropertiesEXT GetSwapchainTimeDomainPropertiesEXT;
+    PFN_vkGetPastPresentationTimingEXT GetPastPresentationTimingEXT;
+
     // ---- VK_INTEL_performance_query extension commands
     PFN_vkInitializePerformanceApiINTEL InitializePerformanceApiINTEL;
     PFN_vkUninitializePerformanceApiINTEL UninitializePerformanceApiINTEL;

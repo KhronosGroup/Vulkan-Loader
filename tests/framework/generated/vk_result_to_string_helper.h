@@ -107,6 +107,8 @@ inline std::ostream& operator<<(std::ostream& os, const VkResult& result) {
             return os << "VK_ERROR_VIDEO_STD_VERSION_NOT_SUPPORTED_KHR";
         case (VK_ERROR_INVALID_DRM_FORMAT_MODIFIER_PLANE_LAYOUT_EXT):
             return os << "VK_ERROR_INVALID_DRM_FORMAT_MODIFIER_PLANE_LAYOUT_EXT";
+        case (VK_ERROR_PRESENT_TIMING_QUEUE_FULL_EXT):
+            return os << "VK_ERROR_PRESENT_TIMING_QUEUE_FULL_EXT";
         case (VK_ERROR_FULL_SCREEN_EXCLUSIVE_MODE_LOST_EXT):
             return os << "VK_ERROR_FULL_SCREEN_EXCLUSIVE_MODE_LOST_EXT";
         case (VK_THREAD_IDLE_KHR):
