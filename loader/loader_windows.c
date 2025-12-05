@@ -788,7 +788,7 @@ VkResult windows_read_data_files_in_registry(const struct loader_instance *inst,
     }
 
     // Now, parse the paths and add any manifest files found in them.
-    vk_result = add_data_files(inst, search_path, out_files, false);
+    vk_result = add_data_files(inst, search_path, out_files);
 
 out:
 

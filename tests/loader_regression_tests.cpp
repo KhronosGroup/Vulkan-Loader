@@ -4458,11 +4458,13 @@ TEST(ManifestDiscovery, AppleBundles) {
     InstWrapper inst{env.vulkan_functions};
     ASSERT_NO_FATAL_FAILURE(inst.CheckCreate());
     auto physical_devices = inst.GetPhysDevs();
-    ASSERT_EQ(1, physical_devices.size());
+    ASSERT_EQ(2, physical_devices.size());
 
-    // Verify that this is the 'right' GPU, aka the one from the bundle
+    // Should get both GPUs, in reverse order to driver enumeration (due to enumerating the last driver first)
     VkPhysicalDeviceProperties props{};
     inst->vkGetPhysicalDeviceProperties(physical_devices[0], &props);
+    ASSERT_EQ(test_physical_device_1.properties.deviceID, props.deviceID);
+    inst->vkGetPhysicalDeviceProperties(physical_devices[1], &props);
     ASSERT_EQ(test_physical_device_0.properties.deviceID, props.deviceID);
 }
 
