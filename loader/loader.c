@@ -3354,8 +3354,7 @@ VkResult prepend_if_manifest_file(const struct loader_instance *inst, const char
 
 // Add any files found in the search_path.  If any path in the search path points to a specific JSON, attempt to
 // only open that one JSON.  Otherwise, if the path is a folder, search the folder for JSON files.
-VkResult add_data_files(const struct loader_instance *inst, char *search_path, struct loader_string_list *out_files,
-                        bool use_first_found_manifest) {
+VkResult add_data_files(const struct loader_instance *inst, char *search_path, struct loader_string_list *out_files) {
     VkResult vk_result = VK_SUCCESS;
     char full_path[2048];
 #if !defined(_WIN32)
@@ -3442,9 +3441,6 @@ VkResult add_data_files(const struct loader_instance *inst, char *search_path, s
                 goto out;
             }
         }
-        if (use_first_found_manifest && out_files->count > 0) {
-            break;
-        }
     }
 
 out:
@@ -3463,7 +3459,6 @@ VkResult read_data_files_in_search_paths(const struct loader_instance *inst, enu
     size_t search_path_size = 0;
     char *search_path = NULL;
     char *cur_path_ptr = NULL;
-    bool use_first_found_manifest = false;
 #if COMMON_UNIX_PLATFORMS
     const char *relative_location = NULL;  // Only used on unix platforms
     size_t rel_size = 0;                   // unused in windows, dont declare so no compiler warnings are generated
@@ -3684,9 +3679,6 @@ VkResult read_data_files_in_search_paths(const struct loader_instance *inst, enu
                         memcpy(cur_path_ptr, relative_location, rel_size);
                         cur_path_ptr += rel_size;
                         *cur_path_ptr++ = PATH_SEPARATOR;
-                        if (manifest_type == LOADER_DATA_FILE_MANIFEST_DRIVER) {
-                            use_first_found_manifest = true;
-                        }
                     }
                     CFRelease(ref);
                 }
@@ -3781,7 +3773,7 @@ VkResult read_data_files_in_search_paths(const struct loader_instance *inst, enu
     }
 
     // Now, parse the paths and add any manifest files found in them.
-    vk_result = add_data_files(inst, search_path, out_files, use_first_found_manifest);
+    vk_result = add_data_files(inst, search_path, out_files);
 
     if (log_flags != 0 && out_files->count > 0) {
         loader_log(inst, log_flags, 0, "   Found the following files:");
