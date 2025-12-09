@@ -491,6 +491,7 @@ TEST(SettingsFile, ApplicationEnablesIgnored) {
     }
 }
 
+// If the layer list is empty, we want no layers found or loaded
 TEST(SettingsFile, LayerListIsEmpty) {
     FrameworkEnvironment env{};
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2)).add_physical_device({});
@@ -511,15 +512,13 @@ TEST(SettingsFile, LayerListIsEmpty) {
     writer.EndObject();
     env.write_settings_file(writer.output, true);
 
-    auto layer_props = env.GetLayerProperties(1);
-    ASSERT_TRUE(string_eq(layer_props.at(0).layerName, implicit_layer_name));
+    ASSERT_NO_FATAL_FAILURE(env.GetLayerProperties(0));
 
     InstWrapper inst{env.vulkan_functions};
     FillDebugUtilsCreateDetails(inst.create_info, env.debug_log);
     inst.CheckCreate();
-    ASSERT_TRUE(env.debug_log.find(get_settings_not_in_use_log_message(env, true)));
-    auto actice_layer_props = inst.GetActiveLayers(inst.GetPhysDev(), 1);
-    ASSERT_TRUE(string_eq(actice_layer_props.at(0).layerName, implicit_layer_name));
+    ASSERT_TRUE(env.debug_log.find(get_settings_location_log_message(env, true)));
+    ASSERT_NO_FATAL_FAILURE(inst.GetActiveLayers(inst.GetPhysDev(), 0));
 }
 
 // If a settings file exists but contains no valid settings - don't consider it
@@ -3662,4 +3661,23 @@ TEST(SettingsFile, DeviceConfigurationReordersExclusiveAdditionalDrivers) {
     inst->vkGetPhysicalDeviceProperties2(pd, &props2);
 
     ASSERT_TRUE(0 == memcmp(vulkan_11_props.deviceUUID, uuids[2].data(), VK_UUID_SIZE * sizeof(uint8_t)));
+}
+TEST(SettingsFile, DeviceConfigurationPreservesLayerEnumeration) {
+    FrameworkEnvironment env{};
+    VulkanUUID uuid{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15};
+
+    const char* layer_name = "VK_LAYER_layer";
+    env.add_explicit_layer(
+        ManifestLayer{}.add_layer(
+            ManifestLayer::LayerDescription{}.set_name(layer_name).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)),
+        "regular_test_layer.json");
+
+    env.loader_settings.set_file_format_version({1, 0, 0}).add_app_specific_setting(
+        AppSpecificSettings{}
+            .add_driver_configuration(LoaderSettingsDriverConfiguration{}.set_path("Shouldn't matter"))
+            .add_device_configuration(LoaderSettingsDeviceConfiguration{}.set_deviceUUID(uuid)));
+    env.update_loader_settings(env.loader_settings);
+
+    auto layer_props = env.GetLayerProperties(1);
+    EXPECT_TRUE(string_eq(layer_props.at(0).layerName, layer_name));
 }
