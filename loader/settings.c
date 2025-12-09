@@ -190,6 +190,7 @@ VkResult parse_layer_configurations(const struct loader_instance* inst, cJSON* s
 
     uint32_t layer_configurations_count = loader_cJSON_GetArraySize(layer_configurations);
     if (layer_configurations_count == 0) {
+        loader_settings->layer_configurations_active = true;
         return VK_SUCCESS;
     }
 
@@ -214,6 +215,7 @@ VkResult parse_layer_configurations(const struct loader_instance* inst, cJSON* s
             goto out;
         }
     }
+    loader_settings->layer_configurations_active = true;
 out:
     if (res != VK_SUCCESS) {
         if (loader_settings->layer_configurations) {
@@ -380,6 +382,7 @@ VkResult parse_device_configurations(const struct loader_instance* inst, cJSON* 
 
     uint32_t device_configuration_count = loader_cJSON_GetArraySize(device_configurations);
     if (device_configuration_count == 0) {
+        loader_settings->device_configurations_active = true;
         return VK_SUCCESS;
     }
 
@@ -407,6 +410,7 @@ VkResult parse_device_configurations(const struct loader_instance* inst, cJSON* 
         }
         i++;
     }
+    loader_settings->device_configurations_active = true;
 out:
     if (res != VK_SUCCESS) {
         if (loader_settings->device_configurations) {
@@ -582,8 +586,10 @@ bool check_if_settings_are_equal(loader_settings* a, loader_settings* b) {
     are_equal &= a->settings_active == b->settings_active;
     are_equal &= a->has_unordered_layer_location == b->has_unordered_layer_location;
     are_equal &= a->debug_level == b->debug_level;
+    are_equal &= a->layer_configurations_active == b->layer_configurations_active;
     are_equal &= a->layer_configuration_count == b->layer_configuration_count;
     are_equal &= a->additional_driver_count == b->additional_driver_count;
+    are_equal &= a->device_configurations_active == b->device_configurations_active;
     are_equal &= a->device_configuration_count == b->device_configuration_count;
     if (!are_equal) return false;
     for (uint32_t i = 0; i < a->layer_configuration_count && i < b->layer_configuration_count; i++) {
@@ -614,18 +620,19 @@ void log_settings(const struct loader_instance* inst, loader_settings* settings)
     if (strlen(cmd_line_msg)) {
         loader_log(inst, VULKAN_LOADER_DEBUG_BIT, 0, "Loader Settings Filters for Logging to Standard Error: %s", cmd_line_msg);
     }
-
-    loader_log(inst, VULKAN_LOADER_DEBUG_BIT, 0, "Layer Configurations count = %d", settings->layer_configuration_count);
-    for (uint32_t i = 0; i < settings->layer_configuration_count; i++) {
-        loader_log(inst, VULKAN_LOADER_DEBUG_BIT, 0, "---- Layer Configuration [%d] ----", i);
-        if (settings->layer_configurations[i].control != LOADER_SETTINGS_LAYER_UNORDERED_LAYER_LOCATION) {
-            loader_log(inst, VULKAN_LOADER_DEBUG_BIT, 0, "Name: %s", settings->layer_configurations[i].name);
-            loader_log(inst, VULKAN_LOADER_DEBUG_BIT, 0, "Path: %s", settings->layer_configurations[i].path);
-            loader_log(inst, VULKAN_LOADER_DEBUG_BIT, 0, "Layer Type: %s",
-                       settings->layer_configurations[i].treat_as_implicit_manifest ? "Implicit" : "Explicit");
+    if (settings->layer_configurations_active) {
+        loader_log(inst, VULKAN_LOADER_DEBUG_BIT, 0, "Layer Configurations count = %d", settings->layer_configuration_count);
+        for (uint32_t i = 0; i < settings->layer_configuration_count; i++) {
+            loader_log(inst, VULKAN_LOADER_DEBUG_BIT, 0, "---- Layer Configuration [%d] ----", i);
+            if (settings->layer_configurations[i].control != LOADER_SETTINGS_LAYER_UNORDERED_LAYER_LOCATION) {
+                loader_log(inst, VULKAN_LOADER_DEBUG_BIT, 0, "Name: %s", settings->layer_configurations[i].name);
+                loader_log(inst, VULKAN_LOADER_DEBUG_BIT, 0, "Path: %s", settings->layer_configurations[i].path);
+                loader_log(inst, VULKAN_LOADER_DEBUG_BIT, 0, "Layer Type: %s",
+                           settings->layer_configurations[i].treat_as_implicit_manifest ? "Implicit" : "Explicit");
+            }
+            loader_log(inst, VULKAN_LOADER_DEBUG_BIT, 0, "Control: %s",
+                       loader_settings_layer_control_to_string(settings->layer_configurations[i].control));
         }
-        loader_log(inst, VULKAN_LOADER_DEBUG_BIT, 0, "Control: %s",
-                   loader_settings_layer_control_to_string(settings->layer_configurations[i].control));
     }
     if (settings->additional_driver_count > 0) {
         loader_log(inst, VULKAN_LOADER_DEBUG_BIT, 0, "----");
@@ -638,7 +645,7 @@ void log_settings(const struct loader_instance* inst, loader_settings* settings)
             loader_log(inst, VULKAN_LOADER_DEBUG_BIT, 0, "Path: %s", settings->additional_drivers[i].path);
         }
     }
-    if (settings->device_configuration_count > 0) {
+    if (settings->device_configurations_active) {
         loader_log(inst, VULKAN_LOADER_DEBUG_BIT, 0, "----");
         loader_log(inst, VULKAN_LOADER_DEBUG_BIT, 0, "Device Configurations count = %d", settings->device_configuration_count);
         for (uint32_t i = 0; i < settings->device_configuration_count; i++) {
@@ -844,8 +851,8 @@ VkResult get_loader_settings(const struct loader_instance* inst, loader_settings
 
     // Only consider the settings active if there is at least one "setting" active.
     // Those are either logging, layers, additional_drivers, or device_configurations.
-    if (loader_settings->debug_level != 0 || loader_settings->layer_configuration_count != 0 ||
-        loader_settings->additional_driver_count != 0 || loader_settings->device_configuration_count != 0) {
+    if (loader_settings->debug_level != 0 || loader_settings->layer_configurations_active ||
+        loader_settings->additional_driver_count != 0 || loader_settings->device_configurations_active) {
         loader_settings->settings_file_path = settings_file_path;
         settings_file_path = NULL;
         loader_settings->settings_active = true;
@@ -925,7 +932,7 @@ TEST_FUNCTION_EXPORT VkResult get_settings_layers(const struct loader_instance* 
 
     const loader_settings* settings = get_current_settings_and_lock(inst);
 
-    if (NULL == settings || !settings->settings_active) {
+    if (NULL == settings || !settings->settings_active || !settings->layer_configurations_active) {
         goto out;
     }
 
@@ -1275,7 +1282,7 @@ bool loader_settings_should_use_driver_environment_variables(const struct loader
     if (NULL == settings || !settings->settings_active) {
         goto out;
     }
-    if (settings->device_configuration_count > 0) {
+    if (settings->device_configurations_active) {
         should_use = false;
     }
 out:

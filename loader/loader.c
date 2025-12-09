@@ -4710,7 +4710,7 @@ VkResult loader_enable_instance_layers(struct loader_instance *inst, const VkIns
         goto out;
     }
 
-    if (inst->settings.settings_active) {
+    if (inst->settings.settings_active && inst->settings.layer_configurations_active) {
         res = enable_correct_layers_from_settings(inst, layer_filters, pCreateInfo->enabledLayerCount,
                                                   pCreateInfo->ppEnabledLayerNames, &inst->instance_layer_list,
                                                   &inst->app_activated_layer_list, &inst->expanded_activated_layer_list);
@@ -5571,7 +5571,8 @@ VkResult loader_validate_layers(const struct loader_instance *inst, const uint32
                        "loader_validate_layers: Layer %d does not exist in the list of available layers", i);
             return VK_ERROR_LAYER_NOT_PRESENT;
         }
-        if (inst->settings.settings_active && prop->settings_control_value != LOADER_SETTINGS_LAYER_CONTROL_ON &&
+        if (inst->settings.settings_active && inst->settings.layer_configurations_active &&
+            prop->settings_control_value != LOADER_SETTINGS_LAYER_CONTROL_ON &&
             prop->settings_control_value != LOADER_SETTINGS_LAYER_CONTROL_DEFAULT) {
             loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0,
                        "loader_validate_layers: Layer %d was explicitly prevented from being enabled by the loader settings file",
@@ -5610,7 +5611,7 @@ VkResult loader_validate_instance_extensions(struct loader_instance *inst, const
         goto out;
     }
 
-    if (inst->settings.settings_active) {
+    if (inst->settings.settings_active && inst->settings.layer_configurations_active) {
         res = enable_correct_layers_from_settings(inst, layer_filters, pCreateInfo->enabledLayerCount,
                                                   pCreateInfo->ppEnabledLayerNames, instance_layers, &active_layers,
                                                   &expanded_layers);
@@ -5986,8 +5987,9 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateInstance(const VkInstanceCreateI
         // If the settings file has device_configurations, we need to raise the ApiVersion drivers use to 1.1 if the driver
         // supports 1.1 or higher. This allows 1.0 apps to use the device_configurations without the app having to set its own
         // ApiVersion to 1.1 on its own.
-        if (ptr_instance->settings.settings_active && ptr_instance->settings.device_configuration_count > 0 &&
-            icd_version >= VK_API_VERSION_1_1 && requested_version < VK_API_VERSION_1_1) {
+        if (ptr_instance->settings.settings_active && ptr_instance->settings.device_configurations_active &&
+            ptr_instance->settings.device_configuration_count > 0 && icd_version >= VK_API_VERSION_1_1 &&
+            requested_version < VK_API_VERSION_1_1) {
             if (NULL != pCreateInfo->pApplicationInfo) {
                 memcpy(&icd_app_info, pCreateInfo->pApplicationInfo, sizeof(VkApplicationInfo));
             }
@@ -7114,7 +7116,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_EnumeratePhysicalDevices(VkInstance in
         goto out;
     }
 
-    if (inst->settings.settings_active && inst->settings.device_configuration_count > 0) {
+    if (inst->settings.settings_active && inst->settings.device_configurations_active) {
         // Use settings file device_configurations if present
         if (NULL == pPhysicalDevices) {
             // take the minimum of the settings configurations count and number of terminators
