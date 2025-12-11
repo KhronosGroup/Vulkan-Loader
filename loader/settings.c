@@ -1041,7 +1041,10 @@ out:
 // Skip comparing to UNORDERED_LAYER_LOCATION
 // If layer_property is a regular layer, check if the lib_path is the same.
 // Make sure that the lib_name pointers are non-null before calling strcmp.
-bool check_if_layer_is_in_list(struct loader_layer_list* layer_list, struct loader_layer_properties* layer_property) {
+// consider_lib_path - true if comparison should include the library_path in distinguishing layers. Used to prevent duplicates
+// between settings file provided layers and default found layers
+bool check_if_layer_is_in_list(struct loader_layer_list* layer_list, struct loader_layer_properties* layer_property,
+                               bool consider_lib_path) {
     // If the layer is a meta layer, just check against the name
     for (uint32_t i = 0; i < layer_list->count; i++) {
         if (0 == strncmp(layer_list->list[i].info.layerName, layer_property->info.layerName, VK_MAX_EXTENSION_NAME_SIZE)) {
@@ -1049,6 +1052,9 @@ bool check_if_layer_is_in_list(struct loader_layer_list* layer_list, struct load
                 return true;
             }
             if (VK_LAYER_TYPE_FLAG_META_LAYER == (layer_property->type_flags & VK_LAYER_TYPE_FLAG_META_LAYER)) {
+                return true;
+            }
+            if (!consider_lib_path) {
                 return true;
             }
             if (layer_list->list[i].lib_name && layer_property->lib_name) {
@@ -1099,7 +1105,7 @@ VkResult combine_settings_layers_with_regular_layers(const struct loader_instanc
 
     // Insert the settings layers into output_layers up to unordered_layer_index
     for (uint32_t i = 0; i < unordered_layer_location_index; i++) {
-        if (!check_if_layer_is_in_list(output_layers, &settings_layers->list[i])) {
+        if (!check_if_layer_is_in_list(output_layers, &settings_layers->list[i], true)) {
             res = loader_append_layer_property(inst, output_layers, &settings_layers->list[i]);
             if (VK_SUCCESS != res) {
                 goto out;
@@ -1109,8 +1115,8 @@ VkResult combine_settings_layers_with_regular_layers(const struct loader_instanc
 
     for (uint32_t i = 0; i < regular_layers->count; i++) {
         // Check if its already been put in the output_layers list as well as the remaining settings_layers
-        bool regular_layer_is_ordered = check_if_layer_is_in_list(output_layers, &regular_layers->list[i]) ||
-                                        check_if_layer_is_in_list(settings_layers, &regular_layers->list[i]);
+        bool regular_layer_is_ordered = check_if_layer_is_in_list(output_layers, &regular_layers->list[i], false) ||
+                                        check_if_layer_is_in_list(settings_layers, &regular_layers->list[i], false);
         // If it isn't found, add it
         if (!regular_layer_is_ordered) {
             res = loader_append_layer_property(inst, output_layers, &regular_layers->list[i]);
@@ -1126,9 +1132,11 @@ VkResult combine_settings_layers_with_regular_layers(const struct loader_instanc
     // Insert the rest of the settings layers into combined_layers from  unordered_layer_index to the end
     // start at one after the unordered_layer_index
     for (uint32_t i = unordered_layer_location_index + 1; i < settings_layers->count; i++) {
-        res = loader_append_layer_property(inst, output_layers, &settings_layers->list[i]);
-        if (VK_SUCCESS != res) {
-            goto out;
+        if (!check_if_layer_is_in_list(output_layers, &settings_layers->list[i], true)) {
+            res = loader_append_layer_property(inst, output_layers, &settings_layers->list[i]);
+            if (VK_SUCCESS != res) {
+                goto out;
+            }
         }
     }
 
