@@ -1355,6 +1355,9 @@ VKAPI_ATTR void VKAPI_CALL loader_init_device_extension_dispatch_table(struct lo
     // ---- VK_EXT_custom_resolve extension commands
     table->CmdBeginCustomResolveEXT = (PFN_vkCmdBeginCustomResolveEXT)gdpa(dev, "vkCmdBeginCustomResolveEXT");
 
+    // ---- VK_NV_compute_occupancy_priority extension commands
+    table->CmdSetComputeOccupancyPriorityNV = (PFN_vkCmdSetComputeOccupancyPriorityNV)gdpa(dev, "vkCmdSetComputeOccupancyPriorityNV");
+
     // ---- VK_KHR_acceleration_structure extension commands
     table->CreateAccelerationStructureKHR = (PFN_vkCreateAccelerationStructureKHR)gdpa(dev, "vkCreateAccelerationStructureKHR");
     table->DestroyAccelerationStructureKHR = (PFN_vkDestroyAccelerationStructureKHR)gdpa(dev, "vkDestroyAccelerationStructureKHR");
@@ -3358,6 +3361,9 @@ VKAPI_ATTR void* VKAPI_CALL loader_lookup_device_dispatch_table(const VkLayerDis
 
     // ---- VK_EXT_custom_resolve extension commands
     if (!strcmp(name, "CmdBeginCustomResolveEXT")) return (void *)table->CmdBeginCustomResolveEXT;
+
+    // ---- VK_NV_compute_occupancy_priority extension commands
+    if (!strcmp(name, "CmdSetComputeOccupancyPriorityNV")) return (void *)table->CmdSetComputeOccupancyPriorityNV;
 
     // ---- VK_KHR_acceleration_structure extension commands
     if (!strcmp(name, "CreateAccelerationStructureKHR")) return (void *)table->CreateAccelerationStructureKHR;
@@ -11155,6 +11161,22 @@ VKAPI_ATTR void VKAPI_CALL CmdBeginCustomResolveEXT(
 }
 
 
+// ---- VK_NV_compute_occupancy_priority extension trampoline/terminators
+
+VKAPI_ATTR void VKAPI_CALL CmdSetComputeOccupancyPriorityNV(
+    VkCommandBuffer                             commandBuffer,
+    const VkComputeOccupancyPriorityParametersNV* pParameters) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkCmdSetComputeOccupancyPriorityNV: Invalid commandBuffer "
+                   "[VUID-vkCmdSetComputeOccupancyPriorityNV-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    disp->CmdSetComputeOccupancyPriorityNV(commandBuffer, pParameters);
+}
+
+
 // ---- VK_KHR_acceleration_structure extension trampoline/terminators
 
 VKAPI_ATTR VkResult VKAPI_CALL CreateAccelerationStructureKHR(
@@ -13849,6 +13871,12 @@ bool extension_instance_gpa(struct loader_instance *ptr_instance, const char *na
     // ---- VK_EXT_custom_resolve extension commands
     if (!strcmp("vkCmdBeginCustomResolveEXT", name)) {
         *addr = (void *)CmdBeginCustomResolveEXT;
+        return true;
+    }
+
+    // ---- VK_NV_compute_occupancy_priority extension commands
+    if (!strcmp("vkCmdSetComputeOccupancyPriorityNV", name)) {
+        *addr = (void *)CmdSetComputeOccupancyPriorityNV;
         return true;
     }
 

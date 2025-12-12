@@ -1317,6 +1317,9 @@ typedef struct VkLayerDispatchTable_ {
     // ---- VK_EXT_custom_resolve extension commands
     PFN_vkCmdBeginCustomResolveEXT CmdBeginCustomResolveEXT;
 
+    // ---- VK_NV_compute_occupancy_priority extension commands
+    PFN_vkCmdSetComputeOccupancyPriorityNV CmdSetComputeOccupancyPriorityNV;
+
     // ---- VK_KHR_acceleration_structure extension commands
     PFN_vkCreateAccelerationStructureKHR CreateAccelerationStructureKHR;
     PFN_vkDestroyAccelerationStructureKHR DestroyAccelerationStructureKHR;
