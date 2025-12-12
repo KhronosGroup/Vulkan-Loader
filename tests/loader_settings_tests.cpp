@@ -3088,6 +3088,41 @@ TEST(SettingsFile, EnvVarsWorkTogether) {
     }
 }
 
+TEST(SettingsFile, DontAllowDuplicatesBetweenSettingsLayersAndDefaultLayers) {
+    FrameworkEnvironment env;
+    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2)).add_physical_device({});
+
+    const char* explicit_layer_name1 = "VK_LAYER_Regular_TestLayer1";
+    env.add_explicit_layer(
+        ManifestLayer{}.add_layer(
+            ManifestLayer::LayerDescription{}.set_name(explicit_layer_name1).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)),
+        "explicit_test_layer1.json");
+
+    env.add_explicit_layer(TestLayerDetails{
+        ManifestLayer{}.add_layer(
+            ManifestLayer::LayerDescription{}.set_name(explicit_layer_name1).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)),
+        "explicit_test_layer2.json"}
+                               .set_discovery_type(ManifestDiscoveryType::override_folder));
+
+    env.update_loader_settings(env.loader_settings.set_file_format_version({1, 0, 0}).add_app_specific_setting(
+        AppSpecificSettings{}
+            .add_stderr_log_filter("all")
+            .add_layer_configuration(LoaderSettingsLayerConfiguration{}.set_control("unordered_layer_location"))
+            .add_layer_configuration(LoaderSettingsLayerConfiguration{}
+                                         .set_name(explicit_layer_name1)
+                                         .set_path(env.get_shimmed_layer_manifest_path(1))
+                                         .set_control("on"))));
+
+    auto layer_props = env.GetLayerProperties(1);
+    ASSERT_TRUE(string_eq(layer_props.at(0).layerName, explicit_layer_name1));
+
+    InstWrapper inst{env.vulkan_functions};
+    inst.CheckCreate();
+
+    auto active_layer_props = inst.GetActiveLayers(inst.GetPhysDev(), 1);
+    ASSERT_TRUE(string_eq(active_layer_props.at(0).layerName, explicit_layer_name1));
+}
+
 // additional drivers being provided by settings file
 TEST(SettingsFile, AdditionalDrivers) {
     FrameworkEnvironment env{FrameworkSettings{}.set_log_filter("")};
