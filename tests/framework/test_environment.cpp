@@ -482,12 +482,6 @@ void FrameworkEnvironment::add_implicit_layer(ManifestLayer layer_manifest, cons
 void FrameworkEnvironment::add_explicit_layer(ManifestLayer layer_manifest, const std::string& json_name) noexcept {
     add_layer_impl(TestLayerDetails{layer_manifest, json_name}, ManifestCategory::explicit_layer);
 }
-void FrameworkEnvironment::add_fake_implicit_layer(ManifestLayer layer_manifest, const std::string& json_name) noexcept {
-    add_layer_impl(TestLayerDetails{layer_manifest, json_name}.set_is_fake(true), ManifestCategory::implicit_layer);
-}
-void FrameworkEnvironment::add_fake_explicit_layer(ManifestLayer layer_manifest, const std::string& json_name) noexcept {
-    add_layer_impl(TestLayerDetails{layer_manifest, json_name}.set_is_fake(true), ManifestCategory::explicit_layer);
-}
 void FrameworkEnvironment::add_implicit_layer(TestLayerDetails layer_details) noexcept {
     add_layer_impl(layer_details, ManifestCategory::implicit_layer);
 }

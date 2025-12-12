@@ -1622,10 +1622,11 @@ TEST(TryLoadWrongBinaries, WrongExplicit) {
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2)).add_physical_device("physical_device_0");
 
     const char* layer_name = "DummyLayerExplicit";
-    env.add_fake_explicit_layer(
+    env.add_explicit_layer(TestLayerDetails{
         ManifestLayer{}.add_layer(
             ManifestLayer::LayerDescription{}.set_name(layer_name).set_lib_path(CURRENT_PLATFORM_DUMMY_BINARY_WRONG_TYPE)),
-        "dummy_test_layer.json");
+        "dummy_test_layer.json"}
+                               .set_is_fake(true));
 
     auto layer_props = env.GetLayerProperties(1);
     ASSERT_TRUE(string_eq(layer_name, layer_props[0].layerName));
@@ -1652,11 +1653,12 @@ TEST(TryLoadWrongBinaries, WrongImplicit) {
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2)).add_physical_device("physical_device_0");
 
     const char* layer_name = "DummyLayerImplicit0";
-    env.add_fake_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
-                                                              .set_name(layer_name)
-                                                              .set_lib_path(CURRENT_PLATFORM_DUMMY_BINARY_WRONG_TYPE)
-                                                              .set_disable_environment("DISABLE_ENV")),
-                                "dummy_test_layer.json");
+    env.add_implicit_layer(TestLayerDetails{ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                                          .set_name(layer_name)
+                                                                          .set_lib_path(CURRENT_PLATFORM_DUMMY_BINARY_WRONG_TYPE)
+                                                                          .set_disable_environment("DISABLE_ENV")),
+                                            "dummy_test_layer.json"}
+                               .set_is_fake(true));
 
     auto layer_props = env.GetLayerProperties(1);
     ASSERT_TRUE(string_eq(layer_name, layer_props[0].layerName));
@@ -1683,16 +1685,18 @@ TEST(TryLoadWrongBinaries, WrongExplicitAndImplicit) {
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2)).add_physical_device("physical_device_0");
 
     const char* layer_name_0 = "DummyLayerExplicit";
-    env.add_fake_explicit_layer(
+    env.add_explicit_layer(TestLayerDetails{
         ManifestLayer{}.add_layer(
             ManifestLayer::LayerDescription{}.set_name(layer_name_0).set_lib_path(CURRENT_PLATFORM_DUMMY_BINARY_WRONG_TYPE)),
-        "dummy_test_layer_0.json");
+        "dummy_test_layer_0.json"}
+                               .set_is_fake(true));
     const char* layer_name_1 = "DummyLayerImplicit";
-    env.add_fake_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
-                                                              .set_name(layer_name_1)
-                                                              .set_lib_path(CURRENT_PLATFORM_DUMMY_BINARY_WRONG_TYPE)
-                                                              .set_disable_environment("DISABLE_ENV")),
-                                "dummy_test_layer_1.json");
+    env.add_implicit_layer(TestLayerDetails{ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                                          .set_name(layer_name_1)
+                                                                          .set_lib_path(CURRENT_PLATFORM_DUMMY_BINARY_WRONG_TYPE)
+                                                                          .set_disable_environment("DISABLE_ENV")),
+                                            "dummy_test_layer_1.json"}
+                               .set_is_fake(true));
 
     auto layer_props = env.GetLayerProperties(2);
     ASSERT_TRUE(check_permutation({layer_name_0, layer_name_1}, layer_props));
@@ -1722,16 +1726,18 @@ TEST(TryLoadWrongBinaries, WrongExplicitAndImplicitErrorOnly) {
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2)).add_physical_device("physical_device_0");
 
     const char* layer_name_0 = "DummyLayerExplicit";
-    env.add_fake_explicit_layer(
+    env.add_explicit_layer(TestLayerDetails{
         ManifestLayer{}.add_layer(
             ManifestLayer::LayerDescription{}.set_name(layer_name_0).set_lib_path(CURRENT_PLATFORM_DUMMY_BINARY_WRONG_TYPE)),
-        "dummy_test_layer_0.json");
+        "dummy_test_layer_0.json"}
+                               .set_is_fake(true));
     const char* layer_name_1 = "DummyLayerImplicit";
-    env.add_fake_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
-                                                              .set_name(layer_name_1)
-                                                              .set_lib_path(CURRENT_PLATFORM_DUMMY_BINARY_WRONG_TYPE)
-                                                              .set_disable_environment("DISABLE_ENV")),
-                                "dummy_test_layer_1.json");
+    env.add_implicit_layer(TestLayerDetails{ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                                          .set_name(layer_name_1)
+                                                                          .set_lib_path(CURRENT_PLATFORM_DUMMY_BINARY_WRONG_TYPE)
+                                                                          .set_disable_environment("DISABLE_ENV")),
+                                            "dummy_test_layer_1.json"}
+                               .set_is_fake(true));
 
     auto layer_props = env.GetLayerProperties(2);
     ASSERT_TRUE(check_permutation({layer_name_0, layer_name_1}, layer_props));
@@ -1760,10 +1766,11 @@ TEST(TryLoadWrongBinaries, BadExplicit) {
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2)).add_physical_device("physical_device_0");
 
     const char* layer_name = "DummyLayerExplicit";
-    env.add_fake_explicit_layer(
+    env.add_explicit_layer(TestLayerDetails{
         ManifestLayer{}.add_layer(
             ManifestLayer::LayerDescription{}.set_name(layer_name).set_lib_path(CURRENT_PLATFORM_DUMMY_BINARY_BAD)),
-        "dummy_test_layer.json");
+        "dummy_test_layer.json"}
+                               .set_is_fake(true));
 
     auto layer_props = env.GetLayerProperties(1);
     ASSERT_TRUE(string_eq(layer_name, layer_props[0].layerName));
@@ -1789,11 +1796,12 @@ TEST(TryLoadWrongBinaries, BadImplicit) {
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2)).add_physical_device("physical_device_0");
 
     const char* layer_name = "DummyLayerImplicit0";
-    env.add_fake_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
-                                                              .set_name(layer_name)
-                                                              .set_lib_path(CURRENT_PLATFORM_DUMMY_BINARY_BAD)
-                                                              .set_disable_environment("DISABLE_ENV")),
-                                "dummy_test_layer.json");
+    env.add_implicit_layer(TestLayerDetails{ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                                          .set_name(layer_name)
+                                                                          .set_lib_path(CURRENT_PLATFORM_DUMMY_BINARY_BAD)
+                                                                          .set_disable_environment("DISABLE_ENV")),
+                                            "dummy_test_layer.json"}
+                               .set_is_fake(true));
 
     auto layer_props = env.GetLayerProperties(1);
     ASSERT_TRUE(string_eq(layer_name, layer_props[0].layerName));
@@ -1819,16 +1827,18 @@ TEST(TryLoadWrongBinaries, BadExplicitAndImplicit) {
     env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2)).add_physical_device("physical_device_0");
 
     const char* layer_name_0 = "DummyLayerExplicit";
-    env.add_fake_explicit_layer(
+    env.add_explicit_layer(TestLayerDetails{
         ManifestLayer{}.add_layer(
             ManifestLayer::LayerDescription{}.set_name(layer_name_0).set_lib_path(CURRENT_PLATFORM_DUMMY_BINARY_BAD)),
-        "dummy_test_layer_0.json");
+        "dummy_test_layer_0.json"}
+                               .set_is_fake(true));
     const char* layer_name_1 = "DummyLayerImplicit0";
-    env.add_fake_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
-                                                              .set_name(layer_name_1)
-                                                              .set_lib_path(CURRENT_PLATFORM_DUMMY_BINARY_BAD)
-                                                              .set_disable_environment("DISABLE_ENV")),
-                                "dummy_test_layer_1.json");
+    env.add_implicit_layer(TestLayerDetails{ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                                          .set_name(layer_name_1)
+                                                                          .set_lib_path(CURRENT_PLATFORM_DUMMY_BINARY_BAD)
+                                                                          .set_disable_environment("DISABLE_ENV")),
+                                            "dummy_test_layer_1.json"}
+                               .set_is_fake(true));
 
     auto layer_props = env.GetLayerProperties(2);
     ASSERT_TRUE(check_permutation({layer_name_0, layer_name_1}, layer_props));

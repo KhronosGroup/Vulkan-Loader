@@ -499,8 +499,6 @@ struct FrameworkEnvironment {
     void add_implicit_layer(TestLayerDetails layer_details) noexcept;
     void add_explicit_layer(ManifestLayer layer_manifest, const std::string& json_name) noexcept;
     void add_explicit_layer(TestLayerDetails layer_details) noexcept;
-    void add_fake_implicit_layer(ManifestLayer layer_manifest, const std::string& json_name) noexcept;
-    void add_fake_explicit_layer(ManifestLayer layer_manifest, const std::string& json_name) noexcept;
 
     // Resets the current settings with the values contained in loader_settings.
     // Write_to_secure_location determines whether to write to the secure or unsecure settings folder.
