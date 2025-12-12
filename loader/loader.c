@@ -973,6 +973,7 @@ VkResult loader_add_instance_extensions(const struct loader_instance *inst,
         res = VK_ERROR_OUT_OF_HOST_MEMORY;
         goto out;
     }
+    memset(ext_props, 0, count * sizeof(VkExtensionProperties));
 
     res = fp_get_props(NULL, &count, ext_props);
     if (res != VK_SUCCESS) {
