@@ -406,42 +406,35 @@ struct PlatformShimWrapper {
     EnvVarWrapper loader_logging;
 };
 
-struct TestICDHandle {
-    TestICDHandle() noexcept;
-    TestICDHandle(std::filesystem::path const& icd_path) noexcept;
-    TestICD& reset_icd() noexcept;
-    TestICD& get_test_icd() noexcept;
-    std::filesystem::path get_icd_full_path() noexcept;
-    std::filesystem::path get_icd_manifest_path() noexcept;
-    std::filesystem::path get_shimmed_manifest_path() noexcept;
+template <typename BinaryObject, typename GetTestBinaryFunc, typename GetNewTestBinaryFunc>
+struct TestBinaryHandle {
+    TestBinaryHandle() noexcept {}
+    TestBinaryHandle(std::filesystem::path const& binary_path) noexcept;
+
+    BinaryObject& get_test_binary() noexcept {
+        assert(proc_addr_get_test_binary != NULL && "symbol must be loaded before use");
+        return *proc_addr_get_test_binary();
+    }
+    BinaryObject& reset() noexcept {
+        assert(proc_addr_reset_binary != NULL && "symbol must be loaded before use");
+        return *proc_addr_reset_binary();
+    }
+    std::filesystem::path get_full_path() noexcept { return library.get_path(); }
+    std::filesystem::path get_manifest_path() noexcept { return manifest_path; }
+    std::filesystem::path get_shimmed_manifest_path() noexcept { return shimmed_manifest_path; }
 
     // Must use statically
-    LibraryWrapper icd_library;
-    GetTestICDFunc proc_addr_get_test_icd = nullptr;
-    GetNewTestICDFunc proc_addr_reset_icd = nullptr;
+    LibraryWrapper library;
+    GetTestBinaryFunc proc_addr_get_test_binary = nullptr;
+    GetNewTestBinaryFunc proc_addr_reset_binary = nullptr;
     std::filesystem::path
         manifest_path;  // path to the manifest file is on the actual filesystem (aka <build_folder>/tests/framework/<...>)
     std::filesystem::path
         shimmed_manifest_path;  // path to where the loader will find the manifest file (eg /usr/local/share/vulkan/<...>)
 };
-struct TestLayerHandle {
-    TestLayerHandle() noexcept;
-    TestLayerHandle(std::filesystem::path const& layer_path) noexcept;
-    TestLayer& reset_layer() noexcept;
-    TestLayer& get_test_layer() noexcept;
-    std::filesystem::path get_layer_full_path() noexcept;
-    std::filesystem::path get_layer_manifest_path() noexcept;
-    std::filesystem::path get_shimmed_manifest_path() noexcept;
 
-    // Must use statically
-    LibraryWrapper layer_library;
-    GetTestLayerFunc proc_addr_get_test_layer = nullptr;
-    GetNewTestLayerFunc proc_addr_reset_layer = nullptr;
-    std::filesystem::path
-        manifest_path;  // path to the manifest file is on the actual filesystem (aka <build_folder>/tests/framework/<...>)
-    std::filesystem::path
-        shimmed_manifest_path;  // path to where the loader will find the manifest file (eg /usr/local/share/vulkan/<...>)
-};
+using TestICDHandle = TestBinaryHandle<TestICD, GetTestICDFunc, GetNewTestICDFunc>;
+using TestLayerHandle = TestBinaryHandle<TestLayer, GetTestLayerFunc, GetNewTestLayerFunc>;
 
 struct TestICDDetails {
     TestICDDetails(ManifestICD icd_manifest) noexcept : icd_manifest(icd_manifest) {}
