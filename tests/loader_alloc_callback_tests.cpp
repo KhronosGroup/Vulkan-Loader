@@ -725,7 +725,7 @@ TEST(Allocation, CreateInstanceDeviceIntentionalAllocFail) {
 
     VkDirectDriverLoadingInfoLUNARG ddl_info{};
     ddl_info.sType = VK_STRUCTURE_TYPE_DIRECT_DRIVER_LOADING_INFO_LUNARG;
-    ddl_info.pfnGetInstanceProcAddr = env.icds.back().icd_library.get_symbol("vk_icdGetInstanceProcAddr");
+    ddl_info.pfnGetInstanceProcAddr = env.icds.back().library.get_symbol("vk_icdGetInstanceProcAddr");
 
     VkDirectDriverLoadingListLUNARG ddl_list{};
     ddl_list.sType = VK_STRUCTURE_TYPE_DIRECT_DRIVER_LOADING_LIST_LUNARG;

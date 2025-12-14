@@ -939,7 +939,7 @@ void CheckDirectDriverLoading(FrameworkEnvironment& env, std::vector<DriverInfo>
         direct_driver_icd.add_and_get_physical_device({}).properties.driverVersion = driver.driver_version;
         VkDirectDriverLoadingInfoLUNARG ddl_info{};
         ddl_info.sType = VK_STRUCTURE_TYPE_DIRECT_DRIVER_LOADING_INFO_LUNARG;
-        ddl_info.pfnGetInstanceProcAddr = env.icds.back().icd_library.get_symbol("vk_icdGetInstanceProcAddr");
+        ddl_info.pfnGetInstanceProcAddr = env.icds.back().library.get_symbol("vk_icdGetInstanceProcAddr");
         ddl_infos.push_back(ddl_info);
         if (driver.expect_to_find) {
             expected_driver_count++;
@@ -1149,7 +1149,7 @@ TEST(DirectDriverLoading, ExtensionNotEnabled) {
 
     VkDirectDriverLoadingInfoLUNARG ddl_info{};
     ddl_info.sType = VK_STRUCTURE_TYPE_DIRECT_DRIVER_LOADING_INFO_LUNARG;
-    ddl_info.pfnGetInstanceProcAddr = env.icds.back().icd_library.get_symbol("vk_icdGetInstanceProcAddr");
+    ddl_info.pfnGetInstanceProcAddr = env.icds.back().library.get_symbol("vk_icdGetInstanceProcAddr");
 
     VkDirectDriverLoadingListLUNARG ddl_list{};
     ddl_list.sType = VK_STRUCTURE_TYPE_DIRECT_DRIVER_LOADING_LIST_LUNARG;
@@ -1222,7 +1222,7 @@ TEST(DirectDriverLoading, DriverListHasZeroInfoCount) {
 
     VkDirectDriverLoadingInfoLUNARG ddl_info{};
     ddl_info.sType = VK_STRUCTURE_TYPE_DIRECT_DRIVER_LOADING_INFO_LUNARG;
-    ddl_info.pfnGetInstanceProcAddr = env.icds.back().icd_library.get_symbol("vk_icdGetInstanceProcAddr");
+    ddl_info.pfnGetInstanceProcAddr = env.icds.back().library.get_symbol("vk_icdGetInstanceProcAddr");
 
     VkDirectDriverLoadingListLUNARG ddl_list{};
     ddl_list.sType = VK_STRUCTURE_TYPE_DIRECT_DRIVER_LOADING_LIST_LUNARG;
@@ -1291,7 +1291,7 @@ TEST(DirectDriverLoading, DriverDoesNotExportNegotiateFunction) {
 
     VkDirectDriverLoadingInfoLUNARG ddl_info{};
     ddl_info.sType = VK_STRUCTURE_TYPE_DIRECT_DRIVER_LOADING_INFO_LUNARG;
-    ddl_info.pfnGetInstanceProcAddr = env.icds.back().icd_library.get_symbol("vk_icdGetInstanceProcAddr");
+    ddl_info.pfnGetInstanceProcAddr = env.icds.back().library.get_symbol("vk_icdGetInstanceProcAddr");
 
     VkDirectDriverLoadingListLUNARG ddl_list{};
     ddl_list.sType = VK_STRUCTURE_TYPE_DIRECT_DRIVER_LOADING_LIST_LUNARG;

@@ -218,39 +218,20 @@ PlatformShimWrapper::PlatformShimWrapper(fs::FileSystemManager& file_system_mana
     }
 }
 
-TestICDHandle::TestICDHandle() noexcept {}
-TestICDHandle::TestICDHandle(std::filesystem::path const& icd_path) noexcept : icd_library(icd_path) {
-    proc_addr_get_test_icd = icd_library.get_symbol(GET_TEST_ICD_FUNC_STR);
-    proc_addr_reset_icd = icd_library.get_symbol(RESET_ICD_FUNC_STR);
+template <>
+TestBinaryHandle<TestICD, GetTestICDFunc, GetNewTestICDFunc>::TestBinaryHandle(std::filesystem::path const& binary_path) noexcept
+    : library(binary_path) {
+    proc_addr_get_test_binary = library.get_symbol(GET_TEST_ICD_FUNC_STR);
+    proc_addr_reset_binary = library.get_symbol(RESET_ICD_FUNC_STR);
 }
-TestICD& TestICDHandle::get_test_icd() noexcept {
-    assert(proc_addr_get_test_icd != NULL && "symbol must be loaded before use");
-    return *proc_addr_get_test_icd();
-}
-TestICD& TestICDHandle::reset_icd() noexcept {
-    assert(proc_addr_reset_icd != NULL && "symbol must be loaded before use");
-    return *proc_addr_reset_icd();
-}
-std::filesystem::path TestICDHandle::get_icd_full_path() noexcept { return icd_library.get_path(); }
-std::filesystem::path TestICDHandle::get_icd_manifest_path() noexcept { return manifest_path; }
-std::filesystem::path TestICDHandle::get_shimmed_manifest_path() noexcept { return shimmed_manifest_path; }
 
-TestLayerHandle::TestLayerHandle() noexcept {}
-TestLayerHandle::TestLayerHandle(std::filesystem::path const& layer_path) noexcept : layer_library(layer_path) {
-    proc_addr_get_test_layer = layer_library.get_symbol(GET_TEST_LAYER_FUNC_STR);
-    proc_addr_reset_layer = layer_library.get_symbol(RESET_LAYER_FUNC_STR);
+template <>
+TestBinaryHandle<TestLayer, GetTestLayerFunc, GetNewTestLayerFunc>::TestBinaryHandle(
+    std::filesystem::path const& binary_path) noexcept
+    : library(binary_path) {
+    proc_addr_get_test_binary = library.get_symbol(GET_TEST_LAYER_FUNC_STR);
+    proc_addr_reset_binary = library.get_symbol(RESET_LAYER_FUNC_STR);
 }
-TestLayer& TestLayerHandle::get_test_layer() noexcept {
-    assert(proc_addr_get_test_layer != NULL && "symbol must be loaded before use");
-    return *proc_addr_get_test_layer();
-}
-TestLayer& TestLayerHandle::reset_layer() noexcept {
-    assert(proc_addr_reset_layer != NULL && "symbol must be loaded before use");
-    return *proc_addr_reset_layer();
-}
-std::filesystem::path TestLayerHandle::get_layer_full_path() noexcept { return layer_library.get_path(); }
-std::filesystem::path TestLayerHandle::get_layer_manifest_path() noexcept { return manifest_path; }
-std::filesystem::path TestLayerHandle::get_shimmed_manifest_path() noexcept { return shimmed_manifest_path; }
 
 FrameworkEnvironment::FrameworkEnvironment() noexcept : FrameworkEnvironment(FrameworkSettings{}) {}
 FrameworkEnvironment::FrameworkEnvironment(FrameworkSettings const& settings) noexcept
@@ -406,7 +387,7 @@ TestICD& FrameworkEnvironment::add_icd(TestICDDetails icd_details) noexcept {
         }
 #endif
         icds.push_back(TestICDHandle(new_driver_location));
-        icds.back().reset_icd();
+        icds.back().reset();
         if (icd_details.library_path_type == LibraryPathType::relative) {
             icd_details.icd_manifest.lib_path = std::filesystem::path(".") / new_lib_name;
         } else if (icd_details.library_path_type == LibraryPathType::default_search_paths) {
@@ -473,7 +454,7 @@ TestICD& FrameworkEnvironment::add_icd(TestICDDetails icd_details) noexcept {
                 break;
         }
     }
-    return icds.back().get_test_icd();
+    return icds.back().get_test_binary();
 }
 
 void FrameworkEnvironment::add_implicit_layer(ManifestLayer layer_manifest, const std::string& json_name) noexcept {
@@ -575,7 +556,7 @@ void FrameworkEnvironment::add_layer_impl(TestLayerDetails layer_details, Manife
                 layer.lib_path.stem().string().find(std::filesystem::path(TEST_LAYER_WRAP_OBJECTS).stem().string()) ==
                     std::string::npos) {
                 layers.push_back(TestLayerHandle(new_layer_location));
-                layers.back().reset_layer();
+                layers.back().reset();
             }
             if (layer_details.library_path_type == LibraryPathType::relative) {
                 layer.lib_path = std::filesystem::path(".") / new_lib_path;
@@ -758,23 +739,19 @@ void FrameworkEnvironment::write_file_from_source(const char* source_file, Manif
     write_file_from_string(file_stream.str(), category, location, file_name);
 }
 
-TestICD& FrameworkEnvironment::get_test_icd(size_t index) noexcept { return icds[index].get_test_icd(); }
-TestICD& FrameworkEnvironment::reset_icd(size_t index) noexcept { return icds[index].reset_icd(); }
-std::filesystem::path FrameworkEnvironment::get_test_icd_path(size_t index) noexcept { return icds[index].get_icd_full_path(); }
-std::filesystem::path FrameworkEnvironment::get_icd_manifest_path(size_t index) noexcept {
-    return icds[index].get_icd_manifest_path();
-}
+TestICD& FrameworkEnvironment::get_test_icd(size_t index) noexcept { return icds[index].get_test_binary(); }
+TestICD& FrameworkEnvironment::reset_icd(size_t index) noexcept { return icds[index].reset(); }
+std::filesystem::path FrameworkEnvironment::get_test_icd_path(size_t index) noexcept { return icds[index].get_full_path(); }
+std::filesystem::path FrameworkEnvironment::get_icd_manifest_path(size_t index) noexcept { return icds[index].get_manifest_path(); }
 std::filesystem::path FrameworkEnvironment::get_shimmed_icd_manifest_path(size_t index) noexcept {
     return icds[index].get_shimmed_manifest_path();
 }
 
-TestLayer& FrameworkEnvironment::get_test_layer(size_t index) noexcept { return layers[index].get_test_layer(); }
-TestLayer& FrameworkEnvironment::reset_layer(size_t index) noexcept { return layers[index].reset_layer(); }
-std::filesystem::path FrameworkEnvironment::get_test_layer_path(size_t index) noexcept {
-    return layers[index].get_layer_full_path();
-}
+TestLayer& FrameworkEnvironment::get_test_layer(size_t index) noexcept { return layers[index].get_test_binary(); }
+TestLayer& FrameworkEnvironment::reset_layer(size_t index) noexcept { return layers[index].reset(); }
+std::filesystem::path FrameworkEnvironment::get_test_layer_path(size_t index) noexcept { return layers[index].get_full_path(); }
 std::filesystem::path FrameworkEnvironment::get_layer_manifest_path(size_t index) noexcept {
-    return layers[index].get_layer_manifest_path();
+    return layers[index].get_manifest_path();
 }
 std::filesystem::path FrameworkEnvironment::get_shimmed_layer_manifest_path(size_t index) noexcept {
     return layers[index].get_shimmed_manifest_path();
