@@ -1004,8 +1004,7 @@ TEST(ImplicitLayers, VkImplicitLayerPathEnvVar) {
     const char* regular_layer_name_1 = "VK_LAYER_RegularLayer1";
     env.add_implicit_layer(ManifestOptions{}
 
-                               .set_discovery_type(ManifestDiscoveryType::env_var)
-                               .set_is_dir(false),
+                               .set_discovery_type(ManifestDiscoveryType::env_var),
                            ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
                                                          .set_name(regular_layer_name_1)
                                                          .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
@@ -1023,20 +1022,14 @@ TEST(ImplicitLayers, VkImplicitLayerPathEnvVarContainsMultipleFilePaths) {
 
     // verify layers load successfully when setting VK_IMPLICIT_LAYER_PATH to multiple full filepaths
     const char* regular_layer_name_1 = "VK_LAYER_RegularLayer1";
-    env.add_implicit_layer(ManifestOptions{}
-
-                               .set_discovery_type(ManifestDiscoveryType::env_var)
-                               .set_is_dir(false),
+    env.add_implicit_layer(ManifestOptions{}.set_discovery_type(ManifestDiscoveryType::env_var),
                            ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
                                                          .set_name(regular_layer_name_1)
                                                          .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
                                                          .set_disable_environment("Yikes")));
 
     const char* regular_layer_name_2 = "VK_LAYER_RegularLayer2";
-    env.add_implicit_layer(ManifestOptions{}
-
-                               .set_discovery_type(ManifestDiscoveryType::env_var)
-                               .set_is_dir(false),
+    env.add_implicit_layer(ManifestOptions{}.set_discovery_type(ManifestDiscoveryType::env_var),
                            ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
                                                          .set_name(regular_layer_name_2)
                                                          .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
@@ -1090,8 +1083,7 @@ TEST(ImplicitLayers, DuplicateLayersInVkImplicitLayerPath) {
 
     env.add_implicit_layer(ManifestOptions{}
                                // putting it in a separate folder then manually adding the folder to VK_IMPLICIT_LAYER_PATH
-                               .set_discovery_type(ManifestDiscoveryType::override_folder)
-                               .set_is_dir(true),
+                               .set_discovery_type(ManifestDiscoveryType::override_folder),
                            ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
                                                          .set_name(layer_name)
                                                          .set_description("actually_layer_2")
@@ -1126,8 +1118,7 @@ TEST(ImplicitLayers, DuplicateLayersInVK_ADD_IMPLICIT_LAYER_PATH) {
     const char* same_layer_name_1 = "VK_LAYER_RegularLayer1";
     env.add_implicit_layer(ManifestOptions{}
                                // use override folder as just a folder and manually set the VK_ADD_IMPLICIT_LAYER_PATH env-var to it
-                               .set_discovery_type(ManifestDiscoveryType::override_folder)
-                               .set_is_dir(true),
+                               .set_discovery_type(ManifestDiscoveryType::override_folder),
                            ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
                                                          .set_name(same_layer_name_1)
                                                          .set_description("actually_layer_1")
@@ -2390,10 +2381,7 @@ TEST(ExplicitLayers, VkLayerPathEnvVar) {
     // verify layer loads successfully when setting VK_LAYER_PATH to a full filepath
     const char* regular_layer_name_1 = "VK_LAYER_RegularLayer1";
     env.add_explicit_layer(
-        ManifestOptions{}
-
-            .set_discovery_type(ManifestDiscoveryType::env_var)
-            .set_is_dir(false),
+        ManifestOptions{}.set_discovery_type(ManifestDiscoveryType::env_var),
         ManifestLayer{}.add_layer(
             ManifestLayer::LayerDescription{}.set_name(regular_layer_name_1).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)));
 
@@ -2411,13 +2399,13 @@ TEST(ExplicitLayers, VkLayerPathEnvVarContainsMultipleFilepaths) {
     // verify layers load successfully when setting VK_LAYER_PATH to multiple full filepaths
     const char* regular_layer_name_1 = "VK_LAYER_RegularLayer1";
     env.add_explicit_layer(
-        ManifestOptions{}.set_discovery_type(ManifestDiscoveryType::env_var).set_is_dir(false),
+        ManifestOptions{}.set_discovery_type(ManifestDiscoveryType::env_var),
         ManifestLayer{}.add_layer(
             ManifestLayer::LayerDescription{}.set_name(regular_layer_name_1).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)));
 
     const char* regular_layer_name_2 = "VK_LAYER_RegularLayer2";
     env.add_explicit_layer(
-        ManifestOptions{}.set_discovery_type(ManifestDiscoveryType::env_var).set_is_dir(false),
+        ManifestOptions{}.set_discovery_type(ManifestDiscoveryType::env_var),
         ManifestLayer{}.add_layer(
             ManifestLayer::LayerDescription{}.set_name(regular_layer_name_2).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)));
 
@@ -2534,8 +2522,7 @@ TEST(ExplicitLayers, DuplicateLayersInVK_ADD_LAYER_PATH) {
     const char* same_layer_name_1 = "VK_LAYER_RegularLayer1";
     env.add_explicit_layer(ManifestOptions{}
                                // use override folder as just a folder and manually set the VK_ADD_LAYER_PATH env-var to it
-                               .set_discovery_type(ManifestDiscoveryType::override_folder)
-                               .set_is_dir(true),
+                               .set_discovery_type(ManifestDiscoveryType::override_folder),
                            ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
                                                          .set_name(same_layer_name_1)
                                                          .set_description("actually_layer_1")

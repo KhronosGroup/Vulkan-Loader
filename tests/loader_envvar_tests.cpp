@@ -148,7 +148,7 @@ TEST(EnvVarICDOverrideSetup, TestOnlyDriverEnvVarRunningWithElevatedPrivileges) 
 // Test VK_DRIVER_FILES environment variable containing a path to a folder
 TEST(EnvVarICDOverrideSetup, TestOnlyDriverEnvVarInFolder) {
     FrameworkEnvironment env{};
-    env.add_icd(TEST_ICD_PATH_EXPORT_NONE, ManifestOptions{}.set_discovery_type(ManifestDiscoveryType::env_var).set_is_dir(false));
+    env.add_icd(TEST_ICD_PATH_EXPORT_NONE, ManifestOptions{}.set_discovery_type(ManifestDiscoveryType::env_var).set_is_dir(true));
     env.get_test_icd(0).add_physical_device("pd0");
 
     InstWrapper inst1{env.vulkan_functions};
@@ -178,7 +178,7 @@ TEST(EnvVarICDOverrideSetup, TestOnlyDriverEnvVarInFolder) {
 // Test VK_DRIVER_FILES environment variable containing a path to a folder  with elevated privileges
 TEST(EnvVarICDOverrideSetup, TestOnlyDriverEnvVarInFolderWithElevatedPrivileges) {
     FrameworkEnvironment env{FrameworkSettings{}.set_run_as_if_with_elevated_privleges(true)};
-    env.add_icd(TEST_ICD_PATH_EXPORT_NONE, ManifestOptions{}.set_discovery_type(ManifestDiscoveryType::env_var).set_is_dir(false));
+    env.add_icd(TEST_ICD_PATH_EXPORT_NONE, ManifestOptions{}.set_discovery_type(ManifestDiscoveryType::env_var).set_is_dir(true));
     env.get_test_icd(0).add_physical_device("pd0");
 
     for (uint32_t add = 0; add < 2; ++add) {

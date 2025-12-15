@@ -391,8 +391,6 @@ struct LoaderSettings {
     BUILDER_VECTOR(AppSpecificSettings, app_specific_settings, app_specific_setting);
 };
 
-struct FrameworkEnvironment;  // forward declaration
-
 struct PlatformShimWrapper {
     PlatformShimWrapper(fs::FileSystemManager& file_system_manager, const char* log_filter) noexcept;
     PlatformShimWrapper(PlatformShimWrapper const&) = delete;
