@@ -334,10 +334,15 @@ FrameworkEnvironment::~FrameworkEnvironment() {
     platform_shim->is_during_destruction = true;
 }
 
-TestICD& FrameworkEnvironment::add_icd(TestICDDetails icd_details) noexcept {
+TestICD& FrameworkEnvironment::add_icd(std::filesystem::path const& path, ManifestOptions args, ManifestICD manifest) noexcept {
+    manifest.set_lib_path(path);
+
+    if (args.json_name.empty()) {
+        args.json_name = "test_icd.json";
+    }
     size_t cur_icd_index = icds.size();
     fs::Folder* fs_ptr = &get_folder(ManifestLocation::driver);
-    switch (icd_details.discovery_type) {
+    switch (args.discovery_type) {
         case (ManifestDiscoveryType::env_var):
         case (ManifestDiscoveryType::add_env_var):
             fs_ptr = &get_folder(ManifestLocation::driver_env_var);
@@ -368,44 +373,44 @@ TestICD& FrameworkEnvironment::add_icd(TestICDDetails icd_details) noexcept {
     }
     auto& folder = *fs_ptr;
 
-    if (!icd_details.is_fake) {
-        std::filesystem::path new_lib_name = icd_details.icd_manifest.lib_path.stem();
+    if (!args.is_fake) {
+        std::filesystem::path new_lib_name = manifest.lib_path.stem();
         new_lib_name += "_";
         new_lib_name += std::to_string(cur_icd_index);
-        new_lib_name += icd_details.icd_manifest.lib_path.extension();
-        auto new_driver_location = folder.copy_file(icd_details.icd_manifest.lib_path, new_lib_name);
+        new_lib_name += manifest.lib_path.extension();
+        auto new_driver_location = folder.copy_file(manifest.lib_path, new_lib_name);
 
 #if TESTING_COMMON_UNIX_PLATFORMS
-        if (icd_details.library_path_type == LibraryPathType::default_search_paths) {
+        if (args.library_path_type == LibraryPathType::default_search_paths) {
             platform_shim->add_system_library(new_lib_name, new_driver_location);
         }
 #endif
 #if defined(WIN32)
-        if (icd_details.library_path_type == LibraryPathType::default_search_paths) {
+        if (args.library_path_type == LibraryPathType::default_search_paths) {
             SetDefaultDllDirectories(LOAD_LIBRARY_SEARCH_USER_DIRS);
             AddDllDirectory(new_driver_location.parent_path().native().c_str());
         }
 #endif
         icds.push_back(TestICDHandle(new_driver_location));
         icds.back().reset();
-        if (icd_details.library_path_type == LibraryPathType::relative) {
-            icd_details.icd_manifest.lib_path = std::filesystem::path(".") / new_lib_name;
-        } else if (icd_details.library_path_type == LibraryPathType::default_search_paths) {
-            icd_details.icd_manifest.lib_path = new_lib_name;
+        if (args.library_path_type == LibraryPathType::relative) {
+            manifest.lib_path = std::filesystem::path(".") / new_lib_name;
+        } else if (args.library_path_type == LibraryPathType::default_search_paths) {
+            manifest.lib_path = new_lib_name;
         } else {
-            icd_details.icd_manifest.lib_path = new_driver_location;
+            manifest.lib_path = new_driver_location;
         }
     }
-    if (icd_details.discovery_type != ManifestDiscoveryType::none) {
-        std::filesystem::path new_manifest_path = icd_details.json_name.stem();
-        if (!icd_details.disable_icd_inc) {
+    if (args.discovery_type != ManifestDiscoveryType::none) {
+        std::filesystem::path new_manifest_path = args.json_name.stem();
+        if (!args.disable_name_increment) {
             new_manifest_path += "_";
             new_manifest_path += std::to_string(cur_icd_index);
         }
         new_manifest_path += ".json";
-        icds.back().manifest_path = folder.write_manifest(new_manifest_path, icd_details.icd_manifest.get_manifest_str());
+        icds.back().manifest_path = folder.write_manifest(new_manifest_path, manifest.get_manifest_str());
         icds.back().shimmed_manifest_path = icds.back().manifest_path;
-        switch (icd_details.discovery_type) {
+        switch (args.discovery_type) {
             case (ManifestDiscoveryType::generic):
 #if defined(WIN32)
                 platform_shim->add_manifest_to_registry(ManifestCategory::icd, icds.back().manifest_path);
@@ -424,14 +429,14 @@ TestICD& FrameworkEnvironment::add_icd(TestICDDetails icd_details) noexcept {
 #endif
                 break;
             case (ManifestDiscoveryType::env_var):
-                if (icd_details.is_dir) {
+                if (args.is_dir) {
                     env_var_vk_icd_filenames.add_to_list(folder.location());
                 } else {
                     env_var_vk_icd_filenames.add_to_list(folder.location() / new_manifest_path);
                 }
                 break;
             case (ManifestDiscoveryType::add_env_var):
-                if (icd_details.is_dir) {
+                if (args.is_dir) {
                     add_env_var_vk_icd_filenames.add_to_list(folder.location());
                 } else {
                     add_env_var_vk_icd_filenames.add_to_list(folder.location() / new_manifest_path);

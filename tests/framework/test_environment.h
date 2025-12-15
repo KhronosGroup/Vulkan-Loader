@@ -436,15 +436,10 @@ struct TestBinaryHandle {
 using TestICDHandle = TestBinaryHandle<TestICD, GetTestICDFunc, GetNewTestICDFunc>;
 using TestLayerHandle = TestBinaryHandle<TestLayer, GetTestLayerFunc, GetNewTestLayerFunc>;
 
-struct TestICDDetails {
-    TestICDDetails(ManifestICD icd_manifest) noexcept : icd_manifest(icd_manifest) {}
-    TestICDDetails(std::filesystem::path icd_binary_path, uint32_t api_version = VK_API_VERSION_1_0) noexcept {
-        icd_manifest.set_lib_path(icd_binary_path).set_api_version(api_version);
-    }
-    BUILDER_VALUE(ManifestICD, icd_manifest);
-    BUILDER_VALUE_WITH_DEFAULT(std::filesystem::path, json_name, "test_icd");
+struct ManifestOptions {
+    BUILDER_VALUE(std::filesystem::path, json_name);
     // Uses the json_name without modification - default is to append _1 in the json file to distinguish drivers
-    BUILDER_VALUE(bool, disable_icd_inc);
+    BUILDER_VALUE(bool, disable_name_increment);
     BUILDER_VALUE_WITH_DEFAULT(ManifestDiscoveryType, discovery_type, ManifestDiscoveryType::generic);
     BUILDER_VALUE(bool, is_fake);
     // If discovery type is env-var, is_dir controls whether to use the path to the file or folder the manifest is in
@@ -487,7 +482,9 @@ struct FrameworkEnvironment {
     FrameworkEnvironment(const FrameworkEnvironment&) = delete;
     FrameworkEnvironment& operator=(const FrameworkEnvironment&) = delete;
 
-    TestICD& add_icd(TestICDDetails icd_details) noexcept;
+    TestICD& add_icd(std::filesystem::path const& path, ManifestOptions args = ManifestOptions{},
+                     ManifestICD manifest = ManifestICD{}) noexcept;
+
     void add_implicit_layer(ManifestLayer layer_manifest, const std::string& json_name) noexcept;
     void add_implicit_layer(TestLayerDetails layer_details) noexcept;
     void add_explicit_layer(ManifestLayer layer_manifest, const std::string& json_name) noexcept;

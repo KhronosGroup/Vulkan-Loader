@@ -52,7 +52,7 @@ class DebugReportTest : public ::testing::Test {
     virtual void SetUp() {
         env = std::unique_ptr<FrameworkEnvironment>(new FrameworkEnvironment());
         for (uint32_t icd = 0; icd < 3; ++icd) {
-            env->add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA, VK_API_VERSION_1_0));
+            env->add_icd(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA);
             env->get_test_icd(icd).add_physical_device({});
             env->get_test_icd(icd).add_physical_device({});
         }
@@ -386,7 +386,7 @@ class DebugUtilTest : public ::testing::Test {
     virtual void SetUp() {
         env = std::unique_ptr<FrameworkEnvironment>(new FrameworkEnvironment());
         for (uint32_t icd = 0; icd < 3; ++icd) {
-            env->add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA, VK_API_VERSION_1_0));
+            env->add_icd(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA);
             env->get_test_icd(icd).add_physical_device({});
             env->get_test_icd(icd).add_physical_device({});
         }
@@ -1041,7 +1041,7 @@ void CheckDeviceFunctions(FrameworkEnvironment& env, bool use_GIPA, bool enable_
 
 TEST(GetProcAddr, DebugFuncsWithTerminator) {
     FrameworkEnvironment env{};
-    auto& driver = env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA)).setup_WSI();
+    auto& driver = env.add_icd(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA).setup_WSI();
     auto& phys_dev = driver.add_and_get_physical_device("physical_device_0").add_extensions({"VK_KHR_swapchain"});
     // Hardware doesn't support the debug extensions
 
@@ -1068,7 +1068,7 @@ TEST(GetProcAddr, DebugFuncsWithTerminator) {
 
 TEST(GetProcAddr, DebugFuncsWithTrampoline) {
     FrameworkEnvironment env{};
-    auto& driver = env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA))
+    auto& driver = env.add_icd(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA)
                        .setup_WSI()
                        .add_and_get_physical_device("physical_device_0")
                        .add_extensions({"VK_KHR_swapchain"});
@@ -1103,7 +1103,7 @@ TEST(GetProcAddr, DebugFuncsWithTrampoline) {
 
 TEST(GetProcAddr, DebugFuncsWithDebugExtsForceAdded) {
     FrameworkEnvironment env{};
-    auto& driver = env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA))
+    auto& driver = env.add_icd(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA)
                        .setup_WSI()
                        .add_and_get_physical_device("physical_device_0")
                        .add_extensions({"VK_KHR_swapchain"});
@@ -1138,7 +1138,7 @@ TEST(GetProcAddr, DebugFuncsWithDebugExtsForceAdded) {
 
 TEST(DebugUtils, WrappingLayer) {
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2))
+    env.add_icd(TEST_ICD_PATH_VERSION_2)
         .set_min_icd_interface_version(5)
         .add_physical_device(PhysicalDevice{}.add_extension(VK_EXT_DEBUG_MARKER_EXTENSION_NAME).finish())
         .add_instance_extension(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);

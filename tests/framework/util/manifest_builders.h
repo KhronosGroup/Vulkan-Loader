@@ -50,7 +50,7 @@ struct ManifestVersion {
 // ManifestICD builder
 struct ManifestICD {
     BUILDER_VALUE(ManifestVersion, file_format_version)
-    BUILDER_VALUE(uint32_t, api_version)
+    BUILDER_VALUE_WITH_DEFAULT(uint32_t, api_version, VK_API_VERSION_1_0)
     BUILDER_VALUE(std::filesystem::path, lib_path)
     BUILDER_VALUE(bool, is_portability_driver)
     BUILDER_VALUE(std::string, library_arch)
