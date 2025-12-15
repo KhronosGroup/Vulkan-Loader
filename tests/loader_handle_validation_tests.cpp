@@ -1261,9 +1261,9 @@ TEST(LoaderHandleValidTests, VerifyHandleWrappingAndroidSurface) {
     env.add_icd(TEST_ICD_PATH_VERSION_2).setup_WSI();
 
     const char* wrap_objects_name = "WrapObjectsLayer";
-    env.add_explicit_layer(ManifestLayer{}.add_layer(
-                               ManifestLayer::LayerDescription{}.set_name(wrap_objects_name).set_lib_path(TEST_LAYER_WRAP_OBJECTS)),
-                           "wrap_objects_layer.json");
+    env.add_explicit_layer(
+        {}, ManifestLayer{}.add_layer(
+                ManifestLayer::LayerDescription{}.set_name(wrap_objects_name).set_lib_path(TEST_LAYER_WRAP_OBJECTS)));
 
     InstWrapper instance(env.vulkan_functions);
     instance.create_info.setup_WSI();
@@ -1289,9 +1289,9 @@ TEST(LoaderHandleValidTests, VerifyHandleWrappingDirectFBSurf) {
     env.add_icd(TEST_ICD_PATH_VERSION_2).setup_WSI();
 
     const char* wrap_objects_name = "WrapObjectsLayer";
-    env.add_explicit_layer(ManifestLayer{}.add_layer(
-                               ManifestLayer::LayerDescription{}.set_name(wrap_objects_name).set_lib_path(TEST_LAYER_WRAP_OBJECTS)),
-                           "wrap_objects_layer.json");
+    env.add_explicit_layer(
+        {}, ManifestLayer{}.add_layer(
+                ManifestLayer::LayerDescription{}.set_name(wrap_objects_name).set_lib_path(TEST_LAYER_WRAP_OBJECTS)));
 
     InstWrapper instance(env.vulkan_functions);
     instance.create_info.setup_WSI();
@@ -1317,9 +1317,9 @@ TEST(LoaderHandleValidTests, VerifyHandleWrappingFuchsiaSurf) {
     env.add_icd(TEST_ICD_PATH_VERSION_2).setup_WSI();
 
     const char* wrap_objects_name = "WrapObjectsLayer";
-    env.add_explicit_layer(ManifestLayer{}.add_layer(
-                               ManifestLayer::LayerDescription{}.set_name(wrap_objects_name).set_lib_path(TEST_LAYER_WRAP_OBJECTS)),
-                           "wrap_objects_layer.json");
+    env.add_explicit_layer(
+        {}, ManifestLayer{}.add_layer(
+                ManifestLayer::LayerDescription{}.set_name(wrap_objects_name).set_lib_path(TEST_LAYER_WRAP_OBJECTS)));
 
     InstWrapper instance(env.vulkan_functions);
     instance.create_info.setup_WSI();
@@ -1345,9 +1345,9 @@ TEST(LoaderHandleValidTests, VerifyHandleWrappingGGPSurf) {
     env.add_icd(TEST_ICD_PATH_VERSION_2).setup_WSI();
 
     const char* wrap_objects_name = "WrapObjectsLayer";
-    env.add_explicit_layer(ManifestLayer{}.add_layer(
-                               ManifestLayer::LayerDescription{}.set_name(wrap_objects_name).set_lib_path(TEST_LAYER_WRAP_OBJECTS)),
-                           "wrap_objects_layer.json");
+    env.add_explicit_layer(
+        {}, ManifestLayer{}.add_layer(
+                ManifestLayer::LayerDescription{}.set_name(wrap_objects_name).set_lib_path(TEST_LAYER_WRAP_OBJECTS)));
 
     InstWrapper instance(env.vulkan_functions);
     instance.create_info.setup_WSI();
@@ -1373,9 +1373,9 @@ TEST(LoaderHandleValidTests, VerifyHandleWrappingIOSSurf) {
     env.add_icd(TEST_ICD_PATH_VERSION_2).setup_WSI();
 
     const char* wrap_objects_name = "WrapObjectsLayer";
-    env.add_explicit_layer(ManifestLayer{}.add_layer(
-                               ManifestLayer::LayerDescription{}.set_name(wrap_objects_name).set_lib_path(TEST_LAYER_WRAP_OBJECTS)),
-                           "wrap_objects_layer.json");
+    env.add_explicit_layer(
+        {}, ManifestLayer{}.add_layer(
+                ManifestLayer::LayerDescription{}.set_name(wrap_objects_name).set_lib_path(TEST_LAYER_WRAP_OBJECTS)));
 
     InstWrapper instance(env.vulkan_functions);
     instance.create_info.setup_WSI();
@@ -1401,9 +1401,9 @@ TEST(LoaderHandleValidTests, VerifyHandleWrappingMacOSSurf) {
     env.add_icd(TEST_ICD_PATH_VERSION_2).setup_WSI("VK_USE_PLATFORM_MACOS_MVK");
 
     const char* wrap_objects_name = "WrapObjectsLayer";
-    env.add_explicit_layer(ManifestLayer{}.add_layer(
-                               ManifestLayer::LayerDescription{}.set_name(wrap_objects_name).set_lib_path(TEST_LAYER_WRAP_OBJECTS)),
-                           "wrap_objects_layer.json");
+    env.add_explicit_layer(
+        {}, ManifestLayer{}.add_layer(
+                ManifestLayer::LayerDescription{}.set_name(wrap_objects_name).set_lib_path(TEST_LAYER_WRAP_OBJECTS)));
 
     InstWrapper instance(env.vulkan_functions);
     instance.create_info.setup_WSI("VK_USE_PLATFORM_MACOS_MVK");
@@ -1429,9 +1429,9 @@ TEST(LoaderHandleValidTests, VerifyHandleWrappingMetalSurf) {
     env.add_icd(TEST_ICD_PATH_VERSION_2).setup_WSI("VK_USE_PLATFORM_METAL_EXT");
 
     const char* wrap_objects_name = "WrapObjectsLayer";
-    env.add_explicit_layer(ManifestLayer{}.add_layer(
-                               ManifestLayer::LayerDescription{}.set_name(wrap_objects_name).set_lib_path(TEST_LAYER_WRAP_OBJECTS)),
-                           "wrap_objects_layer.json");
+    env.add_explicit_layer(
+        {}, ManifestLayer{}.add_layer(
+                ManifestLayer::LayerDescription{}.set_name(wrap_objects_name).set_lib_path(TEST_LAYER_WRAP_OBJECTS)));
 
     InstWrapper instance(env.vulkan_functions);
     instance.create_info.setup_WSI("VK_USE_PLATFORM_METAL_EXT");
@@ -1457,9 +1457,9 @@ TEST(LoaderHandleValidTests, VerifyHandleWrappingQNXSurf) {
     env.add_icd(TEST_ICD_PATH_VERSION_2).setup_WSI();
 
     const char* wrap_objects_name = "WrapObjectsLayer";
-    env.add_explicit_layer(ManifestLayer{}.add_layer(
-                               ManifestLayer::LayerDescription{}.set_name(wrap_objects_name).set_lib_path(TEST_LAYER_WRAP_OBJECTS)),
-                           "wrap_objects_layer.json");
+    env.add_explicit_layer(
+        {}, ManifestLayer{}.add_layer(
+                ManifestLayer::LayerDescription{}.set_name(wrap_objects_name).set_lib_path(TEST_LAYER_WRAP_OBJECTS)));
 
     InstWrapper instance(env.vulkan_functions);
     instance.create_info.setup_WSI();
@@ -1485,9 +1485,9 @@ TEST(LoaderHandleValidTests, VerifyHandleWrappingViNNSurf) {
     env.add_icd(TEST_ICD_PATH_VERSION_2).setup_WSI();
 
     const char* wrap_objects_name = "WrapObjectsLayer";
-    env.add_explicit_layer(ManifestLayer{}.add_layer(
-                               ManifestLayer::LayerDescription{}.set_name(wrap_objects_name).set_lib_path(TEST_LAYER_WRAP_OBJECTS)),
-                           "wrap_objects_layer.json");
+    env.add_explicit_layer(
+        {}, ManifestLayer{}.add_layer(
+                ManifestLayer::LayerDescription{}.set_name(wrap_objects_name).set_lib_path(TEST_LAYER_WRAP_OBJECTS)));
 
     InstWrapper instance(env.vulkan_functions);
     instance.create_info.setup_WSI();
@@ -1513,9 +1513,9 @@ TEST(LoaderHandleValidTests, VerifyHandleWrappingWaylandSurf) {
     env.add_icd(TEST_ICD_PATH_VERSION_2).setup_WSI("VK_USE_PLATFORM_WAYLAND_KHR");
 
     const char* wrap_objects_name = "WrapObjectsLayer";
-    env.add_explicit_layer(ManifestLayer{}.add_layer(
-                               ManifestLayer::LayerDescription{}.set_name(wrap_objects_name).set_lib_path(TEST_LAYER_WRAP_OBJECTS)),
-                           "wrap_objects_layer.json");
+    env.add_explicit_layer(
+        {}, ManifestLayer{}.add_layer(
+                ManifestLayer::LayerDescription{}.set_name(wrap_objects_name).set_lib_path(TEST_LAYER_WRAP_OBJECTS)));
 
     InstWrapper instance(env.vulkan_functions);
     instance.create_info.setup_WSI("VK_USE_PLATFORM_WAYLAND_KHR");
@@ -1541,9 +1541,9 @@ TEST(LoaderHandleValidTests, VerifyHandleWrappingWin32Surf) {
     env.add_icd(TEST_ICD_PATH_VERSION_2).setup_WSI();
 
     const char* wrap_objects_name = "WrapObjectsLayer";
-    env.add_explicit_layer(ManifestLayer{}.add_layer(
-                               ManifestLayer::LayerDescription{}.set_name(wrap_objects_name).set_lib_path(TEST_LAYER_WRAP_OBJECTS)),
-                           "wrap_objects_layer.json");
+    env.add_explicit_layer(
+        {}, ManifestLayer{}.add_layer(
+                ManifestLayer::LayerDescription{}.set_name(wrap_objects_name).set_lib_path(TEST_LAYER_WRAP_OBJECTS)));
 
     InstWrapper instance(env.vulkan_functions);
     instance.create_info.setup_WSI();
@@ -1569,9 +1569,9 @@ TEST(LoaderHandleValidTests, VerifyHandleWrappingXCBSurf) {
     env.add_icd(TEST_ICD_PATH_VERSION_2).setup_WSI();
 
     const char* wrap_objects_name = "WrapObjectsLayer";
-    env.add_explicit_layer(ManifestLayer{}.add_layer(
-                               ManifestLayer::LayerDescription{}.set_name(wrap_objects_name).set_lib_path(TEST_LAYER_WRAP_OBJECTS)),
-                           "wrap_objects_layer.json");
+    env.add_explicit_layer(
+        {}, ManifestLayer{}.add_layer(
+                ManifestLayer::LayerDescription{}.set_name(wrap_objects_name).set_lib_path(TEST_LAYER_WRAP_OBJECTS)));
 
     InstWrapper instance(env.vulkan_functions);
     instance.create_info.setup_WSI();
@@ -1597,9 +1597,9 @@ TEST(LoaderHandleValidTests, VerifyHandleWrappingXlibSurf) {
     env.add_icd(TEST_ICD_PATH_VERSION_2).setup_WSI("VK_USE_PLATFORM_XLIB_KHR");
 
     const char* wrap_objects_name = "WrapObjectsLayer";
-    env.add_explicit_layer(ManifestLayer{}.add_layer(
-                               ManifestLayer::LayerDescription{}.set_name(wrap_objects_name).set_lib_path(TEST_LAYER_WRAP_OBJECTS)),
-                           "wrap_objects_layer.json");
+    env.add_explicit_layer(
+        {}, ManifestLayer{}.add_layer(
+                ManifestLayer::LayerDescription{}.set_name(wrap_objects_name).set_lib_path(TEST_LAYER_WRAP_OBJECTS)));
 
     InstWrapper instance(env.vulkan_functions);
     instance.create_info.setup_WSI("VK_USE_PLATFORM_XLIB_KHR");
@@ -1637,9 +1637,9 @@ TEST(LoaderHandleValidTests, VerifyHandleWrappingDebugUtilsMessenger) {
     env.add_icd(TEST_ICD_PATH_VERSION_2).add_instance_extensions({ext});
 
     const char* wrap_objects_name = "WrapObjectsLayer";
-    env.add_explicit_layer(ManifestLayer{}.add_layer(
-                               ManifestLayer::LayerDescription{}.set_name(wrap_objects_name).set_lib_path(TEST_LAYER_WRAP_OBJECTS)),
-                           "wrap_objects_layer.json");
+    env.add_explicit_layer(
+        {}, ManifestLayer{}.add_layer(
+                ManifestLayer::LayerDescription{}.set_name(wrap_objects_name).set_lib_path(TEST_LAYER_WRAP_OBJECTS)));
 
     InstWrapper instance(env.vulkan_functions);
     instance.create_info.add_extension("VK_EXT_debug_utils");

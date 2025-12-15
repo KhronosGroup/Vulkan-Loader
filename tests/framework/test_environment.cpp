@@ -29,6 +29,7 @@
 
 #include <array>
 #include <fstream>
+#include <string>
 #include <utility>
 
 #include "json_writer.h"
@@ -462,23 +463,22 @@ TestICD& FrameworkEnvironment::add_icd(std::filesystem::path const& path, Manife
     return icds.back().get_test_binary();
 }
 
-void FrameworkEnvironment::add_implicit_layer(ManifestLayer layer_manifest, const std::string& json_name) noexcept {
-    add_layer_impl(TestLayerDetails{layer_manifest, json_name}, ManifestCategory::implicit_layer);
+void FrameworkEnvironment::add_implicit_layer(ManifestOptions args, ManifestLayer layer_manifest) noexcept {
+    add_layer_impl(args, layer_manifest, ManifestCategory::implicit_layer);
 }
-void FrameworkEnvironment::add_explicit_layer(ManifestLayer layer_manifest, const std::string& json_name) noexcept {
-    add_layer_impl(TestLayerDetails{layer_manifest, json_name}, ManifestCategory::explicit_layer);
-}
-void FrameworkEnvironment::add_implicit_layer(TestLayerDetails layer_details) noexcept {
-    add_layer_impl(layer_details, ManifestCategory::implicit_layer);
-}
-void FrameworkEnvironment::add_explicit_layer(TestLayerDetails layer_details) noexcept {
-    add_layer_impl(layer_details, ManifestCategory::explicit_layer);
+void FrameworkEnvironment::add_explicit_layer(ManifestOptions args, ManifestLayer layer_manifest) noexcept {
+    add_layer_impl(args, layer_manifest, ManifestCategory::explicit_layer);
 }
 
-void FrameworkEnvironment::add_layer_impl(TestLayerDetails layer_details, ManifestCategory category) {
+void FrameworkEnvironment::add_layer_impl(ManifestOptions args, ManifestLayer manifest, ManifestCategory category) {
+    if (args.json_name.empty()) {
+        args.json_name = "test_layer_" + std::to_string(created_layer_count) + ".json";
+        created_layer_count++;
+    }
+
     fs::Folder* fs_ptr = &get_folder(ManifestLocation::explicit_layer);
     EnvVarWrapper* env_var_to_use = nullptr;
-    switch (layer_details.discovery_type) {
+    switch (args.discovery_type) {
         case (ManifestDiscoveryType::generic):
             if (category == ManifestCategory::implicit_layer) fs_ptr = &get_folder(ManifestLocation::implicit_layer);
             break;
@@ -490,10 +490,10 @@ void FrameworkEnvironment::add_layer_impl(TestLayerDetails layer_details, Manife
                 fs_ptr = &get_folder(ManifestLocation::implicit_layer_env_var);
                 env_var_to_use = &env_var_vk_implicit_layer_paths;
             }
-            if (layer_details.is_dir) {
+            if (args.is_dir) {
                 env_var_to_use->add_to_list(fs_ptr->location());
             } else {
-                env_var_to_use->add_to_list(fs_ptr->location() / layer_details.json_name);
+                env_var_to_use->add_to_list(fs_ptr->location() / args.json_name);
             }
             break;
         case (ManifestDiscoveryType::add_env_var):
@@ -504,10 +504,10 @@ void FrameworkEnvironment::add_layer_impl(TestLayerDetails layer_details, Manife
                 fs_ptr = &get_folder(ManifestLocation::implicit_layer_add_env_var);
                 env_var_to_use = &add_env_var_vk_implicit_layer_paths;
             }
-            if (layer_details.is_dir) {
+            if (args.is_dir) {
                 env_var_to_use->add_to_list(fs_ptr->location());
             } else {
-                env_var_to_use->add_to_list(fs_ptr->location() / layer_details.json_name);
+                env_var_to_use->add_to_list(fs_ptr->location() / args.json_name);
             }
             break;
         case (ManifestDiscoveryType::override_folder):
@@ -534,7 +534,7 @@ void FrameworkEnvironment::add_layer_impl(TestLayerDetails layer_details, Manife
     }
     auto& folder = *fs_ptr;
     size_t new_layers_start = layers.size();
-    for (auto& layer : layer_details.layer_manifest.layers) {
+    for (auto& layer : manifest.layers) {
         if (!layer.lib_path.empty()) {
             std::filesystem::path new_lib_path = layer.lib_path.stem();
             new_lib_path += "_";
@@ -544,12 +544,12 @@ void FrameworkEnvironment::add_layer_impl(TestLayerDetails layer_details, Manife
             auto new_layer_location = folder.copy_file(layer.lib_path, new_lib_path);
 
 #if TESTING_COMMON_UNIX_PLATFORMS
-            if (layer_details.library_path_type == LibraryPathType::default_search_paths) {
+            if (args.library_path_type == LibraryPathType::default_search_paths) {
                 platform_shim->add_system_library(new_lib_path, new_layer_location);
             }
 #endif
 #if defined(WIN32)
-            if (layer_details.library_path_type == LibraryPathType::default_search_paths) {
+            if (args.library_path_type == LibraryPathType::default_search_paths) {
                 SetDefaultDllDirectories(LOAD_LIBRARY_SEARCH_USER_DIRS);
                 AddDllDirectory(new_layer_location.parent_path().native().c_str());
             }
@@ -557,33 +557,32 @@ void FrameworkEnvironment::add_layer_impl(TestLayerDetails layer_details, Manife
 
             // Don't load the layer binary if using any of the wrap objects layers, since it doesn't export the same interface
             // functions
-            if (!layer_details.is_fake &&
-                layer.lib_path.stem().string().find(std::filesystem::path(TEST_LAYER_WRAP_OBJECTS).stem().string()) ==
-                    std::string::npos) {
+            if (!args.is_fake && layer.lib_path.stem().string().find(
+                                     std::filesystem::path(TEST_LAYER_WRAP_OBJECTS).stem().string()) == std::string::npos) {
                 layers.push_back(TestLayerHandle(new_layer_location));
                 layers.back().reset();
             }
-            if (layer_details.library_path_type == LibraryPathType::relative) {
+            if (args.library_path_type == LibraryPathType::relative) {
                 layer.lib_path = std::filesystem::path(".") / new_lib_path;
-            } else if (layer_details.library_path_type == LibraryPathType::default_search_paths) {
+            } else if (args.library_path_type == LibraryPathType::default_search_paths) {
                 layer.lib_path = new_lib_path;
             } else {
                 layer.lib_path = new_layer_location;
             }
         }
     }
-    if (layer_details.discovery_type != ManifestDiscoveryType::none) {
+    if (args.discovery_type != ManifestDiscoveryType::none) {
         // Write a manifest file to a folder as long as the discovery type isn't none
-        auto layer_manifest_loc = folder.write_manifest(layer_details.json_name, layer_details.layer_manifest.get_manifest_str());
+        auto layer_manifest_loc = folder.write_manifest(args.json_name, manifest.get_manifest_str());
 #if defined(WIN32)
         // only add the manifest to the registry if its a generic location (as if it was installed) - both system and user local
-        if (layer_details.discovery_type == ManifestDiscoveryType::generic) {
+        if (args.discovery_type == ManifestDiscoveryType::generic) {
             platform_shim->add_manifest_to_registry(category, layer_manifest_loc);
         }
-        if (layer_details.discovery_type == ManifestDiscoveryType::unsecured_generic) {
+        if (args.discovery_type == ManifestDiscoveryType::unsecured_generic) {
             platform_shim->add_unsecured_manifest_to_registry(category, layer_manifest_loc);
         }
-        if (layer_details.discovery_type == ManifestDiscoveryType::windows_app_package) {
+        if (args.discovery_type == ManifestDiscoveryType::windows_app_package) {
             platform_shim->set_app_package_path(folder.location());
         }
 #endif
@@ -591,12 +590,12 @@ void FrameworkEnvironment::add_layer_impl(TestLayerDetails layer_details, Manife
             layers.at(i).manifest_path = layer_manifest_loc;
             layers.at(i).shimmed_manifest_path = layer_manifest_loc;
 #if TESTING_COMMON_UNIX_PLATFORMS
-            if (layer_details.discovery_type == ManifestDiscoveryType::generic) {
+            if (args.discovery_type == ManifestDiscoveryType::generic) {
                 layers.at(i).shimmed_manifest_path =
                     ((category == ManifestCategory::implicit_layer)
                          ? file_system_manager.get_path_redirect_by_manifest_location(ManifestLocation::implicit_layer)
                          : file_system_manager.get_path_redirect_by_manifest_location(ManifestLocation::explicit_layer)) /
-                    layer_details.json_name;
+                    args.json_name;
             }
 #endif
         }

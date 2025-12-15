@@ -65,24 +65,24 @@ enum class LayerType {
 const char* add_layer_and_settings(FrameworkEnvironment& env, const char* layer_name, LayerType layer_type, const char* control) {
     if (layer_type == LayerType::imp) {
         env.add_implicit_layer(
+            ManifestOptions{}.set_json_name(std::string(layer_name) + std::to_string(env.layers.size()) + ".json"),
             ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
                                           .set_name(layer_name)
                                           .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
-                                          .set_disable_environment("BADGER" + std::to_string(env.layers.size()))),
-            std::string(layer_name) + std::to_string(env.layers.size()) + ".json");
+                                          .set_disable_environment("BADGER" + std::to_string(env.layers.size()))));
     } else if (layer_type == LayerType::imp_with_enable_env) {
         env.add_implicit_layer(
+            ManifestOptions{}.set_json_name(std::string(layer_name) + std::to_string(env.layers.size()) + ".json"),
             ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
                                           .set_name(layer_name)
                                           .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
                                           .set_disable_environment("BADGER" + std::to_string(env.layers.size()))
-                                          .set_enable_environment("MUSHROOM" + std::to_string(env.layers.size()))),
-            std::string(layer_name) + std::to_string(env.layers.size()) + ".json");
+                                          .set_enable_environment("MUSHROOM" + std::to_string(env.layers.size()))));
     } else if (layer_type == LayerType::exp) {
-        env.add_explicit_layer(TestLayerDetails{
+        env.add_explicit_layer(
+            ManifestOptions{}.set_json_name(std::string(layer_name) + std::to_string(env.layers.size()) + ".json"),
             ManifestLayer{}.add_layer(
-                ManifestLayer::LayerDescription{}.set_name(layer_name).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)),
-            std::string(layer_name) + std::to_string(env.layers.size()) + ".json"});
+                ManifestLayer::LayerDescription{}.set_name(layer_name).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)));
     } else {
         abort();
     }
@@ -121,11 +121,10 @@ TEST(SettingsFile, SettingsInUnsecuredLocation) {
     FrameworkEnvironment env{};
     env.add_icd(TEST_ICD_PATH_VERSION_2).add_physical_device({});
     const char* regular_layer_name = "VK_LAYER_TestLayer_0";
-    env.add_explicit_layer(TestLayerDetails{
+    env.add_explicit_layer(
+        ManifestOptions{}.set_discovery_type(ManifestDiscoveryType::override_folder),
         ManifestLayer{}.add_layer(
-            ManifestLayer::LayerDescription{}.set_name(regular_layer_name).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)),
-        "regular_test_layer.json"}
-                               .set_discovery_type(ManifestDiscoveryType::override_folder));
+            ManifestLayer::LayerDescription{}.set_name(regular_layer_name).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)));
     env.update_loader_settings(
         env.loader_settings.set_file_format_version({1, 0, 0}).add_app_specific_setting(
             AppSpecificSettings{}.add_stderr_log_filter("all").add_layer_configuration(LoaderSettingsLayerConfiguration{}
@@ -151,11 +150,10 @@ TEST(SettingsFile, SettingsInUnsecuredLocationRunningWithElevatedPrivileges) {
     FrameworkEnvironment env{FrameworkSettings{}.set_run_as_if_with_elevated_privleges(true)};
     env.add_icd(TEST_ICD_PATH_VERSION_2).add_physical_device({});
     const char* regular_layer_name = "VK_LAYER_TestLayer_0";
-    env.add_explicit_layer(TestLayerDetails{
+    env.add_explicit_layer(
+        ManifestOptions{}.set_discovery_type(ManifestDiscoveryType::override_folder),
         ManifestLayer{}.add_layer(
-            ManifestLayer::LayerDescription{}.set_name(regular_layer_name).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)),
-        "regular_test_layer.json"}
-                               .set_discovery_type(ManifestDiscoveryType::override_folder));
+            ManifestLayer::LayerDescription{}.set_name(regular_layer_name).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)));
     env.update_loader_settings(
         env.loader_settings.set_file_format_version({1, 0, 0}).add_app_specific_setting(
             AppSpecificSettings{}.add_stderr_log_filter("all").add_layer_configuration(LoaderSettingsLayerConfiguration{}
@@ -179,11 +177,10 @@ TEST(SettingsFile, SettingsInSecuredLocation) {
     env.add_icd(TEST_ICD_PATH_VERSION_2).add_physical_device({});
     env.add_icd(TEST_ICD_PATH_VERSION_2);
     const char* regular_layer_name = "VK_LAYER_TestLayer_0";
-    env.add_explicit_layer(TestLayerDetails{
+    env.add_explicit_layer(
+        ManifestOptions{}.set_discovery_type(ManifestDiscoveryType::override_folder),
         ManifestLayer{}.add_layer(
-            ManifestLayer::LayerDescription{}.set_name(regular_layer_name).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)),
-        "regular_test_layer.json"}
-                               .set_discovery_type(ManifestDiscoveryType::override_folder));
+            ManifestLayer::LayerDescription{}.set_name(regular_layer_name).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)));
     env.update_loader_settings(env.loader_settings.set_file_format_version({1, 0, 0}).add_app_specific_setting(
         AppSpecificSettings{}.add_stderr_log_filter("all").add_layer_configuration(LoaderSettingsLayerConfiguration{}
                                                                                        .set_name(regular_layer_name)
@@ -207,17 +204,17 @@ TEST(SettingsFile, SettingsInSecuredLocation) {
 TEST(SettingsFile, SupportsMultipleSettingsSimultaneously) {
     FrameworkEnvironment env{};
     const char* app_specific_layer_name = "VK_LAYER_TestLayer_0";
-    env.add_explicit_layer(TestLayerDetails{
+    env.add_explicit_layer(
+        ManifestOptions{}.set_discovery_type(ManifestDiscoveryType::override_folder),
         ManifestLayer{}.add_layer(
-            ManifestLayer::LayerDescription{}.set_name(app_specific_layer_name).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)),
-        "VK_LAYER_app_specific.json"}
-                               .set_discovery_type(ManifestDiscoveryType::override_folder));
+            ManifestLayer::LayerDescription{}.set_name(app_specific_layer_name).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)));
+
     const char* global_layer_name = "VK_LAYER_TestLayer_1";
-    env.add_explicit_layer(TestLayerDetails{
+    env.add_explicit_layer(
+        ManifestOptions{}.set_discovery_type(ManifestDiscoveryType::override_folder),
         ManifestLayer{}.add_layer(
-            ManifestLayer::LayerDescription{}.set_name(global_layer_name).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)),
-        "VK_LAYER_global.json"}
-                               .set_discovery_type(ManifestDiscoveryType::override_folder));
+            ManifestLayer::LayerDescription{}.set_name(global_layer_name).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)));
+
     env.update_loader_settings(
         env.loader_settings
             // configuration that matches the current executable path - but dont set the app-key just yet
@@ -284,10 +281,9 @@ TEST(SettingsFile, LayerAutoEnabledByEnvVars) {
 
     const char* layer_name = "VK_LAYER_automatic";
     env.add_explicit_layer(
-        TestLayerDetails{ManifestLayer{}.add_layer(
-                             ManifestLayer::LayerDescription{}.set_name(layer_name).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)),
-                         "layer_name.json"}
-            .set_discovery_type(ManifestDiscoveryType::override_folder));
+        ManifestOptions{}.set_discovery_type(ManifestDiscoveryType::override_folder),
+        ManifestLayer{}.add_layer(
+            ManifestLayer::LayerDescription{}.set_name(layer_name).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)));
 
     env.update_loader_settings(
         env.loader_settings.add_app_specific_setting(AppSpecificSettings{}.add_stderr_log_filter("all").add_layer_configuration(
@@ -325,11 +321,10 @@ TEST(SettingsFile, LayerDisablesImplicitLayer) {
     FrameworkEnvironment env{};
     env.add_icd(TEST_ICD_PATH_VERSION_2).add_physical_device({});
     const char* implicit_layer_name = "VK_LAYER_Implicit_TestLayer";
-    env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
-                                                         .set_name(implicit_layer_name)
-                                                         .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
-                                                         .set_disable_environment("oof")),
-                           "implicit_test_layer.json");
+    env.add_implicit_layer({}, ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                             .set_name(implicit_layer_name)
+                                                             .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                             .set_disable_environment("oof")));
 
     env.update_loader_settings(env.loader_settings.set_file_format_version({1, 0, 0}).add_app_specific_setting(
         AppSpecificSettings{}.add_stderr_log_filter("all").add_layer_configuration(
@@ -354,17 +349,15 @@ TEST(SettingsFile, ImplicitLayersDontInterfere) {
     FrameworkEnvironment env{};
     env.add_icd(TEST_ICD_PATH_VERSION_2).add_physical_device({});
     const char* implicit_layer_name1 = "VK_LAYER_Implicit_TestLayer1";
-    env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
-                                                         .set_name(implicit_layer_name1)
-                                                         .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
-                                                         .set_disable_environment("oof")),
-                           "implicit_test_layer1.json");
+    env.add_implicit_layer({}, ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                             .set_name(implicit_layer_name1)
+                                                             .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                             .set_disable_environment("oof")));
     const char* implicit_layer_name2 = "VK_LAYER_Implicit_TestLayer2";
-    env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
-                                                         .set_name(implicit_layer_name2)
-                                                         .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
-                                                         .set_disable_environment("oof")),
-                           "implicit_test_layer2.json");
+    env.add_implicit_layer({}, ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                             .set_name(implicit_layer_name2)
+                                                             .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                             .set_disable_environment("oof")));
     // validate order when settings file is not present
     {
         auto layer_props = env.GetLayerProperties(2);
@@ -440,9 +433,9 @@ TEST(SettingsFile, ImplicitLayersDontInterfere) {
     // Now add an explicit layer into the middle and verify that is in the correct location
     const char* explicit_layer_name3 = "VK_LAYER_Explicit_TestLayer3";
     env.add_explicit_layer(
-        ManifestLayer{}.add_layer(
-            ManifestLayer::LayerDescription{}.set_name(explicit_layer_name3).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)),
-        "explicit_test_layer3.json");
+        {}, ManifestLayer{}.add_layer(
+                ManifestLayer::LayerDescription{}.set_name(explicit_layer_name3).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)));
+
     env.loader_settings.app_specific_settings.at(0).layer_configurations.insert(
         env.loader_settings.app_specific_settings.at(0).layer_configurations.begin() + 1,
         LoaderSettingsLayerConfiguration{}
@@ -473,9 +466,8 @@ TEST(SettingsFile, ApplicationEnablesIgnored) {
     env.add_icd(TEST_ICD_PATH_VERSION_2).add_physical_device({});
     const char* explicit_layer_name = "VK_LAYER_TestLayer";
     env.add_explicit_layer(
-        ManifestLayer{}.add_layer(
-            ManifestLayer::LayerDescription{}.set_name(explicit_layer_name).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)),
-        "regular_test_layer.json");
+        {}, ManifestLayer{}.add_layer(
+                ManifestLayer::LayerDescription{}.set_name(explicit_layer_name).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)));
 
     env.update_loader_settings(env.loader_settings.set_file_format_version({1, 0, 0}).add_app_specific_setting(
         AppSpecificSettings{}.add_stderr_log_filter("all").add_layer_configuration(
@@ -496,11 +488,10 @@ TEST(SettingsFile, LayerListIsEmpty) {
     FrameworkEnvironment env{};
     env.add_icd(TEST_ICD_PATH_VERSION_2).add_physical_device({});
     const char* implicit_layer_name = "VK_LAYER_TestLayer";
-    env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
-                                                         .set_name(implicit_layer_name)
-                                                         .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
-                                                         .set_disable_environment("HeeHee")),
-                           "regular_test_layer.json");
+    env.add_implicit_layer({}, ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                             .set_name(implicit_layer_name)
+                                                             .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                             .set_disable_environment("HeeHee")));
 
     JsonWriter writer{};
     writer.StartObject();
@@ -527,15 +518,13 @@ TEST(SettingsFile, InvalidSettingsFile) {
     env.add_icd(TEST_ICD_PATH_VERSION_2).add_physical_device({});
     const char* explicit_layer_name = "VK_LAYER_TestLayer";
     env.add_explicit_layer(
-        ManifestLayer{}.add_layer(
-            ManifestLayer::LayerDescription{}.set_name(explicit_layer_name).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)),
-        "regular_test_layer.json");
+        {}, ManifestLayer{}.add_layer(
+                ManifestLayer::LayerDescription{}.set_name(explicit_layer_name).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)));
     const char* implicit_layer_name = "VK_LAYER_ImplicitTestLayer";
-    env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
-                                                         .set_name(implicit_layer_name)
-                                                         .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
-                                                         .set_disable_environment("foobarbaz")),
-                           "implicit_test_layer.json");
+    env.add_implicit_layer({}, ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                             .set_name(implicit_layer_name)
+                                                             .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                             .set_disable_environment("foobarbaz")));
     auto check_integrity = [&env, explicit_layer_name, implicit_layer_name]() {
         auto layer_props = env.GetLayerProperties(2);
         ASSERT_TRUE(string_eq(layer_props.at(0).layerName, implicit_layer_name));
@@ -609,26 +598,22 @@ TEST(SettingsFile, UnknownLayersInRightPlace) {
     env.add_icd(TEST_ICD_PATH_VERSION_2).add_physical_device({});
     const char* explicit_layer_name1 = "VK_LAYER_TestLayer1";
     env.add_explicit_layer(
-        ManifestLayer{}.add_layer(
-            ManifestLayer::LayerDescription{}.set_name(explicit_layer_name1).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)),
-        "regular_test_layer1.json");
+        {}, ManifestLayer{}.add_layer(
+                ManifestLayer::LayerDescription{}.set_name(explicit_layer_name1).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)));
     const char* implicit_layer_name1 = "VK_LAYER_ImplicitTestLayer1";
-    env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
-                                                         .set_name(implicit_layer_name1)
-                                                         .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
-                                                         .set_disable_environment("foobarbaz")),
-                           "implicit_test_layer1.json");
+    env.add_implicit_layer({}, ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                             .set_name(implicit_layer_name1)
+                                                             .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                             .set_disable_environment("foobarbaz")));
     const char* explicit_layer_name2 = "VK_LAYER_TestLayer2";
     env.add_explicit_layer(
-        ManifestLayer{}.add_layer(
-            ManifestLayer::LayerDescription{}.set_name(explicit_layer_name2).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)),
-        "regular_test_layer2.json");
+        {}, ManifestLayer{}.add_layer(
+                ManifestLayer::LayerDescription{}.set_name(explicit_layer_name2).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)));
     const char* implicit_layer_name2 = "VK_LAYER_ImplicitTestLayer2";
-    env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
-                                                         .set_name(implicit_layer_name2)
-                                                         .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
-                                                         .set_disable_environment("foobarbaz")),
-                           "implicit_test_layer2.json");
+    env.add_implicit_layer({}, ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                             .set_name(implicit_layer_name2)
+                                                             .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                             .set_disable_environment("foobarbaz")));
 
     env.update_loader_settings(env.loader_settings.set_file_format_version({1, 0, 0}).add_app_specific_setting(
         AppSpecificSettings{}
@@ -667,17 +652,15 @@ TEST(SettingsFile, MultipleLayersWithSameName) {
     env.add_icd(TEST_ICD_PATH_VERSION_2).add_physical_device({});
 
     const char* explicit_layer_name = "VK_LAYER_TestLayer";
-    env.add_explicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
-                                                         .set_name(explicit_layer_name)
-                                                         .set_description("0000")
-                                                         .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)),
-                           "regular_test_layer1.json");
+    env.add_explicit_layer({}, ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                             .set_name(explicit_layer_name)
+                                                             .set_description("0000")
+                                                             .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)));
 
-    env.add_explicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
-                                                         .set_name(explicit_layer_name)
-                                                         .set_description("1111")
-                                                         .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)),
-                           "regular_test_layer2.json");
+    env.add_explicit_layer({}, ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                             .set_name(explicit_layer_name)
+                                                             .set_description("1111")
+                                                             .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)));
 
     env.update_loader_settings(env.loader_settings.set_file_format_version({1, 0, 0}).add_app_specific_setting(
         AppSpecificSettings{}
@@ -713,9 +696,8 @@ TEST(SettingsFile, MultipleLayersWithSamePath) {
 
     const char* explicit_layer_name = "VK_LAYER_TestLayer";
     env.add_explicit_layer(
-        ManifestLayer{}.add_layer(
-            ManifestLayer::LayerDescription{}.set_name(explicit_layer_name).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)),
-        "regular_test_layer1.json");
+        {}, ManifestLayer{}.add_layer(
+                ManifestLayer::LayerDescription{}.set_name(explicit_layer_name).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)));
 
     env.update_loader_settings(env.loader_settings.set_file_format_version({1, 0, 0}).add_app_specific_setting(
         AppSpecificSettings{}
@@ -748,17 +730,15 @@ TEST(SettingsFile, MismatchedLayerNameAndManifestPath) {
 
     const char* manifest_explicit_layer_name = "VK_LAYER_MANIFEST_TestLayer";
     const char* settings_explicit_layer_name = "VK_LAYER_Settings_TestLayer";
-    env.add_explicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
-                                                         .set_name(manifest_explicit_layer_name)
-                                                         .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)),
-                           "regular_test_layer1.json");
+    env.add_explicit_layer({}, ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                             .set_name(manifest_explicit_layer_name)
+                                                             .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)));
 
     const char* implicit_layer_name = "VK_LAYER_Implicit_TestLayer";
-    env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
-                                                         .set_name(implicit_layer_name)
-                                                         .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
-                                                         .set_disable_environment("oof")),
-                           "implicit_test_layer.json");
+    env.add_implicit_layer({}, ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                             .set_name(implicit_layer_name)
+                                                             .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                             .set_disable_environment("oof")));
 
     env.update_loader_settings(env.loader_settings.set_file_format_version({1, 0, 0}).add_app_specific_setting(
         AppSpecificSettings{}.add_stderr_log_filter("all").add_layer_configuration(
@@ -783,36 +763,33 @@ TEST(SettingsFile, ImplicitLayerWithEnableEnvironment) {
 
     const char* explicit_layer_1 = "VK_LAYER_Regular_TestLayer";
     env.add_explicit_layer(
-        ManifestLayer{}.add_layer(
-            ManifestLayer::LayerDescription{}.set_name(explicit_layer_1).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)),
-        "explicit_test_layer1.json");
+        {}, ManifestLayer{}.add_layer(
+                ManifestLayer::LayerDescription{}.set_name(explicit_layer_1).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)));
 
     const char* implicit_layer_1 = "VK_LAYER_RegularImplicit_TestLayer";
-    env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
-                                                         .set_name(implicit_layer_1)
-                                                         .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
-                                                         .set_disable_environment("AndISaidHey")
-                                                         .set_enable_environment("WhatsGoingOn")),
-                           "implicit_layer1.json");
+    env.add_implicit_layer({}, ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                             .set_name(implicit_layer_1)
+                                                             .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                             .set_disable_environment("AndISaidHey")
+                                                             .set_enable_environment("WhatsGoingOn")));
 
     const char* explicit_layer_2 = "VK_LAYER_Regular_TestLayer1";
-    env.add_explicit_layer(TestLayerDetails(
-        ManifestLayer{}.add_layer(
-            ManifestLayer::LayerDescription{}.set_name(explicit_layer_2).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)),
-        "explicit_test_layer2.json"));
+    env.add_explicit_layer(
+        {}, ManifestLayer{}.add_layer(
+                ManifestLayer::LayerDescription{}.set_name(explicit_layer_2).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)));
 
     const char* implicit_layer_2 = "VK_LAYER_RegularImplicit_TestLayer2";
-    env.add_explicit_layer(TestLayerDetails(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
-                                                                          .set_name(implicit_layer_2)
-                                                                          .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
-                                                                          .set_disable_environment("HeyHeyHeyyaya")
-                                                                          .set_enable_environment("HeyHeyHeyhey")),
-                                            "implicit_layer2.json"));
+    env.add_explicit_layer({}, ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                             .set_name(implicit_layer_2)
+                                                             .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                             .set_disable_environment("HeyHeyHeyyaya")
+                                                             .set_enable_environment("HeyHeyHeyhey")));
+
     const char* explicit_layer_3 = "VK_LAYER_Regular_TestLayer3";
-    env.add_explicit_layer(TestLayerDetails(
-        ManifestLayer{}.add_layer(
-            ManifestLayer::LayerDescription{}.set_name(explicit_layer_3).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)),
-        "explicit_test_layer3.json"));
+    env.add_explicit_layer(
+        {}, ManifestLayer{}.add_layer(
+                ManifestLayer::LayerDescription{}.set_name(explicit_layer_3).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)));
+
     env.update_loader_settings(env.loader_settings.set_file_format_version({1, 0, 0}).add_app_specific_setting(
         AppSpecificSettings{}
             .add_stderr_log_filter("all")
@@ -899,48 +876,42 @@ TEST(SettingsFile, MetaLayerAlsoActivates) {
     env.add_icd(TEST_ICD_PATH_VERSION_2).add_physical_device({});
 
     const char* settings_explicit_layer_name = "VK_LAYER_Regular_TestLayer";
-    env.add_explicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
-                                                         .set_name(settings_explicit_layer_name)
-                                                         .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)),
-                           "explicit_test_layer.json");
+    env.add_explicit_layer({}, ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                             .set_name(settings_explicit_layer_name)
+                                                             .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)));
 
     const char* settings_implicit_layer_name = "VK_LAYER_RegularImplicit_TestLayer";
-    env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
-                                                         .set_name(settings_implicit_layer_name)
-                                                         .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
-                                                         .set_disable_environment("AndISaidHey")
-                                                         .set_enable_environment("WhatsGoingOn")),
-                           "implicit_layer.json");
+    env.add_implicit_layer({}, ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                             .set_name(settings_implicit_layer_name)
+                                                             .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                             .set_disable_environment("AndISaidHey")
+                                                             .set_enable_environment("WhatsGoingOn")));
 
     const char* component_explicit_layer_name1 = "VK_LAYER_Component_TestLayer1";
-    env.add_explicit_layer(TestLayerDetails(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
-                                                                          .set_name(component_explicit_layer_name1)
-                                                                          .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)),
-                                            "component_test_layer1.json"));
+    env.add_explicit_layer({}, ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                             .set_name(component_explicit_layer_name1)
+                                                             .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)));
 
     const char* component_explicit_layer_name2 = "VK_LAYER_Component_TestLayer2";
-    env.add_explicit_layer(TestLayerDetails(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
-                                                                          .set_name(component_explicit_layer_name2)
-                                                                          .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)),
-                                            "component_test_layer2.json"));
+    env.add_explicit_layer({}, ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                             .set_name(component_explicit_layer_name2)
+                                                             .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)));
 
     const char* meta_layer_name1 = "VK_LAYER_meta_layer1";
     env.add_implicit_layer(
-        ManifestLayer{}.set_file_format_version({1, 1, 2}).add_layer(ManifestLayer::LayerDescription{}
-                                                                         .set_name(meta_layer_name1)
-                                                                         .add_component_layer(component_explicit_layer_name2)
-                                                                         .add_component_layer(component_explicit_layer_name1)
-                                                                         .set_disable_environment("NotGonnaWork")),
-        "meta_test_layer.json");
+        {}, ManifestLayer{}.set_file_format_version({1, 1, 2}).add_layer(ManifestLayer::LayerDescription{}
+                                                                             .set_name(meta_layer_name1)
+                                                                             .add_component_layer(component_explicit_layer_name2)
+                                                                             .add_component_layer(component_explicit_layer_name1)
+                                                                             .set_disable_environment("NotGonnaWork")));
 
     const char* meta_layer_name2 = "VK_LAYER_meta_layer2";
     env.add_implicit_layer(
-        ManifestLayer{}.set_file_format_version({1, 1, 2}).add_layer(ManifestLayer::LayerDescription{}
-                                                                         .set_name(meta_layer_name2)
-                                                                         .add_component_layer(component_explicit_layer_name1)
-                                                                         .set_disable_environment("ILikeTrains")
-                                                                         .set_enable_environment("BakedBeans")),
-        "not_automatic_meta_test_layer.json");
+        {}, ManifestLayer{}.set_file_format_version({1, 1, 2}).add_layer(ManifestLayer::LayerDescription{}
+                                                                             .set_name(meta_layer_name2)
+                                                                             .add_component_layer(component_explicit_layer_name1)
+                                                                             .set_disable_environment("ILikeTrains")
+                                                                             .set_enable_environment("BakedBeans")));
 
     env.update_loader_settings(env.loader_settings.set_file_format_version({1, 0, 0}).add_app_specific_setting(
         AppSpecificSettings{}
@@ -1006,22 +977,19 @@ TEST(SettingsFile, DuplicateMetaLayers) {
 
     const char* explicit_layer_name = "VK_LAYER_Regular_TestLayer";
     env.add_explicit_layer(
-        ManifestLayer{}.add_layer(
-            ManifestLayer::LayerDescription{}.set_name(explicit_layer_name).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)),
-        "explicit_test_layer.json");
+        {}, ManifestLayer{}.add_layer(
+                ManifestLayer::LayerDescription{}.set_name(explicit_layer_name).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)));
     // Add an implicit layer and a meta layer that share a name
     const char* meta_layer_name = "VK_LAYER_meta_layer";
-    env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
-                                                         .set_name(meta_layer_name)
-                                                         .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
-                                                         .set_disable_environment("NotGonnaWork")),
-                           "implicit_layer.json");
+    env.add_implicit_layer({}, ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                             .set_name(meta_layer_name)
+                                                             .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                             .set_disable_environment("NotGonnaWork")));
     env.add_implicit_layer(
-        ManifestLayer{}.set_file_format_version({1, 1, 2}).add_layer(ManifestLayer::LayerDescription{}
-                                                                         .set_name(meta_layer_name)
-                                                                         .add_component_layer(explicit_layer_name)
-                                                                         .set_disable_environment("NotGonnaWork")),
-        "meta_test_layer.json");
+        {}, ManifestLayer{}.set_file_format_version({1, 1, 2}).add_layer(ManifestLayer::LayerDescription{}
+                                                                             .set_name(meta_layer_name)
+                                                                             .add_component_layer(explicit_layer_name)
+                                                                             .set_disable_environment("NotGonnaWork")));
 
     env.update_loader_settings(env.loader_settings.set_file_format_version({1, 0, 0}).add_app_specific_setting(
         AppSpecificSettings{}
@@ -1056,29 +1024,25 @@ TEST(SettingsFile, LayerOrdering) {
 
     const char* explicit_layer_name1 = "VK_LAYER_Regular_TestLayer1";
     env.add_explicit_layer(
-        ManifestLayer{}.add_layer(
-            ManifestLayer::LayerDescription{}.set_name(explicit_layer_name1).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)),
-        "explicit_test_layer1.json");
+        {}, ManifestLayer{}.add_layer(
+                ManifestLayer::LayerDescription{}.set_name(explicit_layer_name1).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)));
 
     const char* explicit_layer_name2 = "VK_LAYER_Regular_TestLayer2";
     env.add_explicit_layer(
-        ManifestLayer{}.add_layer(
-            ManifestLayer::LayerDescription{}.set_name(explicit_layer_name2).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)),
-        "explicit_test_layer2.json");
+        {}, ManifestLayer{}.add_layer(
+                ManifestLayer::LayerDescription{}.set_name(explicit_layer_name2).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)));
 
     const char* implicit_layer_name1 = "VK_LAYER_Implicit_TestLayer1";
-    env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
-                                                         .set_name(implicit_layer_name1)
-                                                         .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
-                                                         .set_disable_environment("Domierigato")),
-                           "implicit_layer1.json");
+    env.add_implicit_layer({}, ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                             .set_name(implicit_layer_name1)
+                                                             .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                             .set_disable_environment("Domierigato")));
 
     const char* implicit_layer_name2 = "VK_LAYER_Implicit_TestLayer2";
-    env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
-                                                         .set_name(implicit_layer_name2)
-                                                         .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
-                                                         .set_disable_environment("Mistehrobato")),
-                           "implicit_layer2.json");
+    env.add_implicit_layer({}, ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                             .set_name(implicit_layer_name2)
+                                                             .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                             .set_disable_environment("Mistehrobato")));
 
     env.loader_settings.add_app_specific_setting(AppSpecificSettings{}.add_stderr_log_filter("all"));
 
@@ -1135,23 +1099,21 @@ TEST(SettingsFile, EnvVarsWork_VK_LAYER_PATH) {
     env.add_icd(TEST_ICD_PATH_VERSION_2).add_physical_device({});
 
     const char* explicit_layer_name1 = "VK_LAYER_Regular_TestLayer1";
-    env.add_explicit_layer(TestLayerDetails{
+    env.add_explicit_layer(
+        ManifestOptions{}.set_discovery_type(ManifestDiscoveryType::env_var),
         ManifestLayer{}.add_layer(
-            ManifestLayer::LayerDescription{}.set_name(explicit_layer_name1).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)),
-        "explicit_test_layer1.json"}
-                               .set_discovery_type(ManifestDiscoveryType::env_var));
+            ManifestLayer::LayerDescription{}.set_name(explicit_layer_name1).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)));
 
     const char* implicit_layer_name1 = "VK_LAYER_Implicit_TestLayer1";
-    env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
-                                                         .set_name(implicit_layer_name1)
-                                                         .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
-                                                         .set_disable_environment("Domierigato")),
-                           "implicit_layer1.json");
+    env.add_implicit_layer({}, ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                             .set_name(implicit_layer_name1)
+                                                             .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                             .set_disable_environment("Domierigato")));
     const char* non_env_var_layer_name2 = "VK_LAYER_Regular_TestLayer2";
-    env.add_explicit_layer(TestLayerDetails{
+    env.add_explicit_layer(
+        {},
         ManifestLayer{}.add_layer(
-            ManifestLayer::LayerDescription{}.set_name(non_env_var_layer_name2).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)),
-        "explicit_test_layer2.json"});
+            ManifestLayer::LayerDescription{}.set_name(non_env_var_layer_name2).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)));
 
     {
         auto layer_props = env.GetLayerProperties(2);
@@ -1215,22 +1177,21 @@ TEST(SettingsFile, EnvVarsWork_VK_ADD_LAYER_PATH) {
     env.add_icd(TEST_ICD_PATH_VERSION_2).add_physical_device({});
 
     const char* implicit_layer_name1 = "VK_LAYER_Implicit_TestLayer1";
-    env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
-                                                         .set_name(implicit_layer_name1)
-                                                         .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
-                                                         .set_disable_environment("Domierigato")),
-                           "implicit_layer1.json");
+    env.add_implicit_layer({}, ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                             .set_name(implicit_layer_name1)
+                                                             .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                             .set_disable_environment("Domierigato")));
     const char* explicit_layer_name1 = "VK_LAYER_Regular_TestLayer1";
-    env.add_explicit_layer(TestLayerDetails{
+    env.add_explicit_layer(
+        ManifestOptions{}.set_discovery_type(ManifestDiscoveryType::add_env_var),
         ManifestLayer{}.add_layer(
-            ManifestLayer::LayerDescription{}.set_name(explicit_layer_name1).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)),
-        "explicit_test_layer1.json"}
-                               .set_discovery_type(ManifestDiscoveryType::add_env_var));
+            ManifestLayer::LayerDescription{}.set_name(explicit_layer_name1).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)));
+
     const char* non_env_var_layer_name2 = "VK_LAYER_Regular_TestLayer2";
-    env.add_explicit_layer(TestLayerDetails{
+    env.add_explicit_layer(
+        {},
         ManifestLayer{}.add_layer(
-            ManifestLayer::LayerDescription{}.set_name(non_env_var_layer_name2).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)),
-        "explicit_test_layer2.json"});
+            ManifestLayer::LayerDescription{}.set_name(non_env_var_layer_name2).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)));
 
     {
         auto layer_props = env.GetLayerProperties(3);
@@ -1305,24 +1266,21 @@ TEST(SettingsFile, EnvVarsWork_VK_IMPLICIT_LAYER_PATH) {
     env.add_icd(TEST_ICD_PATH_VERSION_2).add_physical_device({});
 
     const char* explicit_layer_name1 = "VK_LAYER_Regular_TestLayer1";
-    env.add_explicit_layer(TestLayerDetails{
+    env.add_explicit_layer(
+        ManifestOptions{}.set_discovery_type(ManifestDiscoveryType::env_var),
         ManifestLayer{}.add_layer(
-            ManifestLayer::LayerDescription{}.set_name(explicit_layer_name1).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)),
-        "explicit_test_layer1.json"}
-                               .set_discovery_type(ManifestDiscoveryType::env_var));
+            ManifestLayer::LayerDescription{}.set_name(explicit_layer_name1).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)));
 
     const char* implicit_layer_name1 = "VK_LAYER_Implicit_TestLayer1";
-    env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
-                                                         .set_name(implicit_layer_name1)
-                                                         .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
-                                                         .set_disable_environment("Domierigato")),
-                           "implicit_layer1.json");
+    env.add_implicit_layer({}, ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                             .set_name(implicit_layer_name1)
+                                                             .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                             .set_disable_environment("Domierigato")));
     const char* settings_layer_path = "VK_LAYER_Regular_TestLayer2";
-    env.add_implicit_layer(TestLayerDetails{ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
-                                                                          .set_name(settings_layer_path)
-                                                                          .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
-                                                                          .set_disable_environment("Domierigato")),
-                                            "implicit_test_layer2.json"});
+    env.add_implicit_layer({}, ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                             .set_name(settings_layer_path)
+                                                             .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                             .set_disable_environment("Domierigato")));
 
     {
         auto layer_props = env.GetLayerProperties(3);
@@ -1390,23 +1348,21 @@ TEST(SettingsFile, EnvVarsWork_VK_ADD_IMPLICIT_LAYER_PATH) {
     env.add_icd(TEST_ICD_PATH_VERSION_2).add_physical_device({});
 
     const char* implicit_layer_name1 = "VK_LAYER_Implicit_TestLayer1";
-    env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
-                                                         .set_name(implicit_layer_name1)
-                                                         .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
-                                                         .set_disable_environment("Domierigato")),
-                           "implicit_layer1.json");
+    env.add_implicit_layer({}, ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                             .set_name(implicit_layer_name1)
+                                                             .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                             .set_disable_environment("Domierigato")));
     const char* explicit_layer_name1 = "VK_LAYER_Regular_TestLayer1";
-    env.add_explicit_layer(TestLayerDetails{
+    env.add_explicit_layer(
+        ManifestOptions{}.set_discovery_type(ManifestDiscoveryType::add_env_var),
         ManifestLayer{}.add_layer(
-            ManifestLayer::LayerDescription{}.set_name(explicit_layer_name1).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)),
-        "explicit_test_layer1.json"}
-                               .set_discovery_type(ManifestDiscoveryType::add_env_var));
+            ManifestLayer::LayerDescription{}.set_name(explicit_layer_name1).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)));
+
     const char* settings_layer_name = "VK_LAYER_Regular_TestLayer2";
-    env.add_implicit_layer(TestLayerDetails{ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
-                                                                          .set_name(settings_layer_name)
-                                                                          .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
-                                                                          .set_disable_environment("gozaimasu")),
-                                            "implicit_test_layer2.json"});
+    env.add_implicit_layer({}, ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                             .set_name(settings_layer_name)
+                                                             .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                             .set_disable_environment("gozaimasu")));
 
     {
         auto layer_props = env.GetLayerProperties(3);
@@ -1484,16 +1440,14 @@ TEST(SettingsFile, EnvVarsWork_VK_INSTANCE_LAYERS) {
     env.add_icd(TEST_ICD_PATH_VERSION_2).add_physical_device({});
 
     const char* filler_layer_name = "VK_LAYER_filler";
-    env.add_explicit_layer(TestLayerDetails{
-        ManifestLayer{}.add_layer(
-            ManifestLayer::LayerDescription{}.set_name(filler_layer_name).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)),
-        "filler_layer.json"});
+    env.add_explicit_layer(
+        {}, ManifestLayer{}.add_layer(
+                ManifestLayer::LayerDescription{}.set_name(filler_layer_name).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)));
 
     const char* explicit_layer_name = "VK_LAYER_Regular_TestLayer1";
-    env.add_explicit_layer(TestLayerDetails{
-        ManifestLayer{}.add_layer(
-            ManifestLayer::LayerDescription{}.set_name(explicit_layer_name).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)),
-        "explicit_test_layer1.json"});
+    env.add_explicit_layer(
+        {}, ManifestLayer{}.add_layer(
+                ManifestLayer::LayerDescription{}.set_name(explicit_layer_name).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)));
 
     {
         EnvVarWrapper vk_instance_layers{"VK_INSTANCE_LAYERS", explicit_layer_name};
@@ -1573,22 +1527,19 @@ TEST(SettingsFile, EnvVarsWork_VK_INSTANCE_LAYERS_multiple_layers) {
     env.add_icd(TEST_ICD_PATH_VERSION_2).add_physical_device({});
 
     const char* explicit_layer_name1 = "VK_LAYER_Regular_TestLayer1";
-    env.add_explicit_layer(TestLayerDetails{
-        ManifestLayer{}.add_layer(
-            ManifestLayer::LayerDescription{}.set_name(explicit_layer_name1).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)),
-        "explicit_test_layer1.json"});
+    env.add_explicit_layer(
+        {}, ManifestLayer{}.add_layer(
+                ManifestLayer::LayerDescription{}.set_name(explicit_layer_name1).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)));
 
     const char* explicit_layer_name2 = "VK_LAYER_Regular_TestLayer2";
-    env.add_explicit_layer(TestLayerDetails{
-        ManifestLayer{}.add_layer(
-            ManifestLayer::LayerDescription{}.set_name(explicit_layer_name2).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)),
-        "explicit_test_layer2.json"});
+    env.add_explicit_layer(
+        {}, ManifestLayer{}.add_layer(
+                ManifestLayer::LayerDescription{}.set_name(explicit_layer_name2).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)));
 
     const char* explicit_layer_name3 = "VK_LAYER_Regular_TestLayer3";
-    env.add_explicit_layer(TestLayerDetails{
-        ManifestLayer{}.add_layer(
-            ManifestLayer::LayerDescription{}.set_name(explicit_layer_name3).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)),
-        "explicit_test_layer3.json"});
+    env.add_explicit_layer(
+        {}, ManifestLayer{}.add_layer(
+                ManifestLayer::LayerDescription{}.set_name(explicit_layer_name3).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)));
 
     EnvVarWrapper vk_instance_layers{"VK_INSTANCE_LAYERS"};
     vk_instance_layers.add_to_list(explicit_layer_name2);
@@ -1797,10 +1748,9 @@ TEST(SettingsFile, EnvVarsWork_VK_LOADER_LAYERS_DISABLE) {
     env.add_icd(TEST_ICD_PATH_VERSION_2).add_physical_device({});
 
     const char* explicit_layer_name = "VK_LAYER_Regular_TestLayer1";
-    env.add_explicit_layer(TestLayerDetails{
-        ManifestLayer{}.add_layer(
-            ManifestLayer::LayerDescription{}.set_name(explicit_layer_name).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)),
-        "explicit_test_layer1.json"});
+    env.add_explicit_layer(
+        {}, ManifestLayer{}.add_layer(
+                ManifestLayer::LayerDescription{}.set_name(explicit_layer_name).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)));
 
     env.update_loader_settings(
         env.loader_settings.add_app_specific_setting(AppSpecificSettings{}.add_stderr_log_filter("all").add_layer_configuration(
@@ -1829,11 +1779,11 @@ TEST(SettingsFile, MultipleKeysInRegistryInUnsecureLocation) {
     env.platform_shim->add_unsecured_manifest_to_registry(ManifestCategory::settings, "jank_path2");
 
     const char* regular_layer_name = "VK_LAYER_TestLayer_0";
-    env.add_explicit_layer(TestLayerDetails{
+    env.add_explicit_layer(
+        ManifestOptions{}.set_discovery_type(ManifestDiscoveryType::override_folder),
         ManifestLayer{}.add_layer(
-            ManifestLayer::LayerDescription{}.set_name(regular_layer_name).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)),
-        "regular_test_layer.json"}
-                               .set_discovery_type(ManifestDiscoveryType::override_folder));
+            ManifestLayer::LayerDescription{}.set_name(regular_layer_name).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)));
+
     env.update_loader_settings(
         env.loader_settings.set_file_format_version({1, 0, 0}).add_app_specific_setting(
             AppSpecificSettings{}.add_stderr_log_filter("all").add_layer_configuration(LoaderSettingsLayerConfiguration{}
@@ -1862,11 +1812,11 @@ TEST(SettingsFile, MultipleKeysInRegistryInSecureLocation) {
     env.platform_shim->add_manifest_to_registry(ManifestCategory::settings, "jank_path2");
 
     const char* regular_layer_name = "VK_LAYER_TestLayer_0";
-    env.add_explicit_layer(TestLayerDetails{
+    env.add_explicit_layer(
+        ManifestOptions{}.set_discovery_type(ManifestDiscoveryType::override_folder),
         ManifestLayer{}.add_layer(
-            ManifestLayer::LayerDescription{}.set_name(regular_layer_name).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)),
-        "regular_test_layer.json"}
-                               .set_discovery_type(ManifestDiscoveryType::override_folder));
+            ManifestLayer::LayerDescription{}.set_name(regular_layer_name).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)));
+
     env.update_loader_settings(env.loader_settings.set_file_format_version({1, 0, 0}).add_app_specific_setting(
         AppSpecificSettings{}.add_stderr_log_filter("all").add_layer_configuration(LoaderSettingsLayerConfiguration{}
                                                                                        .set_name(regular_layer_name)
@@ -1899,21 +1849,20 @@ TEST(SettingsFile, PreInstanceFunctions) {
     const char* implicit_layer_name = "VK_LAYER_ImplicitTestLayer";
 
     env.add_implicit_layer(
-        ManifestLayer{}.set_file_format_version({1, 1, 2}).add_layer(
-            ManifestLayer::LayerDescription{}
-                .set_name(implicit_layer_name)
-                .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
-                .set_disable_environment("DISABLE_ME")
-                .add_pre_instance_function(ManifestLayer::LayerDescription::FunctionOverride{}
-                                               .set_vk_func("vkEnumerateInstanceLayerProperties")
-                                               .set_override_name("test_preinst_vkEnumerateInstanceLayerProperties"))
-                .add_pre_instance_function(ManifestLayer::LayerDescription::FunctionOverride{}
-                                               .set_vk_func("vkEnumerateInstanceExtensionProperties")
-                                               .set_override_name("test_preinst_vkEnumerateInstanceExtensionProperties"))
-                .add_pre_instance_function(ManifestLayer::LayerDescription::FunctionOverride{}
-                                               .set_vk_func("vkEnumerateInstanceVersion")
-                                               .set_override_name("test_preinst_vkEnumerateInstanceVersion"))),
-        "implicit_test_layer.json");
+        {}, ManifestLayer{}.set_file_format_version({1, 1, 2}).add_layer(
+                ManifestLayer::LayerDescription{}
+                    .set_name(implicit_layer_name)
+                    .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                    .set_disable_environment("DISABLE_ME")
+                    .add_pre_instance_function(ManifestLayer::LayerDescription::FunctionOverride{}
+                                                   .set_vk_func("vkEnumerateInstanceLayerProperties")
+                                                   .set_override_name("test_preinst_vkEnumerateInstanceLayerProperties"))
+                    .add_pre_instance_function(ManifestLayer::LayerDescription::FunctionOverride{}
+                                                   .set_vk_func("vkEnumerateInstanceExtensionProperties")
+                                                   .set_override_name("test_preinst_vkEnumerateInstanceExtensionProperties"))
+                    .add_pre_instance_function(ManifestLayer::LayerDescription::FunctionOverride{}
+                                                   .set_vk_func("vkEnumerateInstanceVersion")
+                                                   .set_override_name("test_preinst_vkEnumerateInstanceVersion"))));
 
     env.loader_settings.add_app_specific_setting(AppSpecificSettings{}.add_stderr_log_filter("all").add_layer_configuration(
         LoaderSettingsLayerConfiguration{}
@@ -2016,17 +1965,15 @@ TEST(SettingsFile, ImplicitLayerDisableEnvironmentVariableOverriden) {
 
     const char* filler_layer_name = "VK_LAYER_filler";
     env.add_explicit_layer(
-        ManifestLayer{}.add_layer(
-            ManifestLayer::LayerDescription{}.set_name(filler_layer_name).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)),
-        "explicit_test_layer.json");
+        {}, ManifestLayer{}.add_layer(
+                ManifestLayer::LayerDescription{}.set_name(filler_layer_name).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)));
 
     const char* implicit_layer_name = "VK_LAYER_ImplicitTestLayer";
-    env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
-                                                         .set_name(implicit_layer_name)
-                                                         .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
-                                                         .set_disable_environment("DISABLE_ME")
-                                                         .set_enable_environment("ENABLE_ME")),
-                           "implicit_test_layer.json");
+    env.add_implicit_layer({}, ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                             .set_name(implicit_layer_name)
+                                                             .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                             .set_disable_environment("DISABLE_ME")
+                                                             .set_enable_environment("ENABLE_ME")));
     env.loader_settings.add_app_specific_setting(AppSpecificSettings{}.add_stderr_log_filter("all").add_layer_configurations(
         {LoaderSettingsLayerConfiguration{}
              .set_name(filler_layer_name)
@@ -2220,15 +2167,14 @@ TEST(SettingsFile, ImplicitLayersPreInstanceEnumInstLayerProps) {
     const char* implicit_layer_name = "VK_LAYER_ImplicitTestLayer";
 
     env.add_implicit_layer(
-        ManifestLayer{}.set_file_format_version({1, 1, 2}).add_layer(
-            ManifestLayer::LayerDescription{}
-                .set_name(implicit_layer_name)
-                .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
-                .set_disable_environment("DISABLE_ME")
-                .add_pre_instance_function(ManifestLayer::LayerDescription::FunctionOverride{}
-                                               .set_vk_func("vkEnumerateInstanceLayerProperties")
-                                               .set_override_name("test_preinst_vkEnumerateInstanceLayerProperties"))),
-        "implicit_test_layer.json");
+        {}, ManifestLayer{}.set_file_format_version({1, 1, 2}).add_layer(
+                ManifestLayer::LayerDescription{}
+                    .set_name(implicit_layer_name)
+                    .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                    .set_disable_environment("DISABLE_ME")
+                    .add_pre_instance_function(ManifestLayer::LayerDescription::FunctionOverride{}
+                                                   .set_vk_func("vkEnumerateInstanceLayerProperties")
+                                                   .set_override_name("test_preinst_vkEnumerateInstanceLayerProperties"))));
 
     env.update_loader_settings(
         env.loader_settings.add_app_specific_setting(AppSpecificSettings{}.add_stderr_log_filter("all").add_layer_configuration(
@@ -2253,16 +2199,15 @@ TEST(SettingsFile, EnableEnvironmentImplicitLayersPreInstanceEnumInstLayerProps)
     const char* implicit_layer_name = "VK_LAYER_ImplicitTestLayer";
 
     env.add_implicit_layer(
-        ManifestLayer{}.set_file_format_version({1, 1, 2}).add_layer(
-            ManifestLayer::LayerDescription{}
-                .set_name(implicit_layer_name)
-                .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
-                .set_disable_environment("DISABLE_ME")
-                .set_enable_environment("ENABLE_ME")
-                .add_pre_instance_function(ManifestLayer::LayerDescription::FunctionOverride{}
-                                               .set_vk_func("vkEnumerateInstanceLayerProperties")
-                                               .set_override_name("test_preinst_vkEnumerateInstanceLayerProperties"))),
-        "implicit_test_layer.json");
+        {}, ManifestLayer{}.set_file_format_version({1, 1, 2}).add_layer(
+                ManifestLayer::LayerDescription{}
+                    .set_name(implicit_layer_name)
+                    .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                    .set_disable_environment("DISABLE_ME")
+                    .set_enable_environment("ENABLE_ME")
+                    .add_pre_instance_function(ManifestLayer::LayerDescription::FunctionOverride{}
+                                                   .set_vk_func("vkEnumerateInstanceLayerProperties")
+                                                   .set_override_name("test_preinst_vkEnumerateInstanceLayerProperties"))));
 
     env.update_loader_settings(
         env.loader_settings.add_app_specific_setting(AppSpecificSettings{}.add_stderr_log_filter("all").add_layer_configuration(
@@ -2291,15 +2236,14 @@ TEST(SettingsFile, ImplicitLayersPreInstanceEnumInstExtProps) {
     const char* implicit_layer_name = "VK_LAYER_ImplicitTestLayer";
 
     env.add_implicit_layer(
-        ManifestLayer{}.set_file_format_version({1, 1, 2}).add_layer(
-            ManifestLayer::LayerDescription{}
-                .set_name(implicit_layer_name)
-                .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
-                .set_disable_environment("DISABLE_ME")
-                .add_pre_instance_function(ManifestLayer::LayerDescription::FunctionOverride{}
-                                               .set_vk_func("vkEnumerateInstanceExtensionProperties")
-                                               .set_override_name("test_preinst_vkEnumerateInstanceExtensionProperties"))),
-        "implicit_test_layer.json");
+        {}, ManifestLayer{}.set_file_format_version({1, 1, 2}).add_layer(
+                ManifestLayer::LayerDescription{}
+                    .set_name(implicit_layer_name)
+                    .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                    .set_disable_environment("DISABLE_ME")
+                    .add_pre_instance_function(ManifestLayer::LayerDescription::FunctionOverride{}
+                                                   .set_vk_func("vkEnumerateInstanceExtensionProperties")
+                                                   .set_override_name("test_preinst_vkEnumerateInstanceExtensionProperties"))));
 
     env.update_loader_settings(
         env.loader_settings.add_app_specific_setting(AppSpecificSettings{}.add_stderr_log_filter("all").add_layer_configuration(
@@ -2324,16 +2268,15 @@ TEST(SettingsFile, EnableEnvironmentImplicitLayersPreInstanceEnumInstExtProps) {
     const char* implicit_layer_name = "VK_LAYER_ImplicitTestLayer";
 
     env.add_implicit_layer(
-        ManifestLayer{}.set_file_format_version({1, 1, 2}).add_layer(
-            ManifestLayer::LayerDescription{}
-                .set_name(implicit_layer_name)
-                .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
-                .set_disable_environment("DISABLE_ME")
-                .set_enable_environment("ENABLE_ME")
-                .add_pre_instance_function(ManifestLayer::LayerDescription::FunctionOverride{}
-                                               .set_vk_func("vkEnumerateInstanceExtensionProperties")
-                                               .set_override_name("test_preinst_vkEnumerateInstanceExtensionProperties"))),
-        "implicit_test_layer.json");
+        {}, ManifestLayer{}.set_file_format_version({1, 1, 2}).add_layer(
+                ManifestLayer::LayerDescription{}
+                    .set_name(implicit_layer_name)
+                    .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                    .set_disable_environment("DISABLE_ME")
+                    .set_enable_environment("ENABLE_ME")
+                    .add_pre_instance_function(ManifestLayer::LayerDescription::FunctionOverride{}
+                                                   .set_vk_func("vkEnumerateInstanceExtensionProperties")
+                                                   .set_override_name("test_preinst_vkEnumerateInstanceExtensionProperties"))));
 
     env.update_loader_settings(
         env.loader_settings.add_app_specific_setting(AppSpecificSettings{}.add_stderr_log_filter("all").add_layer_configuration(
@@ -2362,7 +2305,8 @@ TEST(SettingsFile, ImplicitLayersPreInstanceVersion) {
 
     const char* implicit_layer_name = "VK_LAYER_ImplicitTestLayer";
 
-    env.add_implicit_layer(ManifestLayer{}.set_file_format_version({1, 1, 2}).add_layer(
+    env.add_implicit_layer({},
+                           ManifestLayer{}.set_file_format_version({1, 1, 2}).add_layer(
                                ManifestLayer::LayerDescription{}
                                    .set_name(implicit_layer_name)
                                    .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
@@ -2370,8 +2314,7 @@ TEST(SettingsFile, ImplicitLayersPreInstanceVersion) {
                                    .set_disable_environment("DISABLE_ME")
                                    .add_pre_instance_function(ManifestLayer::LayerDescription::FunctionOverride{}
                                                                   .set_vk_func("vkEnumerateInstanceVersion")
-                                                                  .set_override_name("test_preinst_vkEnumerateInstanceVersion"))),
-                           "implicit_test_layer.json");
+                                                                  .set_override_name("test_preinst_vkEnumerateInstanceVersion"))));
 
     env.update_loader_settings(
         env.loader_settings.add_app_specific_setting(AppSpecificSettings{}.add_stderr_log_filter("all").add_layer_configuration(
@@ -2398,7 +2341,8 @@ TEST(SettingsFile, EnableEnvironmentImplicitLayersPreInstanceVersion) {
 
     const char* implicit_layer_name = "VK_LAYER_ImplicitTestLayer";
 
-    env.add_implicit_layer(ManifestLayer{}.set_file_format_version({1, 1, 2}).add_layer(
+    env.add_implicit_layer({},
+                           ManifestLayer{}.set_file_format_version({1, 1, 2}).add_layer(
                                ManifestLayer::LayerDescription{}
                                    .set_name(implicit_layer_name)
                                    .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
@@ -2407,8 +2351,7 @@ TEST(SettingsFile, EnableEnvironmentImplicitLayersPreInstanceVersion) {
                                    .set_enable_environment("ENABLE_ME")
                                    .add_pre_instance_function(ManifestLayer::LayerDescription::FunctionOverride{}
                                                                   .set_vk_func("vkEnumerateInstanceVersion")
-                                                                  .set_override_name("test_preinst_vkEnumerateInstanceVersion"))),
-                           "implicit_test_layer.json");
+                                                                  .set_override_name("test_preinst_vkEnumerateInstanceVersion"))));
 
     env.update_loader_settings(
         env.loader_settings.add_app_specific_setting(AppSpecificSettings{}.add_stderr_log_filter("all").add_layer_configuration(
@@ -2432,10 +2375,10 @@ TEST(SettingsFile, StderrLogFilters) {
     FrameworkEnvironment env{FrameworkSettings{}.set_log_filter("")};
     env.add_icd(TEST_ICD_PATH_VERSION_2).add_physical_device({});
     const char* explicit_layer_name = "Regular_TestLayer1";
-    env.add_explicit_layer(TestLayerDetails{
-        ManifestLayer{}.add_layer(
-            ManifestLayer::LayerDescription{}.set_name(explicit_layer_name).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)),
-        "explicit_test_layer1.json"});
+    env.add_explicit_layer(
+        {}, ManifestLayer{}.add_layer(
+                ManifestLayer::LayerDescription{}.set_name(explicit_layer_name).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)));
+
     env.update_loader_settings(env.loader_settings.set_file_format_version({1, 0, 0}).add_app_specific_setting(
         AppSpecificSettings{}
             .add_layer_configuration(LoaderSettingsLayerConfiguration{}
@@ -2620,10 +2563,10 @@ TEST(SettingsFile, StderrLog_NoOutput) {
     FrameworkEnvironment env{FrameworkSettings{}.set_log_filter("")};
     env.add_icd(TEST_ICD_PATH_VERSION_2).add_physical_device({});
     const char* explicit_layer_name = "Regular_TestLayer1";
-    env.add_explicit_layer(TestLayerDetails{
-        ManifestLayer{}.add_layer(
-            ManifestLayer::LayerDescription{}.set_name(explicit_layer_name).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)),
-        "explicit_test_layer1.json"});
+    env.add_explicit_layer(
+        {}, ManifestLayer{}.add_layer(
+                ManifestLayer::LayerDescription{}.set_name(explicit_layer_name).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)));
+
     env.loader_settings.set_file_format_version({1, 0, 0}).add_app_specific_setting(
         AppSpecificSettings{}
             .add_layer_configuration(LoaderSettingsLayerConfiguration{}
@@ -2710,10 +2653,9 @@ TEST(SettingsFile, NoStderr_log_but_VK_LOADER_DEBUG) {
 
     const char* explicit_layer_name = "Regular_TestLayer1";
 
-    env.add_explicit_layer(TestLayerDetails{
-        ManifestLayer{}.add_layer(
-            ManifestLayer::LayerDescription{}.set_name(explicit_layer_name).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)),
-        "explicit_test_layer1.json"});
+    env.add_explicit_layer(
+        {}, ManifestLayer{}.add_layer(
+                ManifestLayer::LayerDescription{}.set_name(explicit_layer_name).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)));
 
     env.loader_settings.set_file_format_version({1, 0, 0}).add_app_specific_setting(
         AppSpecificSettings{}
@@ -2766,30 +2708,20 @@ TEST(SettingsFile, ManyLayersEnabledInManyWays) {
     FrameworkEnvironment env{};
     env.add_icd(TEST_ICD_PATH_VERSION_2).add_physical_device({});
     const char* layer1 = "VK_LAYER_layer1";
-    env.add_explicit_layer(
-        TestLayerDetails{ManifestLayer{}.add_layer(
-                             ManifestLayer::LayerDescription{}.set_name(layer1).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)),
-                         "explicit_layer1.json"});
+    env.add_explicit_layer({}, ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}.set_name(layer1).set_lib_path(
+                                   TEST_LAYER_PATH_EXPORT_VERSION_2)));
     const char* layer2 = "VK_LAYER_layer2";
-    env.add_explicit_layer(
-        TestLayerDetails{ManifestLayer{}.add_layer(
-                             ManifestLayer::LayerDescription{}.set_name(layer2).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)),
-                         "explicit_layer2.json"});
+    env.add_explicit_layer({}, ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}.set_name(layer2).set_lib_path(
+                                   TEST_LAYER_PATH_EXPORT_VERSION_2)));
     const char* layer3 = "VK_LAYER_layer3";
-    env.add_explicit_layer(
-        TestLayerDetails{ManifestLayer{}.add_layer(
-                             ManifestLayer::LayerDescription{}.set_name(layer3).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)),
-                         "explicit_layer3.json"});
+    env.add_explicit_layer({}, ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}.set_name(layer3).set_lib_path(
+                                   TEST_LAYER_PATH_EXPORT_VERSION_2)));
     const char* layer4 = "VK_LAYER_layer4";
-    env.add_explicit_layer(
-        TestLayerDetails{ManifestLayer{}.add_layer(
-                             ManifestLayer::LayerDescription{}.set_name(layer4).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)),
-                         "explicit_layer4.json"});
+    env.add_explicit_layer({}, ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}.set_name(layer4).set_lib_path(
+                                   TEST_LAYER_PATH_EXPORT_VERSION_2)));
     const char* layer5 = "VK_LAYER_layer5";
-    env.add_explicit_layer(
-        TestLayerDetails{ManifestLayer{}.add_layer(
-                             ManifestLayer::LayerDescription{}.set_name(layer5).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)),
-                         "explicit_layer5.json"});
+    env.add_explicit_layer({}, ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}.set_name(layer5).set_lib_path(
+                                   TEST_LAYER_PATH_EXPORT_VERSION_2)));
 
     env.loader_settings.set_file_format_version({1, 0, 0}).add_app_specific_setting(
         AppSpecificSettings{}.add_stderr_log_filter("all").add_layer_configurations(
@@ -2840,11 +2772,12 @@ TEST(SettingsFile, TooManyLayers) {
     std::string layer_name = "VK_LAYER_regular_layer_name_";
     uint32_t layer_count = 40;
     for (uint32_t i = 0; i < layer_count; i++) {
-        env.add_explicit_layer(TestLayerDetails{ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
-                                                                              .set_name(layer_name + std::to_string(i))
-                                                                              .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)),
-                                                layer_name + std::to_string(i) + ".json"}
-                                   .set_discovery_type(ManifestDiscoveryType::override_folder));
+        env.add_explicit_layer(ManifestOptions{}
+                                   .set_json_name(layer_name + std::to_string(i) + ".json")
+                                   .set_discovery_type(ManifestDiscoveryType::override_folder),
+                               ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                             .set_name(layer_name + std::to_string(i))
+                                                             .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)));
         env.loader_settings.app_specific_settings.at(0).add_layer_configuration(LoaderSettingsLayerConfiguration{}
                                                                                     .set_name(layer_name + std::to_string(i))
                                                                                     .set_path(env.get_layer_manifest_path(i))
@@ -2911,52 +2844,46 @@ TEST(SettingsFile, EnvVarsWorkTogether) {
         .add_physical_device(PhysicalDevice{}.set_deviceName("add_env_var").finish());
 
     const char* regular_explicit_layer = "VK_LAYER_regular_explicit_layer";
-    env.add_explicit_layer(TestLayerDetails{
-        ManifestLayer{}.add_layer(
-            ManifestLayer::LayerDescription{}.set_name(regular_explicit_layer).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)),
-        "regular_explicit_layer.json"});
+    env.add_explicit_layer(
+        {}, ManifestLayer{}.add_layer(
+                ManifestLayer::LayerDescription{}.set_name(regular_explicit_layer).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)));
+
     const char* regular_explicit_layer_settings_file_set_on = "VK_LAYER_regular_explicit_layer_settings_file_set_on";
-    env.add_explicit_layer(TestLayerDetails{ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
-                                                                          .set_name(regular_explicit_layer_settings_file_set_on)
-                                                                          .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)),
-                                            "regular_explicit_layer_settings_file_set_on.json"});
+    env.add_explicit_layer({}, ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                             .set_name(regular_explicit_layer_settings_file_set_on)
+                                                             .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)));
 
     const char* env_var_explicit_layer = "VK_LAYER_env_var_explicit_layer";
-    env.add_explicit_layer(TestLayerDetails{
+    env.add_explicit_layer(
+        ManifestOptions{}.set_discovery_type(ManifestDiscoveryType::env_var),
         ManifestLayer{}.add_layer(
-            ManifestLayer::LayerDescription{}.set_name(env_var_explicit_layer).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)),
-        "env_var_explicit_layer.json"}
-                               .set_discovery_type(ManifestDiscoveryType::env_var));
+            ManifestLayer::LayerDescription{}.set_name(env_var_explicit_layer).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)));
 
     const char* add_env_var_explicit_layer = "VK_LAYER_add_env_var_explicit_layer";
-    env.add_explicit_layer(TestLayerDetails{
+    env.add_explicit_layer(
+        ManifestOptions{}.set_discovery_type(ManifestDiscoveryType::add_env_var),
         ManifestLayer{}.add_layer(
-            ManifestLayer::LayerDescription{}.set_name(add_env_var_explicit_layer).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)),
-        "add_env_var_explicit_layer.json"}
-                               .set_discovery_type(ManifestDiscoveryType::add_env_var));
+            ManifestLayer::LayerDescription{}.set_name(add_env_var_explicit_layer).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)));
 
     const char* regular_implicit_layer = "VK_LAYER_regular_implicit_layer";
-    env.add_implicit_layer(TestLayerDetails{ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
-                                                                          .set_disable_environment("A")
-                                                                          .set_name(regular_implicit_layer)
-                                                                          .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)),
-                                            "regular_implicit_layer.json"});
+    env.add_implicit_layer({}, ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                             .set_disable_environment("A")
+                                                             .set_name(regular_implicit_layer)
+                                                             .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)));
 
     const char* env_var_implicit_layer = "VK_LAYER_env_var_implicit_layer";
-    env.add_implicit_layer(TestLayerDetails{ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
-                                                                          .set_disable_environment("B")
-                                                                          .set_name(env_var_implicit_layer)
-                                                                          .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)),
-                                            "env_var_implicit_layer.json"}
-                               .set_discovery_type(ManifestDiscoveryType::env_var));
+    env.add_implicit_layer(ManifestOptions{}.set_discovery_type(ManifestDiscoveryType::env_var),
+                           ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                         .set_disable_environment("B")
+                                                         .set_name(env_var_implicit_layer)
+                                                         .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)));
 
     const char* add_env_var_implicit_layer = "VK_LAYER_add_env_var_implicit_layer";
-    env.add_implicit_layer(TestLayerDetails{ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
-                                                                          .set_disable_environment("C")
-                                                                          .set_name(add_env_var_implicit_layer)
-                                                                          .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)),
-                                            "add_env_var_implicit_layer.json"}
-                               .set_discovery_type(ManifestDiscoveryType::add_env_var));
+    env.add_implicit_layer(ManifestOptions{}.set_discovery_type(ManifestDiscoveryType::add_env_var),
+                           ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                         .set_disable_environment("C")
+                                                         .set_name(add_env_var_implicit_layer)
+                                                         .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)));
 
     // Settings file only contains the one layer it wants enabled
     env.loader_settings.set_file_format_version({1, 0, 0}).add_app_specific_setting(
@@ -3094,15 +3021,13 @@ TEST(SettingsFile, DontAllowDuplicatesBetweenSettingsLayersAndDefaultLayers) {
 
     const char* explicit_layer_name1 = "VK_LAYER_Regular_TestLayer1";
     env.add_explicit_layer(
-        ManifestLayer{}.add_layer(
-            ManifestLayer::LayerDescription{}.set_name(explicit_layer_name1).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)),
-        "explicit_test_layer1.json");
+        {}, ManifestLayer{}.add_layer(
+                ManifestLayer::LayerDescription{}.set_name(explicit_layer_name1).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)));
 
-    env.add_explicit_layer(TestLayerDetails{
+    env.add_explicit_layer(
+        ManifestOptions{}.set_discovery_type(ManifestDiscoveryType::override_folder),
         ManifestLayer{}.add_layer(
-            ManifestLayer::LayerDescription{}.set_name(explicit_layer_name1).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)),
-        "explicit_test_layer2.json"}
-                               .set_discovery_type(ManifestDiscoveryType::override_folder));
+            ManifestLayer::LayerDescription{}.set_name(explicit_layer_name1).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)));
 
     env.update_loader_settings(env.loader_settings.set_file_format_version({1, 0, 0}).add_app_specific_setting(
         AppSpecificSettings{}
@@ -3239,11 +3164,11 @@ TEST(SettingsFile, InvalidAdditionalDriversField) {
         .add_physical_device(PhysicalDevice{}.set_deviceName(settings_driver_name).finish());
     env.add_icd(TEST_ICD_PATH_VERSION_2).add_physical_device(PhysicalDevice{}.set_deviceName(driver_name).finish());
 
-    env.add_explicit_layer(TestLayerDetails{
+    env.add_explicit_layer(
+        ManifestOptions{}.set_discovery_type(ManifestDiscoveryType::override_folder),
         ManifestLayer{}.add_layer(
-            ManifestLayer::LayerDescription{}.set_name("VK_LAYER_layer").set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)),
-        "regular_test_layer.json"}
-                               .set_discovery_type(ManifestDiscoveryType::override_folder));
+            ManifestLayer::LayerDescription{}.set_name("VK_LAYER_layer").set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)));
+
     JsonWriter writer;
     writer.StartObject();
     writer.AddKeyedString("file_format_version", "1.0.0");
@@ -3700,9 +3625,8 @@ TEST(SettingsFile, DeviceConfigurationPreservesLayerEnumeration) {
 
     const char* layer_name = "VK_LAYER_layer";
     env.add_explicit_layer(
-        ManifestLayer{}.add_layer(
-            ManifestLayer::LayerDescription{}.set_name(layer_name).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)),
-        "regular_test_layer.json");
+        {}, ManifestLayer{}.add_layer(
+                ManifestLayer::LayerDescription{}.set_name(layer_name).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)));
 
     env.loader_settings.set_file_format_version({1, 0, 0}).add_app_specific_setting(
         AppSpecificSettings{}

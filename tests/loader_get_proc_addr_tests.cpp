@@ -305,12 +305,11 @@ TEST(GetProcAddr, PreserveLayerGettingVkCreateDeviceWithNullInstance) {
     FrameworkEnvironment env{};
     env.add_icd(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA).add_physical_device("physical_device_0");
 
-    env.add_implicit_layer(TestLayerDetails(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
-                                                                          .set_name("VK_LAYER_technically_buggy_layer")
-                                                                          .set_description("actually_layer_1")
-                                                                          .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
-                                                                          .set_disable_environment("if_you_can")),
-                                            "buggy_layer_1.json"));
+    env.add_implicit_layer({}, ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                             .set_name("VK_LAYER_technically_buggy_layer")
+                                                             .set_description("actually_layer_1")
+                                                             .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                             .set_disable_environment("if_you_can")));
     env.get_test_layer().set_buggy_query_of_vkCreateDevice(true);
     InstWrapper inst{env.vulkan_functions};
     inst.create_info.set_api_version(VK_API_VERSION_1_1);

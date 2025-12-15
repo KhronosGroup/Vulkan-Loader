@@ -447,18 +447,6 @@ struct ManifestOptions {
     BUILDER_VALUE_WITH_DEFAULT(LibraryPathType, library_path_type, LibraryPathType::absolute);
 };
 
-struct TestLayerDetails {
-    TestLayerDetails(ManifestLayer layer_manifest, const std::string& json_name) noexcept
-        : layer_manifest(layer_manifest), json_name(json_name) {}
-    BUILDER_VALUE(ManifestLayer, layer_manifest);
-    BUILDER_VALUE_WITH_DEFAULT(std::string, json_name, "test_layer");
-    BUILDER_VALUE_WITH_DEFAULT(ManifestDiscoveryType, discovery_type, ManifestDiscoveryType::generic);
-    BUILDER_VALUE(bool, is_fake);
-    // If discovery type is env-var, is_dir controls whether to use the path to the file or folder the manifest is in
-    BUILDER_VALUE_WITH_DEFAULT(bool, is_dir, true);
-    BUILDER_VALUE_WITH_DEFAULT(LibraryPathType, library_path_type, LibraryPathType::absolute);
-};
-
 struct FrameworkSettings {
     BUILDER_VALUE_WITH_DEFAULT(const char*, log_filter, "all");
     BUILDER_VALUE_WITH_DEFAULT(bool, run_as_if_with_elevated_privleges, false);
@@ -485,10 +473,8 @@ struct FrameworkEnvironment {
     TestICD& add_icd(std::filesystem::path const& path, ManifestOptions args = ManifestOptions{},
                      ManifestICD manifest = ManifestICD{}) noexcept;
 
-    void add_implicit_layer(ManifestLayer layer_manifest, const std::string& json_name) noexcept;
-    void add_implicit_layer(TestLayerDetails layer_details) noexcept;
-    void add_explicit_layer(ManifestLayer layer_manifest, const std::string& json_name) noexcept;
-    void add_explicit_layer(TestLayerDetails layer_details) noexcept;
+    void add_implicit_layer(ManifestOptions args, ManifestLayer layer_manifest) noexcept;
+    void add_explicit_layer(ManifestOptions args, ManifestLayer layer_manifest) noexcept;
 
     // Resets the current settings with the values contained in loader_settings.
     // Write_to_secure_location determines whether to write to the secure or unsecure settings folder.
@@ -570,7 +556,8 @@ struct FrameworkEnvironment {
 
     LoaderSettings loader_settings;  // the current settings written to disk
    private:
-    void add_layer_impl(TestLayerDetails layer_details, ManifestCategory category);
+    uint32_t created_layer_count = 0;
+    void add_layer_impl(ManifestOptions args, ManifestLayer manifest, ManifestCategory category);
 };
 
 // Create a surface using a platform specific API

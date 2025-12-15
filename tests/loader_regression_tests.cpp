@@ -100,9 +100,8 @@ TEST(CreateInstance, LayerPresent) {
 
     const char* layer_name = "TestLayer";
     env.add_explicit_layer(
-        ManifestLayer{}.add_layer(
-            ManifestLayer::LayerDescription{}.set_name(layer_name).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)),
-        "test_layer.json");
+        {}, ManifestLayer{}.add_layer(
+                ManifestLayer::LayerDescription{}.set_name(layer_name).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)));
 
     InstWrapper inst{env.vulkan_functions};
     inst.create_info.add_layer(layer_name);
@@ -116,10 +115,9 @@ TEST(CreateInstance, RelativePaths) {
 
     const char* layer_name = "VK_LAYER_TestLayer";
     env.add_explicit_layer(
-        TestLayerDetails{ManifestLayer{}.add_layer(
-                             ManifestLayer::LayerDescription{}.set_name(layer_name).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)),
-                         "test_layer.json"}
-            .set_library_path_type(LibraryPathType::relative));
+        ManifestOptions{}.set_library_path_type(LibraryPathType::relative),
+        ManifestLayer{}.add_layer(
+            ManifestLayer::LayerDescription{}.set_name(layer_name).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)));
 
     InstWrapper inst{env.vulkan_functions};
     inst.create_info.add_layer(layer_name);
@@ -179,14 +177,12 @@ TEST(EnumerateInstanceLayerProperties, UsageChecks) {
     const char* layer_name_2 = "TestLayer1";
 
     env.add_explicit_layer(
-        ManifestLayer{}.add_layer(
-            ManifestLayer::LayerDescription{}.set_name(layer_name_1).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)),
-        "test_layer_1.json");
+        {}, ManifestLayer{}.add_layer(
+                ManifestLayer::LayerDescription{}.set_name(layer_name_1).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)));
 
     env.add_explicit_layer(
-        ManifestLayer{}.add_layer(
-            ManifestLayer::LayerDescription{}.set_name(layer_name_2).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)),
-        "test_layer_2.json");
+        {}, ManifestLayer{}.add_layer(
+                ManifestLayer::LayerDescription{}.set_name(layer_name_2).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)));
 
     {  // OnePass
         VkLayerProperties layer_props[2] = {};
@@ -314,9 +310,8 @@ TEST(EnumerateDeviceLayerProperties, LayersMatch) {
 
     const char* layer_name = "TestLayer";
     env.add_explicit_layer(
-        ManifestLayer{}.add_layer(
-            ManifestLayer::LayerDescription{}.set_name(layer_name).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)),
-        "test_layer.json");
+        {}, ManifestLayer{}.add_layer(
+                ManifestLayer::LayerDescription{}.set_name(layer_name).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)));
 
     InstWrapper inst{env.vulkan_functions};
     inst.create_info.add_layer(layer_name);
@@ -486,11 +481,10 @@ TEST(EnumerateDeviceExtensionProperties, ImplicitLayerPresentNoExtensions) {
 
     env.add_icd(TEST_ICD_PATH_VERSION_2).add_and_get_physical_device("physical_device_0").add_extensions(exts);
 
-    env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
-                                                         .set_name("implicit_layer_name")
-                                                         .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
-                                                         .set_disable_environment("DISABLE_ME")),
-                           "implicit_test_layer.json");
+    env.add_implicit_layer({}, ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                             .set_name("implicit_layer_name")
+                                                             .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                             .set_disable_environment("DISABLE_ME")));
 
     InstWrapper inst{env.vulkan_functions};
     inst.CheckCreate();
@@ -508,12 +502,11 @@ TEST(EnumerateDeviceExtensionProperties, ImplicitLayerPresentWithExtensions) {
         exts.emplace_back(std::string("LayerExtNumba") + std::to_string(i), i + 10);
         layer_exts.emplace_back(std::string("LayerExtNumba") + std::to_string(i), i + 10);
     }
-    env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
-                                                         .set_name("implicit_layer_name")
-                                                         .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
-                                                         .set_disable_environment("DISABLE_ME")
-                                                         .add_device_extensions({layer_exts})),
-                           "implicit_test_layer.json");
+    env.add_implicit_layer({}, ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                             .set_name("implicit_layer_name")
+                                                             .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                             .set_disable_environment("DISABLE_ME")
+                                                             .add_device_extensions({layer_exts})));
     auto& layer = env.get_test_layer();
     layer.device_extensions = exts;
 
@@ -539,12 +532,11 @@ TEST(EnumerateDeviceExtensionProperties, ImplicitLayerPresentWithLotsOfExtension
         exts.emplace_back(std::string("LayerExtNumba") + std::to_string(i), i + 10);
         layer_exts.emplace_back(std::string("LayerExtNumba") + std::to_string(i), i + 10);
     }
-    env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
-                                                         .set_name("implicit_layer_name")
-                                                         .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
-                                                         .set_disable_environment("DISABLE_ME")
-                                                         .add_device_extensions({layer_exts})),
-                           "implicit_test_layer.json");
+    env.add_implicit_layer({}, ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                             .set_name("implicit_layer_name")
+                                                             .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                             .set_disable_environment("DISABLE_ME")
+                                                             .add_device_extensions({layer_exts})));
     auto& layer = env.get_test_layer();
     layer.device_extensions = exts;
 
@@ -572,12 +564,11 @@ TEST(EnumerateDeviceExtensionProperties, NoDriverExtensionsImplicitLayerPresentW
         exts.emplace_back(std::string("LayerExtNumba") + std::to_string(i), i + 10);
         layer_exts.emplace_back(std::string("LayerExtNumba") + std::to_string(i), i + 10);
     }
-    env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
-                                                         .set_name("implicit_layer_name")
-                                                         .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
-                                                         .set_disable_environment("DISABLE_ME")
-                                                         .add_device_extensions({layer_exts})),
-                           "implicit_test_layer.json");
+    env.add_implicit_layer({}, ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                             .set_name("implicit_layer_name")
+                                                             .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                             .set_disable_environment("DISABLE_ME")
+                                                             .add_device_extensions({layer_exts})));
     auto& layer = env.get_test_layer();
     layer.device_extensions = exts;
 
@@ -598,12 +589,11 @@ TEST(EnumerateDeviceExtensionProperties, NoDriverExtensionsImplicitLayerPresentW
         exts.emplace_back(std::string("LayerExtNumba") + std::to_string(i), i + 10);
         layer_exts.emplace_back(std::string("LayerExtNumba") + std::to_string(i), i + 10);
     }
-    env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
-                                                         .set_name("implicit_layer_name")
-                                                         .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
-                                                         .set_disable_environment("DISABLE_ME")
-                                                         .add_device_extensions({layer_exts})),
-                           "implicit_test_layer.json");
+    env.add_implicit_layer({}, ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                             .set_name("implicit_layer_name")
+                                                             .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                             .set_disable_environment("DISABLE_ME")
+                                                             .add_device_extensions({layer_exts})));
     auto& layer = env.get_test_layer();
     layer.device_extensions = exts;
 
@@ -624,12 +614,11 @@ TEST(EnumerateDeviceExtensionProperties, ImplicitLayerPresentWithDuplicateExtens
         exts.emplace_back(std::string("LayerExtNumba") + std::to_string(i), i + 10);
         layer_exts.emplace_back(std::string("LayerExtNumba") + std::to_string(i), i + 10);
     }
-    env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
-                                                         .set_name("implicit_layer_name")
-                                                         .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
-                                                         .set_disable_environment("DISABLE_ME")
-                                                         .add_device_extensions({layer_exts})),
-                           "implicit_test_layer.json");
+    env.add_implicit_layer({}, ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                             .set_name("implicit_layer_name")
+                                                             .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                             .set_disable_environment("DISABLE_ME")
+                                                             .add_device_extensions({layer_exts})));
     auto& layer = env.get_test_layer();
     layer.device_extensions = exts;
 
@@ -659,12 +648,11 @@ TEST(EnumerateDeviceExtensionProperties, ImplicitLayerPresentWithOnlyDuplicateEx
         exts.emplace_back(std::string("LayerExtNumba") + std::to_string(i), i + 10);
         layer_exts.emplace_back(std::string("LayerExtNumba") + std::to_string(i), i + 10);
     }
-    env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
-                                                         .set_name("implicit_layer_name")
-                                                         .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
-                                                         .set_disable_environment("DISABLE_ME")
-                                                         .add_device_extensions({layer_exts})),
-                           "implicit_test_layer.json");
+    env.add_implicit_layer({}, ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                             .set_name("implicit_layer_name")
+                                                             .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                             .set_disable_environment("DISABLE_ME")
+                                                             .add_device_extensions({layer_exts})));
     auto& layer = env.get_test_layer();
     layer.device_extensions = exts;
 
@@ -1473,9 +1461,8 @@ TEST(CreateDevice, MatchInstanceAndDeviceLayers) {
 
     const char* layer_name = "TestLayer";
     env.add_explicit_layer(
-        ManifestLayer{}.add_layer(
-            ManifestLayer::LayerDescription{}.set_name(layer_name).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)),
-        "test_layer.json");
+        {}, ManifestLayer{}.add_layer(
+                ManifestLayer::LayerDescription{}.set_name(layer_name).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)));
 
     InstWrapper inst{env.vulkan_functions};
     inst.create_info.add_layer(layer_name);
@@ -1499,9 +1486,8 @@ TEST(CreateDevice, UnmatchInstanceAndDeviceLayers) {
 
     const char* layer_name = "TestLayer";
     env.add_explicit_layer(
-        ManifestLayer{}.add_layer(
-            ManifestLayer::LayerDescription{}.set_name(layer_name).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)),
-        "test_layer.json");
+        {}, ManifestLayer{}.add_layer(
+                ManifestLayer::LayerDescription{}.set_name(layer_name).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)));
 
     DebugUtilsLogger debug_log{VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT};
     InstWrapper inst{env.vulkan_functions};
@@ -1533,9 +1519,8 @@ TEST(CreateDevice, CheckCopyOfInstanceLayerNames) {
 
     const char* layer_name = "TestLayer";
     env.add_explicit_layer(
-        ManifestLayer{}.add_layer(
-            ManifestLayer::LayerDescription{}.set_name(layer_name).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)),
-        "test_layer.json");
+        {}, ManifestLayer{}.add_layer(
+                ManifestLayer::LayerDescription{}.set_name(layer_name).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)));
 
     InstWrapper inst{env.vulkan_functions};
     {
@@ -1623,11 +1608,10 @@ TEST(TryLoadWrongBinaries, WrongExplicit) {
     env.add_icd(TEST_ICD_PATH_VERSION_2).add_physical_device("physical_device_0");
 
     const char* layer_name = "DummyLayerExplicit";
-    env.add_explicit_layer(TestLayerDetails{
+    env.add_explicit_layer(
+        ManifestOptions{}.set_is_fake(true),
         ManifestLayer{}.add_layer(
-            ManifestLayer::LayerDescription{}.set_name(layer_name).set_lib_path(CURRENT_PLATFORM_DUMMY_BINARY_WRONG_TYPE)),
-        "dummy_test_layer.json"}
-                               .set_is_fake(true));
+            ManifestLayer::LayerDescription{}.set_name(layer_name).set_lib_path(CURRENT_PLATFORM_DUMMY_BINARY_WRONG_TYPE)));
 
     auto layer_props = env.GetLayerProperties(1);
     ASSERT_TRUE(string_eq(layer_name, layer_props[0].layerName));
@@ -1644,7 +1628,7 @@ TEST(TryLoadWrongBinaries, WrongExplicit) {
 #if !defined(__APPLE__)
     ASSERT_TRUE(log.find(std::string("Requested layer \"") + std::string(layer_name) + std::string("\" was wrong bit-type!")));
 #else   // __APPLE__
-    // Apple only throws a wrong library type of error
+        // Apple only throws a wrong library type of error
     ASSERT_TRUE(log.find(std::string("Requested layer \"") + std::string(layer_name) + std::string("\" failed to load!")));
 #endif  // __APPLE__
 }
@@ -1654,12 +1638,11 @@ TEST(TryLoadWrongBinaries, WrongImplicit) {
     env.add_icd(TEST_ICD_PATH_VERSION_2).add_physical_device("physical_device_0");
 
     const char* layer_name = "DummyLayerImplicit0";
-    env.add_implicit_layer(TestLayerDetails{ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
-                                                                          .set_name(layer_name)
-                                                                          .set_lib_path(CURRENT_PLATFORM_DUMMY_BINARY_WRONG_TYPE)
-                                                                          .set_disable_environment("DISABLE_ENV")),
-                                            "dummy_test_layer.json"}
-                               .set_is_fake(true));
+    env.add_implicit_layer(ManifestOptions{}.set_is_fake(true),
+                           ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                         .set_name(layer_name)
+                                                         .set_lib_path(CURRENT_PLATFORM_DUMMY_BINARY_WRONG_TYPE)
+                                                         .set_disable_environment("DISABLE_ENV")));
 
     auto layer_props = env.GetLayerProperties(1);
     ASSERT_TRUE(string_eq(layer_name, layer_props[0].layerName));
@@ -1686,18 +1669,17 @@ TEST(TryLoadWrongBinaries, WrongExplicitAndImplicit) {
     env.add_icd(TEST_ICD_PATH_VERSION_2).add_physical_device("physical_device_0");
 
     const char* layer_name_0 = "DummyLayerExplicit";
-    env.add_explicit_layer(TestLayerDetails{
+    env.add_explicit_layer(
+        ManifestOptions{}.set_is_fake(true),
         ManifestLayer{}.add_layer(
-            ManifestLayer::LayerDescription{}.set_name(layer_name_0).set_lib_path(CURRENT_PLATFORM_DUMMY_BINARY_WRONG_TYPE)),
-        "dummy_test_layer_0.json"}
-                               .set_is_fake(true));
+            ManifestLayer::LayerDescription{}.set_name(layer_name_0).set_lib_path(CURRENT_PLATFORM_DUMMY_BINARY_WRONG_TYPE)));
+
     const char* layer_name_1 = "DummyLayerImplicit";
-    env.add_implicit_layer(TestLayerDetails{ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
-                                                                          .set_name(layer_name_1)
-                                                                          .set_lib_path(CURRENT_PLATFORM_DUMMY_BINARY_WRONG_TYPE)
-                                                                          .set_disable_environment("DISABLE_ENV")),
-                                            "dummy_test_layer_1.json"}
-                               .set_is_fake(true));
+    env.add_implicit_layer(ManifestOptions{}.set_is_fake(true),
+                           ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                         .set_name(layer_name_1)
+                                                         .set_lib_path(CURRENT_PLATFORM_DUMMY_BINARY_WRONG_TYPE)
+                                                         .set_disable_environment("DISABLE_ENV")));
 
     auto layer_props = env.GetLayerProperties(2);
     ASSERT_TRUE(check_permutation({layer_name_0, layer_name_1}, layer_props));
@@ -1727,18 +1709,17 @@ TEST(TryLoadWrongBinaries, WrongExplicitAndImplicitErrorOnly) {
     env.add_icd(TEST_ICD_PATH_VERSION_2).add_physical_device("physical_device_0");
 
     const char* layer_name_0 = "DummyLayerExplicit";
-    env.add_explicit_layer(TestLayerDetails{
+    env.add_explicit_layer(
+        ManifestOptions{}.set_is_fake(true),
         ManifestLayer{}.add_layer(
-            ManifestLayer::LayerDescription{}.set_name(layer_name_0).set_lib_path(CURRENT_PLATFORM_DUMMY_BINARY_WRONG_TYPE)),
-        "dummy_test_layer_0.json"}
-                               .set_is_fake(true));
+            ManifestLayer::LayerDescription{}.set_name(layer_name_0).set_lib_path(CURRENT_PLATFORM_DUMMY_BINARY_WRONG_TYPE)));
+
     const char* layer_name_1 = "DummyLayerImplicit";
-    env.add_implicit_layer(TestLayerDetails{ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
-                                                                          .set_name(layer_name_1)
-                                                                          .set_lib_path(CURRENT_PLATFORM_DUMMY_BINARY_WRONG_TYPE)
-                                                                          .set_disable_environment("DISABLE_ENV")),
-                                            "dummy_test_layer_1.json"}
-                               .set_is_fake(true));
+    env.add_implicit_layer(ManifestOptions{}.set_is_fake(true),
+                           ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                         .set_name(layer_name_1)
+                                                         .set_lib_path(CURRENT_PLATFORM_DUMMY_BINARY_WRONG_TYPE)
+                                                         .set_disable_environment("DISABLE_ENV")));
 
     auto layer_props = env.GetLayerProperties(2);
     ASSERT_TRUE(check_permutation({layer_name_0, layer_name_1}, layer_props));
@@ -1767,11 +1748,10 @@ TEST(TryLoadWrongBinaries, BadExplicit) {
     env.add_icd(TEST_ICD_PATH_VERSION_2).add_physical_device("physical_device_0");
 
     const char* layer_name = "DummyLayerExplicit";
-    env.add_explicit_layer(TestLayerDetails{
+    env.add_explicit_layer(
+        ManifestOptions{}.set_is_fake(true),
         ManifestLayer{}.add_layer(
-            ManifestLayer::LayerDescription{}.set_name(layer_name).set_lib_path(CURRENT_PLATFORM_DUMMY_BINARY_BAD)),
-        "dummy_test_layer.json"}
-                               .set_is_fake(true));
+            ManifestLayer::LayerDescription{}.set_name(layer_name).set_lib_path(CURRENT_PLATFORM_DUMMY_BINARY_BAD)));
 
     auto layer_props = env.GetLayerProperties(1);
     ASSERT_TRUE(string_eq(layer_name, layer_props[0].layerName));
@@ -1797,12 +1777,11 @@ TEST(TryLoadWrongBinaries, BadImplicit) {
     env.add_icd(TEST_ICD_PATH_VERSION_2).add_physical_device("physical_device_0");
 
     const char* layer_name = "DummyLayerImplicit0";
-    env.add_implicit_layer(TestLayerDetails{ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
-                                                                          .set_name(layer_name)
-                                                                          .set_lib_path(CURRENT_PLATFORM_DUMMY_BINARY_BAD)
-                                                                          .set_disable_environment("DISABLE_ENV")),
-                                            "dummy_test_layer.json"}
-                               .set_is_fake(true));
+    env.add_implicit_layer(ManifestOptions{}.set_is_fake(true),
+                           ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                         .set_name(layer_name)
+                                                         .set_lib_path(CURRENT_PLATFORM_DUMMY_BINARY_BAD)
+                                                         .set_disable_environment("DISABLE_ENV")));
 
     auto layer_props = env.GetLayerProperties(1);
     ASSERT_TRUE(string_eq(layer_name, layer_props[0].layerName));
@@ -1828,18 +1807,17 @@ TEST(TryLoadWrongBinaries, BadExplicitAndImplicit) {
     env.add_icd(TEST_ICD_PATH_VERSION_2).add_physical_device("physical_device_0");
 
     const char* layer_name_0 = "DummyLayerExplicit";
-    env.add_explicit_layer(TestLayerDetails{
+    env.add_explicit_layer(
+        ManifestOptions{}.set_is_fake(true),
         ManifestLayer{}.add_layer(
-            ManifestLayer::LayerDescription{}.set_name(layer_name_0).set_lib_path(CURRENT_PLATFORM_DUMMY_BINARY_BAD)),
-        "dummy_test_layer_0.json"}
-                               .set_is_fake(true));
+            ManifestLayer::LayerDescription{}.set_name(layer_name_0).set_lib_path(CURRENT_PLATFORM_DUMMY_BINARY_BAD)));
+
     const char* layer_name_1 = "DummyLayerImplicit0";
-    env.add_implicit_layer(TestLayerDetails{ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
-                                                                          .set_name(layer_name_1)
-                                                                          .set_lib_path(CURRENT_PLATFORM_DUMMY_BINARY_BAD)
-                                                                          .set_disable_environment("DISABLE_ENV")),
-                                            "dummy_test_layer_1.json"}
-                               .set_is_fake(true));
+    env.add_implicit_layer(ManifestOptions{}.set_is_fake(true),
+                           ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                         .set_name(layer_name_1)
+                                                         .set_lib_path(CURRENT_PLATFORM_DUMMY_BINARY_BAD)
+                                                         .set_disable_environment("DISABLE_ENV")));
 
     auto layer_props = env.GetLayerProperties(2);
     ASSERT_TRUE(check_permutation({layer_name_0, layer_name_1}, layer_props));
@@ -1880,12 +1858,11 @@ TEST(TryLoadWrongBinaries, WrongArchLayer) {
     env.add_icd(TEST_ICD_PATH_VERSION_2).add_physical_device("physical_device_0");
 
     const char* layer_name = "TestLayer";
-    env.add_explicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
-                                                         .set_name(layer_name)
-                                                         .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
-                                                         // Intentionally set the wrong arch
-                                                         .set_library_arch(sizeof(void*) == 4 ? "64" : "32")),
-                           "test_layer.json");
+    env.add_explicit_layer({}, ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                             .set_name(layer_name)
+                                                             .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                             // Intentionally set the wrong arch
+                                                             .set_library_arch(sizeof(void*) == 4 ? "64" : "32")));
 
     DebugUtilsLogger log{VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT};
     InstWrapper inst{env.vulkan_functions};
@@ -4252,9 +4229,8 @@ TEST(PortabilityICDConfiguration, PortabilityAndRegularICDPreInstanceFunctions) 
 
     const char* layer_name = "TestLayer";
     env.add_explicit_layer(
-        ManifestLayer{}.add_layer(
-            ManifestLayer::LayerDescription{}.set_name(layer_name).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)),
-        "test_layer.json");
+        {}, ManifestLayer{}.add_layer(
+                ManifestLayer::LayerDescription{}.set_name(layer_name).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)));
 
     InstWrapper inst{env.vulkan_functions};
     inst.create_info.add_layer(layer_name);
@@ -4287,12 +4263,11 @@ TEST(AppPackageDiscovery, AppPackageLayers) {
     env.add_icd(TEST_ICD_PATH_VERSION_2).add_physical_device({});
 
     const char* layer_name = "VK_LAYER_test_package_layer";
-    env.add_implicit_layer(TestLayerDetails(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
-                                                                          .set_name(layer_name)
-                                                                          .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
-                                                                          .set_disable_environment("DISABLE_ME")),
-                                            "test_package_layer.json")
-                               .set_discovery_type(ManifestDiscoveryType::windows_app_package));
+    env.add_implicit_layer(ManifestOptions{}.set_discovery_type(ManifestDiscoveryType::windows_app_package),
+                           ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                         .set_name(layer_name)
+                                                         .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                         .set_disable_environment("DISABLE_ME")));
 
     InstWrapper inst{env.vulkan_functions};
     inst.CheckCreate();
@@ -4308,12 +4283,11 @@ TEST(AppPackageDiscovery, AppPackageICDAndLayers) {
         .add_physical_device({});
 
     const char* layer_name = "VK_LAYER_test_package_layer";
-    env.add_implicit_layer(TestLayerDetails(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
-                                                                          .set_name(layer_name)
-                                                                          .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
-                                                                          .set_disable_environment("DISABLE_ME")),
-                                            "test_package_layer.json")
-                               .set_discovery_type(ManifestDiscoveryType::windows_app_package));
+    env.add_implicit_layer(ManifestOptions{}.set_discovery_type(ManifestDiscoveryType::windows_app_package),
+                           ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                         .set_name(layer_name)
+                                                         .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                         .set_disable_environment("DISABLE_ME")));
 
     InstWrapper inst{env.vulkan_functions};
     inst.CheckCreate();
@@ -4336,9 +4310,8 @@ TEST(DuplicateRegistryEntries, Layers) {
 
     const char* layer_name = "TestLayer";
     env.add_explicit_layer(
-        ManifestLayer{}.add_layer(
-            ManifestLayer::LayerDescription{}.set_name(layer_name).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)),
-        "test_layer.json");
+        {}, ManifestLayer{}.add_layer(
+                ManifestLayer::LayerDescription{}.set_name(layer_name).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)));
 
     InstWrapper inst{env.vulkan_functions};
     inst.create_info.add_layer(layer_name);
@@ -4377,10 +4350,9 @@ TEST(LibraryLoading, SystemLocations) {
 
     const char* layer_name = "TestLayer";
     env.add_explicit_layer(
-        TestLayerDetails{ManifestLayer{}.add_layer(
-                             ManifestLayer::LayerDescription{}.set_name(layer_name).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)),
-                         "test_layer.json"}
-            .set_library_path_type(LibraryPathType::default_search_paths));
+        ManifestOptions{}.set_library_path_type(LibraryPathType::default_search_paths),
+        ManifestLayer{}.add_layer(
+            ManifestLayer::LayerDescription{}.set_name(layer_name).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)));
 
     auto props = env.GetLayerProperties(1);
     ASSERT_TRUE(string_eq(props.at(0).layerName, layer_name));
@@ -4417,7 +4389,8 @@ TEST(ManifestDiscovery, ValidSymlinkInUnsecureLocation) {
 // Check that valid symlinks do not cause the loader to crash
 TEST(ManifestDiscovery, ValidSymlink) {
     FrameworkEnvironment env{FrameworkSettings{}};
-    env.add_icd(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA, {}.set_discovery_type(ManifestDiscoveryType::override_folder))
+    env.add_icd(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA,
+                ManifestOptions{}.set_discovery_type(ManifestDiscoveryType::override_folder))
         .add_physical_device({});
 
     env.add_symlink(ManifestLocation::driver, env.get_icd_manifest_path(0), "symlink_to_driver.json");
@@ -4508,19 +4481,17 @@ TEST(LayerCreatesDevice, Basic) {
     FrameworkEnvironment env{};
     env.add_icd(TEST_ICD_PATH_VERSION_2).add_physical_device({});
 
-    env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
-                                                         .set_name("implicit_layer_name")
-                                                         .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
-                                                         .set_disable_environment("DISABLE_ME")),
-                           "implicit_test_layer.json");
+    env.add_implicit_layer({}, ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                             .set_name("implicit_layer_name")
+                                                             .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                             .set_disable_environment("DISABLE_ME")));
     env.get_test_layer().set_call_create_device_while_create_device_is_called(true);
     env.get_test_layer().set_physical_device_index_to_use_during_create_device(0);
 
-    env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
-                                                         .set_name("implicit_layer_name2")
-                                                         .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
-                                                         .set_disable_environment("DISABLE_ME")),
-                           "implicit_test_layer2.json");
+    env.add_implicit_layer({}, ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                             .set_name("implicit_layer_name2")
+                                                             .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                             .set_disable_environment("DISABLE_ME")));
 
     InstWrapper inst{env.vulkan_functions};
     inst.CheckCreate();
@@ -4534,19 +4505,17 @@ TEST(LayerCreatesDevice, DifferentPhysicalDevice) {
     env.add_icd(TEST_ICD_PATH_VERSION_2).add_physical_device("Device0");
     env.add_icd(TEST_ICD_PATH_VERSION_2).add_physical_device("Device1");
 
-    env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
-                                                         .set_name("implicit_layer_name")
-                                                         .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
-                                                         .set_disable_environment("DISABLE_ME")),
-                           "implicit_test_layer.json");
+    env.add_implicit_layer({}, ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                             .set_name("implicit_layer_name")
+                                                             .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                             .set_disable_environment("DISABLE_ME")));
     env.get_test_layer().set_call_create_device_while_create_device_is_called(true);
     env.get_test_layer().set_physical_device_index_to_use_during_create_device(1);
 
-    env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
-                                                         .set_name("implicit_layer_name2")
-                                                         .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
-                                                         .set_disable_environment("DISABLE_ME")),
-                           "implicit_test_layer2.json");
+    env.add_implicit_layer({}, ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                             .set_name("implicit_layer_name2")
+                                                             .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                             .set_disable_environment("DISABLE_ME")));
 
     InstWrapper inst{env.vulkan_functions};
     inst.CheckCreate();
@@ -4561,11 +4530,10 @@ TEST(Layer, pfnNextGetInstanceProcAddr_should_not_return_layers_own_functions) {
     FrameworkEnvironment env{};
     env.add_icd(TEST_ICD_PATH_VERSION_2).add_physical_device({});
 
-    env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
-                                                         .set_name("implicit_layer_name")
-                                                         .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
-                                                         .set_disable_environment("DISABLE_ME")),
-                           "implicit_test_layer.json");
+    env.add_implicit_layer({}, ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                             .set_name("implicit_layer_name")
+                                                             .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                             .set_disable_environment("DISABLE_ME")));
     env.get_test_layer(0).set_check_if_EnumDevExtProps_is_same_as_queried_function(true);
 
     InstWrapper inst{env.vulkan_functions};
@@ -4581,11 +4549,10 @@ TEST(Layer, LLP_LAYER_21) {
     FrameworkEnvironment env{};
     env.add_icd(TEST_ICD_PATH_VERSION_2).add_physical_device({});
 
-    env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
-                                                         .set_name("implicit_layer_name")
-                                                         .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
-                                                         .set_disable_environment("DISABLE_ME")),
-                           "implicit_test_layer.json");
+    env.add_implicit_layer({}, ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                             .set_name("implicit_layer_name")
+                                                             .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                             .set_disable_environment("DISABLE_ME")));
     env.get_test_layer(0).set_clobber_pInstance(true);
 
     InstWrapper inst{env.vulkan_functions};
@@ -4617,11 +4584,10 @@ TEST(Layer, LLP_LAYER_22) {
     FrameworkEnvironment env{};
     env.add_icd(TEST_ICD_PATH_VERSION_2).add_physical_device({});
 
-    env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
-                                                         .set_name("implicit_layer_name")
-                                                         .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
-                                                         .set_disable_environment("DISABLE_ME")),
-                           "implicit_test_layer.json");
+    env.add_implicit_layer({}, ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                             .set_name("implicit_layer_name")
+                                                             .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                             .set_disable_environment("DISABLE_ME")));
     env.get_test_layer(0).set_clobber_pDevice(true);
 
     InstWrapper inst{env.vulkan_functions};
