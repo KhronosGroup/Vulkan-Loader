@@ -312,10 +312,9 @@ TEST(EnvVarICDOverrideSetup, TestOnlyLayerEnvVar) {
 
     const char* layer_name = "TestLayer";
     env.add_explicit_layer(
-        TestLayerDetails(ManifestLayer{}.add_layer(
-                             ManifestLayer::LayerDescription{}.set_name(layer_name).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)),
-                         "test_layer.json")
-            .set_discovery_type(ManifestDiscoveryType::env_var));
+        ManifestOptions{}.set_discovery_type(ManifestDiscoveryType::env_var),
+        ManifestLayer{}.add_layer(
+            ManifestLayer::LayerDescription{}.set_name(layer_name).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)));
 
     // Now set up a layer path that includes default and user-specified locations,
     // so that the test app can find them.  Include some badly specified elements as well.
@@ -343,10 +342,9 @@ TEST(EnvVarICDOverrideSetup, TestOnlyLayerEnvVarRunningWithElevatedPrivileges) {
 
     const char* layer_name = "TestLayer";
     env.add_explicit_layer(
-        TestLayerDetails(ManifestLayer{}.add_layer(
-                             ManifestLayer::LayerDescription{}.set_name(layer_name).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)),
-                         "test_layer.json")
-            .set_discovery_type(ManifestDiscoveryType::env_var));
+        ManifestOptions{}.set_discovery_type(ManifestDiscoveryType::env_var),
+        ManifestLayer{}.add_layer(
+            ManifestLayer::LayerDescription{}.set_name(layer_name).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)));
 
     // Now set up a layer path that includes default and user-specified locations,
     // so that the test app can find them.  Include some badly specified elements as well.
@@ -373,10 +371,9 @@ TEST(EnvVarICDOverrideSetup, TestOnlyAddLayerEnvVar) {
 
     const char* layer_name = "TestLayer";
     env.add_explicit_layer(
-        TestLayerDetails(ManifestLayer{}.add_layer(
-                             ManifestLayer::LayerDescription{}.set_name(layer_name).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)),
-                         "test_layer.json")
-            .set_discovery_type(ManifestDiscoveryType::add_env_var));
+        ManifestOptions{}.set_discovery_type(ManifestDiscoveryType::add_env_var),
+        ManifestLayer{}.add_layer(
+            ManifestLayer::LayerDescription{}.set_name(layer_name).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)));
 
     // Set up a layer path that includes default and user-specified locations,
     // so that the test app can find them.  Include some badly specified elements as well.
@@ -406,10 +403,9 @@ TEST(EnvVarICDOverrideSetup, TestOnlyAddLayerEnvVarRunningWithElevatedPrivileges
 
     const char* layer_name = "TestLayer";
     env.add_explicit_layer(
-        TestLayerDetails(ManifestLayer{}.add_layer(
-                             ManifestLayer::LayerDescription{}.set_name(layer_name).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)),
-                         "test_layer.json")
-            .set_discovery_type(ManifestDiscoveryType::add_env_var));
+        ManifestOptions{}.set_discovery_type(ManifestDiscoveryType::add_env_var),
+        ManifestLayer{}.add_layer(
+            ManifestLayer::LayerDescription{}.set_name(layer_name).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)));
 
     // Set up a layer path that includes default and user-specified locations,
     // so that the test app can find them.  Include some badly specified elements as well.
@@ -435,12 +431,11 @@ TEST(EnvVarICDOverrideSetup, TestOnlyImplicitLayerEnvVar) {
     env.file_system_manager.add_path_redirect("/tmp/carol", ManifestLocation::implicit_layer_env_var);
 
     const char* layer_name = "TestLayer";
-    env.add_implicit_layer(TestLayerDetails(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
-                                                                          .set_name(layer_name)
-                                                                          .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
-                                                                          .set_disable_environment("DISABLE_ENV")),
-                                            "test_layer.json")
-                               .set_discovery_type(ManifestDiscoveryType::env_var));
+    env.add_implicit_layer(ManifestOptions{}.set_discovery_type(ManifestDiscoveryType::env_var),
+                           ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                         .set_name(layer_name)
+                                                         .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                         .set_disable_environment("DISABLE_ENV")));
 
     // Now set up a layer path that includes default and user-specified locations,
     // so that the test app can find them.  Include some badly specified elements as well.
@@ -470,12 +465,11 @@ TEST(EnvVarICDOverrideSetup, TestOnlyImplicitLayerEnvVarRunningWithElevatedPrivi
     env.file_system_manager.add_path_redirect("/tmp/carol", ManifestLocation::implicit_layer_env_var);
 
     const char* layer_name = "TestLayer";
-    env.add_implicit_layer(TestLayerDetails(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
-                                                                          .set_name(layer_name)
-                                                                          .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
-                                                                          .set_disable_environment("DISABLE_ENV")),
-                                            "test_layer.json")
-                               .set_discovery_type(ManifestDiscoveryType::env_var));
+    env.add_implicit_layer(ManifestOptions{}.set_discovery_type(ManifestDiscoveryType::env_var),
+                           ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                         .set_name(layer_name)
+                                                         .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                         .set_disable_environment("DISABLE_ENV")));
 
     // Now set up a layer path that includes default and user-specified locations,
     // so that the test app can find them.  Include some badly specified elements as well.
@@ -503,12 +497,11 @@ TEST(EnvVarICDOverrideSetup, TestOnlyAddImplicitLayerEnvVar) {
     env.file_system_manager.add_path_redirect("/tmp/carol", ManifestLocation::implicit_layer_add_env_var);
 
     const char* layer_name = "TestLayer";
-    env.add_implicit_layer(TestLayerDetails(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
-                                                                          .set_name(layer_name)
-                                                                          .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
-                                                                          .set_disable_environment("DISABLE_ENV")),
-                                            "test_layer.json")
-                               .set_discovery_type(ManifestDiscoveryType::add_env_var));
+    env.add_implicit_layer(ManifestOptions{}.set_discovery_type(ManifestDiscoveryType::add_env_var),
+                           ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                         .set_name(layer_name)
+                                                         .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                         .set_disable_environment("DISABLE_ENV")));
 
     // Set up a layer path that includes default and user-specified locations,
     // so that the test app can find them.  Include some badly specified elements as well.
@@ -539,12 +532,11 @@ TEST(EnvVarICDOverrideSetup, TestOnlyAddImplicitLayerEnvVarWithElevatedPrivilege
     env.file_system_manager.add_path_redirect("/tmp/carol", ManifestLocation::implicit_layer_add_env_var);
 
     const char* layer_name = "TestLayer";
-    env.add_implicit_layer(TestLayerDetails(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
-                                                                          .set_name(layer_name)
-                                                                          .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
-                                                                          .set_disable_environment("DISABLE_ENV")),
-                                            "test_layer.json")
-                               .set_discovery_type(ManifestDiscoveryType::add_env_var));
+    env.add_implicit_layer(ManifestOptions{}.set_discovery_type(ManifestDiscoveryType::add_env_var),
+                           ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                         .set_name(layer_name)
+                                                         .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                         .set_disable_environment("DISABLE_ENV")));
 
     // Set up a layer path that includes default and user-specified locations,
     // so that the test app can find them.  Include some badly specified elements as well.

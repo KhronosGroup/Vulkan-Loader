@@ -1083,14 +1083,13 @@ TEST(GetProcAddr, DebugFuncsWithTrampoline) {
     ASSERT_NO_FATAL_FAILURE(CheckDeviceFunctions(env, true, true, false));
 
     // Now add a layer that supports the extensions and run the situations again
-    env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
-                                                         .set_name("VK_LAYER_test_layer")
-                                                         .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
-                                                         .set_disable_environment("DISABLE_ME")
-                                                         .add_instance_extensions({{VK_EXT_DEBUG_REPORT_EXTENSION_NAME},
-                                                                                   {VK_EXT_DEBUG_UTILS_EXTENSION_NAME}})
-                                                         .add_device_extension({VK_EXT_DEBUG_MARKER_EXTENSION_NAME})),
-                           "test_layer.json");
+    env.add_implicit_layer({}, ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                             .set_name("VK_LAYER_test_layer")
+                                                             .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                             .set_disable_environment("DISABLE_ME")
+                                                             .add_instance_extensions({{VK_EXT_DEBUG_REPORT_EXTENSION_NAME},
+                                                                                       {VK_EXT_DEBUG_UTILS_EXTENSION_NAME}})
+                                                             .add_device_extension({VK_EXT_DEBUG_MARKER_EXTENSION_NAME})));
 
     // // Use getDeviceProcAddr & vary enabling the debug extensions
     ASSERT_NO_FATAL_FAILURE(CheckDeviceFunctions(env, false, false, true));
@@ -1118,11 +1117,10 @@ TEST(GetProcAddr, DebugFuncsWithDebugExtsForceAdded) {
     ASSERT_NO_FATAL_FAILURE(CheckDeviceFunctions(env, true, true, false));
 
     // Now add a layer that supports the extensions and run the situations again
-    env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
-                                                         .set_name("VK_LAYER_test_layer")
-                                                         .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
-                                                         .set_disable_environment("DISABLE_ME")),
-                           "test_layer.json");
+    env.add_implicit_layer({}, ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                             .set_name("VK_LAYER_test_layer")
+                                                             .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                             .set_disable_environment("DISABLE_ME")));
     env.get_test_layer()
         .add_injected_instance_extensions({{VK_EXT_DEBUG_REPORT_EXTENSION_NAME}, {VK_EXT_DEBUG_UTILS_EXTENSION_NAME}})
         .add_injected_device_extension({VK_EXT_DEBUG_MARKER_EXTENSION_NAME});
@@ -1144,12 +1142,11 @@ TEST(DebugUtils, WrappingLayer) {
         .add_instance_extension(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
 
     const char* wrap_objects_name = "VK_LAYER_LUNARG_wrap_objects";
-    env.add_explicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
-                                                         .set_name(wrap_objects_name)
-                                                         .set_lib_path(TEST_LAYER_WRAP_OBJECTS)
-                                                         .set_disable_environment("DISABLE_ME")
-                                                         .add_instance_extension({VK_EXT_DEBUG_UTILS_EXTENSION_NAME})),
-                           "wrap_objects_layer.json");
+    env.add_explicit_layer({}, ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                             .set_name(wrap_objects_name)
+                                                             .set_lib_path(TEST_LAYER_WRAP_OBJECTS)
+                                                             .set_disable_environment("DISABLE_ME")
+                                                             .add_instance_extension({VK_EXT_DEBUG_UTILS_EXTENSION_NAME})));
 
     InstWrapper inst{env.vulkan_functions};
     inst.create_info.add_extension(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);

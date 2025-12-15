@@ -184,11 +184,10 @@ TEST(LoaderInstPhysDevExts, PhysDevProps2Simple) {
         ASSERT_EQ(0, memcmp(props.pipelineCacheUUID, props2.properties.pipelineCacheUUID, VK_UUID_SIZE));
         ASSERT_TRUE(log.find("Emulating call in ICD"));
     }
-    env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
-                                                         .set_name("modify_api_version_layer")
-                                                         .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
-                                                         .set_disable_environment("DisableEnvVar")),
-                           "modify_api_version_layer.json");
+    env.add_implicit_layer({}, ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                             .set_name("modify_api_version_layer")
+                                                             .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                             .set_disable_environment("DisableEnvVar")));
     env.get_test_layer().set_alter_api_version(VK_API_VERSION_1_1);
     {  // Now do the same as above but with a layer that updates the version to 1.1
         InstWrapper instance(env.vulkan_functions);
@@ -519,11 +518,10 @@ TEST(LoaderInstPhysDevExts, PhysDevFeats2Simple) {
 
         ASSERT_TRUE(log.find("Emulating call in ICD"));
     }
-    env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
-                                                         .set_name("modify_api_version_layer")
-                                                         .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
-                                                         .set_disable_environment("DisableEnvVar")),
-                           "modify_api_version_layer.json");
+    env.add_implicit_layer({}, ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                             .set_name("modify_api_version_layer")
+                                                             .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                             .set_disable_environment("DisableEnvVar")));
     env.get_test_layer().set_alter_api_version(VK_API_VERSION_1_1);
     {  // Now do the same as above but with a layer that updates the version to 1.1 on behalf of the application
         InstWrapper instance(env.vulkan_functions);
@@ -796,11 +794,10 @@ TEST(LoaderInstPhysDevExts, PhysDevFormatProps2Simple) {
         ASSERT_EQ(props.optimalTilingFeatures, props2.formatProperties.optimalTilingFeatures);
         ASSERT_TRUE(log.find("Emulating call in ICD"));
     }
-    env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
-                                                         .set_name("modify_api_version_layer")
-                                                         .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
-                                                         .set_disable_environment("DisableEnvVar")),
-                           "modify_api_version_layer.json");
+    env.add_implicit_layer({}, ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                             .set_name("modify_api_version_layer")
+                                                             .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                             .set_disable_environment("DisableEnvVar")));
     env.get_test_layer().set_alter_api_version(VK_API_VERSION_1_1);
     {  // Now do the same as above but with a layer that updates the version to 1.1 on behalf of the application
         InstWrapper instance(env.vulkan_functions);
@@ -1132,11 +1129,10 @@ TEST(LoaderInstPhysDevExts, PhysDevImageFormatProps2Simple) {
         ASSERT_EQ(props.maxResourceSize, props2.imageFormatProperties.maxResourceSize);
         ASSERT_TRUE(log.find("Emulating call in ICD"));
     }
-    env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
-                                                         .set_name("modify_api_version_layer")
-                                                         .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
-                                                         .set_disable_environment("DisableEnvVar")),
-                           "modify_api_version_layer.json");
+    env.add_implicit_layer({}, ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                             .set_name("modify_api_version_layer")
+                                                             .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                             .set_disable_environment("DisableEnvVar")));
     env.get_test_layer().set_alter_api_version(VK_API_VERSION_1_1);
     {  // Now do the same as above but with a layer that updates the version to 1.1 on behalf of the application
         InstWrapper instance(env.vulkan_functions);
@@ -1471,11 +1467,10 @@ TEST(LoaderInstPhysDevExts, PhysDevMemoryProps2Simple) {
         ASSERT_EQ(props, props2);
         ASSERT_TRUE(log.find("Emulating call in ICD"));
     }
-    env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
-                                                         .set_name("modify_api_version_layer")
-                                                         .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
-                                                         .set_disable_environment("DisableEnvVar")),
-                           "modify_api_version_layer.json");
+    env.add_implicit_layer({}, ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                             .set_name("modify_api_version_layer")
+                                                             .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                             .set_disable_environment("DisableEnvVar")));
     env.get_test_layer().set_alter_api_version(VK_API_VERSION_1_1);
     {  // Now do the same as above but with a layer that updates the version to 1.1 on behalf of the application
         InstWrapper instance(env.vulkan_functions);
@@ -1773,11 +1768,10 @@ TEST(LoaderInstPhysDevExts, PhysDevQueueFamilyProps2Simple) {
         ASSERT_EQ(props, props2);
         ASSERT_TRUE(log.find("Emulating call in ICD"));
     }
-    env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
-                                                         .set_name("modify_api_version_layer")
-                                                         .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
-                                                         .set_disable_environment("DisableEnvVar")),
-                           "modify_api_version_layer.json");
+    env.add_implicit_layer({}, ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                             .set_name("modify_api_version_layer")
+                                                             .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                             .set_disable_environment("DisableEnvVar")));
     env.get_test_layer().set_alter_api_version(VK_API_VERSION_1_1);
     {  // Now do the same as above but with a layer that updates the version to 1.1 on behalf of the application
         InstWrapper instance(env.vulkan_functions);
@@ -2146,11 +2140,10 @@ TEST(LoaderInstPhysDevExts, PhysDevSparseImageFormatProps2Simple) {
         ASSERT_EQ(props, props2);
         ASSERT_TRUE(log.find("Emulating call in ICD"));
     }
-    env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
-                                                         .set_name("modify_api_version_layer")
-                                                         .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
-                                                         .set_disable_environment("DisableEnvVar")),
-                           "modify_api_version_layer.json");
+    env.add_implicit_layer({}, ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                             .set_name("modify_api_version_layer")
+                                                             .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                             .set_disable_environment("DisableEnvVar")));
     env.get_test_layer().set_alter_api_version(VK_API_VERSION_1_1);
     {  // Now do the same as above but with a layer that updates the version to 1.1 on behalf of the application
         InstWrapper instance(env.vulkan_functions);
@@ -2490,11 +2483,10 @@ TEST(LoaderInstPhysDevExts, PhysDevExtBufProps2Simple) {
         ASSERT_EQ(VkExternalMemoryProperties{}, props.externalMemoryProperties);
         ASSERT_TRUE(log.find("Emulating call in ICD"));
     }
-    env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
-                                                         .set_name("modify_api_version_layer")
-                                                         .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
-                                                         .set_disable_environment("DisableEnvVar")),
-                           "modify_api_version_layer.json");
+    env.add_implicit_layer({}, ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                             .set_name("modify_api_version_layer")
+                                                             .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                             .set_disable_environment("DisableEnvVar")));
     env.get_test_layer().set_alter_api_version(VK_API_VERSION_1_1);
     {  // Now do the same as above but with a layer that updates the version to 1.1 on behalf of the application
         InstWrapper instance(env.vulkan_functions);
@@ -2739,11 +2731,10 @@ TEST(LoaderInstPhysDevExts, PhysDevExtSemProps2Simple) {
         ASSERT_EQ(VkExternalSemaphoreProperties{}, props);
         ASSERT_TRUE(log.find("Emulating call in ICD"));
     }
-    env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
-                                                         .set_name("modify_api_version_layer")
-                                                         .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
-                                                         .set_disable_environment("DisableEnvVar")),
-                           "modify_api_version_layer.json");
+    env.add_implicit_layer({}, ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                             .set_name("modify_api_version_layer")
+                                                             .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                             .set_disable_environment("DisableEnvVar")));
     env.get_test_layer().set_alter_api_version(VK_API_VERSION_1_1);
     {  // Now do the same as above but with a layer that updates the version to 1.1 on behalf of the application
         InstWrapper instance(env.vulkan_functions);
@@ -2987,11 +2978,10 @@ TEST(LoaderInstPhysDevExts, PhysDevExtFenceProps2Simple) {
         ASSERT_EQ(VkExternalFenceProperties{}, props);
         ASSERT_TRUE(log.find("Emulating call in ICD"));
     }
-    env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
-                                                         .set_name("modify_api_version_layer")
-                                                         .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
-                                                         .set_disable_environment("DisableEnvVar")),
-                           "modify_api_version_layer.json");
+    env.add_implicit_layer({}, ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                             .set_name("modify_api_version_layer")
+                                                             .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                             .set_disable_environment("DisableEnvVar")));
     env.get_test_layer().set_alter_api_version(VK_API_VERSION_1_1);
     {  // Now do the same as above but with a layer that updates the version to 1.1 on behalf of the application
         InstWrapper instance(env.vulkan_functions);

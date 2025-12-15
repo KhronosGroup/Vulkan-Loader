@@ -477,12 +477,11 @@ TEST(MultipleICDConfig, version_5_and_version_6) {
     FrameworkEnvironment env;
 
     const char* regular_layer_name = "VK_LAYER_TestLayer1";
-    env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
-                                                         .set_name(regular_layer_name)
-                                                         .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
-                                                         .set_api_version(VK_MAKE_API_VERSION(0, 1, 1, 0))
-                                                         .set_disable_environment("DisableMeIfYouCan")),
-                           "regular_test_layer.json");
+    env.add_implicit_layer({}, ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                             .set_name(regular_layer_name)
+                                                             .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                             .set_api_version(VK_MAKE_API_VERSION(0, 1, 1, 0))
+                                                             .set_disable_environment("DisableMeIfYouCan")));
 
     MockQueueFamilyProperties family_props{{VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}}, true};
 
@@ -809,12 +808,11 @@ TEST(LayerManifest, ImplicitNonVulkanVariant) {
         .add_physical_device({});
 
     const char* implicit_layer_name = "ImplicitTestLayer";
-    env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
-                                                         .set_name(implicit_layer_name)
-                                                         .set_api_version(VK_MAKE_API_VERSION(1, 1, 0, 0))
-                                                         .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
-                                                         .set_disable_environment("DISABLE_ME")),
-                           "implicit_test_layer.json");
+    env.add_implicit_layer({}, ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                             .set_name(implicit_layer_name)
+                                                             .set_api_version(VK_MAKE_API_VERSION(1, 1, 0, 0))
+                                                             .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                             .set_disable_environment("DISABLE_ME")));
 
     DebugUtilsLogger log;
     InstWrapper inst{env.vulkan_functions};
@@ -831,11 +829,10 @@ TEST(LayerManifest, ExplicitNonVulkanVariant) {
         .add_physical_device({});
 
     const char* explicit_layer_name = "ExplicitTestLayer";
-    env.add_explicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
-                                                         .set_name(explicit_layer_name)
-                                                         .set_api_version(VK_MAKE_API_VERSION(1, 1, 0, 0))
-                                                         .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)),
-                           "explicit_test_layer.json");
+    env.add_explicit_layer({}, ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                             .set_name(explicit_layer_name)
+                                                             .set_api_version(VK_MAKE_API_VERSION(1, 1, 0, 0))
+                                                             .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)));
 
     DebugUtilsLogger log;
     InstWrapper inst{env.vulkan_functions};
@@ -882,14 +879,13 @@ TEST(LayerManifest, UnknownManifestVersion) {
     env.add_icd(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA).add_physical_device({});
 
     const char* implicit_layer_name = "ImplicitTestLayer";
-    env.add_implicit_layer(ManifestLayer{}
-                               .add_layer(ManifestLayer::LayerDescription{}
-                                              .set_name(implicit_layer_name)
-                                              .set_api_version(VK_MAKE_API_VERSION(0, 1, 0, 0))
-                                              .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
-                                              .set_disable_environment("DISABLE_ME"))
-                               .set_file_format_version({3, 2, 1}),
-                           "implicit_test_layer.json");
+    env.add_implicit_layer({}, ManifestLayer{}
+                                   .add_layer(ManifestLayer::LayerDescription{}
+                                                  .set_name(implicit_layer_name)
+                                                  .set_api_version(VK_MAKE_API_VERSION(0, 1, 0, 0))
+                                                  .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                  .set_disable_environment("DISABLE_ME"))
+                                   .set_file_format_version({3, 2, 1}));
 
     DebugUtilsLogger log;
     InstWrapper inst{env.vulkan_functions};
@@ -906,14 +902,13 @@ TEST(LayerManifest, LargeUnknownManifestVersion) {
     env.add_icd(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA).add_physical_device({});
 
     const char* implicit_layer_name = "ImplicitTestLayer";
-    env.add_implicit_layer(ManifestLayer{}
-                               .add_layer(ManifestLayer::LayerDescription{}
-                                              .set_name(implicit_layer_name)
-                                              .set_api_version(VK_MAKE_API_VERSION(0, 1, 0, 0))
-                                              .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
-                                              .set_disable_environment("DISABLE_ME"))
-                               .set_file_format_version({100, 222, 111}),
-                           "implicit_test_layer.json");
+    env.add_implicit_layer({}, ManifestLayer{}
+                                   .add_layer(ManifestLayer::LayerDescription{}
+                                                  .set_name(implicit_layer_name)
+                                                  .set_api_version(VK_MAKE_API_VERSION(0, 1, 0, 0))
+                                                  .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                  .set_disable_environment("DISABLE_ME"))
+                                   .set_file_format_version({100, 222, 111}));
 
     DebugUtilsLogger log;
     InstWrapper inst{env.vulkan_functions};
