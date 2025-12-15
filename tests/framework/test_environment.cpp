@@ -339,8 +339,9 @@ TestICD& FrameworkEnvironment::add_icd(std::filesystem::path const& path, Manife
     manifest.set_lib_path(path);
 
     if (args.json_name.empty()) {
-        args.json_name = "test_icd.json";
+        args.json_name = "test_icd_" + std::to_string(icds.size()) + ".json";
     }
+
     size_t cur_icd_index = icds.size();
     fs::Folder* fs_ptr = &get_folder(ManifestLocation::driver);
     switch (args.discovery_type) {
@@ -403,13 +404,7 @@ TestICD& FrameworkEnvironment::add_icd(std::filesystem::path const& path, Manife
         }
     }
     if (args.discovery_type != ManifestDiscoveryType::none) {
-        std::filesystem::path new_manifest_path = args.json_name.stem();
-        if (!args.disable_name_increment) {
-            new_manifest_path += "_";
-            new_manifest_path += std::to_string(cur_icd_index);
-        }
-        new_manifest_path += ".json";
-        icds.back().manifest_path = folder.write_manifest(new_manifest_path, manifest.get_manifest_str());
+        icds.back().manifest_path = folder.write_manifest(args.json_name, manifest.get_manifest_str());
         icds.back().shimmed_manifest_path = icds.back().manifest_path;
         switch (args.discovery_type) {
             case (ManifestDiscoveryType::generic):
@@ -417,7 +412,7 @@ TestICD& FrameworkEnvironment::add_icd(std::filesystem::path const& path, Manife
                 platform_shim->add_manifest_to_registry(ManifestCategory::icd, icds.back().manifest_path);
 #elif TESTING_COMMON_UNIX_PLATFORMS
                 icds.back().shimmed_manifest_path =
-                    file_system_manager.get_path_redirect_by_manifest_location(ManifestLocation::driver) / new_manifest_path;
+                    file_system_manager.get_path_redirect_by_manifest_location(ManifestLocation::driver) / args.json_name;
 #endif
                 break;
             case (ManifestDiscoveryType::unsecured_generic):
@@ -425,22 +420,21 @@ TestICD& FrameworkEnvironment::add_icd(std::filesystem::path const& path, Manife
                 platform_shim->add_unsecured_manifest_to_registry(ManifestCategory::icd, icds.back().manifest_path);
 #elif TESTING_COMMON_UNIX_PLATFORMS
                 icds.back().shimmed_manifest_path =
-                    file_system_manager.get_path_redirect_by_manifest_location(ManifestLocation::unsecured_driver) /
-                    new_manifest_path;
+                    file_system_manager.get_path_redirect_by_manifest_location(ManifestLocation::unsecured_driver) / args.json_name;
 #endif
                 break;
             case (ManifestDiscoveryType::env_var):
                 if (args.is_dir) {
                     env_var_vk_icd_filenames.add_to_list(folder.location());
                 } else {
-                    env_var_vk_icd_filenames.add_to_list(folder.location() / new_manifest_path);
+                    env_var_vk_icd_filenames.add_to_list(folder.location() / args.json_name);
                 }
                 break;
             case (ManifestDiscoveryType::add_env_var):
                 if (args.is_dir) {
                     add_env_var_vk_icd_filenames.add_to_list(folder.location());
                 } else {
-                    add_env_var_vk_icd_filenames.add_to_list(folder.location() / new_manifest_path);
+                    add_env_var_vk_icd_filenames.add_to_list(folder.location() / args.json_name);
                 }
                 break;
                 break;
