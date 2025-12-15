@@ -83,7 +83,7 @@ TEST(Threading, InstanceCreateDestroyLoop) {
     const auto processor_count = std::thread::hardware_concurrency();
 
     FrameworkEnvironment env{FrameworkSettings{}.set_log_filter("")};
-    auto& driver = env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
+    auto& driver = env.add_icd(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA);
     uint32_t num_loops_create_destroy_instance = 500;
     uint32_t num_loops_try_get_instance_proc_addr = 5;
     uint32_t num_loops_try_get_device_proc_addr = 100;
@@ -107,7 +107,7 @@ TEST(Threading, DeviceCreateDestroyLoop) {
     const auto processor_count = std::thread::hardware_concurrency();
 
     FrameworkEnvironment env{FrameworkSettings{}.set_log_filter("")};
-    auto& driver = env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
+    auto& driver = env.add_icd(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA);
 
     uint32_t num_loops_create_destroy_device = 1000;
     uint32_t num_loops_try_get_device_proc_addr = 5;

@@ -29,7 +29,7 @@
 
 TEST(ICDInterfaceVersion2Plus, vk_icdNegotiateLoaderICDInterfaceVersion) {
     FrameworkEnvironment env{};
-    auto& driver = env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
+    auto& driver = env.add_icd(TEST_ICD_PATH_VERSION_2);
 
     for (uint32_t i = 0; i <= 6; i++) {
         for (uint32_t j = i; j <= 6; j++) {
@@ -42,7 +42,7 @@ TEST(ICDInterfaceVersion2Plus, vk_icdNegotiateLoaderICDInterfaceVersion) {
 
 TEST(ICDInterfaceVersion2Plus, version_3) {
     FrameworkEnvironment env{};
-    auto& driver = env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2)).add_physical_device("physical_device_0");
+    auto& driver = env.add_icd(TEST_ICD_PATH_VERSION_2).add_physical_device("physical_device_0");
     {
         driver.set_min_icd_interface_version(2).set_enable_icd_wsi(true);
         InstWrapper inst{env.vulkan_functions};
@@ -68,7 +68,7 @@ TEST(ICDInterfaceVersion2Plus, version_3) {
 
 TEST(ICDInterfaceVersion2Plus, version_4) {
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2)).add_physical_device("physical_device_0");
+    env.add_icd(TEST_ICD_PATH_VERSION_2).add_physical_device("physical_device_0");
     InstWrapper inst{env.vulkan_functions};
     inst.CheckCreate();
 }
@@ -100,7 +100,7 @@ TEST(ICDInterfaceVersion2Plus, l5_icd5) {
 // This test makes sure that EnumerateAdapterPhysicalDevices on drivers found in the Khronos/Vulkan/Drivers registry
 TEST(ICDInterfaceVersion2PlusEnumerateAdapterPhysicalDevices, version_6_in_drivers_registry) {
     FrameworkEnvironment env{};
-    auto& driver = env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_ENUMERATE_ADAPTER_PHYSICAL_DEVICES));
+    auto& driver = env.add_icd(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_ENUMERATE_ADAPTER_PHYSICAL_DEVICES);
     driver.add_and_get_physical_device("physical_device_1");
     driver.add_and_get_physical_device("physical_device_0");
     uint32_t physical_count = static_cast<uint32_t>(driver.physical_devices.size());
@@ -127,7 +127,8 @@ TEST(ICDInterfaceVersion2PlusEnumerateAdapterPhysicalDevices, version_6_in_drive
 // Make the version_6 driver found through the D3DKMT driver discovery mechanism of the loader
 TEST(ICDInterfaceVersion2PlusEnumerateAdapterPhysicalDevices, version_6) {
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails{TEST_ICD_PATH_VERSION_6, VK_API_VERSION_1_3}.set_discovery_type(ManifestDiscoveryType::null_dir));
+    env.add_icd(TEST_ICD_PATH_VERSION_6, ManifestOptions{}.set_discovery_type(ManifestDiscoveryType::null_dir),
+                ManifestICD{}.set_api_version(VK_API_VERSION_1_3));
     // Version 6 provides a mechanism to allow the loader to sort physical devices.
     // The loader will only attempt to sort physical devices on an ICD if version 6 of the interface is supported.
     // This version provides the vk_icdEnumerateAdapterPhysicalDevices function.
@@ -180,8 +181,8 @@ TEST(ICDInterfaceVersion2PlusEnumerateAdapterPhysicalDevices, version_6) {
 // EnumerateAdapterPhysicalDevices
 TEST(ICDInterfaceVersion2, EnumAdapters2) {
     FrameworkEnvironment env{};
-    auto& driver =
-        env.add_icd(TestICDDetails{TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA}.set_discovery_type(ManifestDiscoveryType::null_dir));
+    auto& driver = env.add_icd(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA,
+                               ManifestOptions{}.set_discovery_type(ManifestDiscoveryType::null_dir));
     InstWrapper inst{env.vulkan_functions};
     driver.add_and_get_physical_device("physical_device_1");
     driver.add_and_get_physical_device("physical_device_0");
@@ -205,11 +206,11 @@ TEST(ICDInterfaceVersion2, EnumAdapters2) {
 // Verify that the handles are correct by calling vkGetPhysicalDeviceProperties with them
 TEST(ICDInterfaceVersion2PlusEnumerateAdapterPhysicalDevices, VerifyPhysDevResults) {
     FrameworkEnvironment env{};
-    auto& driver =
-        env.add_icd(TestICDDetails{TEST_ICD_PATH_VERSION_2_EXPORT_ICD_ENUMERATE_ADAPTER_PHYSICAL_DEVICES, VK_API_VERSION_1_1}
-                        .set_discovery_type(ManifestDiscoveryType::null_dir))
-            .set_min_icd_interface_version(6)
-            .set_icd_api_version(VK_API_VERSION_1_1);
+    auto& driver = env.add_icd(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_ENUMERATE_ADAPTER_PHYSICAL_DEVICES,
+                               ManifestOptions{}.set_discovery_type(ManifestDiscoveryType::null_dir),
+                               ManifestICD{}.set_api_version(VK_API_VERSION_1_1))
+                       .set_min_icd_interface_version(6)
+                       .set_icd_api_version(VK_API_VERSION_1_1);
     const std::vector<std::string> physical_device_names = {"physical_device_4", "physical_device_3", "physical_device_2",
                                                             "physical_device_1", "physical_device_0"};
     for (const auto& dev_name : physical_device_names) driver.add_physical_device(dev_name);
@@ -249,11 +250,12 @@ TEST(ICDInterfaceVersion2PlusEnumerateAdapterPhysicalDevices, VerifyPhysDevResul
 // Make sure physical device groups enumerated through EnumerateAdapterPhysicalDevices are properly found
 TEST(ICDInterfaceVersion2PlusEnumerateAdapterPhysicalDevices, VerifyGroupResults) {
     FrameworkEnvironment env{};
-    auto& driver =
-        env.add_icd(TestICDDetails{TEST_ICD_PATH_VERSION_2_EXPORT_ICD_ENUMERATE_ADAPTER_PHYSICAL_DEVICES, VK_API_VERSION_1_1}
-                        .set_discovery_type(ManifestDiscoveryType::null_dir))
-            .set_min_icd_interface_version(6)
-            .set_icd_api_version(VK_API_VERSION_1_1);
+
+    auto& driver = env.add_icd(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_ENUMERATE_ADAPTER_PHYSICAL_DEVICES,
+                               ManifestOptions{}.set_discovery_type(ManifestDiscoveryType::null_dir),
+                               ManifestICD{}.set_api_version(VK_API_VERSION_1_1))
+                       .set_min_icd_interface_version(6)
+                       .set_icd_api_version(VK_API_VERSION_1_1);
     const std::vector<std::string> physical_device_names = {"physical_device_4", "physical_device_3", "physical_device_2",
                                                             "physical_device_1", "physical_device_0"};
 
@@ -309,7 +311,7 @@ TEST(ICDInterfaceVersion2PlusEnumerateAdapterPhysicalDevices, VerifyGroupResults
 #endif  // defined(WIN32)
 TEST(ICDInterfaceVersion7, SingleDriver) {
     FrameworkEnvironment env{};
-    auto& driver = env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_7)).add_physical_device({});
+    auto& driver = env.add_icd(TEST_ICD_PATH_VERSION_7).add_physical_device({});
     InstWrapper inst{env.vulkan_functions};
     inst.CheckCreate();
     DeviceWrapper dev{inst};
@@ -319,7 +321,7 @@ TEST(ICDInterfaceVersion7, SingleDriver) {
 
 TEST(ICDInterfaceVersion7, SingleDriverWithoutExportedFunctions) {
     FrameworkEnvironment env{};
-    auto& driver = env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_7_WIHTOUT_EXPORTS)).add_physical_device({});
+    auto& driver = env.add_icd(TEST_ICD_PATH_VERSION_7_WIHTOUT_EXPORTS).add_physical_device({});
     InstWrapper inst{env.vulkan_functions};
     inst.CheckCreate();
     DeviceWrapper dev{inst};
@@ -329,9 +331,9 @@ TEST(ICDInterfaceVersion7, SingleDriverWithoutExportedFunctions) {
 
 TEST(MultipleICDConfig, Basic) {
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
+    env.add_icd(TEST_ICD_PATH_VERSION_2);
+    env.add_icd(TEST_ICD_PATH_VERSION_2);
+    env.add_icd(TEST_ICD_PATH_VERSION_2);
 
     auto& phys_dev_0 = env.get_test_icd(0).add_and_get_physical_device("physical_device_0");
     auto& phys_dev_1 = env.get_test_icd(1).add_and_get_physical_device("physical_device_1");
@@ -359,9 +361,9 @@ TEST(MultipleICDConfig, Basic) {
 
 TEST(MultipleDriverConfig, DifferentICDInterfaceVersions) {
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_EXPORT_ICD_GIPA));
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
+    env.add_icd(TEST_ICD_PATH_EXPORT_ICD_GIPA);
+    env.add_icd(TEST_ICD_PATH_VERSION_2);
+    env.add_icd(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA);
 
     TestICD& icd0 = env.get_test_icd(0);
     icd0.add_and_get_physical_device("physical_device_0");
@@ -383,9 +385,9 @@ TEST(MultipleDriverConfig, DifferentICDInterfaceVersions) {
 
 TEST(MultipleDriverConfig, DifferentICDsWithDevices) {
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_EXPORT_ICD_GIPA));
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
+    env.add_icd(TEST_ICD_PATH_EXPORT_ICD_GIPA);
+    env.add_icd(TEST_ICD_PATH_VERSION_2);
+    env.add_icd(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA);
 
     // Make sure the loader returns all devices from all active ICDs.  Many of the other
     // tests add multiple devices to a single ICD, this just makes sure the loader combines
@@ -417,9 +419,9 @@ TEST(MultipleDriverConfig, DifferentICDsWithDevices) {
 
 TEST(MultipleDriverConfig, DifferentICDsWithDevicesAndGroups) {
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_EXPORT_ICD_GIPA));
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2, VK_API_VERSION_1_1));
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
+    env.add_icd(TEST_ICD_PATH_EXPORT_ICD_GIPA);
+    env.add_icd(TEST_ICD_PATH_VERSION_2, {}, ManifestICD{}.set_api_version(VK_API_VERSION_1_1));
+    env.add_icd(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA);
 
     // The loader has to be able to handle drivers that support device groups in combination
     // with drivers that don't support device groups.  When this is the case, the loader needs
@@ -486,8 +488,8 @@ TEST(MultipleICDConfig, version_5_and_version_6) {
 
     uint32_t physical_count = 0;
     for (uint32_t i = 0; i < 3; i++) {
-        env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_ENUMERATE_ADAPTER_PHYSICAL_DEVICES));
-        env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
+        env.add_icd((TEST_ICD_PATH_VERSION_2_EXPORT_ICD_ENUMERATE_ADAPTER_PHYSICAL_DEVICES));
+        env.add_icd(TEST_ICD_PATH_VERSION_2);
         auto& driver_5 = env.get_test_icd(i * 2 + 1);
         driver_5.set_max_icd_interface_version(5);
         driver_5.set_min_icd_interface_version(5);
@@ -587,7 +589,7 @@ VkResult test_vkSetPrivateData(VkDevice, VkObjectType, uint64_t, VkPrivateDataSl
 
 TEST(MinorVersionUpdate, Version1_3) {
     FrameworkEnvironment env{};
-    auto& driver = env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
+    auto& driver = env.add_icd(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA);
     auto& pd = driver.add_and_get_physical_device({});
     pd.known_device_functions = {
         VulkanFunction{"vkCmdBeginRendering", to_vkVoidFunction(test_vkCmdBeginRendering)},
@@ -774,7 +776,7 @@ TEST(MinorVersionUpdate, Version1_3) {
 
 TEST(ApplicationInfoVersion, NonVulkanVariant) {
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA)).add_physical_device({});
+    env.add_icd(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA).add_physical_device({});
 
     DebugUtilsLogger log;
     InstWrapper inst{env.vulkan_functions};
@@ -788,7 +790,8 @@ TEST(ApplicationInfoVersion, NonVulkanVariant) {
 
 TEST(DriverManifest, NonVulkanVariant) {
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA, VK_MAKE_API_VERSION(1, 1, 0, 0))).add_physical_device({});
+    env.add_icd(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA, {}, ManifestICD{}.set_api_version(VK_MAKE_API_VERSION(1, 1, 0, 0)))
+        .add_physical_device({});
 
     DebugUtilsLogger log;
     InstWrapper inst{env.vulkan_functions};
@@ -802,7 +805,8 @@ TEST(DriverManifest, NonVulkanVariant) {
 
 TEST(LayerManifest, ImplicitNonVulkanVariant) {
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA, VK_MAKE_API_VERSION(0, 1, 0, 0))).add_physical_device({});
+    env.add_icd(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA, {}, ManifestICD{}.set_api_version(VK_MAKE_API_VERSION(0, 1, 0, 0)))
+        .add_physical_device({});
 
     const char* implicit_layer_name = "ImplicitTestLayer";
     env.add_implicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
@@ -823,7 +827,8 @@ TEST(LayerManifest, ImplicitNonVulkanVariant) {
 
 TEST(LayerManifest, ExplicitNonVulkanVariant) {
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA, VK_MAKE_API_VERSION(0, 1, 0, 0))).add_physical_device({});
+    env.add_icd(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA, {}, ManifestICD{}.set_api_version(VK_MAKE_API_VERSION(0, 1, 0, 0)))
+        .add_physical_device({});
 
     const char* explicit_layer_name = "ExplicitTestLayer";
     env.add_explicit_layer(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
@@ -843,8 +848,8 @@ TEST(LayerManifest, ExplicitNonVulkanVariant) {
 
 TEST(DriverManifest, UnknownManifestVersion) {
     FrameworkEnvironment env{};
-    env.add_icd(
-           TestICDDetails(ManifestICD{}.set_lib_path(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA).set_file_format_version({3, 2, 1})))
+
+    env.add_icd(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA, {}, ManifestICD{}.set_file_format_version({3, 2, 1}))
         .add_physical_device({});
 
     DebugUtilsLogger log;
@@ -859,8 +864,7 @@ TEST(DriverManifest, UnknownManifestVersion) {
 
 TEST(DriverManifest, LargeUnknownManifestVersion) {
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(
-                    ManifestICD{}.set_lib_path(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA).set_file_format_version({100, 222, 111})))
+    env.add_icd(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA, {}, ManifestICD{}.set_file_format_version({100, 222, 111}))
         .add_physical_device({});
 
     DebugUtilsLogger log;
@@ -875,7 +879,7 @@ TEST(DriverManifest, LargeUnknownManifestVersion) {
 
 TEST(LayerManifest, UnknownManifestVersion) {
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA)).add_physical_device({});
+    env.add_icd(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA).add_physical_device({});
 
     const char* implicit_layer_name = "ImplicitTestLayer";
     env.add_implicit_layer(ManifestLayer{}
@@ -899,7 +903,7 @@ TEST(LayerManifest, UnknownManifestVersion) {
 
 TEST(LayerManifest, LargeUnknownManifestVersion) {
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA)).add_physical_device({});
+    env.add_icd(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA).add_physical_device({});
 
     const char* implicit_layer_name = "ImplicitTestLayer";
     env.add_implicit_layer(ManifestLayer{}
@@ -922,9 +926,11 @@ TEST(LayerManifest, LargeUnknownManifestVersion) {
 }
 
 struct DriverInfo {
-    DriverInfo(TestICDDetails icd_details, uint32_t driver_version, bool expect_to_find) noexcept
-        : icd_details(icd_details), driver_version(driver_version), expect_to_find(expect_to_find) {}
-    TestICDDetails icd_details;
+    DriverInfo(std::filesystem::path const& path, ManifestOptions creation_args, uint32_t driver_version,
+               bool expect_to_find) noexcept
+        : path(path), creation_args(creation_args), driver_version(driver_version), expect_to_find(expect_to_find) {}
+    std::filesystem::path path;
+    ManifestOptions creation_args;
     uint32_t driver_version = 0;
     bool expect_to_find = false;
 };
@@ -935,7 +941,7 @@ void CheckDirectDriverLoading(FrameworkEnvironment& env, std::vector<DriverInfo>
     uint32_t expected_driver_count = 0;
 
     for (auto const& driver : direct_drivers) {
-        auto& direct_driver_icd = env.add_icd(driver.icd_details);
+        auto& direct_driver_icd = env.add_icd(driver.path, driver.creation_args);
         direct_driver_icd.add_and_get_physical_device({}).properties.driverVersion = driver.driver_version;
         VkDirectDriverLoadingInfoLUNARG ddl_info{};
         ddl_info.sType = VK_STRUCTURE_TYPE_DIRECT_DRIVER_LOADING_INFO_LUNARG;
@@ -947,7 +953,7 @@ void CheckDirectDriverLoading(FrameworkEnvironment& env, std::vector<DriverInfo>
     }
 
     for (auto const& driver : normal_drivers) {
-        auto& direct_driver_icd = env.add_icd(driver.icd_details);
+        auto& direct_driver_icd = env.add_icd(driver.path, driver.creation_args);
         direct_driver_icd.add_and_get_physical_device({}).properties.driverVersion = driver.driver_version;
         if (!exclusive && driver.expect_to_find) {
             expected_driver_count++;
@@ -1016,7 +1022,8 @@ TEST(DirectDriverLoading, Individual) {
     FrameworkEnvironment env{};
     std::vector<DriverInfo> normal_drivers;
     std::vector<DriverInfo> direct_drivers;
-    direct_drivers.emplace_back(TestICDDetails(TEST_ICD_PATH_VERSION_7).set_discovery_type(ManifestDiscoveryType::none), 10, true);
+    direct_drivers.emplace_back(TEST_ICD_PATH_VERSION_7, ManifestOptions{}.set_discovery_type(ManifestDiscoveryType::none), 10,
+                                true);
 
     ASSERT_NO_FATAL_FAILURE(CheckDirectDriverLoading(env, normal_drivers, direct_drivers, false));
 }
@@ -1026,8 +1033,10 @@ TEST(DirectDriverLoading, MultipleDirectDrivers) {
     FrameworkEnvironment env{};
     std::vector<DriverInfo> normal_drivers;
     std::vector<DriverInfo> direct_drivers;
-    direct_drivers.emplace_back(TestICDDetails(TEST_ICD_PATH_VERSION_7).set_discovery_type(ManifestDiscoveryType::none), 13, true);
-    direct_drivers.emplace_back(TestICDDetails(TEST_ICD_PATH_VERSION_7).set_discovery_type(ManifestDiscoveryType::none), 7, true);
+    direct_drivers.emplace_back(TEST_ICD_PATH_VERSION_7, ManifestOptions{}.set_discovery_type(ManifestDiscoveryType::none), 13,
+                                true);
+    direct_drivers.emplace_back(TEST_ICD_PATH_VERSION_7, ManifestOptions{}.set_discovery_type(ManifestDiscoveryType::none), 7,
+                                true);
     ASSERT_NO_FATAL_FAILURE(CheckDirectDriverLoading(env, normal_drivers, direct_drivers, false));
 }
 
@@ -1036,9 +1045,11 @@ TEST(DirectDriverLoading, MultipleDirectDriversAndNormalDrivers) {
     FrameworkEnvironment env{};
     std::vector<DriverInfo> normal_drivers;
     std::vector<DriverInfo> direct_drivers;
-    normal_drivers.emplace_back(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA), 90, true);
-    direct_drivers.emplace_back(TestICDDetails(TEST_ICD_PATH_VERSION_7).set_discovery_type(ManifestDiscoveryType::none), 80, true);
-    direct_drivers.emplace_back(TestICDDetails(TEST_ICD_PATH_VERSION_7).set_discovery_type(ManifestDiscoveryType::none), 70, true);
+    normal_drivers.emplace_back(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA, ManifestOptions{}, 90, true);
+    direct_drivers.emplace_back(TEST_ICD_PATH_VERSION_7, ManifestOptions{}.set_discovery_type(ManifestDiscoveryType::none), 80,
+                                true);
+    direct_drivers.emplace_back(TEST_ICD_PATH_VERSION_7, ManifestOptions{}.set_discovery_type(ManifestDiscoveryType::none), 70,
+                                true);
     ASSERT_NO_FATAL_FAILURE(CheckDirectDriverLoading(env, normal_drivers, direct_drivers, false));
 }
 
@@ -1047,8 +1058,9 @@ TEST(DirectDriverLoading, ExclusiveWithNormalDriver) {
     FrameworkEnvironment env{};
     std::vector<DriverInfo> normal_drivers;
     std::vector<DriverInfo> direct_drivers;
-    direct_drivers.emplace_back(TestICDDetails(TEST_ICD_PATH_VERSION_7).set_discovery_type(ManifestDiscoveryType::none), 33, true);
-    normal_drivers.emplace_back(TestICDDetails(TEST_ICD_PATH_VERSION_2), 44, false);
+    direct_drivers.emplace_back(TEST_ICD_PATH_VERSION_7, ManifestOptions{}.set_discovery_type(ManifestDiscoveryType::none), 33,
+                                true);
+    normal_drivers.emplace_back(TEST_ICD_PATH_VERSION_2, ManifestOptions{}, 44, false);
     ASSERT_NO_FATAL_FAILURE(CheckDirectDriverLoading(env, normal_drivers, direct_drivers, true));
 }
 
@@ -1056,9 +1068,10 @@ TEST(DirectDriverLoading, ExclusiveWithMultipleNormalDriver) {
     FrameworkEnvironment env{};
     std::vector<DriverInfo> normal_drivers;
     std::vector<DriverInfo> direct_drivers;
-    normal_drivers.emplace_back(TestICDDetails(TEST_ICD_PATH_VERSION_2), 55, true);
-    normal_drivers.emplace_back(TestICDDetails(TEST_ICD_PATH_VERSION_2), 66, true);
-    direct_drivers.emplace_back(TestICDDetails(TEST_ICD_PATH_VERSION_7).set_discovery_type(ManifestDiscoveryType::none), 77, true);
+    normal_drivers.emplace_back(TEST_ICD_PATH_VERSION_2, ManifestOptions{}, 55, true);
+    normal_drivers.emplace_back(TEST_ICD_PATH_VERSION_2, ManifestOptions{}, 66, true);
+    direct_drivers.emplace_back(TEST_ICD_PATH_VERSION_7, ManifestOptions{}.set_discovery_type(ManifestDiscoveryType::none), 77,
+                                true);
     ASSERT_NO_FATAL_FAILURE(CheckDirectDriverLoading(env, normal_drivers, direct_drivers, true));
 }
 
@@ -1066,9 +1079,10 @@ TEST(DirectDriverLoading, ExclusiveWithDriverEnvVar) {
     FrameworkEnvironment env{};
     std::vector<DriverInfo> normal_drivers;
     std::vector<DriverInfo> direct_drivers;
-    normal_drivers.emplace_back(
-        TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA).set_discovery_type(ManifestDiscoveryType::env_var), 4, false);
-    direct_drivers.emplace_back(TestICDDetails(TEST_ICD_PATH_VERSION_7).set_discovery_type(ManifestDiscoveryType::none), 5, true);
+    normal_drivers.emplace_back(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA,
+                                ManifestOptions{}.set_discovery_type(ManifestDiscoveryType::env_var), 4, false);
+    direct_drivers.emplace_back(TEST_ICD_PATH_VERSION_7, ManifestOptions{}.set_discovery_type(ManifestDiscoveryType::none), 5,
+                                true);
     ASSERT_NO_FATAL_FAILURE(CheckDirectDriverLoading(env, normal_drivers, direct_drivers, true));
 }
 
@@ -1077,9 +1091,10 @@ TEST(DirectDriverLoading, ExclusiveWithAddDriverEnvVar) {
     std::vector<DriverInfo> normal_drivers;
     std::vector<DriverInfo> direct_drivers;
 
-    normal_drivers.emplace_back(
-        TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA).set_discovery_type(ManifestDiscoveryType::add_env_var), 6, false);
-    direct_drivers.emplace_back(TestICDDetails(TEST_ICD_PATH_VERSION_7).set_discovery_type(ManifestDiscoveryType::none), 7, true);
+    normal_drivers.emplace_back(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA,
+                                ManifestOptions{}.set_discovery_type(ManifestDiscoveryType::add_env_var), 6, false);
+    direct_drivers.emplace_back(TEST_ICD_PATH_VERSION_7, ManifestOptions{}.set_discovery_type(ManifestDiscoveryType::none), 7,
+                                true);
     ASSERT_NO_FATAL_FAILURE(CheckDirectDriverLoading(env, normal_drivers, direct_drivers, true));
 }
 
@@ -1090,9 +1105,10 @@ TEST(DirectDriverLoading, InclusiveWithFilterSelect) {
 
     EnvVarWrapper driver_filter_select_env_var{"VK_LOADER_DRIVERS_SELECT", "normal_driver.json"};
 
-    normal_drivers.emplace_back(
-        TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA).set_disable_icd_inc(true).set_json_name("normal_driver"), 8, true);
-    direct_drivers.emplace_back(TestICDDetails(TEST_ICD_PATH_VERSION_7).set_discovery_type(ManifestDiscoveryType::none), 9, true);
+    normal_drivers.emplace_back(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA,
+                                ManifestOptions{}.set_json_name("normal_driver.json").set_disable_name_increment(true), 8, true);
+    direct_drivers.emplace_back(TEST_ICD_PATH_VERSION_7, ManifestOptions{}.set_discovery_type(ManifestDiscoveryType::none), 9,
+                                true);
 
     ASSERT_NO_FATAL_FAILURE(CheckDirectDriverLoading(env, normal_drivers, direct_drivers, false));
 }
@@ -1104,10 +1120,10 @@ TEST(DirectDriverLoading, ExclusiveWithFilterSelect) {
 
     EnvVarWrapper driver_filter_select_env_var{"VK_LOADER_DRIVERS_SELECT", "normal_driver.json"};
 
-    normal_drivers.emplace_back(
-        TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA).set_disable_icd_inc(true).set_json_name("normal_driver"), 10,
-        false);
-    direct_drivers.emplace_back(TestICDDetails(TEST_ICD_PATH_VERSION_7).set_discovery_type(ManifestDiscoveryType::none), 11, true);
+    normal_drivers.emplace_back(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA,
+                                ManifestOptions{}.set_json_name("normal_driver.json").set_disable_name_increment(true), 10, false);
+    direct_drivers.emplace_back(TEST_ICD_PATH_VERSION_7, ManifestOptions{}.set_discovery_type(ManifestDiscoveryType::none), 11,
+                                true);
 
     ASSERT_NO_FATAL_FAILURE(CheckDirectDriverLoading(env, normal_drivers, direct_drivers, true));
 }
@@ -1119,10 +1135,10 @@ TEST(DirectDriverLoading, InclusiveWithFilterDisable) {
 
     EnvVarWrapper driver_filter_disable_env_var{"VK_LOADER_DRIVERS_DISABLE", "normal_driver.json"};
 
-    normal_drivers.emplace_back(
-        TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA).set_disable_icd_inc(true).set_json_name("normal_driver"), 12,
-        false);
-    direct_drivers.emplace_back(TestICDDetails(TEST_ICD_PATH_VERSION_7).set_discovery_type(ManifestDiscoveryType::none), 13, true);
+    normal_drivers.emplace_back(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA,
+                                ManifestOptions{}.set_json_name("normal_driver.json").set_disable_name_increment(true), 12, false);
+    direct_drivers.emplace_back(TEST_ICD_PATH_VERSION_7, ManifestOptions{}.set_discovery_type(ManifestDiscoveryType::none), 13,
+                                true);
     ASSERT_NO_FATAL_FAILURE(CheckDirectDriverLoading(env, normal_drivers, direct_drivers, false));
 }
 
@@ -1133,10 +1149,10 @@ TEST(DirectDriverLoading, ExclusiveWithFilterDisable) {
 
     EnvVarWrapper driver_filter_disable_env_var{"VK_LOADER_DRIVERS_DISABLE", "normal_driver.json"};
 
-    normal_drivers.emplace_back(
-        TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA).set_disable_icd_inc(true).set_json_name("normal_driver"), 14,
-        false);
-    direct_drivers.emplace_back(TestICDDetails(TEST_ICD_PATH_VERSION_7).set_discovery_type(ManifestDiscoveryType::none), 15, true);
+    normal_drivers.emplace_back(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA,
+                                ManifestOptions{}.set_json_name("normal_driver.json").set_disable_name_increment(true), 14, false);
+    direct_drivers.emplace_back(TEST_ICD_PATH_VERSION_7, ManifestOptions{}.set_discovery_type(ManifestDiscoveryType::none), 15,
+                                true);
     ASSERT_NO_FATAL_FAILURE(CheckDirectDriverLoading(env, normal_drivers, direct_drivers, true));
 }
 
@@ -1144,7 +1160,8 @@ TEST(DirectDriverLoading, ExclusiveWithFilterDisable) {
 TEST(DirectDriverLoading, ExtensionNotEnabled) {
     FrameworkEnvironment env{};
 
-    auto& direct_driver_icd = env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_7).set_discovery_type(ManifestDiscoveryType::none));
+    auto& direct_driver_icd =
+        env.add_icd(TEST_ICD_PATH_VERSION_7, ManifestOptions{}.set_discovery_type(ManifestDiscoveryType::none));
     direct_driver_icd.add_physical_device({});
 
     VkDirectDriverLoadingInfoLUNARG ddl_info{};
@@ -1174,7 +1191,7 @@ TEST(DirectDriverLoading, ExtensionNotEnabled) {
 TEST(DirectDriverLoading, DriverListNotInPnextChain) {
     FrameworkEnvironment env{};
 
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_7).set_discovery_type(ManifestDiscoveryType::none)).add_physical_device({});
+    env.add_icd(TEST_ICD_PATH_VERSION_7, ManifestOptions{}.set_discovery_type(ManifestDiscoveryType::none)).add_physical_device({});
 
     DebugUtilsLogger log;
     InstWrapper inst{env.vulkan_functions};
@@ -1193,7 +1210,7 @@ TEST(DirectDriverLoading, DriverListNotInPnextChain) {
 TEST(DirectDriverLoading, DriverListHasNullDriverPointer) {
     FrameworkEnvironment env{};
 
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_7).set_discovery_type(ManifestDiscoveryType::none)).add_physical_device({});
+    env.add_icd(TEST_ICD_PATH_VERSION_7, ManifestOptions{}.set_discovery_type(ManifestDiscoveryType::none)).add_physical_device({});
 
     VkDirectDriverLoadingListLUNARG ddl_list{};
     ddl_list.sType = VK_STRUCTURE_TYPE_DIRECT_DRIVER_LOADING_LIST_LUNARG;
@@ -1218,7 +1235,7 @@ TEST(DirectDriverLoading, DriverListHasNullDriverPointer) {
 TEST(DirectDriverLoading, DriverListHasZeroInfoCount) {
     FrameworkEnvironment env{};
 
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_7).set_discovery_type(ManifestDiscoveryType::none)).add_physical_device({});
+    env.add_icd(TEST_ICD_PATH_VERSION_7, ManifestOptions{}.set_discovery_type(ManifestDiscoveryType::none)).add_physical_device({});
 
     VkDirectDriverLoadingInfoLUNARG ddl_info{};
     ddl_info.sType = VK_STRUCTURE_TYPE_DIRECT_DRIVER_LOADING_INFO_LUNARG;
@@ -1248,7 +1265,7 @@ TEST(DirectDriverLoading, DriverListHasZeroInfoCount) {
 TEST(DirectDriverLoading, DriverInfoMissingGetInstanceProcAddr) {
     FrameworkEnvironment env{};
 
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_7).set_discovery_type(ManifestDiscoveryType::none)).add_physical_device({});
+    env.add_icd(TEST_ICD_PATH_VERSION_7, ManifestOptions{}.set_discovery_type(ManifestDiscoveryType::none)).add_physical_device({});
 
     std::array<VkDirectDriverLoadingInfoLUNARG, 2> ddl_infos{};
     ddl_infos[0].sType = VK_STRUCTURE_TYPE_DIRECT_DRIVER_LOADING_INFO_LUNARG;
@@ -1283,7 +1300,7 @@ TEST(DirectDriverLoading, DriverInfoMissingGetInstanceProcAddr) {
 TEST(DirectDriverLoading, DriverDoesNotExportNegotiateFunction) {
     FrameworkEnvironment env{};
 
-    auto& direct_driver = env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_7).set_discovery_type(ManifestDiscoveryType::none))
+    auto& direct_driver = env.add_icd(TEST_ICD_PATH_VERSION_7, ManifestOptions{}.set_discovery_type(ManifestDiscoveryType::none))
                               .add_physical_device({})
                               .set_exposes_vk_icdNegotiateLoaderICDInterfaceVersion(false)
                               .set_exposes_vkCreateInstance(false)
@@ -1368,7 +1385,7 @@ TEST(DirectDriverLoading, DriverDoesNotExportNegotiateFunction) {
 
 TEST(DriverManifest, VersionMismatchWithEnumerateInstanceVersion) {
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2, VK_API_VERSION_1_1))
+    env.add_icd(TEST_ICD_PATH_VERSION_2, {}, ManifestICD{}.set_api_version(VK_API_VERSION_1_1))
         .set_icd_api_version(VK_API_VERSION_1_0)
         .add_physical_device({});
 
@@ -1385,7 +1402,7 @@ TEST(DriverManifest, VersionMismatchWithEnumerateInstanceVersion) {
 
 TEST(DriverManifest, EnumerateInstanceVersionNotSupported) {
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2, VK_API_VERSION_1_1))
+    env.add_icd(TEST_ICD_PATH_VERSION_2, {}, ManifestICD{}.set_api_version(VK_API_VERSION_1_1))
         .set_icd_api_version(VK_API_VERSION_1_0)
         .set_can_query_vkEnumerateInstanceVersion(false)
         .add_physical_device({});

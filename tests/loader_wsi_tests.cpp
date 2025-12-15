@@ -34,7 +34,7 @@ class WsiTests : public ::testing::Test {};
 // When ICD doesn't support the extension, create instance should fail
 TEST(WsiTests, CreateSurfaceWin32NoICDSupport) {
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
+    env.add_icd(TEST_ICD_PATH_VERSION_2);
     auto& cur_icd = env.get_test_icd(0);
     cur_icd.set_min_icd_interface_version(5);
 
@@ -51,7 +51,7 @@ TEST(WsiTests, CreateSurfaceWin32NoICDSupport) {
 // When ICD doesn't support the surface creation, the loader should handle it
 TEST(WsiTests, CreateSurfaceWin32NoICDCreateSupport) {
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
+    env.add_icd(TEST_ICD_PATH_VERSION_2);
     auto& cur_icd = env.get_test_icd(0);
     cur_icd.set_min_icd_interface_version(5);
     cur_icd.add_instance_extension({VK_KHR_SURFACE_EXTENSION_NAME});
@@ -73,7 +73,7 @@ TEST(WsiTests, CreateSurfaceWin32NoICDCreateSupport) {
 // When ICD does support the surface creation, the loader should  delegat handle it to the ICD
 TEST(WsiTests, CreateSurfaceWin32ICDSupport) {
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
+    env.add_icd(TEST_ICD_PATH_VERSION_2);
     auto& cur_icd = env.get_test_icd(0);
     cur_icd.set_min_icd_interface_version(5);
     cur_icd.add_instance_extension({VK_KHR_SURFACE_EXTENSION_NAME});
@@ -98,7 +98,7 @@ TEST(WsiTests, CreateSurfaceWin32MixedICDSupport) {
     for (uint32_t icd = 0; icd < 3; ++icd) {
         Extension first_ext{VK_KHR_SURFACE_EXTENSION_NAME};
         Extension second_ext{VK_KHR_WIN32_SURFACE_EXTENSION_NAME};
-        env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
+        env.add_icd(TEST_ICD_PATH_VERSION_2);
         auto& cur_icd = env.get_test_icd(icd);
         cur_icd.icd_api_version = VK_API_VERSION_1_0;
         cur_icd.add_instance_extensions({first_ext, second_ext});
@@ -122,7 +122,7 @@ TEST(WsiTests, CreateSurfaceWin32MixedICDSupport) {
 
 TEST(WsiTests, GetPhysicalDeviceWin32PresentNoICDSupport) {
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
+    env.add_icd(TEST_ICD_PATH_VERSION_2);
     auto& cur_icd = env.get_test_icd(0);
     cur_icd.set_min_icd_interface_version(5);
     cur_icd.add_instance_extension({VK_KHR_SURFACE_EXTENSION_NAME});
@@ -149,7 +149,7 @@ TEST(WsiTests, GetPhysicalDeviceWin32PresentNoICDSupport) {
 
 TEST(WsiTests, GetPhysicalDeviceWin32PresentICDSupport) {
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
+    env.add_icd(TEST_ICD_PATH_VERSION_2);
     auto& cur_icd = env.get_test_icd(0);
     cur_icd.set_min_icd_interface_version(5);
     cur_icd.add_instance_extension({VK_KHR_SURFACE_EXTENSION_NAME});
@@ -175,7 +175,7 @@ TEST(WsiTests, Win32GetPhysicalDeviceSurfaceSupportKHR) {
     for (uint32_t icd = 0; icd < max_device_count; ++icd) {
         Extension first_ext{VK_KHR_SURFACE_EXTENSION_NAME};
         Extension second_ext{VK_KHR_WIN32_SURFACE_EXTENSION_NAME};
-        env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
+        env.add_icd(TEST_ICD_PATH_VERSION_2);
         auto& cur_icd = env.get_test_icd(icd);
         cur_icd.icd_api_version = VK_API_VERSION_1_0;
         cur_icd.set_min_icd_interface_version(5);
@@ -214,7 +214,7 @@ TEST(WsiTests, Win32GetPhysicalDeviceSurfaceSupportKHR) {
 // When ICD doesn't support the extension, create instance should fail
 TEST(WsiTests, CreateSurfaceXCBNoICDSupport) {
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
+    env.add_icd(TEST_ICD_PATH_VERSION_2);
     auto& cur_icd = env.get_test_icd(0);
     cur_icd.set_min_icd_interface_version(5);
     cur_icd.enable_icd_wsi = false;
@@ -232,7 +232,7 @@ TEST(WsiTests, CreateSurfaceXCBNoICDSupport) {
 // When ICD doesn't support the surface creation, the loader should handle it
 TEST(WsiTests, CreateSurfaceXCBNoICDCreateSupport) {
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
+    env.add_icd(TEST_ICD_PATH_VERSION_2);
     auto& cur_icd = env.get_test_icd(0);
     cur_icd.set_min_icd_interface_version(5);
     cur_icd.add_instance_extension({VK_KHR_SURFACE_EXTENSION_NAME});
@@ -255,7 +255,7 @@ TEST(WsiTests, CreateSurfaceXCBNoICDCreateSupport) {
 // When ICD does support the surface creation, the loader should  delegat handle it to the ICD
 TEST(WsiTests, CreateSurfaceXCBICDSupport) {
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
+    env.add_icd(TEST_ICD_PATH_VERSION_2);
     auto& cur_icd = env.get_test_icd(0);
     cur_icd.set_min_icd_interface_version(5);
     cur_icd.add_instance_extension({VK_KHR_SURFACE_EXTENSION_NAME});
@@ -281,7 +281,7 @@ TEST(WsiTests, CreateSurfaceXCBMixedICDSupport) {
     for (uint32_t icd = 0; icd < 3; ++icd) {
         Extension first_ext{VK_KHR_SURFACE_EXTENSION_NAME};
         Extension second_ext{VK_KHR_XCB_SURFACE_EXTENSION_NAME};
-        env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
+        env.add_icd(TEST_ICD_PATH_VERSION_2);
         auto& cur_icd = env.get_test_icd(icd);
         cur_icd.icd_api_version = VK_API_VERSION_1_0;
         cur_icd.add_instance_extensions({first_ext, second_ext});
@@ -306,7 +306,7 @@ TEST(WsiTests, CreateSurfaceXCBMixedICDSupport) {
 
 TEST(WsiTests, GetPhysicalDeviceXcbPresentNoICDSupport) {
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
+    env.add_icd(TEST_ICD_PATH_VERSION_2);
     auto& cur_icd = env.get_test_icd(0);
     cur_icd.set_min_icd_interface_version(5);
     cur_icd.add_instance_extension({VK_KHR_SURFACE_EXTENSION_NAME});
@@ -333,7 +333,7 @@ TEST(WsiTests, GetPhysicalDeviceXcbPresentNoICDSupport) {
 
 TEST(WsiTests, GetPhysicalDeviceXcbPresentICDSupport) {
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
+    env.add_icd(TEST_ICD_PATH_VERSION_2);
     auto& cur_icd = env.get_test_icd(0);
     cur_icd.set_min_icd_interface_version(5);
     cur_icd.add_instance_extension({VK_KHR_SURFACE_EXTENSION_NAME});
@@ -359,7 +359,7 @@ TEST(WsiTests, XcbGetPhysicalDeviceSurfaceSupportKHR) {
     for (uint32_t icd = 0; icd < max_device_count; ++icd) {
         Extension first_ext{VK_KHR_SURFACE_EXTENSION_NAME};
         Extension second_ext{VK_KHR_XCB_SURFACE_EXTENSION_NAME};
-        env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
+        env.add_icd(TEST_ICD_PATH_VERSION_2);
         auto& cur_icd = env.get_test_icd(icd);
         cur_icd.icd_api_version = VK_API_VERSION_1_0;
         cur_icd.set_min_icd_interface_version(5);
@@ -398,7 +398,7 @@ TEST(WsiTests, XcbGetPhysicalDeviceSurfaceSupportKHR) {
 // When ICD doesn't support the extension, create instance should fail
 TEST(WsiTests, CreateSurfaceXLIBNoICDSupport) {
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
+    env.add_icd(TEST_ICD_PATH_VERSION_2);
     auto& cur_icd = env.get_test_icd(0);
     cur_icd.set_min_icd_interface_version(5);
     cur_icd.enable_icd_wsi = false;
@@ -416,7 +416,7 @@ TEST(WsiTests, CreateSurfaceXLIBNoICDSupport) {
 // When ICD doesn't support the surface creation, the loader should handle it
 TEST(WsiTests, CreateSurfaceXLIBNoICDCreateSupport) {
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
+    env.add_icd(TEST_ICD_PATH_VERSION_2);
     auto& cur_icd = env.get_test_icd(0);
     cur_icd.set_min_icd_interface_version(5);
     cur_icd.add_instance_extension({VK_KHR_SURFACE_EXTENSION_NAME});
@@ -439,7 +439,7 @@ TEST(WsiTests, CreateSurfaceXLIBNoICDCreateSupport) {
 // When ICD does support the surface creation, the loader should  delegat handle it to the ICD
 TEST(WsiTests, CreateSurfaceXLIBICDSupport) {
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
+    env.add_icd(TEST_ICD_PATH_VERSION_2);
     auto& cur_icd = env.get_test_icd(0);
     cur_icd.set_min_icd_interface_version(5);
     cur_icd.add_instance_extension({VK_KHR_SURFACE_EXTENSION_NAME});
@@ -465,7 +465,7 @@ TEST(WsiTests, CreateSurfaceXLIBMixedICDSupport) {
     for (uint32_t icd = 0; icd < 3; ++icd) {
         Extension first_ext{VK_KHR_SURFACE_EXTENSION_NAME};
         Extension second_ext{VK_KHR_XLIB_SURFACE_EXTENSION_NAME};
-        env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
+        env.add_icd(TEST_ICD_PATH_VERSION_2);
         auto& cur_icd = env.get_test_icd(icd);
         cur_icd.icd_api_version = VK_API_VERSION_1_0;
         cur_icd.add_instance_extensions({first_ext, second_ext});
@@ -490,7 +490,7 @@ TEST(WsiTests, CreateSurfaceXLIBMixedICDSupport) {
 
 TEST(WsiTests, GetPhysicalDeviceXlibPresentNoICDSupport) {
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
+    env.add_icd(TEST_ICD_PATH_VERSION_2);
     auto& cur_icd = env.get_test_icd(0);
     cur_icd.set_min_icd_interface_version(5);
     cur_icd.add_instance_extension({VK_KHR_SURFACE_EXTENSION_NAME});
@@ -517,7 +517,7 @@ TEST(WsiTests, GetPhysicalDeviceXlibPresentNoICDSupport) {
 
 TEST(WsiTests, GetPhysicalDeviceXlibPresentICDSupport) {
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
+    env.add_icd(TEST_ICD_PATH_VERSION_2);
     auto& cur_icd = env.get_test_icd(0);
     cur_icd.set_min_icd_interface_version(5);
     cur_icd.add_instance_extension({VK_KHR_SURFACE_EXTENSION_NAME});
@@ -543,7 +543,7 @@ TEST(WsiTests, XlibGetPhysicalDeviceSurfaceSupportKHR) {
     for (uint32_t icd = 0; icd < max_device_count; ++icd) {
         Extension first_ext{VK_KHR_SURFACE_EXTENSION_NAME};
         Extension second_ext{VK_KHR_XLIB_SURFACE_EXTENSION_NAME};
-        env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
+        env.add_icd(TEST_ICD_PATH_VERSION_2);
         auto& cur_icd = env.get_test_icd(icd);
         cur_icd.icd_api_version = VK_API_VERSION_1_0;
         cur_icd.set_min_icd_interface_version(5);
@@ -582,7 +582,7 @@ TEST(WsiTests, XlibGetPhysicalDeviceSurfaceSupportKHR) {
 // When ICD doesn't support the extension, create instance should fail
 TEST(WsiTests, CreateSurfaceWaylandNoICDSupport) {
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
+    env.add_icd(TEST_ICD_PATH_VERSION_2);
     auto& cur_icd = env.get_test_icd(0);
     cur_icd.set_min_icd_interface_version(5);
     cur_icd.enable_icd_wsi = false;
@@ -600,7 +600,7 @@ TEST(WsiTests, CreateSurfaceWaylandNoICDSupport) {
 // When ICD doesn't support the surface creation, the loader should handle it
 TEST(WsiTests, CreateSurfaceWaylandNoICDCreateSupport) {
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
+    env.add_icd(TEST_ICD_PATH_VERSION_2);
     auto& cur_icd = env.get_test_icd(0);
     cur_icd.set_min_icd_interface_version(5);
     cur_icd.add_instance_extension({VK_KHR_SURFACE_EXTENSION_NAME});
@@ -623,7 +623,7 @@ TEST(WsiTests, CreateSurfaceWaylandNoICDCreateSupport) {
 // When ICD does support the surface creation, the loader should  delegat handle it to the ICD
 TEST(WsiTests, CreateSurfaceWaylandICDSupport) {
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
+    env.add_icd(TEST_ICD_PATH_VERSION_2);
     auto& cur_icd = env.get_test_icd(0);
     cur_icd.set_min_icd_interface_version(5);
     cur_icd.add_instance_extension({VK_KHR_SURFACE_EXTENSION_NAME});
@@ -649,7 +649,7 @@ TEST(WsiTests, CreateSurfaceWaylandMixedICDSupport) {
     for (uint32_t icd = 0; icd < 3; ++icd) {
         Extension first_ext{VK_KHR_SURFACE_EXTENSION_NAME};
         Extension second_ext{VK_KHR_WAYLAND_SURFACE_EXTENSION_NAME};
-        env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
+        env.add_icd(TEST_ICD_PATH_VERSION_2);
         auto& cur_icd = env.get_test_icd(icd);
         cur_icd.icd_api_version = VK_API_VERSION_1_0;
         cur_icd.add_instance_extensions({first_ext, second_ext});
@@ -674,7 +674,7 @@ TEST(WsiTests, CreateSurfaceWaylandMixedICDSupport) {
 
 TEST(WsiTests, GetPhysicalDeviceWaylandPresentNoICDSupport) {
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
+    env.add_icd(TEST_ICD_PATH_VERSION_2);
     auto& cur_icd = env.get_test_icd(0);
     cur_icd.set_min_icd_interface_version(5);
     cur_icd.add_instance_extension({VK_KHR_SURFACE_EXTENSION_NAME});
@@ -701,7 +701,7 @@ TEST(WsiTests, GetPhysicalDeviceWaylandPresentNoICDSupport) {
 
 TEST(WsiTests, GetPhysicalDeviceWaylandPresentICDSupport) {
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
+    env.add_icd(TEST_ICD_PATH_VERSION_2);
     auto& cur_icd = env.get_test_icd(0);
     cur_icd.set_min_icd_interface_version(5);
     cur_icd.add_instance_extension({VK_KHR_SURFACE_EXTENSION_NAME});
@@ -727,7 +727,7 @@ TEST(WsiTests, WaylandGetPhysicalDeviceSurfaceSupportKHR) {
     for (uint32_t icd = 0; icd < max_device_count; ++icd) {
         Extension first_ext{VK_KHR_SURFACE_EXTENSION_NAME};
         Extension second_ext{VK_KHR_WAYLAND_SURFACE_EXTENSION_NAME};
-        env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2));
+        env.add_icd(TEST_ICD_PATH_VERSION_2);
         auto& cur_icd = env.get_test_icd(icd);
         cur_icd.icd_api_version = VK_API_VERSION_1_0;
         cur_icd.set_min_icd_interface_version(5);
@@ -767,7 +767,7 @@ TEST(WsiTests, GoogleSurfaceslessQuery) {
                                                 VK_PRESENT_MODE_MAILBOX_KHR, VK_PRESENT_MODE_FIFO_RELAXED_KHR};
     VkSurfaceFormatKHR surface_format = {VK_FORMAT_R8G8B8A8_SRGB, VK_COLORSPACE_SRGB_NONLINEAR_KHR};
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2))
+    env.add_icd(TEST_ICD_PATH_VERSION_2)
         .setup_WSI()
         .add_instance_extension("VK_GOOGLE_surfaceless_query")
         .add_instance_extension("VK_KHR_get_surface_capabilities2")
@@ -826,7 +826,7 @@ TEST(WsiTests, GoogleSurfaceslessQuery) {
 
 TEST(WsiTests, ForgetEnableSurfaceExtensions) {
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2))
+    env.add_icd(TEST_ICD_PATH_VERSION_2)
         .setup_WSI()
         .add_physical_device(PhysicalDevice{}.add_extension("VK_KHR_swapchain").finish());
 
@@ -840,7 +840,7 @@ TEST(WsiTests, ForgetEnableSurfaceExtensions) {
 
 TEST(WsiTests, SwapchainFunctional) {
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2))
+    env.add_icd(TEST_ICD_PATH_VERSION_2)
         .setup_WSI()
         .add_physical_device(PhysicalDevice{}.add_extension("VK_KHR_swapchain").finish());
 
@@ -925,7 +925,7 @@ TEST(WsiTests, EXTSurfaceMaintenance1) {
     VkSurfaceCapabilitiesKHR surface_caps{};
     surface_caps.maxImageExtent = VkExtent2D{300, 300};
     surface_caps.minImageExtent = VkExtent2D{100, 100};
-    auto& test_physical_device_0 = env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2))
+    auto& test_physical_device_0 = env.add_icd(TEST_ICD_PATH_VERSION_2)
                                        .setup_WSI()
                                        .add_instance_extension(VK_KHR_GET_SURFACE_CAPABILITIES_2_EXTENSION_NAME)
                                        .add_and_get_physical_device(PhysicalDevice{}
@@ -940,7 +940,7 @@ TEST(WsiTests, EXTSurfaceMaintenance1) {
     scaling_capabilities.supportedPresentGravityY = VK_PRESENT_SCALING_STRETCH_BIT_EXT;
     scaling_capabilities.minScaledImageExtent = {60, 60};
     scaling_capabilities.maxScaledImageExtent = {1000, 1000};
-    auto& icd2 = env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2))
+    auto& icd2 = env.add_icd(TEST_ICD_PATH_VERSION_2)
                      .setup_WSI()
                      .add_instance_extension(VK_EXT_SURFACE_MAINTENANCE_1_EXTENSION_NAME)
                      .add_instance_extension(VK_KHR_GET_SURFACE_CAPABILITIES_2_EXTENSION_NAME);
@@ -959,7 +959,7 @@ TEST(WsiTests, EXTSurfaceMaintenance1) {
         {VK_PRESENT_MODE_FIFO_RELAXED_KHR, VK_PRESENT_MODE_FIFO_KHR},
     };
     test_physical_device_1.surface_present_mode_compatibility = compatible_present_modes;
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2))
+    env.add_icd(TEST_ICD_PATH_VERSION_2)
         .setup_WSI()
         .add_physical_device(PhysicalDevice{}
                                  .add_extension("VK_KHR_swapchain")
@@ -1046,14 +1046,14 @@ TEST(WsiTests, MultiPlatformGetPhysicalDeviceSurfaceSupportKHR) {
     FrameworkEnvironment env{};
 
     const char* xcb_device_name = "XCB";
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2))
+    env.add_icd(TEST_ICD_PATH_VERSION_2)
         .setup_WSI("VK_USE_PLATFORM_XCB_KHR")
         .add_physical_device(PhysicalDevice{}
                                  .set_deviceName(xcb_device_name)
                                  .add_queue_family_properties({{VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}}, true})
                                  .finish());
     const char* wayland_device_name = "WAYLAND";
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2))
+    env.add_icd(TEST_ICD_PATH_VERSION_2)
         .setup_WSI("VK_USE_PLATFORM_WAYLAND_KHR")
         .add_physical_device(PhysicalDevice{}
                                  .set_deviceName(wayland_device_name)

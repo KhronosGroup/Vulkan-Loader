@@ -335,8 +335,7 @@ using layer_implementation_physical_device_functions = layer_implementation_func
 
 TEST(UnknownFunction, PhysicalDeviceFunction) {
     FrameworkEnvironment env{};
-    auto& test_physical_device =
-        env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA)).add_and_get_physical_device({});
+    auto& test_physical_device = env.add_icd(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA).add_and_get_physical_device({});
     uint32_t function_count = MAX_NUM_UNKNOWN_EXTS;
     std::vector<std::string> function_names;
     add_function_names(function_names, function_count);
@@ -353,8 +352,8 @@ TEST(UnknownFunction, PhysicalDeviceFunction) {
 
 TEST(UnknownFunction, PhysicalDeviceFunctionMultipleDriverSupport) {
     FrameworkEnvironment env{};
-    auto& driver_0 = env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
-    auto& driver_1 = env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
+    auto& driver_0 = env.add_icd(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA);
+    auto& driver_1 = env.add_icd(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA);
     uint32_t function_count = MAX_NUM_UNKNOWN_EXTS;
     std::vector<std::string> function_names;
     add_function_names(function_names, function_count);
@@ -394,8 +393,8 @@ TEST(UnknownFunction, PhysicalDeviceFunctionMultipleDriverSupport) {
 // Add unknown functions to driver 0, and try to use them on driver 1.
 TEST(UnknownFunctionDeathTests, PhysicalDeviceFunctionErrorPath) {
     FrameworkEnvironment env{};
-    auto& driver_0 = env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
-    auto& driver_1 = env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
+    auto& driver_0 = env.add_icd(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA);
+    auto& driver_1 = env.add_icd(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA);
     std::vector<std::string> function_names;
     add_function_names(function_names, 1);
 
@@ -428,7 +427,7 @@ TEST(UnknownFunctionDeathTests, PhysicalDeviceFunctionErrorPath) {
 
 TEST(UnknownFunction, PhysicalDeviceFunctionWithImplicitLayerImplementation) {
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA)).add_physical_device({});
+    env.add_icd(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA).add_physical_device({});
     uint32_t function_count = MAX_NUM_UNKNOWN_EXTS;
     std::vector<std::string> function_names;
     add_function_names(function_names, function_count);
@@ -452,8 +451,8 @@ TEST(UnknownFunction, PhysicalDeviceFunctionWithImplicitLayerImplementation) {
 
 TEST(UnknownFunction, PhysicalDeviceFunctionMultipleDriverSupportWithImplicitLayerImplementation) {
     FrameworkEnvironment env{};
-    auto& driver_0 = env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
-    auto& driver_1 = env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
+    auto& driver_0 = env.add_icd(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA);
+    auto& driver_1 = env.add_icd(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA);
     uint32_t function_count = MAX_NUM_UNKNOWN_EXTS;
     std::vector<std::string> function_names;
     add_function_names(function_names, function_count);
@@ -498,7 +497,7 @@ TEST(UnknownFunction, PhysicalDeviceFunctionMultipleDriverSupportWithImplicitLay
 
 TEST(UnknownFunction, PhysicalDeviceFunctionWithImplicitLayerInterception) {
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA)).add_physical_device({});
+    env.add_icd(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA).add_physical_device({});
     uint32_t function_count = MAX_NUM_UNKNOWN_EXTS;
 
     std::vector<std::string> function_names;
@@ -522,8 +521,7 @@ TEST(UnknownFunction, PhysicalDeviceFunctionWithImplicitLayerInterception) {
 
 TEST(UnknownFunction, PhysicalDeviceFunctionDriverSupportWithImplicitLayerInterception) {
     FrameworkEnvironment env{};
-    auto& test_physical_device =
-        env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA)).add_and_get_physical_device({});
+    auto& test_physical_device = env.add_icd(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA).add_and_get_physical_device({});
     uint32_t function_count = 100;
     std::vector<std::string> function_names;
     add_function_names(function_names, function_count);
@@ -547,7 +545,7 @@ TEST(UnknownFunction, PhysicalDeviceFunctionDriverSupportWithImplicitLayerInterc
 
 TEST(UnknownFunction, PhysicalDeviceFunctionWithMultipleImplicitLayersInterception) {
     FrameworkEnvironment env{};
-    auto& driver = env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
+    auto& driver = env.add_icd(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA);
     std::vector<std::string> function_names;
     uint32_t function_count = MAX_NUM_UNKNOWN_EXTS;
     add_function_names(function_names, function_count);
@@ -636,7 +634,7 @@ void unknown_function_test_impl(std::vector<TestConfig> const& flags) {
     using layer_intercept_functions_type = layer_intercept_functions<DispatchableHandleType>;
 
     FrameworkEnvironment env{};
-    auto& driver = env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA));
+    auto& driver = env.add_icd(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA);
     auto& pd = driver.add_and_get_physical_device({});
     uint32_t function_count = MAX_NUM_UNKNOWN_EXTS;
 
@@ -1097,7 +1095,7 @@ struct D {};
 
 TEST(UnknownFunction, PhysicalDeviceFunctionTwoLayerInterception) {
     FrameworkEnvironment env{};
-    PhysicalDevice& pd = env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA)).add_and_get_physical_device({});
+    PhysicalDevice& pd = env.add_icd(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA).add_and_get_physical_device({});
 
     UnknownFunction f{"vkFunc1"};
     Functions::three::physical_device::add_to_driver(f, pd);
@@ -1129,8 +1127,7 @@ TEST(UnknownFunction, PhysicalDeviceFunctionTwoLayerInterception) {
 
 TEST(UnknownFunction, ManyCombinations) {
     FrameworkEnvironment env{};
-    PhysicalDevice& physical_device =
-        env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA)).add_and_get_physical_device({});
+    PhysicalDevice& physical_device = env.add_icd(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA).add_and_get_physical_device({});
     std::vector<UnknownFunction> unknown_funcs;
 
     unknown_funcs.emplace_back("vkZero_uint32_uint32_0");
@@ -1273,7 +1270,7 @@ TEST(UnknownFunction, ManyCombinations) {
 
 TEST(UnknownFunction, PhysicalDeviceFunctionInLayer) {
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA)).add_physical_device({});
+    env.add_icd(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA).add_physical_device({});
 
     env.add_implicit_layer(ManifestLayer{}
                                .add_layer(ManifestLayer::LayerDescription{}

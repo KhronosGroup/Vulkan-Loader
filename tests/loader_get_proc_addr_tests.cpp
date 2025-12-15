@@ -30,7 +30,7 @@
 // Verify that the various ways to get vkGetInstanceProcAddr return the same value
 TEST(GetProcAddr, VerifyGetInstanceProcAddr) {
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA)).add_physical_device("physical_device_0");
+    env.add_icd(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA).add_physical_device("physical_device_0");
     {
         InstWrapper inst{env.vulkan_functions};
         inst.create_info.set_api_version(VK_API_VERSION_1_1);
@@ -61,7 +61,7 @@ TEST(GetProcAddr, VerifyGetInstanceProcAddr) {
 // Verify that the various ways to get vkGetDeviceProcAddr return the same value
 TEST(GetProcAddr, VerifyGetDeviceProcAddr) {
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA)).add_physical_device("physical_device_0");
+    env.add_icd(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA).add_physical_device("physical_device_0");
 
     InstWrapper inst{env.vulkan_functions};
     inst.create_info.set_api_version(VK_API_VERSION_1_1);
@@ -85,7 +85,7 @@ TEST(GetProcAddr, VerifyGetDeviceProcAddr) {
 // Call the function to make sure it is callable, don't care about what is returned.
 TEST(GetProcAddr, GlobalFunctions) {
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA)).add_physical_device("physical_device_0");
+    env.add_icd(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA).add_physical_device("physical_device_0");
 
     auto& gipa = env.vulkan_functions.vkGetInstanceProcAddr;
     // global entry points with NULL instance handle
@@ -180,7 +180,7 @@ TEST(GetProcAddr, GlobalFunctions) {
 
 TEST(GetProcAddr, Verify10FunctionsFailToLoadWithSingleDriver) {
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2)).add_physical_device({}).set_can_query_GetPhysicalDeviceFuncs(false);
+    env.add_icd(TEST_ICD_PATH_VERSION_2).add_physical_device({}).set_can_query_GetPhysicalDeviceFuncs(false);
 
     InstWrapper inst{env.vulkan_functions};
     inst.CheckCreate(VK_ERROR_INCOMPATIBLE_DRIVER);
@@ -188,8 +188,8 @@ TEST(GetProcAddr, Verify10FunctionsFailToLoadWithSingleDriver) {
 
 TEST(GetProcAddr, Verify10FunctionsLoadWithMultipleDrivers) {
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2)).add_physical_device({});
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2)).add_physical_device({}).set_can_query_GetPhysicalDeviceFuncs(false);
+    env.add_icd(TEST_ICD_PATH_VERSION_2).add_physical_device({});
+    env.add_icd(TEST_ICD_PATH_VERSION_2).add_physical_device({}).set_can_query_GetPhysicalDeviceFuncs(false);
 
     InstWrapper inst{env.vulkan_functions};
     inst.CheckCreate();
@@ -202,9 +202,8 @@ TEST(GetProcAddr, Verify10FunctionsLoadWithMultipleDrivers) {
 // and return VK_SUCCESS to maintain previous behavior.
 TEST(GetDeviceProcAddr, SwapchainFuncsWithTerminator) {
     FrameworkEnvironment env{};
-    auto& test_physical_device = env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA))
-                                     .setup_WSI()
-                                     .add_and_get_physical_device("physical_device_0");
+    auto& test_physical_device =
+        env.add_icd(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA).setup_WSI().add_and_get_physical_device("physical_device_0");
 
     InstWrapper inst(env.vulkan_functions);
     inst.create_info.add_extension("VK_EXT_debug_utils");
@@ -304,7 +303,7 @@ TEST(GetDeviceProcAddr, SwapchainFuncsWithTerminator) {
 // Verify that the various ways to get vkGetDeviceProcAddr return the same value
 TEST(GetProcAddr, PreserveLayerGettingVkCreateDeviceWithNullInstance) {
     FrameworkEnvironment env{};
-    env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA)).add_physical_device("physical_device_0");
+    env.add_icd(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA).add_physical_device("physical_device_0");
 
     env.add_implicit_layer(TestLayerDetails(ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
                                                                           .set_name("VK_LAYER_technically_buggy_layer")
@@ -330,7 +329,7 @@ TEST(GetProcAddr, PreserveLayerGettingVkCreateDeviceWithNullInstance) {
 TEST(GetDeviceProcAddr, AppQueries11FunctionsWhileOnlyEnabling10) {
     FrameworkEnvironment env{};
     auto& test_physical_device =
-        env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2, VK_API_VERSION_1_1))
+        env.add_icd(TEST_ICD_PATH_VERSION_2, {}, ManifestICD{}.set_api_version(VK_API_VERSION_1_1))
             .set_icd_api_version(VK_API_VERSION_1_1)
             .add_and_get_physical_device(
                 PhysicalDevice{}.set_api_version(VK_API_VERSION_1_1).add_extension(VK_KHR_MAINTENANCE_5_EXTENSION_NAME).finish());
@@ -384,7 +383,7 @@ TEST(GetDeviceProcAddr, AppQueries11FunctionsWhileOnlyEnabling10) {
 TEST(GetDeviceProcAddr, AppQueries12FunctionsWhileOnlyEnabling11) {
     FrameworkEnvironment env{};
     auto& test_physical_device =
-        env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2, VK_API_VERSION_1_2))
+        env.add_icd(TEST_ICD_PATH_VERSION_2, {}, ManifestICD{}.set_api_version(VK_API_VERSION_1_2))
             .set_icd_api_version(VK_API_VERSION_1_2)
             .add_and_get_physical_device(
                 PhysicalDevice{}.set_api_version(VK_API_VERSION_1_2).add_extension(VK_KHR_MAINTENANCE_5_EXTENSION_NAME).finish());
@@ -441,7 +440,7 @@ TEST(GetDeviceProcAddr, AppQueries12FunctionsWhileOnlyEnabling11) {
 TEST(GetDeviceProcAddr, AppQueries13FunctionsWhileOnlyEnabling12) {
     FrameworkEnvironment env{};
     auto& test_physical_device =
-        env.add_icd(TestICDDetails(TEST_ICD_PATH_VERSION_2, VK_API_VERSION_1_3))
+        env.add_icd(TEST_ICD_PATH_VERSION_2, {}, ManifestICD{}.set_api_version(VK_API_VERSION_1_3))
             .set_icd_api_version(VK_API_VERSION_1_3)
             .add_and_get_physical_device(
                 PhysicalDevice{}.set_api_version(VK_API_VERSION_1_3).add_extension(VK_KHR_MAINTENANCE_5_EXTENSION_NAME).finish());
