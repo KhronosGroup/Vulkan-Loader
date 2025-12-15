@@ -1100,8 +1100,8 @@ TEST(DirectDriverLoading, InclusiveWithFilterSelect) {
 
     EnvVarWrapper driver_filter_select_env_var{"VK_LOADER_DRIVERS_SELECT", "normal_driver.json"};
 
-    normal_drivers.emplace_back(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA,
-                                ManifestOptions{}.set_json_name("normal_driver.json").set_disable_name_increment(true), 8, true);
+    normal_drivers.emplace_back(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA, ManifestOptions{}.set_json_name("normal_driver.json"), 8,
+                                true);
     direct_drivers.emplace_back(TEST_ICD_PATH_VERSION_7, ManifestOptions{}.set_discovery_type(ManifestDiscoveryType::none), 9,
                                 true);
 
@@ -1115,8 +1115,8 @@ TEST(DirectDriverLoading, ExclusiveWithFilterSelect) {
 
     EnvVarWrapper driver_filter_select_env_var{"VK_LOADER_DRIVERS_SELECT", "normal_driver.json"};
 
-    normal_drivers.emplace_back(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA,
-                                ManifestOptions{}.set_json_name("normal_driver.json").set_disable_name_increment(true), 10, false);
+    normal_drivers.emplace_back(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA, ManifestOptions{}.set_json_name("normal_driver.json"), 10,
+                                false);
     direct_drivers.emplace_back(TEST_ICD_PATH_VERSION_7, ManifestOptions{}.set_discovery_type(ManifestDiscoveryType::none), 11,
                                 true);
 
@@ -1130,8 +1130,8 @@ TEST(DirectDriverLoading, InclusiveWithFilterDisable) {
 
     EnvVarWrapper driver_filter_disable_env_var{"VK_LOADER_DRIVERS_DISABLE", "normal_driver.json"};
 
-    normal_drivers.emplace_back(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA,
-                                ManifestOptions{}.set_json_name("normal_driver.json").set_disable_name_increment(true), 12, false);
+    normal_drivers.emplace_back(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA, ManifestOptions{}.set_json_name("normal_driver.json"), 12,
+                                false);
     direct_drivers.emplace_back(TEST_ICD_PATH_VERSION_7, ManifestOptions{}.set_discovery_type(ManifestDiscoveryType::none), 13,
                                 true);
     ASSERT_NO_FATAL_FAILURE(CheckDirectDriverLoading(env, normal_drivers, direct_drivers, false));
@@ -1144,8 +1144,8 @@ TEST(DirectDriverLoading, ExclusiveWithFilterDisable) {
 
     EnvVarWrapper driver_filter_disable_env_var{"VK_LOADER_DRIVERS_DISABLE", "normal_driver.json"};
 
-    normal_drivers.emplace_back(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA,
-                                ManifestOptions{}.set_json_name("normal_driver.json").set_disable_name_increment(true), 14, false);
+    normal_drivers.emplace_back(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA, ManifestOptions{}.set_json_name("normal_driver.json"), 14,
+                                false);
     direct_drivers.emplace_back(TEST_ICD_PATH_VERSION_7, ManifestOptions{}.set_discovery_type(ManifestDiscoveryType::none), 15,
                                 true);
     ASSERT_NO_FATAL_FAILURE(CheckDirectDriverLoading(env, normal_drivers, direct_drivers, true));

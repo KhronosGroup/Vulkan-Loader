@@ -81,9 +81,10 @@ TEST(EnvVarICDOverrideSetup, version_2_negotiate_interface_version_and_icd_gipa)
 // export vk_icdNegotiateLoaderICDInterfaceVersion and vk_icdGetInstanceProcAddr
 TEST(EnvVarICDOverrideSetup, version_2_negotiate_interface_version_and_icd_gipa_unicode) {
     FrameworkEnvironment env{};
-    env.add_icd(widen(TEST_ICD_PATH_VERSION_2_UNICODE), ManifestOptions{}
-                                                            .set_discovery_type(ManifestDiscoveryType::env_var)
-                                                            .set_json_name(widen(TEST_JSON_NAME_VERSION_2_UNICODE)));
+    env.add_icd(widen(TEST_ICD_PATH_VERSION_2_UNICODE),
+                ManifestOptions{}
+                    .set_discovery_type(ManifestDiscoveryType::env_var)
+                    .set_json_name(widen(std::string(TEST_JSON_NAME_VERSION_2_UNICODE) + ".json")));
 
     InstWrapper inst{env.vulkan_functions};
     inst.CheckCreate();
@@ -564,10 +565,10 @@ TEST(EnvVarICDOverrideSetup, FilterSelectDriver) {
     FrameworkEnvironment env{};
     EnvVarWrapper filter_select_env_var{"VK_LOADER_DRIVERS_SELECT"};
 
-    env.add_icd(TEST_ICD_PATH_VERSION_6, ManifestOptions{}.set_disable_name_increment(true).set_json_name("ABC_ICD"));
-    env.add_icd(TEST_ICD_PATH_VERSION_6, ManifestOptions{}.set_disable_name_increment(true).set_json_name("BCD_ICD"),
+    env.add_icd(TEST_ICD_PATH_VERSION_6, ManifestOptions{}.set_json_name("ABC_ICD.json"));
+    env.add_icd(TEST_ICD_PATH_VERSION_6, ManifestOptions{}.set_json_name("BCD_ICD.json"),
                 ManifestICD{}.set_api_version(VK_API_VERSION_1_2));
-    env.add_icd(TEST_ICD_PATH_VERSION_6, ManifestOptions{}.set_disable_name_increment(true).set_json_name("CDE_ICD"),
+    env.add_icd(TEST_ICD_PATH_VERSION_6, ManifestOptions{}.set_json_name("CDE_ICD.json"),
                 ManifestICD{}.set_api_version(VK_API_VERSION_1_3));
 
     InstWrapper inst1{env.vulkan_functions};
@@ -716,10 +717,10 @@ TEST(EnvVarICDOverrideSetup, FilterDisableDriver) {
     FrameworkEnvironment env{};
     EnvVarWrapper filter_disable_env_var{"VK_LOADER_DRIVERS_DISABLE"};
 
-    env.add_icd(TEST_ICD_PATH_VERSION_6, ManifestOptions{}.set_disable_name_increment(true).set_json_name("ABC_ICD"));
-    env.add_icd(TEST_ICD_PATH_VERSION_6, ManifestOptions{}.set_disable_name_increment(true).set_json_name("BCD_ICD"),
+    env.add_icd(TEST_ICD_PATH_VERSION_6, ManifestOptions{}.set_json_name("ABC_ICD.json"));
+    env.add_icd(TEST_ICD_PATH_VERSION_6, ManifestOptions{}.set_json_name("BCD_ICD.json"),
                 ManifestICD{}.set_api_version(VK_API_VERSION_1_2));
-    env.add_icd(TEST_ICD_PATH_VERSION_6, ManifestOptions{}.set_disable_name_increment(true).set_json_name("CDE_ICD"),
+    env.add_icd(TEST_ICD_PATH_VERSION_6, ManifestOptions{}.set_json_name("CDE_ICD.json"),
                 ManifestICD{}.set_api_version(VK_API_VERSION_1_3));
 
     InstWrapper inst1{env.vulkan_functions};
@@ -852,10 +853,10 @@ TEST(EnvVarICDOverrideSetup, FilterSelectAndDisableDriver) {
     EnvVarWrapper filter_disable_env_var{"VK_LOADER_DRIVERS_DISABLE"};
     EnvVarWrapper filter_select_env_var{"VK_LOADER_DRIVERS_SELECT"};
 
-    env.add_icd(TEST_ICD_PATH_VERSION_6, ManifestOptions{}.set_disable_name_increment(true).set_json_name("ABC_ICD"));
-    env.add_icd(TEST_ICD_PATH_VERSION_6, ManifestOptions{}.set_disable_name_increment(true).set_json_name("BCD_ICD"),
+    env.add_icd(TEST_ICD_PATH_VERSION_6, ManifestOptions{}.set_json_name("ABC_ICD.json"));
+    env.add_icd(TEST_ICD_PATH_VERSION_6, ManifestOptions{}.set_json_name("BCD_ICD.json"),
                 ManifestICD{}.set_api_version(VK_API_VERSION_1_2));
-    env.add_icd(TEST_ICD_PATH_VERSION_6, ManifestOptions{}.set_disable_name_increment(true).set_json_name("CDE_ICD"),
+    env.add_icd(TEST_ICD_PATH_VERSION_6, ManifestOptions{}.set_json_name("CDE_ICD.json"),
                 ManifestICD{}.set_api_version(VK_API_VERSION_1_3));
 
     InstWrapper inst1{env.vulkan_functions};

@@ -438,8 +438,6 @@ using TestLayerHandle = TestBinaryHandle<TestLayer, GetTestLayerFunc, GetNewTest
 
 struct ManifestOptions {
     BUILDER_VALUE(std::filesystem::path, json_name);
-    // Uses the json_name without modification - default is to append _1 in the json file to distinguish drivers
-    BUILDER_VALUE(bool, disable_name_increment);
     BUILDER_VALUE_WITH_DEFAULT(ManifestDiscoveryType, discovery_type, ManifestDiscoveryType::generic);
     BUILDER_VALUE(bool, is_fake);
     // If discovery type is env-var, is_dir controls whether to use the path to the file or folder the manifest is in
