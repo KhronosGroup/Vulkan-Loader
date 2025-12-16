@@ -554,6 +554,8 @@ struct FrameworkEnvironment {
    private:
     uint32_t created_layer_count = 0;
     void add_layer_impl(ManifestOptions args, ManifestLayer manifest, ManifestCategory category);
+
+    static ManifestLocation map_discovery_type_to_location(ManifestDiscoveryType type, ManifestCategory category);
 };
 
 // Create a surface using a platform specific API
