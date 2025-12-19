@@ -1330,17 +1330,6 @@ VKAPI_ATTR void VKAPI_CALL loader_init_device_extension_dispatch_table(struct lo
     table->UpdateIndirectExecutionSetPipelineEXT = (PFN_vkUpdateIndirectExecutionSetPipelineEXT)gdpa(dev, "vkUpdateIndirectExecutionSetPipelineEXT");
     table->UpdateIndirectExecutionSetShaderEXT = (PFN_vkUpdateIndirectExecutionSetShaderEXT)gdpa(dev, "vkUpdateIndirectExecutionSetShaderEXT");
 
-    // ---- VK_OHOS_native_buffer extension commands
-#if defined(VK_USE_PLATFORM_OHOS)
-    table->GetSwapchainGrallocUsageOHOS = (PFN_vkGetSwapchainGrallocUsageOHOS)gdpa(dev, "vkGetSwapchainGrallocUsageOHOS");
-#endif // VK_USE_PLATFORM_OHOS
-#if defined(VK_USE_PLATFORM_OHOS)
-    table->AcquireImageOHOS = (PFN_vkAcquireImageOHOS)gdpa(dev, "vkAcquireImageOHOS");
-#endif // VK_USE_PLATFORM_OHOS
-#if defined(VK_USE_PLATFORM_OHOS)
-    table->QueueSignalReleaseImageOHOS = (PFN_vkQueueSignalReleaseImageOHOS)gdpa(dev, "vkQueueSignalReleaseImageOHOS");
-#endif // VK_USE_PLATFORM_OHOS
-
     // ---- VK_EXT_external_memory_metal extension commands
 #if defined(VK_USE_PLATFORM_METAL_EXT)
     table->GetMemoryMetalHandleEXT = (PFN_vkGetMemoryMetalHandleEXT)gdpa(dev, "vkGetMemoryMetalHandleEXT");
@@ -3336,17 +3325,6 @@ VKAPI_ATTR void* VKAPI_CALL loader_lookup_device_dispatch_table(const VkLayerDis
     if (!strcmp(name, "DestroyIndirectExecutionSetEXT")) return (void *)table->DestroyIndirectExecutionSetEXT;
     if (!strcmp(name, "UpdateIndirectExecutionSetPipelineEXT")) return (void *)table->UpdateIndirectExecutionSetPipelineEXT;
     if (!strcmp(name, "UpdateIndirectExecutionSetShaderEXT")) return (void *)table->UpdateIndirectExecutionSetShaderEXT;
-
-    // ---- VK_OHOS_native_buffer extension commands
-#if defined(VK_USE_PLATFORM_OHOS)
-    if (!strcmp(name, "GetSwapchainGrallocUsageOHOS")) return (void *)table->GetSwapchainGrallocUsageOHOS;
-#endif // VK_USE_PLATFORM_OHOS
-#if defined(VK_USE_PLATFORM_OHOS)
-    if (!strcmp(name, "AcquireImageOHOS")) return (void *)table->AcquireImageOHOS;
-#endif // VK_USE_PLATFORM_OHOS
-#if defined(VK_USE_PLATFORM_OHOS)
-    if (!strcmp(name, "QueueSignalReleaseImageOHOS")) return (void *)table->QueueSignalReleaseImageOHOS;
-#endif // VK_USE_PLATFORM_OHOS
 
     // ---- VK_EXT_external_memory_metal extension commands
 #if defined(VK_USE_PLATFORM_METAL_EXT)
@@ -10967,62 +10945,6 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateSurfaceOHOS(
 
 #endif // VK_USE_PLATFORM_OHOS
 
-// ---- VK_OHOS_native_buffer extension trampoline/terminators
-
-#if defined(VK_USE_PLATFORM_OHOS)
-VKAPI_ATTR VkResult VKAPI_CALL GetSwapchainGrallocUsageOHOS(
-    VkDevice                                    device,
-    VkFormat                                    format,
-    VkImageUsageFlags                           imageUsage,
-    uint64_t*                                   grallocUsage) {
-    const VkLayerDispatchTable *disp = loader_get_dispatch(device);
-    if (NULL == disp) {
-        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
-                   "vkGetSwapchainGrallocUsageOHOS: Invalid device "
-                   "[VUID-vkGetSwapchainGrallocUsageOHOS-device-parameter]");
-        abort(); /* Intentionally fail so user can correct issue. */
-    }
-    return disp->GetSwapchainGrallocUsageOHOS(device, format, imageUsage, grallocUsage);
-}
-
-#endif // VK_USE_PLATFORM_OHOS
-#if defined(VK_USE_PLATFORM_OHOS)
-VKAPI_ATTR VkResult VKAPI_CALL AcquireImageOHOS(
-    VkDevice                                    device,
-    VkImage                                     image,
-    int32_t                                     nativeFenceFd,
-    VkSemaphore                                 semaphore,
-    VkFence                                     fence) {
-    const VkLayerDispatchTable *disp = loader_get_dispatch(device);
-    if (NULL == disp) {
-        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
-                   "vkAcquireImageOHOS: Invalid device "
-                   "[VUID-vkAcquireImageOHOS-device-parameter]");
-        abort(); /* Intentionally fail so user can correct issue. */
-    }
-    return disp->AcquireImageOHOS(device, image, nativeFenceFd, semaphore, fence);
-}
-
-#endif // VK_USE_PLATFORM_OHOS
-#if defined(VK_USE_PLATFORM_OHOS)
-VKAPI_ATTR VkResult VKAPI_CALL QueueSignalReleaseImageOHOS(
-    VkQueue                                     queue,
-    uint32_t                                    waitSemaphoreCount,
-    const VkSemaphore*                          pWaitSemaphores,
-    VkImage                                     image,
-    int32_t*                                    pNativeFenceFd) {
-    const VkLayerDispatchTable *disp = loader_get_dispatch(queue);
-    if (NULL == disp) {
-        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
-                   "vkQueueSignalReleaseImageOHOS: Invalid queue "
-                   "[VUID-vkQueueSignalReleaseImageOHOS-queue-parameter]");
-        abort(); /* Intentionally fail so user can correct issue. */
-    }
-    return disp->QueueSignalReleaseImageOHOS(queue, waitSemaphoreCount, pWaitSemaphores, image, pNativeFenceFd);
-}
-
-#endif // VK_USE_PLATFORM_OHOS
-
 // ---- VK_NV_cooperative_matrix2 extension trampoline/terminators
 
 VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV(
@@ -13812,26 +13734,6 @@ bool extension_instance_gpa(struct loader_instance *ptr_instance, const char *na
         *addr = (ptr_instance->enabled_extensions.ohos_surface == 1)
                      ? (void *)CreateSurfaceOHOS
                      : NULL;
-        return true;
-    }
-#endif // VK_USE_PLATFORM_OHOS
-
-    // ---- VK_OHOS_native_buffer extension commands
-#if defined(VK_USE_PLATFORM_OHOS)
-    if (!strcmp("vkGetSwapchainGrallocUsageOHOS", name)) {
-        *addr = (void *)GetSwapchainGrallocUsageOHOS;
-        return true;
-    }
-#endif // VK_USE_PLATFORM_OHOS
-#if defined(VK_USE_PLATFORM_OHOS)
-    if (!strcmp("vkAcquireImageOHOS", name)) {
-        *addr = (void *)AcquireImageOHOS;
-        return true;
-    }
-#endif // VK_USE_PLATFORM_OHOS
-#if defined(VK_USE_PLATFORM_OHOS)
-    if (!strcmp("vkQueueSignalReleaseImageOHOS", name)) {
-        *addr = (void *)QueueSignalReleaseImageOHOS;
         return true;
     }
 #endif // VK_USE_PLATFORM_OHOS

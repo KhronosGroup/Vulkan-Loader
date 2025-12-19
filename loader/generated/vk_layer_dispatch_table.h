@@ -1292,17 +1292,6 @@ typedef struct VkLayerDispatchTable_ {
     PFN_vkUpdateIndirectExecutionSetPipelineEXT UpdateIndirectExecutionSetPipelineEXT;
     PFN_vkUpdateIndirectExecutionSetShaderEXT UpdateIndirectExecutionSetShaderEXT;
 
-    // ---- VK_OHOS_native_buffer extension commands
-#if defined(VK_USE_PLATFORM_OHOS)
-    PFN_vkGetSwapchainGrallocUsageOHOS GetSwapchainGrallocUsageOHOS;
-#endif // VK_USE_PLATFORM_OHOS
-#if defined(VK_USE_PLATFORM_OHOS)
-    PFN_vkAcquireImageOHOS AcquireImageOHOS;
-#endif // VK_USE_PLATFORM_OHOS
-#if defined(VK_USE_PLATFORM_OHOS)
-    PFN_vkQueueSignalReleaseImageOHOS QueueSignalReleaseImageOHOS;
-#endif // VK_USE_PLATFORM_OHOS
-
     // ---- VK_EXT_external_memory_metal extension commands
 #if defined(VK_USE_PLATFORM_METAL_EXT)
     PFN_vkGetMemoryMetalHandleEXT GetMemoryMetalHandleEXT;

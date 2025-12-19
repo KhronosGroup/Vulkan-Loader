@@ -739,15 +739,6 @@ static inline void layer_init_device_dispatch_table(VkDevice device, VkLayerDisp
     table->DestroyIndirectExecutionSetEXT = (PFN_vkDestroyIndirectExecutionSetEXT)gpa(device, "vkDestroyIndirectExecutionSetEXT");
     table->UpdateIndirectExecutionSetPipelineEXT = (PFN_vkUpdateIndirectExecutionSetPipelineEXT)gpa(device, "vkUpdateIndirectExecutionSetPipelineEXT");
     table->UpdateIndirectExecutionSetShaderEXT = (PFN_vkUpdateIndirectExecutionSetShaderEXT)gpa(device, "vkUpdateIndirectExecutionSetShaderEXT");
-#if defined(VK_USE_PLATFORM_OHOS)
-    table->GetSwapchainGrallocUsageOHOS = (PFN_vkGetSwapchainGrallocUsageOHOS)gpa(device, "vkGetSwapchainGrallocUsageOHOS");
-#endif  // VK_USE_PLATFORM_OHOS
-#if defined(VK_USE_PLATFORM_OHOS)
-    table->AcquireImageOHOS = (PFN_vkAcquireImageOHOS)gpa(device, "vkAcquireImageOHOS");
-#endif  // VK_USE_PLATFORM_OHOS
-#if defined(VK_USE_PLATFORM_OHOS)
-    table->QueueSignalReleaseImageOHOS = (PFN_vkQueueSignalReleaseImageOHOS)gpa(device, "vkQueueSignalReleaseImageOHOS");
-#endif  // VK_USE_PLATFORM_OHOS
 #if defined(VK_USE_PLATFORM_METAL_EXT)
     table->GetMemoryMetalHandleEXT = (PFN_vkGetMemoryMetalHandleEXT)gpa(device, "vkGetMemoryMetalHandleEXT");
 #endif  // VK_USE_PLATFORM_METAL_EXT
