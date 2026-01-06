@@ -310,39 +310,36 @@ elseif(UNIX OR MINGW OR (WIN32 AND USE_GAS)) # i.e.: Linux & Apple & MinGW & Win
     endif()
 
     if(ASSEMBLER_WORKS)
-        add_executable(asm_offset asm_offset.c)
-        target_link_libraries(asm_offset loader_specific_options)
         # If not cross compiling, run asm_offset to generate gen_defines.asm
         if (NOT CMAKE_CROSSCOMPILING)
+            add_executable(asm_offset asm_offset.c)
+            target_link_libraries(asm_offset loader_specific_options)
             add_custom_command(OUTPUT gen_defines.asm DEPENDS asm_offset COMMAND asm_offset GAS)
         else()
+            add_library(asm_offset OBJECT asm_offset.c)
+            target_link_libraries(asm_offset loader_specific_options)
             # Forces compiler to write the intermediate asm file, needed so that we can get sizeof/offset of info out of it.
             # If with lto, compiler will output IR instead of asm, so we need to explicitly disable lto here.
             if(CMAKE_C_COMPILER_ID STREQUAL "GNU")
-                target_compile_options(asm_offset PRIVATE -save-temps=obj -fno-lto)
+                target_compile_options(asm_offset PRIVATE -S -fno-lto)
             elseif(CMAKE_C_COMPILER_ID STREQUAL "Clang" OR CMAKE_C_COMPILER_ID STREQUAL "AppleClang")
-                target_compile_options(asm_offset PRIVATE -save-temps=obj -fno-lto -fno-whole-program-vtables -fno-virtual-function-elimination)
+                target_compile_options(asm_offset PRIVATE -S -fno-lto -fno-whole-program-vtables -fno-virtual-function-elimination)
             else()
-                target_compile_options(asm_offset PRIVATE -save-temps=obj)
+                target_compile_options(asm_offset PRIVATE -S)
             endif()
-            if(CMAKE_C_COMPILER_ID STREQUAL "GNU")
-                set(ASM_OFFSET_EXECUTABLE_LOCATION "$<TARGET_FILE_DIR:asm_offset>/gen_defines.asm")
-                set(ASM_OFFSET_INTERMEDIATE_LOCATION "$<TARGET_FILE_DIR:asm_offset>/CMakeFiles/asm_offset.dir/asm_offset.c.s")
-            elseif(CMAKE_C_COMPILER_ID STREQUAL "Clang")
-                set(ASM_OFFSET_EXECUTABLE_LOCATION "$<TARGET_FILE_DIR:asm_offset>/gen_defines.asm")
-                set(ASM_OFFSET_INTERMEDIATE_LOCATION "$<TARGET_FILE_DIR:asm_offset>/CMakeFiles/asm_offset.dir/asm_offset.s")
-            elseif(CMAKE_C_COMPILER_ID STREQUAL "AppleClang")
-            # Need to use the current binary dir since the asm_offset.s file is in that folder rather than the bundle
-                set(ASM_OFFSET_EXECUTABLE_LOCATION "${CMAKE_CURRENT_BINARY_DIR}/gen_defines.asm")
-                set(ASM_OFFSET_INTERMEDIATE_LOCATION "${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/asm_offset.dir/asm_offset.s")
-            else()
+            if(NOT CMAKE_C_COMPILER_ID STREQUAL "GNU" AND
+               NOT CMAKE_C_COMPILER_ID STREQUAL "Clang" AND
+               NOT CMAKE_C_COMPILER_ID STREQUAL "AppleClang")
                 message(FATAL_ERROR "C_COMPILER_ID not supported!")
             endif()
+            set(ASM_OFFSET_EXECUTABLE_LOCATION "${CMAKE_CURRENT_BINARY_DIR}/gen_defines.asm")
+            set(ASM_OFFSET_INTERMEDIATE_LOCATION "$<TARGET_OBJECTS:asm_offset>")
             message(STATUS "CMAKE_CROSSCOMPILING FALSE")
 
             find_package(Python3 REQUIRED QUIET)
             # Run parse_asm_values.py on asm_offset's assembly file to generate the gen_defines.asm, which the asm code depends on
-            add_custom_command(TARGET asm_offset POST_BUILD
+            add_custom_target(gen_defines.asm
+                DEPENDS asm_offset
                 COMMAND Python3::Interpreter ${PROJECT_SOURCE_DIR}/scripts/parse_asm_values.py "${ASM_OFFSET_EXECUTABLE_LOCATION}"
                     "${ASM_OFFSET_INTERMEDIATE_LOCATION}" "GAS" "${CMAKE_C_COMPILER_ID}" "${ASM_OFFSET_SYSTEM_PROCESSOR}"
                 BYPRODUCTS gen_defines.asm
