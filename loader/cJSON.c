@@ -58,8 +58,6 @@
 
 #include "cJSON.h"
 
-#include <vulkan/vulkan_core.h>
-
 #include "allocation.h"
 
 /* define our own boolean type */
