@@ -228,10 +228,10 @@ end
 
             find_package(Python3 REQUIRED QUIET)
             # Run parse_asm_values.py on asm_offset's assembly file to generate the gen_defines.asm, which the asm code depends on
-            add_custom_command(TARGET asm_offset POST_BUILD
+            add_custom_command(OUTPUT gen_defines.asm
+                DEPENDS asm_offset
                 COMMAND Python3::Interpreter ${PROJECT_SOURCE_DIR}/scripts/parse_asm_values.py "${CMAKE_CURRENT_BINARY_DIR}/gen_defines.asm"
                     "$<TARGET_FILE_DIR:asm_offset>/asm_offset.asm" "${LOADER_ASM_DIALECT}" "${CMAKE_C_COMPILER_ID}" "${SYSTEM_PROCESSOR}"
-                BYPRODUCTS gen_defines.asm
             )
         endif()
         add_custom_target(loader_asm_gen_files DEPENDS gen_defines.asm)
@@ -338,11 +338,10 @@ elseif(UNIX OR MINGW OR (WIN32 AND USE_GAS)) # i.e.: Linux & Apple & MinGW & Win
 
             find_package(Python3 REQUIRED QUIET)
             # Run parse_asm_values.py on asm_offset's assembly file to generate the gen_defines.asm, which the asm code depends on
-            add_custom_target(gen_defines.asm
+            add_custom_command(OUTPUT gen_defines.asm
                 DEPENDS asm_offset
                 COMMAND Python3::Interpreter ${PROJECT_SOURCE_DIR}/scripts/parse_asm_values.py "${ASM_OFFSET_EXECUTABLE_LOCATION}"
                     "${ASM_OFFSET_INTERMEDIATE_LOCATION}" "GAS" "${CMAKE_C_COMPILER_ID}" "${ASM_OFFSET_SYSTEM_PROCESSOR}"
-                BYPRODUCTS gen_defines.asm
             )
         endif()
         add_custom_target(loader_asm_gen_files DEPENDS gen_defines.asm)
