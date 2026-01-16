@@ -4272,6 +4272,27 @@ VkResult get_override_layer_override_paths(struct loader_instance *inst, struct 
     return VK_SUCCESS;
 }
 
+void loader_remove_duplicate_layers(struct loader_instance *inst, struct loader_layer_list *layers) {
+    // Remove duplicate layers (that share the same layerName)
+    for (uint32_t i = 0; i < layers->count; ++i) {
+        bool has_duplicate = false;
+        uint32_t duplicate_index = 0;
+        for (uint32_t j = i + 1; j < layers->count; ++j) {
+            if (strcmp(layers->list[i].info.layerName, layers->list[j].info.layerName) == 0) {
+                has_duplicate = true;
+                duplicate_index = j;
+                break;
+            }
+        }
+        if (has_duplicate) {
+            loader_log(inst, VULKAN_LOADER_WARN_BIT, 0, "Removing layer %s (%s) because it is a duplicate of %s (%s)",
+                       layers->list[duplicate_index].info.layerName, layers->list[duplicate_index].manifest_file_name,
+                       layers->list[i].info.layerName, layers->list[i].manifest_file_name);
+            loader_remove_layer_in_list(inst, layers, duplicate_index);
+        }
+    }
+}
+
 VkResult loader_scan_for_layers(struct loader_instance *inst, struct loader_layer_list *instance_layers,
                                 const struct loader_envvar_all_filters *filters) {
     VkResult res = VK_SUCCESS;
@@ -4341,6 +4362,9 @@ VkResult loader_scan_for_layers(struct loader_instance *inst, struct loader_laye
             i--;
         }
     }
+
+    // Make sure no layers have the same layerName
+    loader_remove_duplicate_layers(inst, &regular_instance_layers);
 
     res = combine_settings_layers_with_regular_layers(inst, &settings_layers, &regular_instance_layers, instance_layers);
 
@@ -4441,6 +4465,9 @@ VkResult loader_scan_for_implicit_layers(struct loader_instance *inst, struct lo
             i--;
         }
     }
+
+    // Make sure no layers have the same layerName
+    loader_remove_duplicate_layers(inst, &regular_instance_layers);
 
     res = combine_settings_layers_with_regular_layers(inst, &settings_layers, &regular_instance_layers, instance_layers);
 
