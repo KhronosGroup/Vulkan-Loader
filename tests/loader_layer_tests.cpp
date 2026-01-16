@@ -979,11 +979,9 @@ TEST(ImplicitLayers, DuplicateLayers) {
     layer2.set_description("actually_layer_2");
     layer2.set_make_spurious_log_in_create_instance("actually_layer_2");
 
-    auto layer_props = env.GetLayerProperties(2);
+    auto layer_props = env.GetLayerProperties(1);
     ASSERT_TRUE(string_eq(same_layer_name_1, layer_props[0].layerName));
-    ASSERT_TRUE(string_eq(same_layer_name_1, layer_props[1].layerName));
     ASSERT_TRUE(string_eq(layer1.description.c_str(), layer_props[0].description));
-    ASSERT_TRUE(string_eq(layer2.description.c_str(), layer_props[1].description));
 
     InstWrapper inst{env.vulkan_functions};
     FillDebugUtilsCreateDetails(inst.create_info, env.debug_log);
@@ -994,6 +992,58 @@ TEST(ImplicitLayers, DuplicateLayers) {
     ASSERT_TRUE(string_eq(layer1.description.c_str(), enabled_layer_props.at(0).description));
     ASSERT_TRUE(env.debug_log.find("actually_layer_1"));
     ASSERT_FALSE(env.debug_log.find("actually_layer_2"));
+}
+
+TEST(ImplicitLayer, DuplicateLayersWithDifferentExtensions) {
+    // Put the duplicate layer without the extension first
+    {
+        FrameworkEnvironment env{};
+        env.add_icd(TEST_ICD_PATH_VERSION_2).setup_WSI();
+
+        env.add_implicit_layer({}, ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                                 .set_name("VK_LAYER_tesssst")
+                                                                 .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                                 .set_disable_environment("delete me")));
+        env.add_implicit_layer({}, ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                                 .set_name("VK_LAYER_tesssst")
+                                                                 .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                                 .add_instance_extension({"VK_EXT_layer_settings"})
+                                                                 .set_disable_environment("delete me")));
+        env.layers.back().get_test_binary().instance_extensions.push_back("VK_EXT_layer_settings");
+
+        auto layer_props = env.GetLayerProperties(1);
+
+        auto ext_props = env.GetInstanceExtensions(6);
+
+        InstWrapper inst{env.vulkan_functions};
+        inst.create_info.add_extension("VK_EXT_layer_settings");
+        inst.CheckCreate(VK_ERROR_EXTENSION_NOT_PRESENT);
+    }
+    // Do the same but put the layer with the extension first
+    {
+        FrameworkEnvironment env{};
+        env.add_icd(TEST_ICD_PATH_VERSION_2).setup_WSI();
+
+        env.add_implicit_layer({}, ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                                 .set_name("VK_LAYER_tesssst")
+                                                                 .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                                 .add_instance_extension({"VK_EXT_layer_settings"})
+                                                                 .set_disable_environment("delete me")));
+        env.layers.back().get_test_binary().instance_extensions.push_back("VK_EXT_layer_settings");
+
+        env.add_implicit_layer({}, ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                                 .set_name("VK_LAYER_tesssst")
+                                                                 .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                                 .set_disable_environment("delete me")));
+
+        auto layer_props = env.GetLayerProperties(1);
+
+        auto ext_props = env.GetInstanceExtensions(7);
+
+        InstWrapper inst{env.vulkan_functions};
+        inst.create_info.add_extension("VK_EXT_layer_settings");
+        inst.CheckCreate();
+    }
 }
 
 TEST(ImplicitLayers, VkImplicitLayerPathEnvVar) {
@@ -1093,11 +1143,9 @@ TEST(ImplicitLayers, DuplicateLayersInVkImplicitLayerPath) {
     layer2.set_description("actually_layer_2");
     env.env_var_vk_implicit_layer_paths.add_to_list(env.get_folder(ManifestLocation::override_layer).location().string());
 
-    auto layer_props = env.GetLayerProperties(2);
+    auto layer_props = env.GetLayerProperties(1);
     ASSERT_TRUE(string_eq(layer_name, layer_props[0].layerName));
     ASSERT_TRUE(string_eq(layer1.description.c_str(), layer_props[0].description));
-    ASSERT_TRUE(string_eq(layer_name, layer_props[1].layerName));
-    ASSERT_TRUE(string_eq(layer2.description.c_str(), layer_props[1].description));
 
     EnvVarWrapper inst_layers_env_var{"VK_INSTANCE_LAYERS"};
     inst_layers_env_var.add_to_list(layer_name);
@@ -1139,11 +1187,9 @@ TEST(ImplicitLayers, DuplicateLayersInVK_ADD_IMPLICIT_LAYER_PATH) {
     layer2.set_description("actually_layer_2");
     layer2.set_make_spurious_log_in_create_instance("actually_layer_2");
 
-    auto layer_props = env.GetLayerProperties(2);
+    auto layer_props = env.GetLayerProperties(1);
     ASSERT_TRUE(string_eq(same_layer_name_1, layer_props[0].layerName));
-    ASSERT_TRUE(string_eq(same_layer_name_1, layer_props[1].layerName));
     ASSERT_TRUE(string_eq(layer1.description.c_str(), layer_props[0].description));
-    ASSERT_TRUE(string_eq(layer2.description.c_str(), layer_props[1].description));
 
     InstWrapper inst{env.vulkan_functions};
     FillDebugUtilsCreateDetails(inst.create_info, env.debug_log);
@@ -2470,11 +2516,9 @@ TEST(ExplicitLayers, DuplicateLayersInVK_LAYER_PATH) {
     layer2.set_description("actually_layer_2");
     layer2.set_make_spurious_log_in_create_instance("actually_layer_2");
 
-    auto layer_props = env.GetLayerProperties(2);
+    auto layer_props = env.GetLayerProperties(1);
     ASSERT_TRUE(string_eq(same_layer_name_1, layer_props[0].layerName));
-    ASSERT_TRUE(string_eq(same_layer_name_1, layer_props[1].layerName));
     ASSERT_TRUE(string_eq(layer1.description.c_str(), layer_props[0].description));
-    ASSERT_TRUE(string_eq(layer2.description.c_str(), layer_props[1].description));
     {
         InstWrapper inst{env.vulkan_functions};
         inst.create_info.add_layer(same_layer_name_1);
@@ -2541,11 +2585,9 @@ TEST(ExplicitLayers, DuplicateLayersInVK_ADD_LAYER_PATH) {
     layer2.set_description("actually_layer_2");
     layer2.set_make_spurious_log_in_create_instance("actually_layer_2");
 
-    auto layer_props = env.GetLayerProperties(2);
+    auto layer_props = env.GetLayerProperties(1);
     ASSERT_TRUE(string_eq(same_layer_name_1, layer_props[0].layerName));
-    ASSERT_TRUE(string_eq(same_layer_name_1, layer_props[1].layerName));
     ASSERT_TRUE(string_eq(layer1.description.c_str(), layer_props[0].description));
-    ASSERT_TRUE(string_eq(layer2.description.c_str(), layer_props[1].description));
     {
         InstWrapper inst{env.vulkan_functions};
         inst.create_info.add_layer(same_layer_name_1);
@@ -2671,11 +2713,9 @@ TEST(ExplicitLayers, DuplicateLayersInVkLayerPath) {
     layer2.set_description("actually_layer_2");
     env.env_var_vk_layer_paths.add_to_list(env.get_folder(ManifestLocation::override_layer).location().string());
 
-    auto layer_props = env.GetLayerProperties(2);
+    auto layer_props = env.GetLayerProperties(1);
     ASSERT_TRUE(string_eq(layer_name, layer_props[0].layerName));
     ASSERT_TRUE(string_eq(layer1.description.c_str(), layer_props[0].description));
-    ASSERT_TRUE(string_eq(layer_name, layer_props[1].layerName));
-    ASSERT_TRUE(string_eq(layer2.description.c_str(), layer_props[1].description));
 
     EnvVarWrapper inst_layers_env_var{"VK_INSTANCE_LAYERS"};
     inst_layers_env_var.add_to_list(layer_name);

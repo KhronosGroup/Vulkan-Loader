@@ -174,7 +174,7 @@ TEST(EnumerateInstanceLayerProperties, UsageChecks) {
     env.add_icd(TEST_ICD_PATH_VERSION_2);
 
     const char* layer_name_1 = "TestLayer1";
-    const char* layer_name_2 = "TestLayer1";
+    const char* layer_name_2 = "TestLayer2";
 
     env.add_explicit_layer(
         {}, ManifestLayer{}.add_layer(
