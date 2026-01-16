@@ -8927,7 +8927,7 @@ VKAPI_ATTR void VKAPI_CALL CmdSetPrimitiveRestartEnableEXT(
 
 // ---- VK_EXT_color_write_enable extension trampoline/terminators
 
-VKAPI_ATTR void                                    VKAPI_CALL CmdSetColorWriteEnableEXT(
+VKAPI_ATTR void VKAPI_CALL CmdSetColorWriteEnableEXT(
     VkCommandBuffer                             commandBuffer,
     uint32_t                                    attachmentCount,
     const VkBool32*                             pColorWriteEnables) {
