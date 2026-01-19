@@ -104,8 +104,9 @@ void free_loader_settings(const struct loader_instance* inst, loader_settings* l
 
 // Log the settings to the console
 void log_settings(const struct loader_instance* inst, loader_settings* settings);
+void log_global_settings();
 
-// Every global function needs to call this at startup to insure that
+// Every global function needs to call this at startup to insure that its up to date
 TEST_FUNCTION_EXPORT VkResult update_global_loader_settings(void);
 
 // Needs to be called during startup -
