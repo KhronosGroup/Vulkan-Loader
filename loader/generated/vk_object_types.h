@@ -79,16 +79,16 @@ typedef enum VulkanObjectType {
     kVulkanObjectTypeCuModuleNVX = 38,
     kVulkanObjectTypeCuFunctionNVX = 39,
     kVulkanObjectTypeDebugUtilsMessengerEXT = 40,
-    kVulkanObjectTypeValidationCacheEXT = 41,
-    kVulkanObjectTypeAccelerationStructureNV = 42,
-    kVulkanObjectTypePerformanceConfigurationINTEL = 43,
-    kVulkanObjectTypeIndirectCommandsLayoutNV = 44,
-    kVulkanObjectTypeCudaModuleNV = 45,
-    kVulkanObjectTypeCudaFunctionNV = 46,
-    kVulkanObjectTypeAccelerationStructureKHR = 47,
-    kVulkanObjectTypeBufferCollectionFUCHSIA = 48,
-    kVulkanObjectTypeMicromapEXT = 49,
-    kVulkanObjectTypeTensorARM = 50,
+    kVulkanObjectTypeTensorARM = 41,
+    kVulkanObjectTypeValidationCacheEXT = 42,
+    kVulkanObjectTypeAccelerationStructureNV = 43,
+    kVulkanObjectTypePerformanceConfigurationINTEL = 44,
+    kVulkanObjectTypeIndirectCommandsLayoutNV = 45,
+    kVulkanObjectTypeCudaModuleNV = 46,
+    kVulkanObjectTypeCudaFunctionNV = 47,
+    kVulkanObjectTypeAccelerationStructureKHR = 48,
+    kVulkanObjectTypeBufferCollectionFUCHSIA = 49,
+    kVulkanObjectTypeMicromapEXT = 50,
     kVulkanObjectTypeTensorViewARM = 51,
     kVulkanObjectTypeOpticalFlowSessionNV = 52,
     kVulkanObjectTypeShaderEXT = 53,
@@ -146,6 +146,7 @@ static const char * const object_string[kVulkanObjectTypeMax] = {
     "CuModuleNVX",
     "CuFunctionNVX",
     "DebugUtilsMessengerEXT",
+    "TensorARM",
     "ValidationCacheEXT",
     "AccelerationStructureNV",
     "PerformanceConfigurationINTEL",
@@ -155,7 +156,6 @@ static const char * const object_string[kVulkanObjectTypeMax] = {
     "AccelerationStructureKHR",
     "BufferCollectionFUCHSIA",
     "MicromapEXT",
-    "TensorARM",
     "TensorViewARM",
     "OpticalFlowSessionNV",
     "ShaderEXT",
@@ -208,6 +208,7 @@ const VkDebugReportObjectTypeEXT get_debug_report_enum[] = {
     VK_DEBUG_REPORT_OBJECT_TYPE_CU_MODULE_NVX_EXT,   // kVulkanObjectTypeCuModuleNVX
     VK_DEBUG_REPORT_OBJECT_TYPE_CU_FUNCTION_NVX_EXT,   // kVulkanObjectTypeCuFunctionNVX
     VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT,   // kVulkanObjectTypeDebugUtilsMessengerEXT
+    VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT,   // kVulkanObjectTypeTensorARM
     VK_DEBUG_REPORT_OBJECT_TYPE_VALIDATION_CACHE_EXT_EXT,   // kVulkanObjectTypeValidationCacheEXT
     VK_DEBUG_REPORT_OBJECT_TYPE_ACCELERATION_STRUCTURE_NV_EXT,   // kVulkanObjectTypeAccelerationStructureNV
     VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT,   // kVulkanObjectTypePerformanceConfigurationINTEL
@@ -217,7 +218,6 @@ const VkDebugReportObjectTypeEXT get_debug_report_enum[] = {
     VK_DEBUG_REPORT_OBJECT_TYPE_ACCELERATION_STRUCTURE_KHR_EXT,   // kVulkanObjectTypeAccelerationStructureKHR
     VK_DEBUG_REPORT_OBJECT_TYPE_BUFFER_COLLECTION_FUCHSIA_EXT,   // kVulkanObjectTypeBufferCollectionFUCHSIA
     VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT,   // kVulkanObjectTypeMicromapEXT
-    VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT,   // kVulkanObjectTypeTensorARM
     VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT,   // kVulkanObjectTypeTensorViewARM
     VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT,   // kVulkanObjectTypeOpticalFlowSessionNV
     VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT,   // kVulkanObjectTypeShaderEXT
@@ -270,6 +270,7 @@ const VkObjectType get_object_type_enum[] = {
     VK_OBJECT_TYPE_CU_MODULE_NVX,   // kVulkanObjectTypeCuModuleNVX
     VK_OBJECT_TYPE_CU_FUNCTION_NVX,   // kVulkanObjectTypeCuFunctionNVX
     VK_OBJECT_TYPE_DEBUG_UTILS_MESSENGER_EXT,   // kVulkanObjectTypeDebugUtilsMessengerEXT
+    VK_OBJECT_TYPE_TENSOR_ARM,   // kVulkanObjectTypeTensorARM
     VK_OBJECT_TYPE_VALIDATION_CACHE_EXT,   // kVulkanObjectTypeValidationCacheEXT
     VK_OBJECT_TYPE_ACCELERATION_STRUCTURE_NV,   // kVulkanObjectTypeAccelerationStructureNV
     VK_OBJECT_TYPE_PERFORMANCE_CONFIGURATION_INTEL,   // kVulkanObjectTypePerformanceConfigurationINTEL
@@ -279,7 +280,6 @@ const VkObjectType get_object_type_enum[] = {
     VK_OBJECT_TYPE_ACCELERATION_STRUCTURE_KHR,   // kVulkanObjectTypeAccelerationStructureKHR
     VK_OBJECT_TYPE_BUFFER_COLLECTION_FUCHSIA,   // kVulkanObjectTypeBufferCollectionFUCHSIA
     VK_OBJECT_TYPE_MICROMAP_EXT,   // kVulkanObjectTypeMicromapEXT
-    VK_OBJECT_TYPE_TENSOR_ARM,   // kVulkanObjectTypeTensorARM
     VK_OBJECT_TYPE_TENSOR_VIEW_ARM,   // kVulkanObjectTypeTensorViewARM
     VK_OBJECT_TYPE_OPTICAL_FLOW_SESSION_NV,   // kVulkanObjectTypeOpticalFlowSessionNV
     VK_OBJECT_TYPE_SHADER_EXT,   // kVulkanObjectTypeShaderEXT
