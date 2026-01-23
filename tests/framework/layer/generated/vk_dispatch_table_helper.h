@@ -392,6 +392,7 @@ static inline void layer_init_device_dispatch_table(VkDevice device, VkLayerDisp
     table->GetImageViewHandleNVX = (PFN_vkGetImageViewHandleNVX)gpa(device, "vkGetImageViewHandleNVX");
     table->GetImageViewHandle64NVX = (PFN_vkGetImageViewHandle64NVX)gpa(device, "vkGetImageViewHandle64NVX");
     table->GetImageViewAddressNVX = (PFN_vkGetImageViewAddressNVX)gpa(device, "vkGetImageViewAddressNVX");
+    table->GetDeviceCombinedImageSamplerIndexNVX = (PFN_vkGetDeviceCombinedImageSamplerIndexNVX)gpa(device, "vkGetDeviceCombinedImageSamplerIndexNVX");
     table->CmdDrawIndirectCountAMD = (PFN_vkCmdDrawIndirectCountAMD)gpa(device, "vkCmdDrawIndirectCountAMD");
     table->CmdDrawIndexedIndirectCountAMD = (PFN_vkCmdDrawIndexedIndirectCountAMD)gpa(device, "vkCmdDrawIndexedIndirectCountAMD");
     table->GetShaderInfoAMD = (PFN_vkGetShaderInfoAMD)gpa(device, "vkGetShaderInfoAMD");
@@ -446,6 +447,15 @@ static inline void layer_init_device_dispatch_table(VkDevice device, VkLayerDisp
 #if defined(VK_ENABLE_BETA_EXTENSIONS)
     table->CmdDispatchGraphIndirectCountAMDX = (PFN_vkCmdDispatchGraphIndirectCountAMDX)gpa(device, "vkCmdDispatchGraphIndirectCountAMDX");
 #endif  // VK_ENABLE_BETA_EXTENSIONS
+    table->WriteSamplerDescriptorsEXT = (PFN_vkWriteSamplerDescriptorsEXT)gpa(device, "vkWriteSamplerDescriptorsEXT");
+    table->WriteResourceDescriptorsEXT = (PFN_vkWriteResourceDescriptorsEXT)gpa(device, "vkWriteResourceDescriptorsEXT");
+    table->CmdBindSamplerHeapEXT = (PFN_vkCmdBindSamplerHeapEXT)gpa(device, "vkCmdBindSamplerHeapEXT");
+    table->CmdBindResourceHeapEXT = (PFN_vkCmdBindResourceHeapEXT)gpa(device, "vkCmdBindResourceHeapEXT");
+    table->CmdPushDataEXT = (PFN_vkCmdPushDataEXT)gpa(device, "vkCmdPushDataEXT");
+    table->GetImageOpaqueCaptureDataEXT = (PFN_vkGetImageOpaqueCaptureDataEXT)gpa(device, "vkGetImageOpaqueCaptureDataEXT");
+    table->RegisterCustomBorderColorEXT = (PFN_vkRegisterCustomBorderColorEXT)gpa(device, "vkRegisterCustomBorderColorEXT");
+    table->UnregisterCustomBorderColorEXT = (PFN_vkUnregisterCustomBorderColorEXT)gpa(device, "vkUnregisterCustomBorderColorEXT");
+    table->GetTensorOpaqueCaptureDataARM = (PFN_vkGetTensorOpaqueCaptureDataARM)gpa(device, "vkGetTensorOpaqueCaptureDataARM");
     table->CmdSetSampleLocationsEXT = (PFN_vkCmdSetSampleLocationsEXT)gpa(device, "vkCmdSetSampleLocationsEXT");
     table->GetImageDrmFormatModifierPropertiesEXT = (PFN_vkGetImageDrmFormatModifierPropertiesEXT)gpa(device, "vkGetImageDrmFormatModifierPropertiesEXT");
     table->CreateValidationCacheEXT = (PFN_vkCreateValidationCacheEXT)gpa(device, "vkCreateValidationCacheEXT");
@@ -902,6 +912,7 @@ static inline void layer_init_instance_dispatch_table(VkInstance instance, VkLay
     table->CreateDebugUtilsMessengerEXT = (PFN_vkCreateDebugUtilsMessengerEXT)gpa(instance, "vkCreateDebugUtilsMessengerEXT");
     table->DestroyDebugUtilsMessengerEXT = (PFN_vkDestroyDebugUtilsMessengerEXT)gpa(instance, "vkDestroyDebugUtilsMessengerEXT");
     table->SubmitDebugUtilsMessageEXT = (PFN_vkSubmitDebugUtilsMessageEXT)gpa(instance, "vkSubmitDebugUtilsMessageEXT");
+    table->GetPhysicalDeviceDescriptorSizeEXT = (PFN_vkGetPhysicalDeviceDescriptorSizeEXT)gpa(instance, "vkGetPhysicalDeviceDescriptorSizeEXT");
     table->GetPhysicalDeviceMultisamplePropertiesEXT = (PFN_vkGetPhysicalDeviceMultisamplePropertiesEXT)gpa(instance, "vkGetPhysicalDeviceMultisamplePropertiesEXT");
     table->GetPhysicalDeviceCalibrateableTimeDomainsEXT = (PFN_vkGetPhysicalDeviceCalibrateableTimeDomainsEXT)gpa(instance, "vkGetPhysicalDeviceCalibrateableTimeDomainsEXT");
 #if defined(VK_USE_PLATFORM_FUCHSIA)
