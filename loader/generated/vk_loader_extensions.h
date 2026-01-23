@@ -416,6 +416,9 @@ struct loader_icd_term_dispatch {
     PFN_vkDestroyDebugUtilsMessengerEXT DestroyDebugUtilsMessengerEXT;
     PFN_vkSubmitDebugUtilsMessageEXT SubmitDebugUtilsMessageEXT;
 
+    // ---- VK_EXT_descriptor_heap extension commands
+    PFN_vkGetPhysicalDeviceDescriptorSizeEXT GetPhysicalDeviceDescriptorSizeEXT;
+
     // ---- VK_EXT_sample_locations extension commands
     PFN_vkGetPhysicalDeviceMultisamplePropertiesEXT GetPhysicalDeviceMultisamplePropertiesEXT;
 
