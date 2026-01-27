@@ -242,6 +242,7 @@ class LoaderExtensionGenerator(BaseGenerator):
         out.append('#pragma once\n')
         out.append('\n')
         out.append('#include <vulkan/vulkan.h>\n')
+        out.append('#include <vulkan/vk_layer.h>\n')
         out.append('\n')
         self.OutputLayerInstanceDispatchTable(out)
         self.OutputLayerDeviceDispatchTable(out)

@@ -29,6 +29,7 @@
 #pragma once
 
 #include <vulkan/vulkan.h>
+#include <vulkan/vk_layer.h>
 
 // Instance function pointer dispatch table
 typedef struct VkLayerInstanceDispatchTable_ {
