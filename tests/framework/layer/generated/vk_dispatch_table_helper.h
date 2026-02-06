@@ -958,5 +958,11 @@ static inline void layer_init_instance_dispatch_table(VkInstance instance, VkLay
 #endif  // VK_USE_PLATFORM_OHOS
     table->GetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV = (PFN_vkGetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV)gpa(instance, "vkGetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV");
     table->EnumeratePhysicalDeviceQueueFamilyPerformanceCountersByRegionARM = (PFN_vkEnumeratePhysicalDeviceQueueFamilyPerformanceCountersByRegionARM)gpa(instance, "vkEnumeratePhysicalDeviceQueueFamilyPerformanceCountersByRegionARM");
+#if defined(VK_USE_PLATFORM_UBM_SEC)
+    table->CreateUbmSurfaceSEC = (PFN_vkCreateUbmSurfaceSEC)gpa(instance, "vkCreateUbmSurfaceSEC");
+#endif  // VK_USE_PLATFORM_UBM_SEC
+#if defined(VK_USE_PLATFORM_UBM_SEC)
+    table->GetPhysicalDeviceUbmPresentationSupportSEC = (PFN_vkGetPhysicalDeviceUbmPresentationSupportSEC)gpa(instance, "vkGetPhysicalDeviceUbmPresentationSupportSEC");
+#endif  // VK_USE_PLATFORM_UBM_SEC
     // clang-format on
 }

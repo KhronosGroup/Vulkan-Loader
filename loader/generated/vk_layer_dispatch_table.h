@@ -312,6 +312,14 @@ typedef struct VkLayerInstanceDispatchTable_ {
 
     // ---- VK_ARM_performance_counters_by_region extension commands
     PFN_vkEnumeratePhysicalDeviceQueueFamilyPerformanceCountersByRegionARM EnumeratePhysicalDeviceQueueFamilyPerformanceCountersByRegionARM;
+
+    // ---- VK_SEC_ubm_surface extension commands
+#if defined(VK_USE_PLATFORM_UBM_SEC)
+    PFN_vkCreateUbmSurfaceSEC CreateUbmSurfaceSEC;
+#endif // VK_USE_PLATFORM_UBM_SEC
+#if defined(VK_USE_PLATFORM_UBM_SEC)
+    PFN_vkGetPhysicalDeviceUbmPresentationSupportSEC GetPhysicalDeviceUbmPresentationSupportSEC;
+#endif // VK_USE_PLATFORM_UBM_SEC
 } VkLayerInstanceDispatchTable;
 
 // Device function pointer dispatch table
