@@ -337,6 +337,14 @@ VKAPI_ATTR bool VKAPI_CALL loader_icd_init_entries(struct loader_instance* inst,
     // ---- VK_ARM_performance_counters_by_region extension commands
     LOOKUP_GIPA(EnumeratePhysicalDeviceQueueFamilyPerformanceCountersByRegionARM);
 
+    // ---- VK_SEC_ubm_surface extension commands
+#if defined(VK_USE_PLATFORM_UBM_SEC)
+    LOOKUP_GIPA(CreateUbmSurfaceSEC);
+#endif // VK_USE_PLATFORM_UBM_SEC
+#if defined(VK_USE_PLATFORM_UBM_SEC)
+    LOOKUP_GIPA(GetPhysicalDeviceUbmPresentationSupportSEC);
+#endif // VK_USE_PLATFORM_UBM_SEC
+
 #undef LOOKUP_REQUIRED_GIPA
 #undef LOOKUP_GIPA
 
@@ -1674,6 +1682,14 @@ VKAPI_ATTR void VKAPI_CALL loader_init_instance_extension_dispatch_table(VkLayer
 
     // ---- VK_ARM_performance_counters_by_region extension commands
     table->EnumeratePhysicalDeviceQueueFamilyPerformanceCountersByRegionARM = (PFN_vkEnumeratePhysicalDeviceQueueFamilyPerformanceCountersByRegionARM)gpa(inst, "vkEnumeratePhysicalDeviceQueueFamilyPerformanceCountersByRegionARM");
+
+    // ---- VK_SEC_ubm_surface extension commands
+#if defined(VK_USE_PLATFORM_UBM_SEC)
+    table->CreateUbmSurfaceSEC = (PFN_vkCreateUbmSurfaceSEC)gpa(inst, "vkCreateUbmSurfaceSEC");
+#endif // VK_USE_PLATFORM_UBM_SEC
+#if defined(VK_USE_PLATFORM_UBM_SEC)
+    table->GetPhysicalDeviceUbmPresentationSupportSEC = (PFN_vkGetPhysicalDeviceUbmPresentationSupportSEC)gpa(inst, "vkGetPhysicalDeviceUbmPresentationSupportSEC");
+#endif // VK_USE_PLATFORM_UBM_SEC
 }
 
 // Functions that required a terminator need to have a separate dispatch table which contains their corresponding
@@ -3690,6 +3706,14 @@ VKAPI_ATTR void* VKAPI_CALL loader_lookup_instance_dispatch_table(const VkLayerI
 
     // ---- VK_ARM_performance_counters_by_region extension commands
     if (!strcmp(name, "EnumeratePhysicalDeviceQueueFamilyPerformanceCountersByRegionARM")) return (void *)table->EnumeratePhysicalDeviceQueueFamilyPerformanceCountersByRegionARM;
+
+    // ---- VK_SEC_ubm_surface extension commands
+#if defined(VK_USE_PLATFORM_UBM_SEC)
+    if (!strcmp(name, "CreateUbmSurfaceSEC")) return (void *)table->CreateUbmSurfaceSEC;
+#endif // VK_USE_PLATFORM_UBM_SEC
+#if defined(VK_USE_PLATFORM_UBM_SEC)
+    if (!strcmp(name, "GetPhysicalDeviceUbmPresentationSupportSEC")) return (void *)table->GetPhysicalDeviceUbmPresentationSupportSEC;
+#endif // VK_USE_PLATFORM_UBM_SEC
 
     *found_name = false;
     return NULL;
@@ -11304,6 +11328,74 @@ VKAPI_ATTR void VKAPI_CALL CmdSetComputeOccupancyPriorityNV(
 }
 
 
+// ---- VK_SEC_ubm_surface extension trampoline/terminators
+
+#if defined(VK_USE_PLATFORM_UBM_SEC)
+VKAPI_ATTR VkResult VKAPI_CALL CreateUbmSurfaceSEC(
+    VkInstance                                  instance,
+    const VkUbmSurfaceCreateInfoSEC*            pCreateInfo,
+    const VkAllocationCallbacks*                pAllocator,
+    VkSurfaceKHR*                               pSurface) {
+    struct loader_instance *inst = loader_get_instance(instance);
+    if (NULL == inst) {
+        loader_log(
+            NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+            "vkCreateUbmSurfaceSEC: Invalid instance [VUID-vkCreateUbmSurfaceSEC-instance-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+#error("Not implemented. Likely needs to be manually generated!");
+    return inst->disp->CreateUbmSurfaceSEC(instance, pCreateInfo, pAllocator, pSurface);
+}
+
+VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateUbmSurfaceSEC(
+    VkInstance                                  instance,
+    const VkUbmSurfaceCreateInfoSEC*            pCreateInfo,
+    const VkAllocationCallbacks*                pAllocator,
+    VkSurfaceKHR*                               pSurface) {
+    struct loader_instance *inst = loader_get_instance(instance);
+    if (NULL == inst) {
+        loader_log(
+            NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+            "vkCreateUbmSurfaceSEC: Invalid instance [VUID-vkCreateUbmSurfaceSEC-instance-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+#error("Not implemented. Likely needs to be manually generated!");
+}
+
+#endif // VK_USE_PLATFORM_UBM_SEC
+#if defined(VK_USE_PLATFORM_UBM_SEC)
+VKAPI_ATTR VkBool32 VKAPI_CALL GetPhysicalDeviceUbmPresentationSupportSEC(
+    VkPhysicalDevice                            physicalDevice,
+    uint32_t                                    queueFamilyIndex,
+    struct ubm_device*                          ubm_device) {
+    const VkLayerInstanceDispatchTable *disp;
+    VkPhysicalDevice unwrapped_phys_dev = loader_unwrap_physical_device(physicalDevice);
+    if (VK_NULL_HANDLE == unwrapped_phys_dev) {
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkGetPhysicalDeviceUbmPresentationSupportSEC: Invalid physicalDevice "
+                   "[VUID-vkGetPhysicalDeviceUbmPresentationSupportSEC-physicalDevice-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    disp = loader_get_instance_layer_dispatch(physicalDevice);
+    return disp->GetPhysicalDeviceUbmPresentationSupportSEC(unwrapped_phys_dev, queueFamilyIndex, ubm_device);
+}
+
+VKAPI_ATTR VkBool32 VKAPI_CALL terminator_GetPhysicalDeviceUbmPresentationSupportSEC(
+    VkPhysicalDevice                            physicalDevice,
+    uint32_t                                    queueFamilyIndex,
+    struct ubm_device*                          ubm_device) {
+    struct loader_physical_device_term *phys_dev_term = (struct loader_physical_device_term *)physicalDevice;
+    struct loader_icd_term *icd_term = phys_dev_term->this_icd_term;
+    if (NULL == icd_term->dispatch.GetPhysicalDeviceUbmPresentationSupportSEC) {
+        loader_log(icd_term->this_instance, VULKAN_LOADER_ERROR_BIT, 0,
+                   "ICD associated with VkPhysicalDevice does not support GetPhysicalDeviceUbmPresentationSupportSEC");
+        return VK_ERROR_EXTENSION_NOT_PRESENT;
+    }
+    return icd_term->dispatch.GetPhysicalDeviceUbmPresentationSupportSEC(phys_dev_term->phys_dev, queueFamilyIndex, ubm_device);
+}
+
+#endif // VK_USE_PLATFORM_UBM_SEC
+
 // ---- VK_KHR_acceleration_structure extension trampoline/terminators
 
 VKAPI_ATTR VkResult VKAPI_CALL CreateAccelerationStructureKHR(
@@ -14033,6 +14125,24 @@ bool extension_instance_gpa(struct loader_instance *ptr_instance, const char *na
         return true;
     }
 
+    // ---- VK_SEC_ubm_surface extension commands
+#if defined(VK_USE_PLATFORM_UBM_SEC)
+    if (!strcmp("vkCreateUbmSurfaceSEC", name)) {
+        *addr = (ptr_instance->enabled_extensions.sec_ubm_surface == 1)
+                     ? (void *)CreateUbmSurfaceSEC
+                     : NULL;
+        return true;
+    }
+#endif // VK_USE_PLATFORM_UBM_SEC
+#if defined(VK_USE_PLATFORM_UBM_SEC)
+    if (!strcmp("vkGetPhysicalDeviceUbmPresentationSupportSEC", name)) {
+        *addr = (ptr_instance->enabled_extensions.sec_ubm_surface == 1)
+                     ? (void *)GetPhysicalDeviceUbmPresentationSupportSEC
+                     : NULL;
+        return true;
+    }
+#endif // VK_USE_PLATFORM_UBM_SEC
+
     // ---- VK_KHR_acceleration_structure extension commands
     if (!strcmp("vkCreateAccelerationStructureKHR", name)) {
         *addr = (void *)CreateAccelerationStructureKHR;
@@ -14300,6 +14410,11 @@ void fill_out_enabled_instance_extensions(uint32_t extension_count, const char *
 #if defined(VK_USE_PLATFORM_OHOS)
         else if (0 == strcmp(extension_list[i], VK_OHOS_SURFACE_EXTENSION_NAME)) { enables->ohos_surface = 1; }
 #endif // VK_USE_PLATFORM_OHOS
+
+    // ---- VK_SEC_ubm_surface extension commands
+#if defined(VK_USE_PLATFORM_UBM_SEC)
+        else if (0 == strcmp(extension_list[i], VK_SEC_UBM_SURFACE_EXTENSION_NAME)) { enables->sec_ubm_surface = 1; }
+#endif // VK_USE_PLATFORM_UBM_SEC
     }
 }
 
@@ -14668,6 +14783,14 @@ const VkLayerInstanceDispatchTable instance_disp = {
 
     // ---- VK_ARM_performance_counters_by_region extension commands
     .EnumeratePhysicalDeviceQueueFamilyPerformanceCountersByRegionARM = terminator_EnumeratePhysicalDeviceQueueFamilyPerformanceCountersByRegionARM,
+
+    // ---- VK_SEC_ubm_surface extension commands
+#if defined(VK_USE_PLATFORM_UBM_SEC)
+    .CreateUbmSurfaceSEC = terminator_CreateUbmSurfaceSEC,
+#endif // VK_USE_PLATFORM_UBM_SEC
+#if defined(VK_USE_PLATFORM_UBM_SEC)
+    .GetPhysicalDeviceUbmPresentationSupportSEC = terminator_GetPhysicalDeviceUbmPresentationSupportSEC,
+#endif // VK_USE_PLATFORM_UBM_SEC
 };
 
 // A null-terminated list of all of the instance extensions supported by the loader.
@@ -14747,5 +14870,8 @@ const char *const LOADER_INSTANCE_EXTENSIONS[] = {
 #if defined(VK_USE_PLATFORM_OHOS)
                                                   VK_OHOS_SURFACE_EXTENSION_NAME,
 #endif // VK_USE_PLATFORM_OHOS
+#if defined(VK_USE_PLATFORM_UBM_SEC)
+                                                  VK_SEC_UBM_SURFACE_EXTENSION_NAME,
+#endif // VK_USE_PLATFORM_UBM_SEC
                                                   NULL };
 // clang-format on
