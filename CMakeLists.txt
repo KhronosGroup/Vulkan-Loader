@@ -53,6 +53,9 @@ if(WIN32)
 endif()
 
 find_package(VulkanHeaders ${PROJECT_VERSION} CONFIG QUIET)
+if (${VulkanHeaders_VERSION} VERSION_GREATER ${PROJECT_VERSION})
+    message(WARNING "The Vulkan Headers version ${VulkanHeaders_VERSION} is newer than the expected version ${PROJECT_VERSION} used by the Vulkan-Loader. May cause issues.")
+endif()
 
 include(GNUInstallDirs)
 
