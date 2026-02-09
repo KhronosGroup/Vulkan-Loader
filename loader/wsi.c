@@ -212,7 +212,7 @@ VkResult wsi_unwrap_icd_surface(struct loader_icd_term *icd_term, VkSurfaceKHR *
 #if defined(VK_USE_PLATFORM_GGP)
                 case VK_ICD_WSI_PLATFORM_GGP:
                     if (NULL != icd_term->dispatch.CreateStreamDescriptorSurfaceGGP &&
-                        icd_term->enabled_instance_extensions.qnx_screen_surface) {
+                        icd_term->enabled_instance_extensions.ggp_stream_descriptor_surface) {
                         result = icd_term->dispatch.CreateStreamDescriptorSurfaceGGP(
                             icd_term->instance, (const VkStreamDescriptorSurfaceCreateInfoGGP *)icd_surface->create_info,
                             pAllocator, &icd_term->surface_list.list[icd_surface->surface_index]);
