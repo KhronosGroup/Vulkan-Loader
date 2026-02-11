@@ -1067,9 +1067,9 @@ TEST(WsiTests, MultiPlatformGetPhysicalDeviceSurfaceSupportKHR) {
         inst.CheckCreate();
 
         auto phys_devs = inst.GetPhysDevs();
-        // Physical devices are enumerated in order to the ICD order
-        VkPhysicalDevice xcb_physical_device = phys_devs[0];
-        VkPhysicalDevice wayland_physical_device = phys_devs[1];
+        // Physical devices are enumerated in reverse order to the ICD order
+        VkPhysicalDevice xcb_physical_device = phys_devs[1];
+        VkPhysicalDevice wayland_physical_device = phys_devs[0];
         VkPhysicalDeviceProperties props0{};
         inst->vkGetPhysicalDeviceProperties(wayland_physical_device, &props0);
         ASSERT_TRUE(string_eq(props0.deviceName, wayland_device_name));
@@ -1113,9 +1113,9 @@ TEST(WsiTests, MultiPlatformGetPhysicalDeviceSurfaceSupportKHR) {
         inst.CheckCreate();
 
         auto phys_devs = inst.GetPhysDevs();
-        // Physical devices are enumerated in ICD discovery order
-        VkPhysicalDevice xcb_physical_device = phys_devs[0];
-        VkPhysicalDevice wayland_physical_device = phys_devs[1];
+        // Physical devices are enumerated in reverse order to the ICD order
+        VkPhysicalDevice xcb_physical_device = phys_devs[1];
+        VkPhysicalDevice wayland_physical_device = phys_devs[0];
         VkPhysicalDeviceProperties props0{};
         inst->vkGetPhysicalDeviceProperties(wayland_physical_device, &props0);
         ASSERT_TRUE(string_eq(props0.deviceName, wayland_device_name));

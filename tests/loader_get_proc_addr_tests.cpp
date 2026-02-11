@@ -188,8 +188,8 @@ TEST(GetProcAddr, Verify10FunctionsFailToLoadWithSingleDriver) {
 
 TEST(GetProcAddr, Verify10FunctionsLoadWithMultipleDrivers) {
     FrameworkEnvironment env{};
-    env.add_icd(TEST_ICD_PATH_VERSION_2).add_physical_device({}).set_can_query_GetPhysicalDeviceFuncs(false);
     env.add_icd(TEST_ICD_PATH_VERSION_2).add_physical_device({});
+    env.add_icd(TEST_ICD_PATH_VERSION_2).add_physical_device({}).set_can_query_GetPhysicalDeviceFuncs(false);
 
     InstWrapper inst{env.vulkan_functions};
     inst.CheckCreate();
