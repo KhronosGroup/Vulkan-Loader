@@ -36,6 +36,9 @@
 LOADER_PLATFORM_THREAD_ONCE_EXTERN_DEFINITION(once_init)
 
 static inline VkPhysicalDevice loader_unwrap_physical_device(VkPhysicalDevice physicalDevice) {
+    if (VK_NULL_HANDLE == physicalDevice) {
+        return VK_NULL_HANDLE;
+    }
     struct loader_physical_device_tramp *phys_dev = (struct loader_physical_device_tramp *)physicalDevice;
     if (PHYS_TRAMP_MAGIC_NUMBER != phys_dev->magic) {
         return VK_NULL_HANDLE;
