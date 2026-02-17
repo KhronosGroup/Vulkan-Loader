@@ -135,19 +135,11 @@ struct VulkanFunctions {
 #endif  // VK_USE_PLATFORM_WIN32_KHR
     PFN_vkDestroySurfaceKHR vkDestroySurfaceKHR = nullptr;
 
-    // instance extensions functions (can only be loaded with a valid instance)
-    PFN_vkCreateDebugUtilsMessengerEXT vkCreateDebugUtilsMessengerEXT = nullptr;    // Null unless the extension is enabled
-    PFN_vkDestroyDebugUtilsMessengerEXT vkDestroyDebugUtilsMessengerEXT = nullptr;  // Null unless the extension is enabled
-    PFN_vkCreateDebugReportCallbackEXT vkCreateDebugReportCallbackEXT = nullptr;    // Null unless the extension is enabled
-    PFN_vkDestroyDebugReportCallbackEXT vkDestroyDebugReportCallbackEXT = nullptr;  // Null unless the extension is enabled
-
     // device functions
     PFN_vkDestroyDevice vkDestroyDevice = nullptr;
     PFN_vkGetDeviceQueue vkGetDeviceQueue = nullptr;
 
     VulkanFunctions();
-
-    void load_instance_functions(VkInstance instance);
 
     FromVoidStarFunc load(VkInstance inst, const char* func_name) const {
         return FromVoidStarFunc(vkGetInstanceProcAddr(inst, func_name));
@@ -155,6 +147,22 @@ struct VulkanFunctions {
 
     FromVoidStarFunc load(VkDevice device, const char* func_name) const {
         return FromVoidStarFunc(vkGetDeviceProcAddr(device, func_name));
+    }
+};
+
+struct InstanceFunctions {
+    PFN_vkGetInstanceProcAddr vkGetInstanceProcAddr;
+
+    PFN_vkCreateDebugReportCallbackEXT vkCreateDebugReportCallbackEXT;
+    PFN_vkDestroyDebugReportCallbackEXT vkDestroyDebugReportCallbackEXT;
+    PFN_vkCreateDebugUtilsMessengerEXT vkCreateDebugUtilsMessengerEXT;
+    PFN_vkDestroyDebugUtilsMessengerEXT vkDestroyDebugUtilsMessengerEXT;
+
+    InstanceFunctions() = default;
+    InstanceFunctions(PFN_vkGetInstanceProcAddr vkGetInstanceProcAddr, VkInstance instance);
+
+    FromVoidStarFunc load(VkInstance instance, const char* func_name) const {
+        return FromVoidStarFunc(vkGetInstanceProcAddr(instance, func_name));
     }
 };
 

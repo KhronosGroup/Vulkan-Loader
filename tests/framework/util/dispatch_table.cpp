@@ -154,7 +154,8 @@ VulkanFunctions::VulkanFunctions() : loader(get_loader_path()) {
     init_vulkan_functions(*this);
 }
 
-void VulkanFunctions::load_instance_functions(VkInstance instance) {
+InstanceFunctions::InstanceFunctions(PFN_vkGetInstanceProcAddr vkGetInstanceProcAddr, VkInstance instance) {
+    this->vkGetInstanceProcAddr = vkGetInstanceProcAddr;
     vkCreateDebugReportCallbackEXT = FromVoidStarFunc(vkGetInstanceProcAddr(instance, "vkCreateDebugReportCallbackEXT"));
     vkDestroyDebugReportCallbackEXT = FromVoidStarFunc(vkGetInstanceProcAddr(instance, "vkDestroyDebugReportCallbackEXT"));
     vkCreateDebugUtilsMessengerEXT = FromVoidStarFunc(vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT"));

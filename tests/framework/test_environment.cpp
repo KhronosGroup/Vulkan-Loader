@@ -64,13 +64,13 @@ InstWrapper& InstWrapper::operator=(InstWrapper&& other) noexcept {
 void InstWrapper::CheckCreate(VkResult result_to_check) {
     handle_assert_null(inst);
     ASSERT_EQ(result_to_check, functions->vkCreateInstance(create_info.get(), callbacks, &inst));
-    functions->load_instance_functions(inst);
+    instance_functions = InstanceFunctions(functions->vkGetInstanceProcAddr, inst);
 }
 
 void InstWrapper::CheckCreateWithInfo(InstanceCreateInfo& create_info, VkResult result_to_check) {
     handle_assert_null(inst);
     ASSERT_EQ(result_to_check, functions->vkCreateInstance(create_info.get(), callbacks, &inst));
-    functions->load_instance_functions(inst);
+    instance_functions = InstanceFunctions(functions->vkGetInstanceProcAddr, inst);
 }
 
 std::vector<VkPhysicalDevice> InstWrapper::GetPhysDevs(uint32_t phys_dev_count, VkResult result_to_check) {
@@ -869,7 +869,7 @@ VkResult create_surface(InstWrapper& inst, VkSurfaceKHR& surface, const char* ap
 
 VkResult create_debug_callback(InstWrapper& inst, const VkDebugReportCallbackCreateInfoEXT& create_info,
                                VkDebugReportCallbackEXT& callback) {
-    return inst.functions->vkCreateDebugReportCallbackEXT(inst.inst, &create_info, nullptr, &callback);
+    return inst.instance_functions.vkCreateDebugReportCallbackEXT(inst.inst, &create_info, nullptr, &callback);
 }
 
 extern "C" {
