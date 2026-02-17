@@ -29,6 +29,7 @@
 
 #include <array>
 #include <filesystem>
+#include <mutex>
 #include <ostream>
 #include <unordered_map>
 
@@ -173,6 +174,7 @@ struct PhysicalDeviceGroup {
 };
 
 struct TestICD {
+    std::recursive_mutex mutex;
     std::filesystem::path manifest_file_path;
 
     BUILDER_VALUE_WITH_DEFAULT(bool, exposes_vk_icdNegotiateLoaderICDInterfaceVersion, true)

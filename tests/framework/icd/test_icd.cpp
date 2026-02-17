@@ -87,12 +87,14 @@ bool CheckLayer(std::vector<LayerDefinition>& layers, std::string layerName) {
 }
 
 bool IsInstanceExtensionSupported(const char* extension_name) {
+    std::lock_guard lg(icd.mutex);
     return icd.instance_extensions.end() !=
            std::find_if(icd.instance_extensions.begin(), icd.instance_extensions.end(),
                         [extension_name](Extension const& ext) { return string_eq(&ext.extensionName[0], extension_name); });
 }
 
 bool IsInstanceExtensionEnabled(const char* extension_name) {
+    std::lock_guard lg(icd.mutex);
     return icd.enabled_instance_extensions.end() !=
            std::find_if(icd.enabled_instance_extensions.begin(), icd.enabled_instance_extensions.end(),
                         [extension_name](Extension const& ext) { return string_eq(&ext.extensionName[0], extension_name); });
@@ -214,6 +216,7 @@ void check_allocator_handle(const VkAllocationCallbacks* pAllocator) {
 // VK_SUCCESS,VK_INCOMPLETE
 VKAPI_ATTR VkResult VKAPI_CALL test_vkEnumerateInstanceExtensionProperties(const char* pLayerName, uint32_t* pPropertyCount,
                                                                            VkExtensionProperties* pProperties) {
+    std::lock_guard lg(icd.mutex);
     if (pLayerName != nullptr) {
         auto& layer = FindLayer(icd.instance_layers, std::string(pLayerName));
         return FillCountPtr(layer.extensions, pPropertyCount, pProperties);
@@ -225,10 +228,12 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vkEnumerateInstanceExtensionProperties(const
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL test_vkEnumerateInstanceLayerProperties(uint32_t* pPropertyCount, VkLayerProperties* pProperties) {
+    std::lock_guard lg(icd.mutex);
     return FillCountPtr(icd.instance_layers, pPropertyCount, pProperties);
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL test_vkEnumerateInstanceVersion(uint32_t* pApiVersion) {
+    std::lock_guard lg(icd.mutex);
     if (pApiVersion != nullptr) {
         *pApiVersion = icd.icd_api_version;
     }
@@ -237,6 +242,7 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vkEnumerateInstanceVersion(uint32_t* pApiVer
 
 VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateInstance(const VkInstanceCreateInfo* pCreateInfo,
                                                      const VkAllocationCallbacks* pAllocator, VkInstance* pInstance) {
+    std::lock_guard lg(icd.mutex);
     if (pCreateInfo == nullptr) {
         return VK_ERROR_OUT_OF_HOST_MEMORY;
     }
@@ -269,6 +275,7 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateInstance(const VkInstanceCreateInfo*
 }
 
 VKAPI_ATTR void VKAPI_CALL test_vkDestroyInstance([[maybe_unused]] VkInstance instance, const VkAllocationCallbacks* pAllocator) {
+    std::lock_guard lg(icd.mutex);
     icd.enabled_instance_extensions.clear();
     check_allocator_handle(pAllocator);
 }
@@ -276,6 +283,7 @@ VKAPI_ATTR void VKAPI_CALL test_vkDestroyInstance([[maybe_unused]] VkInstance in
 // VK_SUCCESS,VK_INCOMPLETE
 VKAPI_ATTR VkResult VKAPI_CALL test_vkEnumeratePhysicalDevices([[maybe_unused]] VkInstance instance, uint32_t* pPhysicalDeviceCount,
                                                                VkPhysicalDevice* pPhysicalDevices) {
+    std::lock_guard lg(icd.mutex);
     if (icd.enum_physical_devices_return_code != VK_SUCCESS) {
         return icd.enum_physical_devices_return_code;
     }
@@ -308,6 +316,7 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vkEnumeratePhysicalDevices([[maybe_unused]] 
 VKAPI_ATTR VkResult VKAPI_CALL
 test_vkEnumeratePhysicalDeviceGroups([[maybe_unused]] VkInstance instance, uint32_t* pPhysicalDeviceGroupCount,
                                      VkPhysicalDeviceGroupProperties* pPhysicalDeviceGroupProperties) {
+    std::lock_guard lg(icd.mutex);
     VkResult result = VK_SUCCESS;
 
     if (pPhysicalDeviceGroupProperties == nullptr) {
@@ -391,6 +400,7 @@ test_vkEnumeratePhysicalDeviceGroups([[maybe_unused]] VkInstance instance, uint3
 VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateDebugUtilsMessengerEXT(
     [[maybe_unused]] VkInstance instance, [[maybe_unused]] const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo,
     const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pMessenger) {
+    std::lock_guard lg(icd.mutex);
     if (nullptr != pMessenger) {
         uint8_t* new_handle_ptr = nullptr;
         if (pAllocator) {
@@ -414,6 +424,7 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateDebugUtilsMessengerEXT(
 VKAPI_ATTR void VKAPI_CALL test_vkDestroyDebugUtilsMessengerEXT([[maybe_unused]] VkInstance instance,
                                                                 VkDebugUtilsMessengerEXT messenger,
                                                                 const VkAllocationCallbacks* pAllocator) {
+    std::lock_guard lg(icd.mutex);
     if (messenger != VK_NULL_HANDLE) {
         uint64_t fake_msgr_handle = (uint64_t)(messenger);
         auto found_iter = std::find(icd.messenger_handles.begin(), icd.messenger_handles.end(), fake_msgr_handle);
@@ -438,6 +449,7 @@ VKAPI_ATTR void VKAPI_CALL test_vkDestroyDebugUtilsMessengerEXT([[maybe_unused]]
 VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateDebugReportCallbackEXT(
     [[maybe_unused]] VkInstance instance, [[maybe_unused]] const VkDebugReportCallbackCreateInfoEXT* pCreateInfo,
     const VkAllocationCallbacks* pAllocator, VkDebugReportCallbackEXT* pCallback) {
+    std::lock_guard lg(icd.mutex);
     if (nullptr != pCallback) {
         uint8_t* new_handle_ptr = nullptr;
         if (pAllocator) {
@@ -461,6 +473,7 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateDebugReportCallbackEXT(
 VKAPI_ATTR void VKAPI_CALL test_vkDestroyDebugReportCallbackEXT([[maybe_unused]] VkInstance instance,
                                                                 VkDebugReportCallbackEXT callback,
                                                                 const VkAllocationCallbacks* pAllocator) {
+    std::lock_guard lg(icd.mutex);
     if (callback != VK_NULL_HANDLE) {
         uint64_t fake_msgr_handle = (uint64_t)(callback);
         auto found_iter = std::find(icd.callback_handles.begin(), icd.callback_handles.end(), fake_msgr_handle);
@@ -482,6 +495,7 @@ VKAPI_ATTR void VKAPI_CALL test_vkDestroyDebugReportCallbackEXT([[maybe_unused]]
 
 // Debug utils & debug marker ext stubs
 VKAPI_ATTR VkResult VKAPI_CALL test_vkDebugMarkerSetObjectTagEXT(VkDevice dev, const VkDebugMarkerObjectTagInfoEXT* pTagInfo) {
+    std::lock_guard lg(icd.mutex);
     if (pTagInfo && pTagInfo->objectType == VK_DEBUG_REPORT_OBJECT_TYPE_PHYSICAL_DEVICE_EXT) {
         VkPhysicalDevice pd = (VkPhysicalDevice)(uintptr_t)(pTagInfo->object);
         if (pd != lookup_device(dev).phys_dev) return VK_ERROR_DEVICE_LOST;
@@ -495,6 +509,7 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vkDebugMarkerSetObjectTagEXT(VkDevice dev, c
     return VK_SUCCESS;
 }
 VKAPI_ATTR VkResult VKAPI_CALL test_vkDebugMarkerSetObjectNameEXT(VkDevice dev, const VkDebugMarkerObjectNameInfoEXT* pNameInfo) {
+    std::lock_guard lg(icd.mutex);
     if (pNameInfo && pNameInfo->objectType == VK_DEBUG_REPORT_OBJECT_TYPE_PHYSICAL_DEVICE_EXT) {
         VkPhysicalDevice pd = (VkPhysicalDevice)(uintptr_t)(pNameInfo->object);
         if (pd != lookup_device(dev).phys_dev) return VK_ERROR_DEVICE_LOST;
@@ -512,6 +527,7 @@ VKAPI_ATTR void VKAPI_CALL test_vkCmdDebugMarkerEndEXT(VkCommandBuffer) {}
 VKAPI_ATTR void VKAPI_CALL test_vkCmdDebugMarkerInsertEXT(VkCommandBuffer, const VkDebugMarkerMarkerInfoEXT*) {}
 
 VKAPI_ATTR VkResult VKAPI_CALL test_vkSetDebugUtilsObjectNameEXT(VkDevice dev, const VkDebugUtilsObjectNameInfoEXT* pNameInfo) {
+    std::lock_guard lg(icd.mutex);
     if (pNameInfo && pNameInfo->objectType == VK_OBJECT_TYPE_PHYSICAL_DEVICE) {
         VkPhysicalDevice pd = (VkPhysicalDevice)(uintptr_t)(pNameInfo->objectHandle);
         if (pd != lookup_device(dev).phys_dev) return VK_ERROR_DEVICE_LOST;
@@ -525,6 +541,7 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vkSetDebugUtilsObjectNameEXT(VkDevice dev, c
     return VK_SUCCESS;
 }
 VKAPI_ATTR VkResult VKAPI_CALL test_vkSetDebugUtilsObjectTagEXT(VkDevice dev, const VkDebugUtilsObjectTagInfoEXT* pTagInfo) {
+    std::lock_guard lg(icd.mutex);
     if (pTagInfo && pTagInfo->objectType == VK_OBJECT_TYPE_PHYSICAL_DEVICE) {
         VkPhysicalDevice pd = (VkPhysicalDevice)(uintptr_t)(pTagInfo->objectHandle);
         if (pd != lookup_device(dev).phys_dev) return VK_ERROR_DEVICE_LOST;
@@ -556,6 +573,7 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vkEnumerateDeviceLayerProperties(VkPhysicalD
 VKAPI_ATTR VkResult VKAPI_CALL test_vkEnumerateDeviceExtensionProperties(VkPhysicalDevice physicalDevice, const char* pLayerName,
                                                                          uint32_t* pPropertyCount,
                                                                          VkExtensionProperties* pProperties) {
+    std::lock_guard lg(icd.mutex);
     auto& phys_dev = GetPhysDevice(physicalDevice);
     if (pLayerName != nullptr) {
         assert(false && "Drivers don't contain layers???");
@@ -568,6 +586,7 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vkEnumerateDeviceExtensionProperties(VkPhysi
 VKAPI_ATTR void VKAPI_CALL test_vkGetPhysicalDeviceQueueFamilyProperties(VkPhysicalDevice physicalDevice,
                                                                          uint32_t* pQueueFamilyPropertyCount,
                                                                          VkQueueFamilyProperties* pQueueFamilyProperties) {
+    std::lock_guard lg(icd.mutex);
     auto& phys_dev = GetPhysDevice(physicalDevice);
     FillCountPtr(phys_dev.queue_family_properties, pQueueFamilyPropertyCount, pQueueFamilyProperties);
 }
@@ -575,6 +594,7 @@ VKAPI_ATTR void VKAPI_CALL test_vkGetPhysicalDeviceQueueFamilyProperties(VkPhysi
 VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateDevice(VkPhysicalDevice physicalDevice, const VkDeviceCreateInfo* pCreateInfo,
                                                    const VkAllocationCallbacks* pAllocator, VkDevice* pDevice) {
     check_allocator_handle(pAllocator);
+    std::lock_guard lg(icd.mutex);
     if (icd.physical_devices.count(physicalDevice) == 0) {
         return VK_ERROR_INITIALIZATION_FAILED;
     }
@@ -593,6 +613,7 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateDevice(VkPhysicalDevice physicalDevi
 
 VKAPI_ATTR void VKAPI_CALL test_vkDestroyDevice(VkDevice device, const VkAllocationCallbacks* pAllocator) {
     check_allocator_handle(pAllocator);
+    std::lock_guard lg(icd.mutex);
     auto found = std::find(icd.device_handles.begin(), icd.device_handles.end(), device);
     if (found != icd.device_handles.end()) icd.device_handles.erase(found);
     auto fd = lookup_device(device);
@@ -605,6 +626,7 @@ VKAPI_ATTR void VKAPI_CALL test_vkDestroyDevice(VkDevice device, const VkAllocat
 
 VKAPI_ATTR VkResult VKAPI_CALL generic_tool_props_function([[maybe_unused]] VkPhysicalDevice physicalDevice, uint32_t* pToolCount,
                                                            VkPhysicalDeviceToolPropertiesEXT* pToolProperties) {
+    std::lock_guard lg(icd.mutex);
     if (icd.tooling_properties.size() == 0) {
         return VK_SUCCESS;
     }
@@ -623,11 +645,13 @@ VKAPI_ATTR VkResult VKAPI_CALL generic_tool_props_function([[maybe_unused]] VkPh
 
 VKAPI_ATTR VkResult VKAPI_CALL test_vkGetPhysicalDeviceToolPropertiesEXT(VkPhysicalDevice physicalDevice, uint32_t* pToolCount,
                                                                          VkPhysicalDeviceToolPropertiesEXT* pToolProperties) {
+    std::lock_guard lg(icd.mutex);
     return generic_tool_props_function(physicalDevice, pToolCount, pToolProperties);
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL test_vkGetPhysicalDeviceToolProperties(VkPhysicalDevice physicalDevice, uint32_t* pToolCount,
                                                                       VkPhysicalDeviceToolPropertiesEXT* pToolProperties) {
+    std::lock_guard lg(icd.mutex);
     return generic_tool_props_function(physicalDevice, pToolCount, pToolProperties);
 }
 
@@ -666,6 +690,7 @@ void common_nondispatch_handle_creation(std::vector<uint64_t>& handles, HandleTy
 
 VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateAndroidSurfaceKHR(VkInstance instance, const VkAndroidSurfaceCreateInfoKHR* pCreateInfo,
                                                               const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface) {
+    std::lock_guard lg(icd.mutex);
     common_nondispatch_handle_creation(icd.surface_handles, pSurface);
     return VK_SUCCESS;
 }
@@ -676,6 +701,7 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateWin32SurfaceKHR([[maybe_unused]] VkI
                                                             [[maybe_unused]] const VkWin32SurfaceCreateInfoKHR* pCreateInfo,
                                                             const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface) {
     check_allocator_handle(pAllocator);
+    std::lock_guard lg(icd.mutex);
     if (IsInstanceExtensionSupported(VK_KHR_WIN32_SURFACE_EXTENSION_NAME)) {
         common_nondispatch_handle_creation(icd.surface_handles, pSurface);
     }
@@ -690,6 +716,7 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateWaylandSurfaceKHR([[maybe_unused]] V
                                                               [[maybe_unused]] const VkWaylandSurfaceCreateInfoKHR* pCreateInfo,
                                                               const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface) {
     check_allocator_handle(pAllocator);
+    std::lock_guard lg(icd.mutex);
     if (IsInstanceExtensionSupported(VK_KHR_WAYLAND_SURFACE_EXTENSION_NAME)) {
         common_nondispatch_handle_creation(icd.surface_handles, pSurface);
     }
@@ -706,6 +733,7 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateXcbSurfaceKHR([[maybe_unused]] VkIns
                                                           [[maybe_unused]] const VkXcbSurfaceCreateInfoKHR* pCreateInfo,
                                                           const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface) {
     check_allocator_handle(pAllocator);
+    std::lock_guard lg(icd.mutex);
     if (IsInstanceExtensionSupported(VK_KHR_XCB_SURFACE_EXTENSION_NAME)) {
         common_nondispatch_handle_creation(icd.surface_handles, pSurface);
     }
@@ -723,6 +751,7 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateXlibSurfaceKHR([[maybe_unused]] VkIn
                                                            [[maybe_unused]] const VkXlibSurfaceCreateInfoKHR* pCreateInfo,
                                                            const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface) {
     check_allocator_handle(pAllocator);
+    std::lock_guard lg(icd.mutex);
     if (IsInstanceExtensionSupported(VK_KHR_XCB_SURFACE_EXTENSION_NAME)) {
         common_nondispatch_handle_creation(icd.surface_handles, pSurface);
     }
@@ -739,6 +768,7 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateDirectFBSurfaceEXT([[maybe_unused]] 
                                                                [[maybe_unused]] const VkDirectFBSurfaceCreateInfoEXT* pCreateInfo,
                                                                const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface) {
     check_allocator_handle(pAllocator);
+    std::lock_guard lg(icd.mutex);
     common_nondispatch_handle_creation(icd.surface_handles, pSurface);
     return VK_SUCCESS;
 }
@@ -754,6 +784,7 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateMacOSSurfaceMVK([[maybe_unused]] VkI
                                                             [[maybe_unused]] const VkMacOSSurfaceCreateInfoMVK* pCreateInfo,
                                                             const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface) {
     check_allocator_handle(pAllocator);
+    std::lock_guard lg(icd.mutex);
     common_nondispatch_handle_creation(icd.surface_handles, pSurface);
     return VK_SUCCESS;
 }
@@ -764,6 +795,7 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateIOSSurfaceMVK([[maybe_unused]] VkIns
                                                           [[maybe_unused]] const VkIOSSurfaceCreateInfoMVK* pCreateInfo,
                                                           const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface) {
     check_allocator_handle(pAllocator);
+    std::lock_guard lg(icd.mutex);
     common_nondispatch_handle_creation(icd.surface_handles, pSurface);
     return VK_SUCCESS;
 }
@@ -774,6 +806,7 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateStreamDescriptorSurfaceGGP(
     [[maybe_unused]] VkInstance instance, [[maybe_unused]] const VkStreamDescriptorSurfaceCreateInfoGGP* pCreateInfo,
     const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface) {
     check_allocator_handle(pAllocator);
+    std::lock_guard lg(icd.mutex);
     common_nondispatch_handle_creation(icd.surface_handles, pSurface);
     return VK_SUCCESS;
 }
@@ -784,6 +817,7 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateMetalSurfaceEXT([[maybe_unused]] VkI
                                                             [[maybe_unused]] const VkMetalSurfaceCreateInfoEXT* pCreateInfo,
                                                             const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface) {
     check_allocator_handle(pAllocator);
+    std::lock_guard lg(icd.mutex);
     common_nondispatch_handle_creation(icd.surface_handles, pSurface);
     return VK_SUCCESS;
 }
@@ -794,6 +828,7 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateScreenSurfaceQNX([[maybe_unused]] Vk
                                                              [[maybe_unused]] const VkScreenSurfaceCreateInfoQNX* pCreateInfo,
                                                              const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface) {
     check_allocator_handle(pAllocator);
+    std::lock_guard lg(icd.mutex);
     common_nondispatch_handle_creation(icd.surface_handles, pSurface);
     return VK_SUCCESS;
 }
@@ -808,6 +843,7 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateHeadlessSurfaceEXT([[maybe_unused]] 
                                                                [[maybe_unused]] const VkHeadlessSurfaceCreateInfoEXT* pCreateInfo,
                                                                const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface) {
     check_allocator_handle(pAllocator);
+    std::lock_guard lg(icd.mutex);
     if (IsInstanceExtensionSupported(VK_EXT_HEADLESS_SURFACE_EXTENSION_NAME)) {
         common_nondispatch_handle_creation(icd.surface_handles, pSurface);
     }
@@ -816,6 +852,7 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateHeadlessSurfaceEXT([[maybe_unused]] 
 
 VKAPI_ATTR void VKAPI_CALL test_vkDestroySurfaceKHR([[maybe_unused]] VkInstance instance, VkSurfaceKHR surface,
                                                     const VkAllocationCallbacks* pAllocator) {
+    std::lock_guard lg(icd.mutex);
     if (surface != VK_NULL_HANDLE) {
         uint64_t surf_handle = from_nondispatch_handle(surface);
         auto found_iter = std::find(icd.surface_handles.begin(), icd.surface_handles.end(), surf_handle);
@@ -832,6 +869,7 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateSwapchainKHR([[maybe_unused]] VkDevi
                                                          [[maybe_unused]] const VkSwapchainCreateInfoKHR* pCreateInfo,
                                                          const VkAllocationCallbacks* pAllocator, VkSwapchainKHR* pSwapchain) {
     check_allocator_handle(pAllocator);
+    std::lock_guard lg(icd.mutex);
     common_nondispatch_handle_creation(icd.swapchain_handles, pSwapchain);
     return VK_SUCCESS;
 }
@@ -840,6 +878,7 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vkGetSwapchainImagesKHR([[maybe_unused]] VkD
                                                             [[maybe_unused]] VkSwapchainKHR swapchain,
                                                             uint32_t* pSwapchainImageCount, VkImage* pSwapchainImages) {
     std::vector<uint64_t> handles{123, 234, 345, 345, 456};
+    std::lock_guard lg(icd.mutex);
     if (pSwapchainImages == nullptr) {
         if (pSwapchainImageCount) *pSwapchainImageCount = static_cast<uint32_t>(handles.size());
     } else if (pSwapchainImageCount) {
@@ -854,6 +893,7 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vkGetSwapchainImagesKHR([[maybe_unused]] VkD
 VKAPI_ATTR void VKAPI_CALL test_vkDestroySwapchainKHR([[maybe_unused]] VkDevice device, VkSwapchainKHR swapchain,
                                                       const VkAllocationCallbacks* pAllocator) {
     check_allocator_handle(pAllocator);
+    std::lock_guard lg(icd.mutex);
     if (swapchain != VK_NULL_HANDLE) {
         uint64_t fake_swapchain_handle = from_nondispatch_handle(swapchain);
         auto found_iter = icd.swapchain_handles.erase(
@@ -876,6 +916,7 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vkGetDeviceGroupSurfacePresentModesKHR([[may
 // VK_KHR_surface
 VKAPI_ATTR VkResult VKAPI_CALL test_vkGetPhysicalDeviceSurfaceSupportKHR(VkPhysicalDevice physicalDevice, uint32_t queueFamilyIndex,
                                                                          VkSurfaceKHR surface, VkBool32* pSupported) {
+    std::lock_guard lg(icd.mutex);
     if (surface != VK_NULL_HANDLE) {
         if (!is_valid_surface(surface)) {
             *pSupported = VK_FALSE;
@@ -894,6 +935,7 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vkGetPhysicalDeviceSurfaceSupportKHR(VkPhysi
 }
 VKAPI_ATTR VkResult VKAPI_CALL test_vkGetPhysicalDeviceSurfaceCapabilitiesKHR(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface,
                                                                               VkSurfaceCapabilitiesKHR* pSurfaceCapabilities) {
+    std::lock_guard lg(icd.mutex);
     if (surface != VK_NULL_HANDLE) {
         if (!is_valid_surface(surface)) {
             assert(false && "Surface not found during GetPhysicalDeviceSurfaceCapabilitiesKHR query!");
@@ -908,6 +950,7 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vkGetPhysicalDeviceSurfaceCapabilitiesKHR(Vk
 VKAPI_ATTR VkResult VKAPI_CALL test_vkGetPhysicalDeviceSurfaceFormatsKHR(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface,
                                                                          uint32_t* pSurfaceFormatCount,
                                                                          VkSurfaceFormatKHR* pSurfaceFormats) {
+    std::lock_guard lg(icd.mutex);
     if (surface != VK_NULL_HANDLE) {
         if (!is_valid_surface(surface)) {
             assert(false && "Surface not found during GetPhysicalDeviceSurfaceFormatsKHR query!");
@@ -925,6 +968,7 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vkGetPhysicalDeviceSurfaceFormatsKHR(VkPhysi
 VKAPI_ATTR VkResult VKAPI_CALL test_vkGetPhysicalDeviceSurfacePresentModesKHR(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface,
                                                                               uint32_t* pPresentModeCount,
                                                                               VkPresentModeKHR* pPresentModes) {
+    std::lock_guard lg(icd.mutex);
     if (surface != VK_NULL_HANDLE) {
         if (!is_valid_surface(surface)) {
             assert(false && "Surface not found during GetPhysicalDeviceSurfacePresentModesKHR query!");
@@ -945,6 +989,7 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vkGetPhysicalDeviceSurfacePresentModes2EXT(V
                                                                                const VkPhysicalDeviceSurfaceInfo2KHR* pSurfaceInfo,
                                                                                uint32_t* pPresentModeCount,
                                                                                VkPresentModeKHR* pPresentModes) {
+    std::lock_guard lg(icd.mutex);
     if (pSurfaceInfo->surface != VK_NULL_HANDLE) {
         if (!is_valid_surface(pSurfaceInfo->surface)) {
             assert(false && "Surface not found during GetPhysicalDeviceSurfacePresentModesKHR query!");
@@ -965,30 +1010,35 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vkGetPhysicalDeviceSurfacePresentModes2EXT(V
 VKAPI_ATTR VkResult VKAPI_CALL test_vkGetPhysicalDeviceDisplayPropertiesKHR(VkPhysicalDevice physicalDevice,
                                                                             uint32_t* pPropertyCount,
                                                                             VkDisplayPropertiesKHR* pProperties) {
+    std::lock_guard lg(icd.mutex);
     FillCountPtr(GetPhysDevice(physicalDevice).display_properties, pPropertyCount, pProperties);
     return VK_SUCCESS;
 }
 VKAPI_ATTR VkResult VKAPI_CALL test_vkGetPhysicalDeviceDisplayPlanePropertiesKHR(VkPhysicalDevice physicalDevice,
                                                                                  uint32_t* pPropertyCount,
                                                                                  VkDisplayPlanePropertiesKHR* pProperties) {
+    std::lock_guard lg(icd.mutex);
     FillCountPtr(GetPhysDevice(physicalDevice).display_plane_properties, pPropertyCount, pProperties);
     return VK_SUCCESS;
 }
 VKAPI_ATTR VkResult VKAPI_CALL test_vkGetDisplayPlaneSupportedDisplaysKHR(VkPhysicalDevice physicalDevice,
                                                                           [[maybe_unused]] uint32_t planeIndex,
                                                                           uint32_t* pDisplayCount, VkDisplayKHR* pDisplays) {
+    std::lock_guard lg(icd.mutex);
     FillCountPtr(GetPhysDevice(physicalDevice).displays, pDisplayCount, pDisplays);
     return VK_SUCCESS;
 }
 VKAPI_ATTR VkResult VKAPI_CALL test_vkGetDisplayModePropertiesKHR(VkPhysicalDevice physicalDevice,
                                                                   [[maybe_unused]] VkDisplayKHR display, uint32_t* pPropertyCount,
                                                                   VkDisplayModePropertiesKHR* pProperties) {
+    std::lock_guard lg(icd.mutex);
     FillCountPtr(GetPhysDevice(physicalDevice).display_mode_properties, pPropertyCount, pProperties);
     return VK_SUCCESS;
 }
 VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateDisplayModeKHR(VkPhysicalDevice physicalDevice, [[maybe_unused]] VkDisplayKHR display,
                                                            [[maybe_unused]] const VkDisplayModeCreateInfoKHR* pCreateInfo,
                                                            const VkAllocationCallbacks* pAllocator, VkDisplayModeKHR* pMode) {
+    std::lock_guard lg(icd.mutex);
     check_allocator_handle(pAllocator);
     if (nullptr != pMode) {
         *pMode = GetPhysDevice(physicalDevice).display_mode;
@@ -999,6 +1049,7 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vkGetDisplayPlaneCapabilitiesKHR(VkPhysicalD
                                                                      [[maybe_unused]] VkDisplayModeKHR mode,
                                                                      [[maybe_unused]] uint32_t planeIndex,
                                                                      VkDisplayPlaneCapabilitiesKHR* pCapabilities) {
+    std::lock_guard lg(icd.mutex);
     if (nullptr != pCapabilities) {
         *pCapabilities = GetPhysDevice(physicalDevice).display_plane_capabilities;
     }
@@ -1008,6 +1059,7 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateDisplayPlaneSurfaceKHR(
     [[maybe_unused]] VkInstance instance, [[maybe_unused]] const VkDisplaySurfaceCreateInfoKHR* pCreateInfo,
     const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface) {
     check_allocator_handle(pAllocator);
+    std::lock_guard lg(icd.mutex);
     if (IsInstanceExtensionSupported(VK_KHR_DISPLAY_EXTENSION_NAME)) {
         common_nondispatch_handle_creation(icd.surface_handles, pSurface);
     }
@@ -1018,6 +1070,7 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateDisplayPlaneSurfaceKHR(
 VKAPI_ATTR VkResult VKAPI_CALL test_vkGetPhysicalDeviceSurfaceCapabilities2KHR(VkPhysicalDevice physicalDevice,
                                                                                const VkPhysicalDeviceSurfaceInfo2KHR* pSurfaceInfo,
                                                                                VkSurfaceCapabilities2KHR* pSurfaceCapabilities) {
+    std::lock_guard lg(icd.mutex);
     if (nullptr != pSurfaceInfo && nullptr != pSurfaceCapabilities) {
         if (IsInstanceExtensionSupported("VK_EXT_surface_maintenance1") &&
             IsInstanceExtensionEnabled("VK_EXT_surface_maintenance1")) {
@@ -1084,6 +1137,7 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vkGetPhysicalDeviceSurfaceFormats2KHR(VkPhys
                                                                           const VkPhysicalDeviceSurfaceInfo2KHR* pSurfaceInfo,
                                                                           uint32_t* pSurfaceFormatCount,
                                                                           VkSurfaceFormat2KHR* pSurfaceFormats) {
+    std::lock_guard lg(icd.mutex);
     if (nullptr != pSurfaceFormatCount) {
         test_vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, pSurfaceInfo->surface, pSurfaceFormatCount, nullptr);
         if (nullptr != pSurfaceFormats) {
@@ -1102,6 +1156,7 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateSharedSwapchainsKHR([[maybe_unused]]
                                                                 const VkSwapchainCreateInfoKHR* pCreateInfos,
                                                                 const VkAllocationCallbacks* pAllocator,
                                                                 VkSwapchainKHR* pSwapchains) {
+    std::lock_guard lg(icd.mutex);
     check_allocator_handle(pAllocator);
     for (uint32_t i = 0; i < swapchainCount; i++) {
         uint64_t surface_integer_value = from_nondispatch_handle(pCreateInfos[i].surface);
@@ -1131,6 +1186,7 @@ VKAPI_ATTR void VKAPI_CALL test_vkDestroyCommandPool(VkDevice, VkCommandPool, co
 VKAPI_ATTR VkResult VKAPI_CALL test_vkAllocateCommandBuffers([[maybe_unused]] VkDevice device,
                                                              const VkCommandBufferAllocateInfo* pAllocateInfo,
                                                              VkCommandBuffer* pCommandBuffers) {
+    std::lock_guard lg(icd.mutex);
     if (pAllocateInfo != nullptr && pCommandBuffers != nullptr) {
         for (size_t i = 0; i < pAllocateInfo->commandBufferCount; i++) {
             icd.allocated_command_buffers.push_back({});
@@ -1142,6 +1198,7 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vkAllocateCommandBuffers([[maybe_unused]] Vk
 
 VKAPI_ATTR void VKAPI_CALL test_vkGetDeviceQueue([[maybe_unused]] VkDevice device, [[maybe_unused]] uint32_t queueFamilyIndex,
                                                  uint32_t queueIndex, VkQueue* pQueue) {
+    std::lock_guard lg(icd.mutex);
     auto fd = lookup_device(device);
     if (fd.found) {
         *pQueue = icd.physical_devices.at(fd.phys_dev).queue_handles[queueIndex].handle;
@@ -1153,6 +1210,7 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vkAcquireDrmDisplayEXT(VkPhysicalDevice, int
 
 VKAPI_ATTR VkResult VKAPI_CALL test_vkGetDrmDisplayEXT(VkPhysicalDevice physicalDevice, [[maybe_unused]] int32_t drmFd,
                                                        [[maybe_unused]] uint32_t connectorId, VkDisplayKHR* display) {
+    std::lock_guard lg(icd.mutex);
     if (nullptr != display && GetPhysDevice(physicalDevice).displays.size() > 0) {
         *display = GetPhysDevice(physicalDevice).displays[0];
     }
@@ -1162,12 +1220,14 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vkGetDrmDisplayEXT(VkPhysicalDevice physical
 //// stubs
 // 1.0
 VKAPI_ATTR void VKAPI_CALL test_vkGetPhysicalDeviceFeatures(VkPhysicalDevice physicalDevice, VkPhysicalDeviceFeatures* pFeatures) {
+    std::lock_guard lg(icd.mutex);
     if (nullptr != pFeatures) {
         memcpy(pFeatures, &GetPhysDevice(physicalDevice).features, sizeof(VkPhysicalDeviceFeatures));
     }
 }
 VKAPI_ATTR void VKAPI_CALL test_vkGetPhysicalDeviceProperties(VkPhysicalDevice physicalDevice,
                                                               VkPhysicalDeviceProperties* pProperties) {
+    std::lock_guard lg(icd.mutex);
     if (nullptr != pProperties) {
         auto& phys_dev = GetPhysDevice(physicalDevice);
         memcpy(pProperties, &phys_dev.properties, sizeof(VkPhysicalDeviceProperties));
@@ -1179,6 +1239,7 @@ VKAPI_ATTR void VKAPI_CALL test_vkGetPhysicalDeviceProperties(VkPhysicalDevice p
 }
 VKAPI_ATTR void VKAPI_CALL test_vkGetPhysicalDeviceMemoryProperties(VkPhysicalDevice physicalDevice,
                                                                     VkPhysicalDeviceMemoryProperties* pMemoryProperties) {
+    std::lock_guard lg(icd.mutex);
     if (nullptr != pMemoryProperties) {
         memcpy(pMemoryProperties, &GetPhysDevice(physicalDevice).memory_properties, sizeof(VkPhysicalDeviceMemoryProperties));
     }
@@ -1187,10 +1248,12 @@ VKAPI_ATTR void VKAPI_CALL test_vkGetPhysicalDeviceSparseImageFormatProperties(
     VkPhysicalDevice physicalDevice, [[maybe_unused]] VkFormat format, [[maybe_unused]] VkImageType type,
     [[maybe_unused]] VkSampleCountFlagBits samples, [[maybe_unused]] VkImageUsageFlags usage, [[maybe_unused]] VkImageTiling tiling,
     uint32_t* pPropertyCount, VkSparseImageFormatProperties* pProperties) {
+    std::lock_guard lg(icd.mutex);
     FillCountPtr(GetPhysDevice(physicalDevice).sparse_image_format_properties, pPropertyCount, pProperties);
 }
 VKAPI_ATTR void VKAPI_CALL test_vkGetPhysicalDeviceFormatProperties(VkPhysicalDevice physicalDevice, VkFormat format,
                                                                     VkFormatProperties* pFormatProperties) {
+    std::lock_guard lg(icd.mutex);
     if (nullptr != pFormatProperties) {
         memcpy(pFormatProperties, &GetPhysDevice(physicalDevice).format_properties[static_cast<uint32_t>(format)],
                sizeof(VkFormatProperties));
@@ -1200,6 +1263,7 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vkGetPhysicalDeviceImageFormatProperties(
     VkPhysicalDevice physicalDevice, [[maybe_unused]] VkFormat format, [[maybe_unused]] VkImageType type,
     [[maybe_unused]] VkImageTiling tiling, [[maybe_unused]] VkImageUsageFlags usage, [[maybe_unused]] VkImageCreateFlags flags,
     VkImageFormatProperties* pImageFormatProperties) {
+    std::lock_guard lg(icd.mutex);
     if (nullptr != pImageFormatProperties) {
         memcpy(pImageFormatProperties, &GetPhysDevice(physicalDevice).image_format_properties, sizeof(VkImageFormatProperties));
     }
@@ -1209,12 +1273,14 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vkGetPhysicalDeviceImageFormatProperties(
 // 1.1
 VKAPI_ATTR void VKAPI_CALL test_vkGetPhysicalDeviceFeatures2(VkPhysicalDevice physicalDevice,
                                                              VkPhysicalDeviceFeatures2* pFeatures) {
+    std::lock_guard lg(icd.mutex);
     if (nullptr != pFeatures) {
         test_vkGetPhysicalDeviceFeatures(physicalDevice, &pFeatures->features);
     }
 }
 VKAPI_ATTR void VKAPI_CALL test_vkGetPhysicalDeviceProperties2(VkPhysicalDevice physicalDevice,
                                                                VkPhysicalDeviceProperties2* pProperties) {
+    std::lock_guard lg(icd.mutex);
     if (nullptr != pProperties) {
         auto& phys_dev = GetPhysDevice(physicalDevice);
         test_vkGetPhysicalDeviceProperties(physicalDevice, &pProperties->properties);
@@ -1248,6 +1314,7 @@ VKAPI_ATTR void VKAPI_CALL test_vkGetPhysicalDeviceProperties2(VkPhysicalDevice 
 }
 VKAPI_ATTR void VKAPI_CALL test_vkGetPhysicalDeviceMemoryProperties2(VkPhysicalDevice physicalDevice,
                                                                      VkPhysicalDeviceMemoryProperties2* pMemoryProperties) {
+    std::lock_guard lg(icd.mutex);
     if (nullptr != pMemoryProperties) {
         test_vkGetPhysicalDeviceMemoryProperties(physicalDevice, &pMemoryProperties->memoryProperties);
     }
@@ -1255,6 +1322,7 @@ VKAPI_ATTR void VKAPI_CALL test_vkGetPhysicalDeviceMemoryProperties2(VkPhysicalD
 VKAPI_ATTR void VKAPI_CALL test_vkGetPhysicalDeviceQueueFamilyProperties2(VkPhysicalDevice physicalDevice,
                                                                           uint32_t* pQueueFamilyPropertyCount,
                                                                           VkQueueFamilyProperties2* pQueueFamilyProperties) {
+    std::lock_guard lg(icd.mutex);
     if (nullptr != pQueueFamilyPropertyCount) {
         test_vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, pQueueFamilyPropertyCount, nullptr);
         if (nullptr != pQueueFamilyProperties) {
@@ -1271,6 +1339,7 @@ VKAPI_ATTR void VKAPI_CALL test_vkGetPhysicalDeviceQueueFamilyProperties2(VkPhys
 VKAPI_ATTR void VKAPI_CALL test_vkGetPhysicalDeviceSparseImageFormatProperties2(
     VkPhysicalDevice physicalDevice, const VkPhysicalDeviceSparseImageFormatInfo2* pFormatInfo, uint32_t* pPropertyCount,
     VkSparseImageFormatProperties2* pProperties) {
+    std::lock_guard lg(icd.mutex);
     if (nullptr != pPropertyCount) {
         test_vkGetPhysicalDeviceSparseImageFormatProperties(physicalDevice, pFormatInfo->format, pFormatInfo->type,
                                                             pFormatInfo->samples, pFormatInfo->usage, pFormatInfo->tiling,
@@ -1288,6 +1357,7 @@ VKAPI_ATTR void VKAPI_CALL test_vkGetPhysicalDeviceSparseImageFormatProperties2(
 }
 VKAPI_ATTR void VKAPI_CALL test_vkGetPhysicalDeviceFormatProperties2(VkPhysicalDevice physicalDevice, VkFormat format,
                                                                      VkFormatProperties2* pFormatProperties) {
+    std::lock_guard lg(icd.mutex);
     if (nullptr != pFormatProperties) {
         test_vkGetPhysicalDeviceFormatProperties(physicalDevice, format, &pFormatProperties->formatProperties);
     }
@@ -1295,6 +1365,7 @@ VKAPI_ATTR void VKAPI_CALL test_vkGetPhysicalDeviceFormatProperties2(VkPhysicalD
 VKAPI_ATTR VkResult VKAPI_CALL test_vkGetPhysicalDeviceImageFormatProperties2(
     VkPhysicalDevice physicalDevice, const VkPhysicalDeviceImageFormatInfo2* pImageFormatInfo,
     VkImageFormatProperties2* pImageFormatProperties) {
+    std::lock_guard lg(icd.mutex);
     if (nullptr != pImageFormatInfo) {
         VkImageFormatProperties* ptr = nullptr;
         if (pImageFormatProperties) {
@@ -1309,6 +1380,7 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vkGetPhysicalDeviceImageFormatProperties2(
 VKAPI_ATTR void VKAPI_CALL test_vkGetPhysicalDeviceExternalBufferProperties(
     VkPhysicalDevice physicalDevice, [[maybe_unused]] const VkPhysicalDeviceExternalBufferInfo* pExternalBufferInfo,
     VkExternalBufferProperties* pExternalBufferProperties) {
+    std::lock_guard lg(icd.mutex);
     if (nullptr != pExternalBufferProperties) {
         auto& phys_dev = GetPhysDevice(physicalDevice);
         memcpy(&pExternalBufferProperties->externalMemoryProperties, &phys_dev.external_memory_properties,
@@ -1318,6 +1390,7 @@ VKAPI_ATTR void VKAPI_CALL test_vkGetPhysicalDeviceExternalBufferProperties(
 VKAPI_ATTR void VKAPI_CALL test_vkGetPhysicalDeviceExternalSemaphoreProperties(
     VkPhysicalDevice physicalDevice, [[maybe_unused]] const VkPhysicalDeviceExternalSemaphoreInfo* pExternalSemaphoreInfo,
     VkExternalSemaphoreProperties* pExternalSemaphoreProperties) {
+    std::lock_guard lg(icd.mutex);
     if (nullptr != pExternalSemaphoreProperties) {
         auto& phys_dev = GetPhysDevice(physicalDevice);
         memcpy(pExternalSemaphoreProperties, &phys_dev.external_semaphore_properties, sizeof(VkExternalSemaphoreProperties));
@@ -1326,6 +1399,7 @@ VKAPI_ATTR void VKAPI_CALL test_vkGetPhysicalDeviceExternalSemaphoreProperties(
 VKAPI_ATTR void VKAPI_CALL test_vkGetPhysicalDeviceExternalFenceProperties(
     VkPhysicalDevice physicalDevice, [[maybe_unused]] const VkPhysicalDeviceExternalFenceInfo* pExternalFenceInfo,
     VkExternalFenceProperties* pExternalFenceProperties) {
+    std::lock_guard lg(icd.mutex);
     if (nullptr != pExternalFenceProperties) {
         auto& phys_dev = GetPhysDevice(physicalDevice);
         memcpy(pExternalFenceProperties, &phys_dev.external_fence_properties, sizeof(VkExternalFenceProperties));
@@ -1358,6 +1432,7 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vkGetCalibratedTimestampsEXT(VkDevice, uint3
 VKAPI_ATTR VkResult VKAPI_CALL test_vk_icdEnumerateAdapterPhysicalDevices(VkInstance instance, LUID adapterLUID,
                                                                           uint32_t* pPhysicalDeviceCount,
                                                                           VkPhysicalDevice* pPhysicalDevices) {
+    std::lock_guard lg(icd.mutex);
     if (icd.enum_adapter_physical_devices_return_code != VK_SUCCESS) {
         return icd.enum_adapter_physical_devices_return_code;
     }
@@ -1376,6 +1451,7 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vk_icdEnumerateAdapterPhysicalDevices(VkInst
 #endif  // defined(WIN32)
 
 VKAPI_ATTR VkResult VKAPI_CALL test_vk_icdNegotiateLoaderICDInterfaceVersion(uint32_t* pSupportedVersion) {
+    std::lock_guard lg(icd.mutex);
     if (icd.called_vk_icd_gipa == CalledICDGIPA::not_called &&
         icd.called_negotiate_interface == CalledNegotiateInterface::not_called)
         icd.called_negotiate_interface = CalledNegotiateInterface::vk_icd_negotiate;
@@ -1575,6 +1651,7 @@ PFN_vkVoidFunction get_instance_func_wsi(VkInstance instance, const char* pName)
     return nullptr;
 }
 VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL get_physical_device_func([[maybe_unused]] VkInstance instance, const char* pName) {
+    std::lock_guard lg(icd.mutex);
     if (string_eq(pName, "vkEnumerateDeviceLayerProperties")) return to_vkVoidFunction(test_vkEnumerateDeviceLayerProperties);
     if (string_eq(pName, "vkEnumerateDeviceExtensionProperties"))
         return to_vkVoidFunction(test_vkEnumerateDeviceExtensionProperties);
@@ -1731,12 +1808,14 @@ bool should_check(std::vector<const char*>* exts, VkDevice device, const char* e
 PFN_vkVoidFunction get_device_func(VkDevice device, const char* pName) {
     std::vector<const char*>* enabled_extensions = nullptr;
     FindDevice found_device{};
+    std::lock_guard lg(icd.mutex);
     if (device != nullptr) {
         found_device = lookup_device(device);
         if (!found_device.found) return NULL;
         enabled_extensions =
             &icd.physical_devices.at(found_device.phys_dev).device_create_infos.at(found_device.dev_index).enabled_extensions;
     }
+
     if (string_eq(pName, "vkCreateCommandPool")) return to_vkVoidFunction(test_vkCreateCommandPool);
     if (string_eq(pName, "vkAllocateCommandBuffers")) return to_vkVoidFunction(test_vkAllocateCommandBuffers);
     if (string_eq(pName, "vkDestroyCommandPool")) return to_vkVoidFunction(test_vkDestroyCommandPool);
@@ -1794,10 +1873,12 @@ PFN_vkVoidFunction get_device_func(VkDevice device, const char* pName) {
 }
 
 VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL test_vkGetInstanceProcAddr(VkInstance instance, const char* pName) {
+    std::lock_guard lg(icd.mutex);
     return get_instance_func(instance, pName);
 }
 
 VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL test_vkGetDeviceProcAddr(VkDevice device, const char* pName) {
+    std::lock_guard lg(icd.mutex);
     return get_device_func(device, pName);
 }
 
@@ -1843,33 +1924,39 @@ PFN_vkVoidFunction base_get_instance_proc_addr(VkInstance instance, const char* 
 extern "C" {
 #if TEST_ICD_EXPORT_NEGOTIATE_INTERFACE_VERSION && TEST_ICD_EXPORT_VERSION_7
 FRAMEWORK_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vk_icdNegotiateLoaderICDInterfaceVersion(uint32_t* pSupportedVersion) {
+    std::lock_guard lg(icd.mutex);
     return test_vk_icdNegotiateLoaderICDInterfaceVersion(pSupportedVersion);
 }
 #endif  // TEST_ICD_EXPORT_NEGOTIATE_INTERFACE_VERSION
 
 #if TEST_ICD_EXPORT_ICD_GPDPA && TEST_ICD_EXPORT_VERSION_7
 FRAMEWORK_EXPORT VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL vk_icdGetPhysicalDeviceProcAddr(VkInstance instance, const char* pName) {
+    std::lock_guard lg(icd.mutex);
     return get_physical_device_func(instance, pName);
 }
 #endif  // TEST_ICD_EXPORT_ICD_GPDPA
 
 #if TEST_ICD_EXPORT_ICD_GIPA
 FRAMEWORK_EXPORT VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL vk_icdGetInstanceProcAddr(VkInstance instance, const char* pName) {
+    std::lock_guard lg(icd.mutex);
     if (icd.called_vk_icd_gipa == CalledICDGIPA::not_called) icd.called_vk_icd_gipa = CalledICDGIPA::vk_icd_gipa;
     return base_get_instance_proc_addr(instance, pName);
 }
 #else   // !TEST_ICD_EXPORT_ICD_GIPA
 FRAMEWORK_EXPORT VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL vkGetInstanceProcAddr(VkInstance instance, const char* pName) {
+    std::lock_guard lg(icd.mutex);
     if (icd.called_vk_icd_gipa == CalledICDGIPA::not_called) icd.called_vk_icd_gipa = CalledICDGIPA::vk_gipa;
     return base_get_instance_proc_addr(instance, pName);
 }
 FRAMEWORK_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkCreateInstance(const VkInstanceCreateInfo* pCreateInfo,
                                                                  const VkAllocationCallbacks* pAllocator, VkInstance* pInstance) {
+    std::lock_guard lg(icd.mutex);
     return test_vkCreateInstance(pCreateInfo, pAllocator, pInstance);
 }
 FRAMEWORK_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumerateInstanceExtensionProperties(const char* pLayerName,
                                                                                        uint32_t* pPropertyCount,
                                                                                        VkExtensionProperties* pProperties) {
+    std::lock_guard lg(icd.mutex);
     return test_vkEnumerateInstanceExtensionProperties(pLayerName, pPropertyCount, pProperties);
 }
 #endif  // TEST_ICD_EXPORT_ICD_GIPA
