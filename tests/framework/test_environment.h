@@ -177,6 +177,7 @@ struct InstWrapper {
     VkInstance inst = VK_NULL_HANDLE;
     VkAllocationCallbacks* callbacks = nullptr;
     InstanceCreateInfo create_info{};
+    InstanceFunctions instance_functions{};
 };
 
 struct DeviceWrapper {

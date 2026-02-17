@@ -5019,15 +5019,16 @@ TEST(DriverUnloadingFromZeroPhysDevs, InterspersedThroughout) {
     VkDebugReportCallbackCreateInfoEXT debug_report_create_info{};
     ASSERT_EQ(VK_SUCCESS, create_debug_callback(inst, debug_report_create_info, debug_callback));
     WrappedHandle<VkDebugReportCallbackEXT, VkInstance, PFN_vkDestroyDebugReportCallbackEXT>
-        pre_enum_phys_devs_debug_report_callback{debug_callback, inst.inst, env.vulkan_functions.vkDestroyDebugReportCallbackEXT};
+        pre_enum_phys_devs_debug_report_callback{debug_callback, inst.inst,
+                                                 inst.instance_functions.vkDestroyDebugReportCallbackEXT};
 
     auto phys_devs = inst.GetPhysDevs();
     std::vector<WrappedHandle<VkDebugUtilsMessengerEXT, VkInstance, PFN_vkDestroyDebugUtilsMessengerEXT>> messengers;
     std::vector<WrappedHandle<VkSurfaceKHR, VkInstance, PFN_vkDestroySurfaceKHR>> surfaces;
     for (uint32_t i = 0; i < 35; i++) {
         VkDebugUtilsMessengerEXT messenger;
-        ASSERT_EQ(VK_SUCCESS, env.vulkan_functions.vkCreateDebugUtilsMessengerEXT(inst.inst, log.get(), nullptr, &messenger));
-        messengers.emplace_back(messenger, inst.inst, env.vulkan_functions.vkDestroyDebugUtilsMessengerEXT);
+        ASSERT_EQ(VK_SUCCESS, inst.instance_functions.vkCreateDebugUtilsMessengerEXT(inst.inst, log.get(), nullptr, &messenger));
+        messengers.emplace_back(messenger, inst.inst, inst.instance_functions.vkDestroyDebugUtilsMessengerEXT);
 
         VkSurfaceKHR surface{};
         ASSERT_EQ(VK_SUCCESS, create_surface(inst, surface));
@@ -5067,15 +5068,16 @@ TEST(DriverUnloadingFromZeroPhysDevs, InMiddleOfList) {
     VkDebugReportCallbackCreateInfoEXT debug_report_create_info{};
     ASSERT_EQ(VK_SUCCESS, create_debug_callback(inst, debug_report_create_info, debug_callback));
     WrappedHandle<VkDebugReportCallbackEXT, VkInstance, PFN_vkDestroyDebugReportCallbackEXT>
-        pre_enum_phys_devs_debug_report_callback{debug_callback, inst.inst, env.vulkan_functions.vkDestroyDebugReportCallbackEXT};
+        pre_enum_phys_devs_debug_report_callback{debug_callback, inst.inst,
+                                                 inst.instance_functions.vkDestroyDebugReportCallbackEXT};
 
     auto phys_devs = inst.GetPhysDevs();
     std::vector<WrappedHandle<VkDebugUtilsMessengerEXT, VkInstance, PFN_vkDestroyDebugUtilsMessengerEXT>> messengers;
     std::vector<WrappedHandle<VkSurfaceKHR, VkInstance, PFN_vkDestroySurfaceKHR>> surfaces;
     for (uint32_t i = 0; i < 35; i++) {
         VkDebugUtilsMessengerEXT messenger;
-        ASSERT_EQ(VK_SUCCESS, env.vulkan_functions.vkCreateDebugUtilsMessengerEXT(inst.inst, log.get(), nullptr, &messenger));
-        messengers.emplace_back(messenger, inst.inst, env.vulkan_functions.vkDestroyDebugUtilsMessengerEXT);
+        ASSERT_EQ(VK_SUCCESS, inst.instance_functions.vkCreateDebugUtilsMessengerEXT(inst.inst, log.get(), nullptr, &messenger));
+        messengers.emplace_back(messenger, inst.inst, inst.instance_functions.vkDestroyDebugUtilsMessengerEXT);
 
         VkSurfaceKHR surface{};
         ASSERT_EQ(VK_SUCCESS, create_surface(inst, surface));
@@ -5118,15 +5120,16 @@ TEST(DriverUnloadingFromZeroPhysDevs, AtFrontAndBack) {
     VkDebugReportCallbackCreateInfoEXT debug_report_create_info{};
     ASSERT_EQ(VK_SUCCESS, create_debug_callback(inst, debug_report_create_info, debug_callback));
     WrappedHandle<VkDebugReportCallbackEXT, VkInstance, PFN_vkDestroyDebugReportCallbackEXT>
-        pre_enum_phys_devs_debug_report_callback{debug_callback, inst.inst, env.vulkan_functions.vkDestroyDebugReportCallbackEXT};
+        pre_enum_phys_devs_debug_report_callback{debug_callback, inst.inst,
+                                                 inst.instance_functions.vkDestroyDebugReportCallbackEXT};
 
     auto phys_devs = inst.GetPhysDevs();
     std::vector<WrappedHandle<VkDebugUtilsMessengerEXT, VkInstance, PFN_vkDestroyDebugUtilsMessengerEXT>> messengers;
     std::vector<WrappedHandle<VkSurfaceKHR, VkInstance, PFN_vkDestroySurfaceKHR>> surfaces;
     for (uint32_t i = 0; i < 35; i++) {
         VkDebugUtilsMessengerEXT messenger;
-        ASSERT_EQ(VK_SUCCESS, env.vulkan_functions.vkCreateDebugUtilsMessengerEXT(inst.inst, log.get(), nullptr, &messenger));
-        messengers.emplace_back(messenger, inst.inst, env.vulkan_functions.vkDestroyDebugUtilsMessengerEXT);
+        ASSERT_EQ(VK_SUCCESS, inst.instance_functions.vkCreateDebugUtilsMessengerEXT(inst.inst, log.get(), nullptr, &messenger));
+        messengers.emplace_back(messenger, inst.inst, inst.instance_functions.vkDestroyDebugUtilsMessengerEXT);
 
         VkSurfaceKHR surface{};
         ASSERT_EQ(VK_SUCCESS, create_surface(inst, surface));
@@ -5196,7 +5199,8 @@ TEST(DriverUnloadingFromZeroPhysDevs, NoPhysicalDevices) {
     VkDebugReportCallbackCreateInfoEXT debug_report_create_info{};
     ASSERT_EQ(VK_SUCCESS, create_debug_callback(inst, debug_report_create_info, debug_callback));
     WrappedHandle<VkDebugReportCallbackEXT, VkInstance, PFN_vkDestroyDebugReportCallbackEXT>
-        pre_enum_phys_devs_debug_report_callback{debug_callback, inst.inst, env.vulkan_functions.vkDestroyDebugReportCallbackEXT};
+        pre_enum_phys_devs_debug_report_callback{debug_callback, inst.inst,
+                                                 inst.instance_functions.vkDestroyDebugReportCallbackEXT};
 
     // No physical devices == VK_ERROR_INITIALIZATION_FAILED
     inst.GetPhysDevs(VK_ERROR_INITIALIZATION_FAILED);
@@ -5205,8 +5209,8 @@ TEST(DriverUnloadingFromZeroPhysDevs, NoPhysicalDevices) {
     std::vector<WrappedHandle<VkSurfaceKHR, VkInstance, PFN_vkDestroySurfaceKHR>> surfaces;
     for (uint32_t i = 0; i < 35; i++) {
         VkDebugUtilsMessengerEXT messenger;
-        ASSERT_EQ(VK_SUCCESS, env.vulkan_functions.vkCreateDebugUtilsMessengerEXT(inst.inst, log.get(), nullptr, &messenger));
-        messengers.emplace_back(messenger, inst.inst, env.vulkan_functions.vkDestroyDebugUtilsMessengerEXT);
+        ASSERT_EQ(VK_SUCCESS, inst.instance_functions.vkCreateDebugUtilsMessengerEXT(inst.inst, log.get(), nullptr, &messenger));
+        messengers.emplace_back(messenger, inst.inst, inst.instance_functions.vkDestroyDebugUtilsMessengerEXT);
 
         VkSurfaceKHR surface{};
         ASSERT_EQ(VK_SUCCESS, create_surface(inst, surface));
@@ -5242,15 +5246,16 @@ TEST(DriverUnloadingFromZeroPhysDevs, HandleRecreation) {
     VkDebugReportCallbackCreateInfoEXT debug_report_create_info{};
     ASSERT_EQ(VK_SUCCESS, create_debug_callback(inst, debug_report_create_info, debug_callback));
     WrappedHandle<VkDebugReportCallbackEXT, VkInstance, PFN_vkDestroyDebugReportCallbackEXT>
-        pre_enum_phys_devs_debug_report_callback{debug_callback, inst.inst, env.vulkan_functions.vkDestroyDebugReportCallbackEXT};
+        pre_enum_phys_devs_debug_report_callback{debug_callback, inst.inst,
+                                                 inst.instance_functions.vkDestroyDebugReportCallbackEXT};
 
     auto phys_devs = inst.GetPhysDevs();
     std::vector<WrappedHandle<VkDebugUtilsMessengerEXT, VkInstance, PFN_vkDestroyDebugUtilsMessengerEXT>> messengers;
     std::vector<WrappedHandle<VkSurfaceKHR, VkInstance, PFN_vkDestroySurfaceKHR>> surfaces;
     for (uint32_t i = 0; i < 35; i++) {
         VkDebugUtilsMessengerEXT messenger;
-        ASSERT_EQ(VK_SUCCESS, env.vulkan_functions.vkCreateDebugUtilsMessengerEXT(inst.inst, log.get(), nullptr, &messenger));
-        messengers.emplace_back(messenger, inst.inst, env.vulkan_functions.vkDestroyDebugUtilsMessengerEXT);
+        ASSERT_EQ(VK_SUCCESS, inst.instance_functions.vkCreateDebugUtilsMessengerEXT(inst.inst, log.get(), nullptr, &messenger));
+        messengers.emplace_back(messenger, inst.inst, inst.instance_functions.vkDestroyDebugUtilsMessengerEXT);
 
         VkSurfaceKHR surface{};
         ASSERT_EQ(VK_SUCCESS, create_surface(inst, surface));
@@ -5265,8 +5270,8 @@ TEST(DriverUnloadingFromZeroPhysDevs, HandleRecreation) {
     // Add in another 100
     for (uint32_t i = 0; i < 100; i++) {
         VkDebugUtilsMessengerEXT messenger;
-        ASSERT_EQ(VK_SUCCESS, env.vulkan_functions.vkCreateDebugUtilsMessengerEXT(inst.inst, log.get(), nullptr, &messenger));
-        messengers.emplace_back(messenger, inst.inst, env.vulkan_functions.vkDestroyDebugUtilsMessengerEXT);
+        ASSERT_EQ(VK_SUCCESS, inst.instance_functions.vkCreateDebugUtilsMessengerEXT(inst.inst, log.get(), nullptr, &messenger));
+        messengers.emplace_back(messenger, inst.inst, inst.instance_functions.vkDestroyDebugUtilsMessengerEXT);
 
         VkSurfaceKHR surface{};
         ASSERT_EQ(VK_SUCCESS, create_surface(inst, surface));
