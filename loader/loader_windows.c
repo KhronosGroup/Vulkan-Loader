@@ -102,7 +102,6 @@ BOOL WINAPI DllMain(HINSTANCE hinst, DWORD reason, LPVOID reserved) {
             // Only initialize necessary sync primitives
             loader_platform_thread_create_mutex(&loader_lock);
             loader_platform_thread_create_mutex(&loader_preload_icd_lock);
-            loader_platform_thread_create_mutex(&loader_global_instance_list_lock);
             init_global_loader_settings();
             break;
         case DLL_PROCESS_DETACH:

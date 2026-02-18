@@ -202,6 +202,32 @@ jobs:
             - run: ctest --parallel --output-on-failure --test-dir build/
             - run: cmake --install build --prefix /tmp
 
+    linux-threading:
+        needs: codegen
+        runs-on: ubuntu-24.04-arm
+        timeout-minutes: 30
+        steps:
+            - uses: actions/checkout@v6.0.2
+            - uses: actions/setup-python@v6
+              with:
+                python-version: '3.11'
+            - name: Test CMake min
+              uses: lukka/get-cmake@latest
+              with:
+                  cmakeVersion: 3.22.1
+            - run: sudo apt update
+            - run: sudo apt install --yes --no-install-recommends libwayland-dev libxrandr-dev
+            - run: |
+                  cmake -S. -B build \
+                  -D CMAKE_BUILD_TYPE=Debug \
+                  -D BUILD_TESTS=ON \
+                  -D UPDATE_DEPS=ON \
+                  -D LOADER_ENABLE_THREAD_SANITIZER=ON \
+                  -D BUILD_WERROR=ON
+            - run: cmake --build build
+            - run: ctest --parallel --output-on-failure --test-dir build/
+            - run: cmake --install build --prefix /tmp
+
     windows_vs:
         # windows is 2x expensive to run on GitHub machines, so only run if we know something else simple passed as well
         needs: linux-no-asm
