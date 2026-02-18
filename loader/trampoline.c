@@ -673,10 +673,8 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkCreateInstance(const VkInstanceCr
     }
     memcpy(&ptr_instance->disp->layer_inst_disp, &instance_disp, sizeof(instance_disp));
 
-    loader_platform_thread_lock_mutex(&loader_global_instance_list_lock);
     ptr_instance->next = loader.instances;
     loader.instances = ptr_instance;
-    loader_platform_thread_unlock_mutex(&loader_global_instance_list_lock);
 
     // Activate any layers on instance chain
     res = loader_enable_instance_layers(ptr_instance, &ici, &ptr_instance->instance_layer_list, &layer_filters);
@@ -714,12 +712,10 @@ out:
 
     if (NULL != ptr_instance) {
         if (res != VK_SUCCESS) {
-            loader_platform_thread_lock_mutex(&loader_global_instance_list_lock);
             // error path, should clean everything up
             if (loader.instances == ptr_instance) {
                 loader.instances = ptr_instance->next;
             }
-            loader_platform_thread_unlock_mutex(&loader_global_instance_list_lock);
 
             free_loader_settings(ptr_instance, &ptr_instance->settings);
 

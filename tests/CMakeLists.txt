@@ -139,9 +139,11 @@ endif()
 if(NOT CMAKE_CROSSCOMPILING)
     gtest_discover_tests(test_regression PROPERTIES DISCOVERY_TIMEOUT 100)
     gtest_discover_tests(test_fuzzing PROPERTIES DISCOVERY_TIMEOUT 100)
+    gtest_discover_tests(test_threading PROPERTIES DISCOVERY_TIMEOUT 100)
 else()
     gtest_add_tests(TARGET test_regression)
     gtest_add_tests(TARGET test_fuzzing)
+    gtest_add_tests(TARGET test_threading)
 endif()
 
 # When APPLE_STATIC_LOADER is ON installation is disabled
