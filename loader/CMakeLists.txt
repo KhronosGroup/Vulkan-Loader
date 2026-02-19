@@ -432,6 +432,11 @@ else()
     if (LOADER_ENABLE_ADDRESS_SANITIZER)
         target_compile_options(vulkan PUBLIC -fsanitize=address,undefined)
         target_link_options(vulkan PUBLIC -fsanitize=address,undefined)
+        # workaround regression in macOS SDK 15 when address sanitizer is enabled in debug mode
+        # https://developer.apple.com/forums/thread/774632
+        if (APPLE)
+            target_compile_options(vulkan PRIVATE -mllvm -asan-globals=0)
+        endif()
     endif()
     if (LOADER_ENABLE_THREAD_SANITIZER)
         target_compile_options(vulkan PUBLIC -fsanitize=thread)
