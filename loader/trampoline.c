@@ -547,6 +547,9 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkCreateInstance(const VkInstanceCr
     if (settings_file_res == VK_ERROR_OUT_OF_HOST_MEMORY) {
         res = settings_file_res;
         goto out;
+    } else if (settings_file_res != VK_SUCCESS) {
+        loader_log(ptr_instance, VULKAN_LOADER_INFO_BIT, 0,
+                   "No valid vk_loader_settings.json file found, no loader settings will be active");
     }
     if (ptr_instance->settings.settings_active) {
         log_settings(ptr_instance, &ptr_instance->settings);
