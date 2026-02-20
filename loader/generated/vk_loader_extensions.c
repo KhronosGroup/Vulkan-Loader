@@ -11367,7 +11367,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateUbmSurfaceSEC(
 VKAPI_ATTR VkBool32 VKAPI_CALL GetPhysicalDeviceUbmPresentationSupportSEC(
     VkPhysicalDevice                            physicalDevice,
     uint32_t                                    queueFamilyIndex,
-    struct ubm_device*                          ubm_device) {
+    struct ubm_device*                          device) {
     const VkLayerInstanceDispatchTable *disp;
     VkPhysicalDevice unwrapped_phys_dev = loader_unwrap_physical_device(physicalDevice);
     if (VK_NULL_HANDLE == unwrapped_phys_dev) {
@@ -11377,13 +11377,13 @@ VKAPI_ATTR VkBool32 VKAPI_CALL GetPhysicalDeviceUbmPresentationSupportSEC(
         abort(); /* Intentionally fail so user can correct issue. */
     }
     disp = loader_get_instance_layer_dispatch(physicalDevice);
-    return disp->GetPhysicalDeviceUbmPresentationSupportSEC(unwrapped_phys_dev, queueFamilyIndex, ubm_device);
+    return disp->GetPhysicalDeviceUbmPresentationSupportSEC(unwrapped_phys_dev, queueFamilyIndex, device);
 }
 
 VKAPI_ATTR VkBool32 VKAPI_CALL terminator_GetPhysicalDeviceUbmPresentationSupportSEC(
     VkPhysicalDevice                            physicalDevice,
     uint32_t                                    queueFamilyIndex,
-    struct ubm_device*                          ubm_device) {
+    struct ubm_device*                          device) {
     struct loader_physical_device_term *phys_dev_term = (struct loader_physical_device_term *)physicalDevice;
     struct loader_icd_term *icd_term = phys_dev_term->this_icd_term;
     if (NULL == icd_term->dispatch.GetPhysicalDeviceUbmPresentationSupportSEC) {
@@ -11391,7 +11391,7 @@ VKAPI_ATTR VkBool32 VKAPI_CALL terminator_GetPhysicalDeviceUbmPresentationSuppor
                    "ICD associated with VkPhysicalDevice does not support GetPhysicalDeviceUbmPresentationSupportSEC");
         return VK_ERROR_EXTENSION_NOT_PRESENT;
     }
-    return icd_term->dispatch.GetPhysicalDeviceUbmPresentationSupportSEC(phys_dev_term->phys_dev, queueFamilyIndex, ubm_device);
+    return icd_term->dispatch.GetPhysicalDeviceUbmPresentationSupportSEC(phys_dev_term->phys_dev, queueFamilyIndex, device);
 }
 
 #endif // VK_USE_PLATFORM_UBM_SEC
