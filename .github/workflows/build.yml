@@ -406,8 +406,7 @@ jobs:
     mingw:
         # windows is 2x expensive to run on GitHub machines, so only run if we know something else simple passed as well
         needs: linux-no-asm
-        if: false # Disabled due to issues with msys2 making CMake unable to find a working compiler
-        runs-on: windows-2022
+        runs-on: windows-latest
         timeout-minutes: 30
         defaults:
             run:
