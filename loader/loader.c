@@ -6460,15 +6460,6 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateDevice(VkPhysicalDevice physical
 
     VkPhysicalDeviceProperties properties;
     icd_term->dispatch.GetPhysicalDeviceProperties(phys_dev_term->phys_dev, &properties);
-    if (properties.apiVersion >= VK_API_VERSION_1_1) {
-        dev->driver_extensions.version_1_1_enabled = true;
-    }
-    if (properties.apiVersion >= VK_API_VERSION_1_2) {
-        dev->driver_extensions.version_1_2_enabled = true;
-    }
-    if (properties.apiVersion >= VK_API_VERSION_1_3) {
-        dev->driver_extensions.version_1_3_enabled = true;
-    }
 
     loader_log(icd_term->this_instance, VULKAN_LOADER_LAYER_BIT | VULKAN_LOADER_DRIVER_BIT, 0,
                "       Using \"%s\" with driver: \"%s\"", properties.deviceName, icd_term->scanned_icd->lib_name);
