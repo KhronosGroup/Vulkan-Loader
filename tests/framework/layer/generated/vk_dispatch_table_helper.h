@@ -755,6 +755,12 @@ static inline void layer_init_device_dispatch_table(VkDevice device, VkLayerDisp
 #if defined(VK_USE_PLATFORM_METAL_EXT)
     table->GetMemoryMetalHandlePropertiesEXT = (PFN_vkGetMemoryMetalHandlePropertiesEXT)gpa(device, "vkGetMemoryMetalHandlePropertiesEXT");
 #endif  // VK_USE_PLATFORM_METAL_EXT
+    table->CreateShaderInstrumentationARM = (PFN_vkCreateShaderInstrumentationARM)gpa(device, "vkCreateShaderInstrumentationARM");
+    table->DestroyShaderInstrumentationARM = (PFN_vkDestroyShaderInstrumentationARM)gpa(device, "vkDestroyShaderInstrumentationARM");
+    table->CmdBeginShaderInstrumentationARM = (PFN_vkCmdBeginShaderInstrumentationARM)gpa(device, "vkCmdBeginShaderInstrumentationARM");
+    table->CmdEndShaderInstrumentationARM = (PFN_vkCmdEndShaderInstrumentationARM)gpa(device, "vkCmdEndShaderInstrumentationARM");
+    table->GetShaderInstrumentationValuesARM = (PFN_vkGetShaderInstrumentationValuesARM)gpa(device, "vkGetShaderInstrumentationValuesARM");
+    table->ClearShaderInstrumentationMetricsARM = (PFN_vkClearShaderInstrumentationMetricsARM)gpa(device, "vkClearShaderInstrumentationMetricsARM");
     table->CmdEndRendering2EXT = (PFN_vkCmdEndRendering2EXT)gpa(device, "vkCmdEndRendering2EXT");
     table->CmdBeginCustomResolveEXT = (PFN_vkCmdBeginCustomResolveEXT)gpa(device, "vkCmdBeginCustomResolveEXT");
     table->CmdSetComputeOccupancyPriorityNV = (PFN_vkCmdSetComputeOccupancyPriorityNV)gpa(device, "vkCmdSetComputeOccupancyPriorityNV");
@@ -958,6 +964,7 @@ static inline void layer_init_instance_dispatch_table(VkInstance instance, VkLay
 #endif  // VK_USE_PLATFORM_OHOS
     table->GetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV = (PFN_vkGetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV)gpa(instance, "vkGetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV");
     table->EnumeratePhysicalDeviceQueueFamilyPerformanceCountersByRegionARM = (PFN_vkEnumeratePhysicalDeviceQueueFamilyPerformanceCountersByRegionARM)gpa(instance, "vkEnumeratePhysicalDeviceQueueFamilyPerformanceCountersByRegionARM");
+    table->EnumeratePhysicalDeviceShaderInstrumentationMetricsARM = (PFN_vkEnumeratePhysicalDeviceShaderInstrumentationMetricsARM)gpa(instance, "vkEnumeratePhysicalDeviceShaderInstrumentationMetricsARM");
 #if defined(VK_USE_PLATFORM_UBM_SEC)
     table->CreateUbmSurfaceSEC = (PFN_vkCreateUbmSurfaceSEC)gpa(instance, "vkCreateUbmSurfaceSEC");
 #endif  // VK_USE_PLATFORM_UBM_SEC

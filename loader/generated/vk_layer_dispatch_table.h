@@ -313,6 +313,9 @@ typedef struct VkLayerInstanceDispatchTable_ {
     // ---- VK_ARM_performance_counters_by_region extension commands
     PFN_vkEnumeratePhysicalDeviceQueueFamilyPerformanceCountersByRegionARM EnumeratePhysicalDeviceQueueFamilyPerformanceCountersByRegionARM;
 
+    // ---- VK_ARM_shader_instrumentation extension commands
+    PFN_vkEnumeratePhysicalDeviceShaderInstrumentationMetricsARM EnumeratePhysicalDeviceShaderInstrumentationMetricsARM;
+
     // ---- VK_SEC_ubm_surface extension commands
 #if defined(VK_USE_PLATFORM_UBM_SEC)
     PFN_vkCreateUbmSurfaceSEC CreateUbmSurfaceSEC;
@@ -1319,6 +1322,14 @@ typedef struct VkLayerDispatchTable_ {
 #if defined(VK_USE_PLATFORM_METAL_EXT)
     PFN_vkGetMemoryMetalHandlePropertiesEXT GetMemoryMetalHandlePropertiesEXT;
 #endif // VK_USE_PLATFORM_METAL_EXT
+
+    // ---- VK_ARM_shader_instrumentation extension commands
+    PFN_vkCreateShaderInstrumentationARM CreateShaderInstrumentationARM;
+    PFN_vkDestroyShaderInstrumentationARM DestroyShaderInstrumentationARM;
+    PFN_vkCmdBeginShaderInstrumentationARM CmdBeginShaderInstrumentationARM;
+    PFN_vkCmdEndShaderInstrumentationARM CmdEndShaderInstrumentationARM;
+    PFN_vkGetShaderInstrumentationValuesARM GetShaderInstrumentationValuesARM;
+    PFN_vkClearShaderInstrumentationMetricsARM ClearShaderInstrumentationMetricsARM;
 
     // ---- VK_EXT_fragment_density_map_offset extension commands
     PFN_vkCmdEndRendering2EXT CmdEndRendering2EXT;

@@ -337,6 +337,9 @@ VKAPI_ATTR bool VKAPI_CALL loader_icd_init_entries(struct loader_instance* inst,
     // ---- VK_ARM_performance_counters_by_region extension commands
     LOOKUP_GIPA(EnumeratePhysicalDeviceQueueFamilyPerformanceCountersByRegionARM);
 
+    // ---- VK_ARM_shader_instrumentation extension commands
+    LOOKUP_GIPA(EnumeratePhysicalDeviceShaderInstrumentationMetricsARM);
+
     // ---- VK_SEC_ubm_surface extension commands
 #if defined(VK_USE_PLATFORM_UBM_SEC)
     LOOKUP_GIPA(CreateUbmSurfaceSEC);
@@ -1361,6 +1364,14 @@ VKAPI_ATTR void VKAPI_CALL loader_init_device_extension_dispatch_table(struct lo
     table->GetMemoryMetalHandlePropertiesEXT = (PFN_vkGetMemoryMetalHandlePropertiesEXT)gdpa(dev, "vkGetMemoryMetalHandlePropertiesEXT");
 #endif // VK_USE_PLATFORM_METAL_EXT
 
+    // ---- VK_ARM_shader_instrumentation extension commands
+    table->CreateShaderInstrumentationARM = (PFN_vkCreateShaderInstrumentationARM)gdpa(dev, "vkCreateShaderInstrumentationARM");
+    table->DestroyShaderInstrumentationARM = (PFN_vkDestroyShaderInstrumentationARM)gdpa(dev, "vkDestroyShaderInstrumentationARM");
+    table->CmdBeginShaderInstrumentationARM = (PFN_vkCmdBeginShaderInstrumentationARM)gdpa(dev, "vkCmdBeginShaderInstrumentationARM");
+    table->CmdEndShaderInstrumentationARM = (PFN_vkCmdEndShaderInstrumentationARM)gdpa(dev, "vkCmdEndShaderInstrumentationARM");
+    table->GetShaderInstrumentationValuesARM = (PFN_vkGetShaderInstrumentationValuesARM)gdpa(dev, "vkGetShaderInstrumentationValuesARM");
+    table->ClearShaderInstrumentationMetricsARM = (PFN_vkClearShaderInstrumentationMetricsARM)gdpa(dev, "vkClearShaderInstrumentationMetricsARM");
+
     // ---- VK_EXT_fragment_density_map_offset extension commands
     table->CmdEndRendering2EXT = (PFN_vkCmdEndRendering2EXT)gdpa(dev, "vkCmdEndRendering2EXT");
 
@@ -1682,6 +1693,9 @@ VKAPI_ATTR void VKAPI_CALL loader_init_instance_extension_dispatch_table(VkLayer
 
     // ---- VK_ARM_performance_counters_by_region extension commands
     table->EnumeratePhysicalDeviceQueueFamilyPerformanceCountersByRegionARM = (PFN_vkEnumeratePhysicalDeviceQueueFamilyPerformanceCountersByRegionARM)gpa(inst, "vkEnumeratePhysicalDeviceQueueFamilyPerformanceCountersByRegionARM");
+
+    // ---- VK_ARM_shader_instrumentation extension commands
+    table->EnumeratePhysicalDeviceShaderInstrumentationMetricsARM = (PFN_vkEnumeratePhysicalDeviceShaderInstrumentationMetricsARM)gpa(inst, "vkEnumeratePhysicalDeviceShaderInstrumentationMetricsARM");
 
     // ---- VK_SEC_ubm_surface extension commands
 #if defined(VK_USE_PLATFORM_UBM_SEC)
@@ -3380,6 +3394,14 @@ VKAPI_ATTR void* VKAPI_CALL loader_lookup_device_dispatch_table(const VkLayerDis
     if (!strcmp(name, "GetMemoryMetalHandlePropertiesEXT")) return (void *)table->GetMemoryMetalHandlePropertiesEXT;
 #endif // VK_USE_PLATFORM_METAL_EXT
 
+    // ---- VK_ARM_shader_instrumentation extension commands
+    if (!strcmp(name, "CreateShaderInstrumentationARM")) return (void *)table->CreateShaderInstrumentationARM;
+    if (!strcmp(name, "DestroyShaderInstrumentationARM")) return (void *)table->DestroyShaderInstrumentationARM;
+    if (!strcmp(name, "CmdBeginShaderInstrumentationARM")) return (void *)table->CmdBeginShaderInstrumentationARM;
+    if (!strcmp(name, "CmdEndShaderInstrumentationARM")) return (void *)table->CmdEndShaderInstrumentationARM;
+    if (!strcmp(name, "GetShaderInstrumentationValuesARM")) return (void *)table->GetShaderInstrumentationValuesARM;
+    if (!strcmp(name, "ClearShaderInstrumentationMetricsARM")) return (void *)table->ClearShaderInstrumentationMetricsARM;
+
     // ---- VK_EXT_fragment_density_map_offset extension commands
     if (!strcmp(name, "CmdEndRendering2EXT")) return (void *)table->CmdEndRendering2EXT;
 
@@ -3706,6 +3728,9 @@ VKAPI_ATTR void* VKAPI_CALL loader_lookup_instance_dispatch_table(const VkLayerI
 
     // ---- VK_ARM_performance_counters_by_region extension commands
     if (!strcmp(name, "EnumeratePhysicalDeviceQueueFamilyPerformanceCountersByRegionARM")) return (void *)table->EnumeratePhysicalDeviceQueueFamilyPerformanceCountersByRegionARM;
+
+    // ---- VK_ARM_shader_instrumentation extension commands
+    if (!strcmp(name, "EnumeratePhysicalDeviceShaderInstrumentationMetricsARM")) return (void *)table->EnumeratePhysicalDeviceShaderInstrumentationMetricsARM;
 
     // ---- VK_SEC_ubm_surface extension commands
 #if defined(VK_USE_PLATFORM_UBM_SEC)
@@ -11280,6 +11305,122 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_EnumeratePhysicalDeviceQueueFamilyPerf
 }
 
 
+// ---- VK_ARM_shader_instrumentation extension trampoline/terminators
+
+VKAPI_ATTR VkResult VKAPI_CALL EnumeratePhysicalDeviceShaderInstrumentationMetricsARM(
+    VkPhysicalDevice                            physicalDevice,
+    uint32_t*                                   pDescriptionCount,
+    VkShaderInstrumentationMetricDescriptionARM* pDescriptions) {
+    const VkLayerInstanceDispatchTable *disp;
+    VkPhysicalDevice unwrapped_phys_dev = loader_unwrap_physical_device(physicalDevice);
+    if (VK_NULL_HANDLE == unwrapped_phys_dev) {
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkEnumeratePhysicalDeviceShaderInstrumentationMetricsARM: Invalid physicalDevice "
+                   "[VUID-vkEnumeratePhysicalDeviceShaderInstrumentationMetricsARM-physicalDevice-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    disp = loader_get_instance_layer_dispatch(physicalDevice);
+    return disp->EnumeratePhysicalDeviceShaderInstrumentationMetricsARM(unwrapped_phys_dev, pDescriptionCount, pDescriptions);
+}
+
+VKAPI_ATTR VkResult VKAPI_CALL terminator_EnumeratePhysicalDeviceShaderInstrumentationMetricsARM(
+    VkPhysicalDevice                            physicalDevice,
+    uint32_t*                                   pDescriptionCount,
+    VkShaderInstrumentationMetricDescriptionARM* pDescriptions) {
+    struct loader_physical_device_term *phys_dev_term = (struct loader_physical_device_term *)physicalDevice;
+    struct loader_icd_term *icd_term = phys_dev_term->this_icd_term;
+    if (NULL == icd_term->dispatch.EnumeratePhysicalDeviceShaderInstrumentationMetricsARM) {
+        loader_log(icd_term->this_instance, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT, 0,
+                   "ICD associated with VkPhysicalDevice does not support EnumeratePhysicalDeviceShaderInstrumentationMetricsARM");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    return icd_term->dispatch.EnumeratePhysicalDeviceShaderInstrumentationMetricsARM(phys_dev_term->phys_dev, pDescriptionCount, pDescriptions);
+}
+
+VKAPI_ATTR VkResult VKAPI_CALL CreateShaderInstrumentationARM(
+    VkDevice                                    device,
+    const VkShaderInstrumentationCreateInfoARM* pCreateInfo,
+    const VkAllocationCallbacks*                pAllocator,
+    VkShaderInstrumentationARM*                 pInstrumentation) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkCreateShaderInstrumentationARM: Invalid device "
+                   "[VUID-vkCreateShaderInstrumentationARM-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    return disp->CreateShaderInstrumentationARM(device, pCreateInfo, pAllocator, pInstrumentation);
+}
+
+VKAPI_ATTR void VKAPI_CALL DestroyShaderInstrumentationARM(
+    VkDevice                                    device,
+    VkShaderInstrumentationARM                  instrumentation,
+    const VkAllocationCallbacks*                pAllocator) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkDestroyShaderInstrumentationARM: Invalid device "
+                   "[VUID-vkDestroyShaderInstrumentationARM-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    disp->DestroyShaderInstrumentationARM(device, instrumentation, pAllocator);
+}
+
+VKAPI_ATTR void VKAPI_CALL CmdBeginShaderInstrumentationARM(
+    VkCommandBuffer                             commandBuffer,
+    VkShaderInstrumentationARM                  instrumentation) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkCmdBeginShaderInstrumentationARM: Invalid commandBuffer "
+                   "[VUID-vkCmdBeginShaderInstrumentationARM-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    disp->CmdBeginShaderInstrumentationARM(commandBuffer, instrumentation);
+}
+
+VKAPI_ATTR void VKAPI_CALL CmdEndShaderInstrumentationARM(
+    VkCommandBuffer                             commandBuffer) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkCmdEndShaderInstrumentationARM: Invalid commandBuffer "
+                   "[VUID-vkCmdEndShaderInstrumentationARM-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    disp->CmdEndShaderInstrumentationARM(commandBuffer);
+}
+
+VKAPI_ATTR VkResult VKAPI_CALL GetShaderInstrumentationValuesARM(
+    VkDevice                                    device,
+    VkShaderInstrumentationARM                  instrumentation,
+    uint32_t*                                   pMetricBlockCount,
+    void*                                       pMetricValues,
+    VkShaderInstrumentationValuesFlagsARM       flags) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkGetShaderInstrumentationValuesARM: Invalid device "
+                   "[VUID-vkGetShaderInstrumentationValuesARM-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    return disp->GetShaderInstrumentationValuesARM(device, instrumentation, pMetricBlockCount, pMetricValues, flags);
+}
+
+VKAPI_ATTR void VKAPI_CALL ClearShaderInstrumentationMetricsARM(
+    VkDevice                                    device,
+    VkShaderInstrumentationARM                  instrumentation) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkClearShaderInstrumentationMetricsARM: Invalid device "
+                   "[VUID-vkClearShaderInstrumentationMetricsARM-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    disp->ClearShaderInstrumentationMetricsARM(device, instrumentation);
+}
+
+
 // ---- VK_EXT_fragment_density_map_offset extension trampoline/terminators
 
 VKAPI_ATTR void VKAPI_CALL CmdEndRendering2EXT(
@@ -14107,6 +14248,36 @@ bool extension_instance_gpa(struct loader_instance *ptr_instance, const char *na
         return true;
     }
 
+    // ---- VK_ARM_shader_instrumentation extension commands
+    if (!strcmp("vkEnumeratePhysicalDeviceShaderInstrumentationMetricsARM", name)) {
+        *addr = (void *)EnumeratePhysicalDeviceShaderInstrumentationMetricsARM;
+        return true;
+    }
+    if (!strcmp("vkCreateShaderInstrumentationARM", name)) {
+        *addr = (void *)CreateShaderInstrumentationARM;
+        return true;
+    }
+    if (!strcmp("vkDestroyShaderInstrumentationARM", name)) {
+        *addr = (void *)DestroyShaderInstrumentationARM;
+        return true;
+    }
+    if (!strcmp("vkCmdBeginShaderInstrumentationARM", name)) {
+        *addr = (void *)CmdBeginShaderInstrumentationARM;
+        return true;
+    }
+    if (!strcmp("vkCmdEndShaderInstrumentationARM", name)) {
+        *addr = (void *)CmdEndShaderInstrumentationARM;
+        return true;
+    }
+    if (!strcmp("vkGetShaderInstrumentationValuesARM", name)) {
+        *addr = (void *)GetShaderInstrumentationValuesARM;
+        return true;
+    }
+    if (!strcmp("vkClearShaderInstrumentationMetricsARM", name)) {
+        *addr = (void *)ClearShaderInstrumentationMetricsARM;
+        return true;
+    }
+
     // ---- VK_EXT_fragment_density_map_offset extension commands
     if (!strcmp("vkCmdEndRendering2EXT", name)) {
         *addr = (void *)CmdEndRendering2EXT;
@@ -14783,6 +14954,9 @@ const VkLayerInstanceDispatchTable instance_disp = {
 
     // ---- VK_ARM_performance_counters_by_region extension commands
     .EnumeratePhysicalDeviceQueueFamilyPerformanceCountersByRegionARM = terminator_EnumeratePhysicalDeviceQueueFamilyPerformanceCountersByRegionARM,
+
+    // ---- VK_ARM_shader_instrumentation extension commands
+    .EnumeratePhysicalDeviceShaderInstrumentationMetricsARM = terminator_EnumeratePhysicalDeviceShaderInstrumentationMetricsARM,
 
     // ---- VK_SEC_ubm_surface extension commands
 #if defined(VK_USE_PLATFORM_UBM_SEC)
