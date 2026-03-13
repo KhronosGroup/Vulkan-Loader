@@ -124,6 +124,30 @@ struct loader_debug_report_callback_list {
     VkDebugReportCallbackEXT *list;
 };
 
+// Represents the origin of a manifest search path.
+// This enum tracks where a specific path was sourced from.
+enum loader_search_path_origin {
+    LOADER_SEARCH_PATH_ORIGIN_OVERRIDE_ENV,
+    LOADER_SEARCH_PATH_ORIGIN_XDG_CONFIG,
+    LOADER_SEARCH_PATH_ORIGIN_XDG_DATA,
+    LOADER_SEARCH_PATH_ORIGIN_SYSCONFIG,
+    LOADER_SEARCH_PATH_ORIGIN_HOME,
+};
+
+// Represents a fully resolved filesystem directory alongside the metadata of how the loader discovered it.
+// `path` must hold a heap-allocated, null-terminated C string pointing to the exact directory where the loader will find
+// JSON manifests.
+struct loader_search_path {
+    char *path;
+    enum loader_search_path_origin origin;
+};
+
+struct loader_search_path_list {
+    size_t capacity;
+    uint32_t count;
+    struct loader_search_path *list;
+};
+
 struct loader_name_value {
     char *name;
     char *value;
