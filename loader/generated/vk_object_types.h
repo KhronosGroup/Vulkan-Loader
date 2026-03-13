@@ -74,19 +74,19 @@ typedef enum VulkanObjectType {
     kVulkanObjectTypeVideoSessionKHR = 33,
     kVulkanObjectTypeVideoSessionParametersKHR = 34,
     kVulkanObjectTypeDeferredOperationKHR = 35,
-    kVulkanObjectTypePipelineBinaryKHR = 36,
-    kVulkanObjectTypeDebugReportCallbackEXT = 37,
-    kVulkanObjectTypeCuModuleNVX = 38,
-    kVulkanObjectTypeCuFunctionNVX = 39,
-    kVulkanObjectTypeDebugUtilsMessengerEXT = 40,
-    kVulkanObjectTypeTensorARM = 41,
-    kVulkanObjectTypeValidationCacheEXT = 42,
-    kVulkanObjectTypeAccelerationStructureNV = 43,
-    kVulkanObjectTypePerformanceConfigurationINTEL = 44,
-    kVulkanObjectTypeIndirectCommandsLayoutNV = 45,
-    kVulkanObjectTypeCudaModuleNV = 46,
-    kVulkanObjectTypeCudaFunctionNV = 47,
-    kVulkanObjectTypeAccelerationStructureKHR = 48,
+    kVulkanObjectTypeAccelerationStructureKHR = 36,
+    kVulkanObjectTypePipelineBinaryKHR = 37,
+    kVulkanObjectTypeDebugReportCallbackEXT = 38,
+    kVulkanObjectTypeCuModuleNVX = 39,
+    kVulkanObjectTypeCuFunctionNVX = 40,
+    kVulkanObjectTypeDebugUtilsMessengerEXT = 41,
+    kVulkanObjectTypeTensorARM = 42,
+    kVulkanObjectTypeValidationCacheEXT = 43,
+    kVulkanObjectTypeAccelerationStructureNV = 44,
+    kVulkanObjectTypePerformanceConfigurationINTEL = 45,
+    kVulkanObjectTypeIndirectCommandsLayoutNV = 46,
+    kVulkanObjectTypeCudaModuleNV = 47,
+    kVulkanObjectTypeCudaFunctionNV = 48,
     kVulkanObjectTypeBufferCollectionFUCHSIA = 49,
     kVulkanObjectTypeMicromapEXT = 50,
     kVulkanObjectTypeTensorViewARM = 51,
@@ -142,6 +142,7 @@ static const char * const object_string[kVulkanObjectTypeMax] = {
     "VideoSessionKHR",
     "VideoSessionParametersKHR",
     "DeferredOperationKHR",
+    "AccelerationStructureKHR",
     "PipelineBinaryKHR",
     "DebugReportCallbackEXT",
     "CuModuleNVX",
@@ -154,7 +155,6 @@ static const char * const object_string[kVulkanObjectTypeMax] = {
     "IndirectCommandsLayoutNV",
     "CudaModuleNV",
     "CudaFunctionNV",
-    "AccelerationStructureKHR",
     "BufferCollectionFUCHSIA",
     "MicromapEXT",
     "TensorViewARM",
@@ -205,6 +205,7 @@ const VkDebugReportObjectTypeEXT get_debug_report_enum[] = {
     VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT,   // kVulkanObjectTypeVideoSessionKHR
     VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT,   // kVulkanObjectTypeVideoSessionParametersKHR
     VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT,   // kVulkanObjectTypeDeferredOperationKHR
+    VK_DEBUG_REPORT_OBJECT_TYPE_ACCELERATION_STRUCTURE_KHR_EXT,   // kVulkanObjectTypeAccelerationStructureKHR
     VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT,   // kVulkanObjectTypePipelineBinaryKHR
     VK_DEBUG_REPORT_OBJECT_TYPE_DEBUG_REPORT_CALLBACK_EXT_EXT,   // kVulkanObjectTypeDebugReportCallbackEXT
     VK_DEBUG_REPORT_OBJECT_TYPE_CU_MODULE_NVX_EXT,   // kVulkanObjectTypeCuModuleNVX
@@ -217,7 +218,6 @@ const VkDebugReportObjectTypeEXT get_debug_report_enum[] = {
     VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT,   // kVulkanObjectTypeIndirectCommandsLayoutNV
     VK_DEBUG_REPORT_OBJECT_TYPE_CUDA_MODULE_NV_EXT,   // kVulkanObjectTypeCudaModuleNV
     VK_DEBUG_REPORT_OBJECT_TYPE_CUDA_FUNCTION_NV_EXT,   // kVulkanObjectTypeCudaFunctionNV
-    VK_DEBUG_REPORT_OBJECT_TYPE_ACCELERATION_STRUCTURE_KHR_EXT,   // kVulkanObjectTypeAccelerationStructureKHR
     VK_DEBUG_REPORT_OBJECT_TYPE_BUFFER_COLLECTION_FUCHSIA_EXT,   // kVulkanObjectTypeBufferCollectionFUCHSIA
     VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT,   // kVulkanObjectTypeMicromapEXT
     VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT,   // kVulkanObjectTypeTensorViewARM
@@ -268,6 +268,7 @@ const VkObjectType get_object_type_enum[] = {
     VK_OBJECT_TYPE_VIDEO_SESSION_KHR,   // kVulkanObjectTypeVideoSessionKHR
     VK_OBJECT_TYPE_VIDEO_SESSION_PARAMETERS_KHR,   // kVulkanObjectTypeVideoSessionParametersKHR
     VK_OBJECT_TYPE_DEFERRED_OPERATION_KHR,   // kVulkanObjectTypeDeferredOperationKHR
+    VK_OBJECT_TYPE_ACCELERATION_STRUCTURE_KHR,   // kVulkanObjectTypeAccelerationStructureKHR
     VK_OBJECT_TYPE_PIPELINE_BINARY_KHR,   // kVulkanObjectTypePipelineBinaryKHR
     VK_OBJECT_TYPE_DEBUG_REPORT_CALLBACK_EXT,   // kVulkanObjectTypeDebugReportCallbackEXT
     VK_OBJECT_TYPE_CU_MODULE_NVX,   // kVulkanObjectTypeCuModuleNVX
@@ -280,7 +281,6 @@ const VkObjectType get_object_type_enum[] = {
     VK_OBJECT_TYPE_INDIRECT_COMMANDS_LAYOUT_NV,   // kVulkanObjectTypeIndirectCommandsLayoutNV
     VK_OBJECT_TYPE_CUDA_MODULE_NV,   // kVulkanObjectTypeCudaModuleNV
     VK_OBJECT_TYPE_CUDA_FUNCTION_NV,   // kVulkanObjectTypeCudaFunctionNV
-    VK_OBJECT_TYPE_ACCELERATION_STRUCTURE_KHR,   // kVulkanObjectTypeAccelerationStructureKHR
     VK_OBJECT_TYPE_BUFFER_COLLECTION_FUCHSIA,   // kVulkanObjectTypeBufferCollectionFUCHSIA
     VK_OBJECT_TYPE_MICROMAP_EXT,   // kVulkanObjectTypeMicromapEXT
     VK_OBJECT_TYPE_TENSOR_VIEW_ARM,   // kVulkanObjectTypeTensorViewARM

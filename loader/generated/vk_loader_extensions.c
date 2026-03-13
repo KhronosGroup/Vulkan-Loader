@@ -752,6 +752,30 @@ VKAPI_ATTR void VKAPI_CALL loader_init_device_extension_dispatch_table(struct lo
     table->CmdWriteTimestamp2KHR = (PFN_vkCmdWriteTimestamp2KHR)gdpa(dev, "vkCmdWriteTimestamp2KHR");
     table->QueueSubmit2KHR = (PFN_vkQueueSubmit2KHR)gdpa(dev, "vkQueueSubmit2KHR");
 
+    // ---- VK_KHR_device_address_commands extension commands
+    table->CmdBindIndexBuffer3KHR = (PFN_vkCmdBindIndexBuffer3KHR)gdpa(dev, "vkCmdBindIndexBuffer3KHR");
+    table->CmdBindVertexBuffers3KHR = (PFN_vkCmdBindVertexBuffers3KHR)gdpa(dev, "vkCmdBindVertexBuffers3KHR");
+    table->CmdDrawIndirect2KHR = (PFN_vkCmdDrawIndirect2KHR)gdpa(dev, "vkCmdDrawIndirect2KHR");
+    table->CmdDrawIndexedIndirect2KHR = (PFN_vkCmdDrawIndexedIndirect2KHR)gdpa(dev, "vkCmdDrawIndexedIndirect2KHR");
+    table->CmdDispatchIndirect2KHR = (PFN_vkCmdDispatchIndirect2KHR)gdpa(dev, "vkCmdDispatchIndirect2KHR");
+    table->CmdCopyMemoryKHR = (PFN_vkCmdCopyMemoryKHR)gdpa(dev, "vkCmdCopyMemoryKHR");
+    table->CmdCopyMemoryToImageKHR = (PFN_vkCmdCopyMemoryToImageKHR)gdpa(dev, "vkCmdCopyMemoryToImageKHR");
+    table->CmdCopyImageToMemoryKHR = (PFN_vkCmdCopyImageToMemoryKHR)gdpa(dev, "vkCmdCopyImageToMemoryKHR");
+    table->CmdUpdateMemoryKHR = (PFN_vkCmdUpdateMemoryKHR)gdpa(dev, "vkCmdUpdateMemoryKHR");
+    table->CmdFillMemoryKHR = (PFN_vkCmdFillMemoryKHR)gdpa(dev, "vkCmdFillMemoryKHR");
+    table->CmdCopyQueryPoolResultsToMemoryKHR = (PFN_vkCmdCopyQueryPoolResultsToMemoryKHR)gdpa(dev, "vkCmdCopyQueryPoolResultsToMemoryKHR");
+    table->CmdDrawIndirectCount2KHR = (PFN_vkCmdDrawIndirectCount2KHR)gdpa(dev, "vkCmdDrawIndirectCount2KHR");
+    table->CmdDrawIndexedIndirectCount2KHR = (PFN_vkCmdDrawIndexedIndirectCount2KHR)gdpa(dev, "vkCmdDrawIndexedIndirectCount2KHR");
+    table->CmdBeginConditionalRendering2EXT = (PFN_vkCmdBeginConditionalRendering2EXT)gdpa(dev, "vkCmdBeginConditionalRendering2EXT");
+    table->CmdBindTransformFeedbackBuffers2EXT = (PFN_vkCmdBindTransformFeedbackBuffers2EXT)gdpa(dev, "vkCmdBindTransformFeedbackBuffers2EXT");
+    table->CmdBeginTransformFeedback2EXT = (PFN_vkCmdBeginTransformFeedback2EXT)gdpa(dev, "vkCmdBeginTransformFeedback2EXT");
+    table->CmdEndTransformFeedback2EXT = (PFN_vkCmdEndTransformFeedback2EXT)gdpa(dev, "vkCmdEndTransformFeedback2EXT");
+    table->CmdDrawIndirectByteCount2EXT = (PFN_vkCmdDrawIndirectByteCount2EXT)gdpa(dev, "vkCmdDrawIndirectByteCount2EXT");
+    table->CmdDrawMeshTasksIndirect2EXT = (PFN_vkCmdDrawMeshTasksIndirect2EXT)gdpa(dev, "vkCmdDrawMeshTasksIndirect2EXT");
+    table->CmdDrawMeshTasksIndirectCount2EXT = (PFN_vkCmdDrawMeshTasksIndirectCount2EXT)gdpa(dev, "vkCmdDrawMeshTasksIndirectCount2EXT");
+    table->CmdWriteMarkerToMemoryAMD = (PFN_vkCmdWriteMarkerToMemoryAMD)gdpa(dev, "vkCmdWriteMarkerToMemoryAMD");
+    table->CreateAccelerationStructure2KHR = (PFN_vkCreateAccelerationStructure2KHR)gdpa(dev, "vkCreateAccelerationStructure2KHR");
+
     // ---- VK_KHR_copy_commands2 extension commands
     table->CmdCopyBuffer2KHR = (PFN_vkCmdCopyBuffer2KHR)gdpa(dev, "vkCmdCopyBuffer2KHR");
     table->CmdCopyImage2KHR = (PFN_vkCmdCopyImage2KHR)gdpa(dev, "vkCmdCopyImage2KHR");
@@ -2781,6 +2805,30 @@ VKAPI_ATTR void* VKAPI_CALL loader_lookup_device_dispatch_table(const VkLayerDis
     if (!strcmp(name, "CmdPipelineBarrier2KHR")) return (void *)table->CmdPipelineBarrier2KHR;
     if (!strcmp(name, "CmdWriteTimestamp2KHR")) return (void *)table->CmdWriteTimestamp2KHR;
     if (!strcmp(name, "QueueSubmit2KHR")) return (void *)table->QueueSubmit2KHR;
+
+    // ---- VK_KHR_device_address_commands extension commands
+    if (!strcmp(name, "CmdBindIndexBuffer3KHR")) return (void *)table->CmdBindIndexBuffer3KHR;
+    if (!strcmp(name, "CmdBindVertexBuffers3KHR")) return (void *)table->CmdBindVertexBuffers3KHR;
+    if (!strcmp(name, "CmdDrawIndirect2KHR")) return (void *)table->CmdDrawIndirect2KHR;
+    if (!strcmp(name, "CmdDrawIndexedIndirect2KHR")) return (void *)table->CmdDrawIndexedIndirect2KHR;
+    if (!strcmp(name, "CmdDispatchIndirect2KHR")) return (void *)table->CmdDispatchIndirect2KHR;
+    if (!strcmp(name, "CmdCopyMemoryKHR")) return (void *)table->CmdCopyMemoryKHR;
+    if (!strcmp(name, "CmdCopyMemoryToImageKHR")) return (void *)table->CmdCopyMemoryToImageKHR;
+    if (!strcmp(name, "CmdCopyImageToMemoryKHR")) return (void *)table->CmdCopyImageToMemoryKHR;
+    if (!strcmp(name, "CmdUpdateMemoryKHR")) return (void *)table->CmdUpdateMemoryKHR;
+    if (!strcmp(name, "CmdFillMemoryKHR")) return (void *)table->CmdFillMemoryKHR;
+    if (!strcmp(name, "CmdCopyQueryPoolResultsToMemoryKHR")) return (void *)table->CmdCopyQueryPoolResultsToMemoryKHR;
+    if (!strcmp(name, "CmdDrawIndirectCount2KHR")) return (void *)table->CmdDrawIndirectCount2KHR;
+    if (!strcmp(name, "CmdDrawIndexedIndirectCount2KHR")) return (void *)table->CmdDrawIndexedIndirectCount2KHR;
+    if (!strcmp(name, "CmdBeginConditionalRendering2EXT")) return (void *)table->CmdBeginConditionalRendering2EXT;
+    if (!strcmp(name, "CmdBindTransformFeedbackBuffers2EXT")) return (void *)table->CmdBindTransformFeedbackBuffers2EXT;
+    if (!strcmp(name, "CmdBeginTransformFeedback2EXT")) return (void *)table->CmdBeginTransformFeedback2EXT;
+    if (!strcmp(name, "CmdEndTransformFeedback2EXT")) return (void *)table->CmdEndTransformFeedback2EXT;
+    if (!strcmp(name, "CmdDrawIndirectByteCount2EXT")) return (void *)table->CmdDrawIndirectByteCount2EXT;
+    if (!strcmp(name, "CmdDrawMeshTasksIndirect2EXT")) return (void *)table->CmdDrawMeshTasksIndirect2EXT;
+    if (!strcmp(name, "CmdDrawMeshTasksIndirectCount2EXT")) return (void *)table->CmdDrawMeshTasksIndirectCount2EXT;
+    if (!strcmp(name, "CmdWriteMarkerToMemoryAMD")) return (void *)table->CmdWriteMarkerToMemoryAMD;
+    if (!strcmp(name, "CreateAccelerationStructure2KHR")) return (void *)table->CreateAccelerationStructure2KHR;
 
     // ---- VK_KHR_copy_commands2 extension commands
     if (!strcmp(name, "CmdCopyBuffer2KHR")) return (void *)table->CmdCopyBuffer2KHR;
@@ -5149,6 +5197,319 @@ VKAPI_ATTR VkResult VKAPI_CALL QueueSubmit2KHR(
         abort(); /* Intentionally fail so user can correct issue. */
     }
     return disp->QueueSubmit2KHR(queue, submitCount, pSubmits, fence);
+}
+
+
+// ---- VK_KHR_device_address_commands extension trampoline/terminators
+
+VKAPI_ATTR void VKAPI_CALL CmdBindIndexBuffer3KHR(
+    VkCommandBuffer                             commandBuffer,
+    const VkBindIndexBuffer3InfoKHR*            pInfo) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkCmdBindIndexBuffer3KHR: Invalid commandBuffer "
+                   "[VUID-vkCmdBindIndexBuffer3KHR-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    disp->CmdBindIndexBuffer3KHR(commandBuffer, pInfo);
+}
+
+VKAPI_ATTR void VKAPI_CALL CmdBindVertexBuffers3KHR(
+    VkCommandBuffer                             commandBuffer,
+    uint32_t                                    firstBinding,
+    uint32_t                                    bindingCount,
+    const VkBindVertexBuffer3InfoKHR*           pBindingInfos) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkCmdBindVertexBuffers3KHR: Invalid commandBuffer "
+                   "[VUID-vkCmdBindVertexBuffers3KHR-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    disp->CmdBindVertexBuffers3KHR(commandBuffer, firstBinding, bindingCount, pBindingInfos);
+}
+
+VKAPI_ATTR void VKAPI_CALL CmdDrawIndirect2KHR(
+    VkCommandBuffer                             commandBuffer,
+    const VkDrawIndirect2InfoKHR*               pInfo) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkCmdDrawIndirect2KHR: Invalid commandBuffer "
+                   "[VUID-vkCmdDrawIndirect2KHR-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    disp->CmdDrawIndirect2KHR(commandBuffer, pInfo);
+}
+
+VKAPI_ATTR void VKAPI_CALL CmdDrawIndexedIndirect2KHR(
+    VkCommandBuffer                             commandBuffer,
+    const VkDrawIndirect2InfoKHR*               pInfo) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkCmdDrawIndexedIndirect2KHR: Invalid commandBuffer "
+                   "[VUID-vkCmdDrawIndexedIndirect2KHR-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    disp->CmdDrawIndexedIndirect2KHR(commandBuffer, pInfo);
+}
+
+VKAPI_ATTR void VKAPI_CALL CmdDispatchIndirect2KHR(
+    VkCommandBuffer                             commandBuffer,
+    const VkDispatchIndirect2InfoKHR*           pInfo) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkCmdDispatchIndirect2KHR: Invalid commandBuffer "
+                   "[VUID-vkCmdDispatchIndirect2KHR-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    disp->CmdDispatchIndirect2KHR(commandBuffer, pInfo);
+}
+
+VKAPI_ATTR void VKAPI_CALL CmdCopyMemoryKHR(
+    VkCommandBuffer                             commandBuffer,
+    const VkCopyDeviceMemoryInfoKHR*            pCopyMemoryInfo) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkCmdCopyMemoryKHR: Invalid commandBuffer "
+                   "[VUID-vkCmdCopyMemoryKHR-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    disp->CmdCopyMemoryKHR(commandBuffer, pCopyMemoryInfo);
+}
+
+VKAPI_ATTR void VKAPI_CALL CmdCopyMemoryToImageKHR(
+    VkCommandBuffer                             commandBuffer,
+    const VkCopyDeviceMemoryImageInfoKHR*       pCopyMemoryInfo) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkCmdCopyMemoryToImageKHR: Invalid commandBuffer "
+                   "[VUID-vkCmdCopyMemoryToImageKHR-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    disp->CmdCopyMemoryToImageKHR(commandBuffer, pCopyMemoryInfo);
+}
+
+VKAPI_ATTR void VKAPI_CALL CmdCopyImageToMemoryKHR(
+    VkCommandBuffer                             commandBuffer,
+    const VkCopyDeviceMemoryImageInfoKHR*       pCopyMemoryInfo) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkCmdCopyImageToMemoryKHR: Invalid commandBuffer "
+                   "[VUID-vkCmdCopyImageToMemoryKHR-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    disp->CmdCopyImageToMemoryKHR(commandBuffer, pCopyMemoryInfo);
+}
+
+VKAPI_ATTR void VKAPI_CALL CmdUpdateMemoryKHR(
+    VkCommandBuffer                             commandBuffer,
+    const VkDeviceAddressRangeKHR*              pDstRange,
+    VkAddressCommandFlagsKHR                    dstFlags,
+    VkDeviceSize                                dataSize,
+    const void*                                 pData) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkCmdUpdateMemoryKHR: Invalid commandBuffer "
+                   "[VUID-vkCmdUpdateMemoryKHR-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    disp->CmdUpdateMemoryKHR(commandBuffer, pDstRange, dstFlags, dataSize, pData);
+}
+
+VKAPI_ATTR void VKAPI_CALL CmdFillMemoryKHR(
+    VkCommandBuffer                             commandBuffer,
+    const VkDeviceAddressRangeKHR*              pDstRange,
+    VkAddressCommandFlagsKHR                    dstFlags,
+    uint32_t                                    data) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkCmdFillMemoryKHR: Invalid commandBuffer "
+                   "[VUID-vkCmdFillMemoryKHR-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    disp->CmdFillMemoryKHR(commandBuffer, pDstRange, dstFlags, data);
+}
+
+VKAPI_ATTR void VKAPI_CALL CmdCopyQueryPoolResultsToMemoryKHR(
+    VkCommandBuffer                             commandBuffer,
+    VkQueryPool                                 queryPool,
+    uint32_t                                    firstQuery,
+    uint32_t                                    queryCount,
+    const VkStridedDeviceAddressRangeKHR*       pDstRange,
+    VkAddressCommandFlagsKHR                    dstFlags,
+    VkQueryResultFlags                          queryResultFlags) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkCmdCopyQueryPoolResultsToMemoryKHR: Invalid commandBuffer "
+                   "[VUID-vkCmdCopyQueryPoolResultsToMemoryKHR-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    disp->CmdCopyQueryPoolResultsToMemoryKHR(commandBuffer, queryPool, firstQuery, queryCount, pDstRange, dstFlags, queryResultFlags);
+}
+
+VKAPI_ATTR void VKAPI_CALL CmdDrawIndirectCount2KHR(
+    VkCommandBuffer                             commandBuffer,
+    const VkDrawIndirectCount2InfoKHR*          pInfo) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkCmdDrawIndirectCount2KHR: Invalid commandBuffer "
+                   "[VUID-vkCmdDrawIndirectCount2KHR-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    disp->CmdDrawIndirectCount2KHR(commandBuffer, pInfo);
+}
+
+VKAPI_ATTR void VKAPI_CALL CmdDrawIndexedIndirectCount2KHR(
+    VkCommandBuffer                             commandBuffer,
+    const VkDrawIndirectCount2InfoKHR*          pInfo) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkCmdDrawIndexedIndirectCount2KHR: Invalid commandBuffer "
+                   "[VUID-vkCmdDrawIndexedIndirectCount2KHR-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    disp->CmdDrawIndexedIndirectCount2KHR(commandBuffer, pInfo);
+}
+
+VKAPI_ATTR void VKAPI_CALL CmdBeginConditionalRendering2EXT(
+    VkCommandBuffer                             commandBuffer,
+    const VkConditionalRenderingBeginInfo2EXT*  pConditionalRenderingBegin) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkCmdBeginConditionalRendering2EXT: Invalid commandBuffer "
+                   "[VUID-vkCmdBeginConditionalRendering2EXT-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    disp->CmdBeginConditionalRendering2EXT(commandBuffer, pConditionalRenderingBegin);
+}
+
+VKAPI_ATTR void VKAPI_CALL CmdBindTransformFeedbackBuffers2EXT(
+    VkCommandBuffer                             commandBuffer,
+    uint32_t                                    firstBinding,
+    uint32_t                                    bindingCount,
+    const VkBindTransformFeedbackBuffer2InfoEXT* pBindingInfos) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkCmdBindTransformFeedbackBuffers2EXT: Invalid commandBuffer "
+                   "[VUID-vkCmdBindTransformFeedbackBuffers2EXT-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    disp->CmdBindTransformFeedbackBuffers2EXT(commandBuffer, firstBinding, bindingCount, pBindingInfos);
+}
+
+VKAPI_ATTR void VKAPI_CALL CmdBeginTransformFeedback2EXT(
+    VkCommandBuffer                             commandBuffer,
+    uint32_t                                    firstCounterRange,
+    uint32_t                                    counterRangeCount,
+    const VkBindTransformFeedbackBuffer2InfoEXT* pCounterInfos) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkCmdBeginTransformFeedback2EXT: Invalid commandBuffer "
+                   "[VUID-vkCmdBeginTransformFeedback2EXT-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    disp->CmdBeginTransformFeedback2EXT(commandBuffer, firstCounterRange, counterRangeCount, pCounterInfos);
+}
+
+VKAPI_ATTR void VKAPI_CALL CmdEndTransformFeedback2EXT(
+    VkCommandBuffer                             commandBuffer,
+    uint32_t                                    firstCounterRange,
+    uint32_t                                    counterRangeCount,
+    const VkBindTransformFeedbackBuffer2InfoEXT* pCounterInfos) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkCmdEndTransformFeedback2EXT: Invalid commandBuffer "
+                   "[VUID-vkCmdEndTransformFeedback2EXT-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    disp->CmdEndTransformFeedback2EXT(commandBuffer, firstCounterRange, counterRangeCount, pCounterInfos);
+}
+
+VKAPI_ATTR void VKAPI_CALL CmdDrawIndirectByteCount2EXT(
+    VkCommandBuffer                             commandBuffer,
+    uint32_t                                    instanceCount,
+    uint32_t                                    firstInstance,
+    const VkBindTransformFeedbackBuffer2InfoEXT* pCounterInfo,
+    uint32_t                                    counterOffset,
+    uint32_t                                    vertexStride) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkCmdDrawIndirectByteCount2EXT: Invalid commandBuffer "
+                   "[VUID-vkCmdDrawIndirectByteCount2EXT-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    disp->CmdDrawIndirectByteCount2EXT(commandBuffer, instanceCount, firstInstance, pCounterInfo, counterOffset, vertexStride);
+}
+
+VKAPI_ATTR void VKAPI_CALL CmdDrawMeshTasksIndirect2EXT(
+    VkCommandBuffer                             commandBuffer,
+    const VkDrawIndirect2InfoKHR*               pInfo) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkCmdDrawMeshTasksIndirect2EXT: Invalid commandBuffer "
+                   "[VUID-vkCmdDrawMeshTasksIndirect2EXT-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    disp->CmdDrawMeshTasksIndirect2EXT(commandBuffer, pInfo);
+}
+
+VKAPI_ATTR void VKAPI_CALL CmdDrawMeshTasksIndirectCount2EXT(
+    VkCommandBuffer                             commandBuffer,
+    const VkDrawIndirectCount2InfoKHR*          pInfo) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkCmdDrawMeshTasksIndirectCount2EXT: Invalid commandBuffer "
+                   "[VUID-vkCmdDrawMeshTasksIndirectCount2EXT-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    disp->CmdDrawMeshTasksIndirectCount2EXT(commandBuffer, pInfo);
+}
+
+VKAPI_ATTR void VKAPI_CALL CmdWriteMarkerToMemoryAMD(
+    VkCommandBuffer                             commandBuffer,
+    const VkMemoryMarkerInfoAMD*                pInfo) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkCmdWriteMarkerToMemoryAMD: Invalid commandBuffer "
+                   "[VUID-vkCmdWriteMarkerToMemoryAMD-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    disp->CmdWriteMarkerToMemoryAMD(commandBuffer, pInfo);
+}
+
+VKAPI_ATTR VkResult VKAPI_CALL CreateAccelerationStructure2KHR(
+    VkDevice                                    device,
+    const VkAccelerationStructureCreateInfo2KHR* pCreateInfo,
+    const VkAllocationCallbacks*                pAllocator,
+    VkAccelerationStructureKHR*                 pAccelerationStructure) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkCreateAccelerationStructure2KHR: Invalid device "
+                   "[VUID-vkCreateAccelerationStructure2KHR-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    return disp->CreateAccelerationStructure2KHR(device, pCreateInfo, pAllocator, pAccelerationStructure);
 }
 
 
@@ -12421,6 +12782,96 @@ bool extension_instance_gpa(struct loader_instance *ptr_instance, const char *na
     }
     if (!strcmp("vkQueueSubmit2KHR", name)) {
         *addr = (void *)QueueSubmit2KHR;
+        return true;
+    }
+
+    // ---- VK_KHR_device_address_commands extension commands
+    if (!strcmp("vkCmdBindIndexBuffer3KHR", name)) {
+        *addr = (void *)CmdBindIndexBuffer3KHR;
+        return true;
+    }
+    if (!strcmp("vkCmdBindVertexBuffers3KHR", name)) {
+        *addr = (void *)CmdBindVertexBuffers3KHR;
+        return true;
+    }
+    if (!strcmp("vkCmdDrawIndirect2KHR", name)) {
+        *addr = (void *)CmdDrawIndirect2KHR;
+        return true;
+    }
+    if (!strcmp("vkCmdDrawIndexedIndirect2KHR", name)) {
+        *addr = (void *)CmdDrawIndexedIndirect2KHR;
+        return true;
+    }
+    if (!strcmp("vkCmdDispatchIndirect2KHR", name)) {
+        *addr = (void *)CmdDispatchIndirect2KHR;
+        return true;
+    }
+    if (!strcmp("vkCmdCopyMemoryKHR", name)) {
+        *addr = (void *)CmdCopyMemoryKHR;
+        return true;
+    }
+    if (!strcmp("vkCmdCopyMemoryToImageKHR", name)) {
+        *addr = (void *)CmdCopyMemoryToImageKHR;
+        return true;
+    }
+    if (!strcmp("vkCmdCopyImageToMemoryKHR", name)) {
+        *addr = (void *)CmdCopyImageToMemoryKHR;
+        return true;
+    }
+    if (!strcmp("vkCmdUpdateMemoryKHR", name)) {
+        *addr = (void *)CmdUpdateMemoryKHR;
+        return true;
+    }
+    if (!strcmp("vkCmdFillMemoryKHR", name)) {
+        *addr = (void *)CmdFillMemoryKHR;
+        return true;
+    }
+    if (!strcmp("vkCmdCopyQueryPoolResultsToMemoryKHR", name)) {
+        *addr = (void *)CmdCopyQueryPoolResultsToMemoryKHR;
+        return true;
+    }
+    if (!strcmp("vkCmdDrawIndirectCount2KHR", name)) {
+        *addr = (void *)CmdDrawIndirectCount2KHR;
+        return true;
+    }
+    if (!strcmp("vkCmdDrawIndexedIndirectCount2KHR", name)) {
+        *addr = (void *)CmdDrawIndexedIndirectCount2KHR;
+        return true;
+    }
+    if (!strcmp("vkCmdBeginConditionalRendering2EXT", name)) {
+        *addr = (void *)CmdBeginConditionalRendering2EXT;
+        return true;
+    }
+    if (!strcmp("vkCmdBindTransformFeedbackBuffers2EXT", name)) {
+        *addr = (void *)CmdBindTransformFeedbackBuffers2EXT;
+        return true;
+    }
+    if (!strcmp("vkCmdBeginTransformFeedback2EXT", name)) {
+        *addr = (void *)CmdBeginTransformFeedback2EXT;
+        return true;
+    }
+    if (!strcmp("vkCmdEndTransformFeedback2EXT", name)) {
+        *addr = (void *)CmdEndTransformFeedback2EXT;
+        return true;
+    }
+    if (!strcmp("vkCmdDrawIndirectByteCount2EXT", name)) {
+        *addr = (void *)CmdDrawIndirectByteCount2EXT;
+        return true;
+    }
+    if (!strcmp("vkCmdDrawMeshTasksIndirect2EXT", name)) {
+        *addr = (void *)CmdDrawMeshTasksIndirect2EXT;
+        return true;
+    }
+    if (!strcmp("vkCmdDrawMeshTasksIndirectCount2EXT", name)) {
+        *addr = (void *)CmdDrawMeshTasksIndirectCount2EXT;
+        return true;
+    }
+    if (!strcmp("vkCmdWriteMarkerToMemoryAMD", name)) {
+        *addr = (void *)CmdWriteMarkerToMemoryAMD;
+        return true;
+    }
+    if (!strcmp("vkCreateAccelerationStructure2KHR", name)) {
+        *addr = (void *)CreateAccelerationStructure2KHR;
         return true;
     }
 
