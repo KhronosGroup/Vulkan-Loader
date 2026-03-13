@@ -124,6 +124,57 @@ struct loader_debug_report_callback_list {
     VkDebugReportCallbackEXT *list;
 };
 
+// --------------------------------------------------------------------------------
+// The following defines are used in `struct loader_search_path::origin`
+// --------------------------------------------------------------------------------
+
+// Environment Variable Overrides an Additions
+#define SEARCH_PATH_ORIGIN_ENV_VAR_PREFIX "env var "
+#define SEARCH_PATH_ORIGIN_VK_DRIVER_FILES_ENV_VAR (SEARCH_PATH_ORIGIN_ENV_VAR_PREFIX VK_DRIVER_FILES_ENV_VAR)
+#define SEARCH_PATH_ORIGIN_VK_ICD_FILENAMES_ENV_VAR (SEARCH_PATH_ORIGIN_ENV_VAR_PREFIX VK_ICD_FILENAMES_ENV_VAR)
+#define SEARCH_PATH_ORIGIN_VK_EXPLICIT_LAYER_PATH_ENV_VAR (SEARCH_PATH_ORIGIN_ENV_VAR_PREFIX VK_EXPLICIT_LAYER_PATH_ENV_VAR)
+#define SEARCH_PATH_ORIGIN_VK_ADDITIONAL_DRIVER_FILES_ENV_VAR (SEARCH_PATH_ORIGIN_ENV_VAR_PREFIX VK_ADDITIONAL_DRIVER_FILES_ENV_VAR)
+#define SEARCH_PATH_ORIGIN_VK_ADDITIONAL_EXPLICIT_LAYER_PATH_ENV_VAR \
+    (SEARCH_PATH_ORIGIN_ENV_VAR_PREFIX VK_ADDITIONAL_EXPLICIT_LAYER_PATH_ENV_VAR)
+#define SEARCH_PATH_ORIGIN_VK_IMPLICIT_LAYER_PATH_ENV_VAR (SEARCH_PATH_ORIGIN_ENV_VAR_PREFIX VK_IMPLICIT_LAYER_PATH_ENV_VAR)
+#define SEARCH_PATH_ORIGIN_VK_ADDITIONAL_IMPLICIT_LAYER_PATH_ENV_VAR \
+    (SEARCH_PATH_ORIGIN_ENV_VAR_PREFIX VK_ADDITIONAL_IMPLICIT_LAYER_PATH_ENV_VAR)
+
+// Unix XDG Base Directory
+#define SEARCH_PATH_ORIGIN_XDG_CONFIG_HOME "XDG_CONFIG_HOME"
+#define SEARCH_PATH_ORIGIN_XDG_CONFIG_DIRS "XDG_CONFIG_DIRS"
+#define SEARCH_PATH_ORIGIN_XDG_DATA_HOME "XDG_DATA_HOME"
+#define SEARCH_PATH_ORIGIN_XDG_DATA_DIRS "XDG_DATA_DIRS"
+
+// Unix System Directories
+#define SEARCH_PATH_ORIGIN_SYSCONFDIR "SYSCONFDIR"
+#define SEARCH_PATH_ORIGIN_EXTRASYSCONFDIR "EXTRASYSCONFDIR"
+
+// Unix Directory Fallbacks
+#define SEARCH_PATH_ORIGIN_FALLBACK_CONFIG_DIRS "FALLBACK_CONFIG_DIRS"
+#define SEARCH_PATH_ORIGIN_FALLBACK_DATA_DIRS "FALLBACK_DATA_DIRS"
+
+// Windows Specific Paths
+#define SEARCH_PATH_ORIGIN_WIN_APP_PACKAGE_PATH "Windows App Package Path"
+#define SEARCH_PATH_ORIGIN_WIN_REGISTRY "Windows Registry"
+
+// Apple Specific Paths
+#define SEARCH_PATH_ORIGIN_APPLE_APP_BUNDLE "macOS/iOS App Bundle"
+
+// Represents vk_loader_settings.json
+#define SEARCH_PATH_ORIGIN_LOADER_SETTINGS_FILE "Loader Settings File"
+
+// Represents VkLayer_override.json
+#define SEARCH_PATH_ORIGIN_OVERRIDE_FILE "Override File"
+
+// Represents a fully resolved filesystem directory alongside the metadata of how the loader discovered it.
+// `raw_string` must hold a heap-allocated, null-terminated C string pointing to the exact directory where the loader will find
+// JSON manifests.
+struct loader_search_path {
+    char *raw_string;
+    const char *origin;
+};
+
 struct loader_name_value {
     char *name;
     char *value;
