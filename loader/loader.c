@@ -1032,6 +1032,41 @@ VkResult loader_add_device_extensions(const struct loader_instance *inst,
     return VK_SUCCESS;
 }
 
+VkResult loader_init_search_path_list(const struct loader_instance *instance, struct loader_search_path_list *search_paths,
+                                      const uint32_t count, const size_t capacity) {
+    assert(instance);
+    assert(search_paths);
+    assert(count > 0);
+    search_paths->list =
+        loader_instance_heap_calloc(instance, sizeof(struct loader_search_path) * count, VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
+
+    if (NULL == search_paths->list) {
+        return VK_ERROR_OUT_OF_HOST_MEMORY;
+    }
+
+    search_paths->count = count;
+    search_paths->capacity = capacity;
+    return VK_SUCCESS;
+}
+
+void loader_destroy_search_path_list(const struct loader_instance *instance, struct loader_search_path_list *search_paths) {
+    assert(instance);
+    assert(search_paths);
+    assert(search_paths->list);
+    loader_instance_heap_free(instance, search_paths->list);
+    memset(search_paths, 0, sizeof(struct loader_search_path_list));
+}
+
+void loader_append_search_path(struct loader_search_path_list *search_paths, struct loader_search_path *path) {
+    assert(search_paths);
+    assert(search_paths->list);
+    assert(path);
+    assert(search_paths->count < search_paths->capacity);
+    search_paths->list += search_paths->count;
+    search_paths->list = path;
+    ++search_paths->count;
+}
+
 VkResult loader_init_generic_list(const struct loader_instance *inst, struct loader_generic_list *list_info, size_t element_size) {
     size_t capacity = 32 * element_size;
     list_info->count = 0;
