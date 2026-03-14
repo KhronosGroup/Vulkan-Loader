@@ -144,6 +144,11 @@ VkResult loader_init_search_path_list(const struct loader_instance *instance, st
 // `instance`, `search_paths` and `search_paths->list` must not be NULL.
 void loader_destroy_search_path_list(const struct loader_instance *instance, struct loader_search_path_list *search_paths);
 
+// Appends `path` to `search_paths`.
+// `search_paths`, `search_paths->list`, and `path` must not be NULL.
+// `search_paths->count` must be less than `search_paths->capacity`.
+void loader_append_search_path(struct loader_search_path_list *search_paths, struct loader_search_path *path);
+
 VkResult loader_init_generic_list(const struct loader_instance *inst, struct loader_generic_list *list_info, size_t element_size);
 VkResult loader_resize_generic_list(const struct loader_instance *inst, struct loader_generic_list *list_info);
 VkResult loader_get_next_available_entry(const struct loader_instance *inst, struct loader_used_object_list *list_info,

@@ -1057,6 +1057,16 @@ void loader_destroy_search_path_list(const struct loader_instance *instance, str
     memset(search_paths, 0, sizeof(struct loader_search_path_list));
 }
 
+void loader_append_search_path(struct loader_search_path_list *search_paths, struct loader_search_path *path) {
+    assert(search_paths);
+    assert(search_paths->list);
+    assert(path);
+    assert(search_paths->count < search_paths->capacity);
+    search_paths->list += search_paths->count;
+    search_paths->list = path;
+    ++search_paths->count;
+}
+
 VkResult loader_init_generic_list(const struct loader_instance *inst, struct loader_generic_list *list_info, size_t element_size) {
     size_t capacity = 32 * element_size;
     list_info->count = 0;
