@@ -133,6 +133,13 @@ VkResult copy_str_to_start_of_string_list(const struct loader_instance *inst, st
 // Free any string inside of loader_string_list and then free the list itself
 void free_string_list(const struct loader_instance *inst, struct loader_string_list *string_list);
 
+// Allocates a `loader_search_path_list` with enough space for `count` `loader_search_path` structs.
+// `instance` and `search_paths` must not be NULL.
+// `count` must be greater than 0.
+// Returns VK_SUCCESS on success, `VK_ERROR_OUT_OF_HOST_MEMORY` if memory allocation failed.
+VkResult loader_init_search_path_list(const struct loader_instance *instance, struct loader_search_path_list *search_paths,
+                                      uint32_t count, size_t capacity);
+
 VkResult loader_init_generic_list(const struct loader_instance *inst, struct loader_generic_list *list_info, size_t element_size);
 VkResult loader_resize_generic_list(const struct loader_instance *inst, struct loader_generic_list *list_info);
 VkResult loader_get_next_available_entry(const struct loader_instance *inst, struct loader_used_object_list *list_info,
