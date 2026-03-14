@@ -140,6 +140,10 @@ void free_string_list(const struct loader_instance *inst, struct loader_string_l
 VkResult loader_init_search_path_list(const struct loader_instance *instance, struct loader_search_path_list *search_paths,
                                       uint32_t count, size_t capacity);
 
+// Frees the memory allocated list in `search_paths` and memset `search_paths` to 0.
+// `instance`, `search_paths` and `search_paths->list` must not be NULL.
+void loader_destroy_search_path_list(const struct loader_instance *instance, struct loader_search_path_list *search_paths);
+
 VkResult loader_init_generic_list(const struct loader_instance *inst, struct loader_generic_list *list_info, size_t element_size);
 VkResult loader_resize_generic_list(const struct loader_instance *inst, struct loader_generic_list *list_info);
 VkResult loader_get_next_available_entry(const struct loader_instance *inst, struct loader_used_object_list *list_info,
