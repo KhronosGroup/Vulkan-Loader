@@ -558,7 +558,7 @@ bool check_if_layer_configurations_are_equal(loader_settings_layer_configuration
     if (!a->path || !b->path || 0 != strcmp(a->path, b->path)) {
         return false;
     }
-    return a->control == b->control;
+    return a->control == b->control && a->treat_as_implicit_manifest == b->treat_as_implicit_manifest;
 }
 
 bool check_if_driver_configurations_are_equal(loader_settings_driver_configuration* a, loader_settings_driver_configuration* b) {
@@ -576,6 +576,8 @@ bool check_if_device_configurations_are_equal(loader_settings_device_configurati
         if (a->driverUUID[i] != b->driverUUID[i]) return false;
     }
     if (a->driverVersion != b->driverVersion) return false;
+    if (0 != strcmp(a->deviceName, b->deviceName)) return false;
+    if (0 != strcmp(a->driverName, b->driverName)) return false;
     return true;
 }
 
@@ -588,6 +590,7 @@ bool check_if_settings_are_equal(loader_settings* a, loader_settings* b) {
     are_equal &= a->debug_level == b->debug_level;
     are_equal &= a->layer_configurations_active == b->layer_configurations_active;
     are_equal &= a->layer_configuration_count == b->layer_configuration_count;
+    are_equal &= a->additional_drivers_use_exclusively == b->additional_drivers_use_exclusively;
     are_equal &= a->additional_driver_count == b->additional_driver_count;
     are_equal &= a->device_configurations_active == b->device_configurations_active;
     are_equal &= a->device_configuration_count == b->device_configuration_count;
@@ -722,7 +725,7 @@ VkResult get_loader_settings(const struct loader_instance* inst, loader_settings
         memcpy(&settings_iter_parent, settings_array, sizeof(cJSON));
     } else if (NULL != single_settings_object) {
         settings_iter_parent.child = single_settings_object;
-    } else if (settings_array == NULL && single_settings_object) {
+    } else {
         loader_log(inst, VULKAN_LOADER_DEBUG_BIT, 0,
                    "Loader settings file from %s missing required settings objects: Either one of the \"settings\" or "
                    "\"settings_array\" objects must be present - no loader settings will be active",
@@ -876,7 +879,6 @@ TEST_FUNCTION_EXPORT VkResult update_global_loader_settings(void) {
     VkResult res = get_loader_settings(NULL, &settings);
     loader_platform_thread_lock_mutex(&global_loader_settings_lock);
 
-    free_loader_settings(NULL, &global_loader_settings);
     if (res == VK_SUCCESS) {
         if (!check_if_settings_are_equal(&settings, &global_loader_settings)) {
             log_settings(NULL, &settings);
@@ -1004,29 +1006,33 @@ TEST_FUNCTION_EXPORT VkResult get_settings_layers(const struct loader_instance* 
             continue;
         }
 
-        struct loader_layer_properties* newly_added_layer = &settings_layers->list[settings_layers->count - 1];
-        newly_added_layer->settings_control_value = layer_config->control;
-        // If the manifest file found has a name that differs from the one in the settings, remove this layer from
-        // consideration
-        bool should_remove = false;
-        if (strncmp(newly_added_layer->info.layerName, layer_config->name, VK_MAX_EXTENSION_NAME_SIZE) != 0) {
-            should_remove = true;
-            loader_remove_layer_in_list(inst, settings_layers, settings_layers->count - 1);
-        }
-        // Make sure the layer isn't already in the list
-        for (uint32_t j = 0; settings_layers->count > 0 && j < settings_layers->count - 1; j++) {
-            if (0 ==
-                strncmp(settings_layers->list[j].info.layerName, newly_added_layer->info.layerName, VK_MAX_EXTENSION_NAME_SIZE)) {
-                if (0 == (newly_added_layer->type_flags & VK_LAYER_TYPE_FLAG_META_LAYER) &&
-                    settings_layers->list[j].lib_name != NULL && newly_added_layer->lib_name != NULL &&
-                    strcmp(settings_layers->list[j].lib_name, newly_added_layer->lib_name) == 0) {
-                    should_remove = true;
-                    break;
+        for (uint32_t j = count_before_adding; j < settings_layers->count; j++) {
+            struct loader_layer_properties* newly_added_layer = &settings_layers->list[j];
+            newly_added_layer->settings_control_value = layer_config->control;
+            // If the manifest file found has a name that differs from the one in the settings, remove this layer from
+            // consideration
+            if (strncmp(newly_added_layer->info.layerName, layer_config->name, VK_MAX_EXTENSION_NAME_SIZE) != 0) {
+                loader_remove_layer_in_list(inst, settings_layers, j);
+                j--;
+                continue;
+            }
+            bool should_remove = false;
+            // Make sure the layer isn't already in the list
+            for (uint32_t k = 0; k < j; k++) {
+                if (0 ==
+                    strncmp(settings_layers->list[k].info.layerName, newly_added_layer->info.layerName, VK_MAX_EXTENSION_NAME_SIZE)) {
+                    if (0 == (newly_added_layer->type_flags & VK_LAYER_TYPE_FLAG_META_LAYER) &&
+                        settings_layers->list[k].lib_name != NULL && newly_added_layer->lib_name != NULL &&
+                        strcmp(settings_layers->list[k].lib_name, newly_added_layer->lib_name) == 0) {
+                        should_remove = true;
+                        break;
+                    }
                 }
             }
-        }
-        if (should_remove) {
-            loader_remove_layer_in_list(inst, settings_layers, settings_layers->count - 1);
+            if (should_remove) {
+                loader_remove_layer_in_list(inst, settings_layers, j);
+                j--;
+            }
         }
     }
 

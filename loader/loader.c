@@ -2836,7 +2836,7 @@ VkResult loader_read_layer_json(const struct loader_instance *inst, struct loade
     // Parse description
 
     result =
-        loader_parse_json_string_to_existing_str(layer_node, "description", VK_MAX_EXTENSION_NAME_SIZE, props.info.description);
+        loader_parse_json_string_to_existing_str(layer_node, "description", VK_MAX_DESCRIPTION_SIZE, props.info.description);
     if (VK_ERROR_INITIALIZATION_FAILED == result) {
         loader_log(
             inst, VULKAN_LOADER_WARN_BIT, 0,
