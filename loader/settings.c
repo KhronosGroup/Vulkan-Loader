@@ -883,7 +883,7 @@ TEST_FUNCTION_EXPORT VkResult update_global_loader_settings(void) {
         if (!check_if_settings_are_equal(&settings, &global_loader_settings)) {
             log_settings(NULL, &settings);
         }
-
+        free_loader_settings(NULL, &global_loader_settings);
         memcpy(&global_loader_settings, &settings, sizeof(loader_settings));
         if (global_loader_settings.settings_active && global_loader_settings.debug_level > 0) {
             loader_set_global_debug_level(global_loader_settings.debug_level);
@@ -991,7 +991,7 @@ TEST_FUNCTION_EXPORT VkResult get_settings_layers(const struct loader_instance* 
         }
 
         // Makes it possible to know if a new layer was added or not, since the only return value is VkResult
-        size_t count_before_adding = settings_layers->count;
+        uint32_t count_before_adding = settings_layers->count;
 
         local_res =
             loader_add_layer_properties(inst, settings_layers, json, layer_config->treat_as_implicit_manifest, layer_config->path);
@@ -1019,8 +1019,8 @@ TEST_FUNCTION_EXPORT VkResult get_settings_layers(const struct loader_instance* 
             bool should_remove = false;
             // Make sure the layer isn't already in the list
             for (uint32_t k = 0; k < j; k++) {
-                if (0 ==
-                    strncmp(settings_layers->list[k].info.layerName, newly_added_layer->info.layerName, VK_MAX_EXTENSION_NAME_SIZE)) {
+                if (0 == strncmp(settings_layers->list[k].info.layerName, newly_added_layer->info.layerName,
+                                 VK_MAX_EXTENSION_NAME_SIZE)) {
                     if (0 == (newly_added_layer->type_flags & VK_LAYER_TYPE_FLAG_META_LAYER) &&
                         settings_layers->list[k].lib_name != NULL && newly_added_layer->lib_name != NULL &&
                         strcmp(settings_layers->list[k].lib_name, newly_added_layer->lib_name) == 0) {
