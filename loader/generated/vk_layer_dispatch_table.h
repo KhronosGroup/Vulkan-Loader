@@ -788,6 +788,10 @@ typedef struct VkLayerDispatchTable_ {
     PFN_vkCmdCopyMemoryIndirectKHR CmdCopyMemoryIndirectKHR;
     PFN_vkCmdCopyMemoryToImageIndirectKHR CmdCopyMemoryToImageIndirectKHR;
 
+    // ---- VK_KHR_device_fault extension commands
+    PFN_vkGetDeviceFaultReportsKHR GetDeviceFaultReportsKHR;
+    PFN_vkGetDeviceFaultDebugInfoKHR GetDeviceFaultDebugInfoKHR;
+
     // ---- VK_KHR_maintenance10 extension commands
     PFN_vkCmdEndRendering2KHR CmdEndRendering2KHR;
 
