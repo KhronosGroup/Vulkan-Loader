@@ -394,6 +394,8 @@ static inline void layer_init_device_dispatch_table(VkDevice device, VkLayerDisp
     table->CmdBindDescriptorBufferEmbeddedSamplers2EXT = (PFN_vkCmdBindDescriptorBufferEmbeddedSamplers2EXT)gpa(device, "vkCmdBindDescriptorBufferEmbeddedSamplers2EXT");
     table->CmdCopyMemoryIndirectKHR = (PFN_vkCmdCopyMemoryIndirectKHR)gpa(device, "vkCmdCopyMemoryIndirectKHR");
     table->CmdCopyMemoryToImageIndirectKHR = (PFN_vkCmdCopyMemoryToImageIndirectKHR)gpa(device, "vkCmdCopyMemoryToImageIndirectKHR");
+    table->GetDeviceFaultReportsKHR = (PFN_vkGetDeviceFaultReportsKHR)gpa(device, "vkGetDeviceFaultReportsKHR");
+    table->GetDeviceFaultDebugInfoKHR = (PFN_vkGetDeviceFaultDebugInfoKHR)gpa(device, "vkGetDeviceFaultDebugInfoKHR");
     table->CmdEndRendering2KHR = (PFN_vkCmdEndRendering2KHR)gpa(device, "vkCmdEndRendering2KHR");
     table->DebugMarkerSetObjectTagEXT = (PFN_vkDebugMarkerSetObjectTagEXT)gpa(device, "vkDebugMarkerSetObjectTagEXT");
     table->DebugMarkerSetObjectNameEXT = (PFN_vkDebugMarkerSetObjectNameEXT)gpa(device, "vkDebugMarkerSetObjectNameEXT");

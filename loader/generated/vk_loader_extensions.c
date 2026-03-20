@@ -829,6 +829,10 @@ VKAPI_ATTR void VKAPI_CALL loader_init_device_extension_dispatch_table(struct lo
     table->CmdCopyMemoryIndirectKHR = (PFN_vkCmdCopyMemoryIndirectKHR)gdpa(dev, "vkCmdCopyMemoryIndirectKHR");
     table->CmdCopyMemoryToImageIndirectKHR = (PFN_vkCmdCopyMemoryToImageIndirectKHR)gdpa(dev, "vkCmdCopyMemoryToImageIndirectKHR");
 
+    // ---- VK_KHR_device_fault extension commands
+    table->GetDeviceFaultReportsKHR = (PFN_vkGetDeviceFaultReportsKHR)gdpa(dev, "vkGetDeviceFaultReportsKHR");
+    table->GetDeviceFaultDebugInfoKHR = (PFN_vkGetDeviceFaultDebugInfoKHR)gdpa(dev, "vkGetDeviceFaultDebugInfoKHR");
+
     // ---- VK_KHR_maintenance10 extension commands
     table->CmdEndRendering2KHR = (PFN_vkCmdEndRendering2KHR)gdpa(dev, "vkCmdEndRendering2KHR");
 
@@ -2882,6 +2886,10 @@ VKAPI_ATTR void* VKAPI_CALL loader_lookup_device_dispatch_table(const VkLayerDis
     // ---- VK_KHR_copy_memory_indirect extension commands
     if (!strcmp(name, "CmdCopyMemoryIndirectKHR")) return (void *)table->CmdCopyMemoryIndirectKHR;
     if (!strcmp(name, "CmdCopyMemoryToImageIndirectKHR")) return (void *)table->CmdCopyMemoryToImageIndirectKHR;
+
+    // ---- VK_KHR_device_fault extension commands
+    if (!strcmp(name, "GetDeviceFaultReportsKHR")) return (void *)table->GetDeviceFaultReportsKHR;
+    if (!strcmp(name, "GetDeviceFaultDebugInfoKHR")) return (void *)table->GetDeviceFaultDebugInfoKHR;
 
     // ---- VK_KHR_maintenance10 extension commands
     if (!strcmp(name, "CmdEndRendering2KHR")) return (void *)table->CmdEndRendering2KHR;
@@ -6033,6 +6041,37 @@ VKAPI_ATTR void VKAPI_CALL CmdCopyMemoryToImageIndirectKHR(
         abort(); /* Intentionally fail so user can correct issue. */
     }
     disp->CmdCopyMemoryToImageIndirectKHR(commandBuffer, pCopyMemoryToImageIndirectInfo);
+}
+
+
+// ---- VK_KHR_device_fault extension trampoline/terminators
+
+VKAPI_ATTR VkResult VKAPI_CALL GetDeviceFaultReportsKHR(
+    VkDevice                                    device,
+    uint64_t                                    timeout,
+    uint32_t*                                   pFaultCounts,
+    VkDeviceFaultInfoKHR*                       pFaultInfo) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkGetDeviceFaultReportsKHR: Invalid device "
+                   "[VUID-vkGetDeviceFaultReportsKHR-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    return disp->GetDeviceFaultReportsKHR(device, timeout, pFaultCounts, pFaultInfo);
+}
+
+VKAPI_ATTR VkResult VKAPI_CALL GetDeviceFaultDebugInfoKHR(
+    VkDevice                                    device,
+    VkDeviceFaultDebugInfoKHR*                  pDebugInfo) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkGetDeviceFaultDebugInfoKHR: Invalid device "
+                   "[VUID-vkGetDeviceFaultDebugInfoKHR-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    return disp->GetDeviceFaultDebugInfoKHR(device, pDebugInfo);
 }
 
 
@@ -13028,6 +13067,16 @@ bool extension_instance_gpa(struct loader_instance *ptr_instance, const char *na
     }
     if (!strcmp("vkCmdCopyMemoryToImageIndirectKHR", name)) {
         *addr = (void *)CmdCopyMemoryToImageIndirectKHR;
+        return true;
+    }
+
+    // ---- VK_KHR_device_fault extension commands
+    if (!strcmp("vkGetDeviceFaultReportsKHR", name)) {
+        *addr = (void *)GetDeviceFaultReportsKHR;
+        return true;
+    }
+    if (!strcmp("vkGetDeviceFaultDebugInfoKHR", name)) {
+        *addr = (void *)GetDeviceFaultDebugInfoKHR;
         return true;
     }
 
