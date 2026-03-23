@@ -3350,6 +3350,99 @@ VkResult prepend_if_manifest_file(const struct loader_instance *inst, const char
     return copy_str_to_start_of_string_list(inst, out_files, file_name, name_len);
 }
 
+VkResult append_raw_data_file_path_to_search_path_list(const struct loader_instance *instance,
+                                                       struct loader_generic_list *search_paths, const char *raw_path,
+                                                       const char *vulkan_relative_path, const size_t vulkan_relative_path_size,
+                                                       const char *origin) {
+    assert(search_paths);
+    assert(raw_path);
+    assert(origin);
+
+    uint32_t stop = 0;
+    uint32_t start = 0;
+
+    while (raw_path[start] != '\0') {
+        while (raw_path[start] == PATH_SEPARATOR && raw_path[start] != '\0') {
+            ++start;
+        }
+
+        stop = start;
+
+        while (raw_path[stop] != PATH_SEPARATOR && raw_path[stop] != '\0') {
+            ++stop;
+        }
+
+        const size_t difference = stop - start;
+
+        if (difference != 0) {
+            const size_t string_terminator_size = 1;
+            const size_t directory_symbol_size = 1;
+            const size_t string_size = difference + vulkan_relative_path_size + string_terminator_size + directory_symbol_size;
+            char *allocated_string_base = loader_instance_heap_alloc(instance, string_size, VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
+
+            if (allocated_string_base == NULL) {
+                return VK_ERROR_OUT_OF_HOST_MEMORY;
+            }
+
+            memcpy(allocated_string_base, &raw_path[start], difference);
+            char *allocated_string_cursor = allocated_string_base + difference;
+
+            // If this is a specific JSON file, just add it and don't add any
+            // relative path or directory symbol to it.
+            const bool is_json_result = is_json(allocated_string_cursor - 5, difference);
+
+            if (false == is_json_result) {
+                // Add the relative directory if present.
+                if (vulkan_relative_path_size > 0) {
+                    // If last symbol written was not a directory symbol, add it.
+                    if (*(allocated_string_cursor - 1) != DIRECTORY_SYMBOL) {
+                        *allocated_string_cursor++ = DIRECTORY_SYMBOL;
+                    }
+
+                    memcpy(allocated_string_cursor, vulkan_relative_path, vulkan_relative_path_size);
+                    allocated_string_cursor += vulkan_relative_path_size;
+                }
+            }
+
+            start = stop;
+            *allocated_string_cursor = '\0';
+            bool is_unique_path = true;
+            const struct loader_search_path path = {.raw_string = allocated_string_base, .origin = origin};
+            // Variable used to avoid casting from void on every access.
+            struct loader_search_path *paths = search_paths->list;
+
+            // Ignore duplicate paths, or it would result in duplicate extensions, duplicate devices, etc.
+            for (size_t i = 0; i < search_paths->count; ++i) {
+                if (NULL == paths[i].raw_string) {
+                    continue;
+                }
+
+                const int result = strcmp(paths[i].raw_string, path.raw_string);
+
+                if (0 == result) {
+                    is_unique_path = true;
+                    break;
+                }
+            }
+
+            if (false == is_unique_path) {
+                loader_instance_heap_free(instance, allocated_string_base);
+                return VK_SUCCESS;
+            }
+
+            const size_t count_bytes = search_paths->count * 32;
+
+            if (count_bytes >= search_paths->capacity) {
+                loader_resize_generic_list(instance, search_paths);
+                paths = search_paths->list;
+            }
+            paths[search_paths->count++] = path;
+        }
+    }
+
+    return VK_SUCCESS;
+}
+
 // Add any files found in the search_path.  If any path in the search path points to a specific JSON, attempt to
 // only open that one JSON.  Otherwise, if the path is a folder, search the folder for JSON files.
 VkResult add_data_files(const struct loader_instance *inst, char *search_path, struct loader_string_list *out_files) {
