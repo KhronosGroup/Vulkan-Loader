@@ -3544,37 +3544,53 @@ out:
 VkResult read_data_files_in_search_paths(const struct loader_instance *inst, enum loader_data_files_type manifest_type,
                                          const char *path_override, bool *override_active, struct loader_string_list *out_files) {
     VkResult vk_result = VK_SUCCESS;
-    char *override_env = NULL;
+    size_t max_list_size = 8;
+    struct loader_generic_list search_paths = {0};
+    vk_result = loader_init_generic_list(inst, &search_paths, max_list_size);
+
+    if (vk_result != VK_SUCCESS) {
+        loader_destroy_generic_list(inst, &search_paths);
+        return vk_result;
+    }
+
     const char *override_path = NULL;
+    char *override_env = NULL;
     char *additional_env = NULL;
-    size_t search_path_size = 0;
-    char *search_path = NULL;
-    char *cur_path_ptr = NULL;
-#if COMMON_UNIX_PLATFORMS
-    const char *relative_location = NULL;  // Only used on unix platforms
-    size_t rel_size = 0;                   // unused in windows, dont declare so no compiler warnings are generated
-#endif
+    char *override_path_origin = NULL;
+    char *additional_env_origin = NULL;
 
 #if defined(_WIN32)
     char *package_path = NULL;
-#elif COMMON_UNIX_PLATFORMS
-    // Determine how much space is needed to generate the full search path
-    // for the current manifest files.
+    char *package_path_origin = NULL;
+#endif
+
+#if COMMON_UNIX_PLATFORMS
+    char *xdg_config_dirs_origin = NULL;
+    char *xdg_data_dirs_origin = NULL;
+    char *home_config_dir_origin = NULL;
+    char *home_data_dir_origin = NULL;
+    const char *relative_location = NULL;  // Only used on unix platforms
+    size_t rel_size = 0;                   // unused in windows, dont declare so no compiler warnings are generated
+
     char *xdg_config_home = loader_secure_getenv("XDG_CONFIG_HOME", inst);
     char *xdg_config_dirs = loader_secure_getenv("XDG_CONFIG_DIRS", inst);
+    xdg_config_dirs_origin = SEARCH_PATH_ORIGIN_XDG_CONFIG_DIRS;
 
 #if !defined(__Fuchsia__) && !defined(__QNX__)
     if (NULL == xdg_config_dirs || '\0' == xdg_config_dirs[0]) {
         xdg_config_dirs = FALLBACK_CONFIG_DIRS;
+        xdg_config_dirs_origin = SEARCH_PATH_ORIGIN_FALLBACK_CONFIG_DIRS;
     }
 #endif
 
     char *xdg_data_home = loader_secure_getenv("XDG_DATA_HOME", inst);
     char *xdg_data_dirs = loader_secure_getenv("XDG_DATA_DIRS", inst);
+    xdg_data_dirs_origin = SEARCH_PATH_ORIGIN_XDG_DATA_DIRS;
 
 #if !defined(__Fuchsia__) && !defined(__QNX__)
     if (NULL == xdg_data_dirs || '\0' == xdg_data_dirs[0]) {
         xdg_data_dirs = FALLBACK_DATA_DIRS;
+        xdg_data_dirs_origin = SEARCH_PATH_ORIGIN_FALLBACK_DATA_DIRS;
     }
 #endif
 
@@ -3613,13 +3629,17 @@ VkResult read_data_files_in_search_paths(const struct loader_instance *inst, enu
 
     if (NULL != default_config_home) {
         home_config_dir = default_config_home;
+        home_config_dir_origin = SEARCH_PATH_ORIGIN_FALLBACK_CONFIG_DIRS;
     } else {
         home_config_dir = xdg_config_home;
+        home_config_dir_origin = SEARCH_PATH_ORIGIN_XDG_CONFIG_HOME;
     }
     if (NULL != default_data_home) {
         home_data_dir = default_data_home;
+        home_data_dir_origin = SEARCH_PATH_ORIGIN_FALLBACK_DATA_DIRS;
     } else {
         home_data_dir = xdg_data_home;
+        home_data_dir_origin = SEARCH_PATH_ORIGIN_XDG_DATA_DIRS;
     }
 #else
 #warning read_data_files_in_search_paths unsupported platform
@@ -3629,32 +3649,58 @@ VkResult read_data_files_in_search_paths(const struct loader_instance *inst, enu
         case LOADER_DATA_FILE_MANIFEST_DRIVER:
             if (loader_settings_should_use_driver_environment_variables(inst)) {
                 override_env = loader_secure_getenv(VK_DRIVER_FILES_ENV_VAR, inst);
+                override_path_origin = SEARCH_PATH_ORIGIN_VK_DRIVER_FILES_ENV_VAR;
+
                 if (NULL == override_env) {
                     // Not there, so fall back to the old name
                     override_env = loader_secure_getenv(VK_ICD_FILENAMES_ENV_VAR, inst);
+                    override_path_origin = SEARCH_PATH_ORIGIN_VK_ICD_FILENAMES_ENV_VAR;
                 }
+
                 additional_env = loader_secure_getenv(VK_ADDITIONAL_DRIVER_FILES_ENV_VAR, inst);
+
+                if (additional_env != NULL) {
+                    additional_env_origin = SEARCH_PATH_ORIGIN_VK_ADDITIONAL_DRIVER_FILES_ENV_VAR;
+                }
             }
 #if COMMON_UNIX_PLATFORMS
             relative_location = VK_DRIVERS_INFO_RELATIVE_DIR;
 #endif
 #if defined(_WIN32)
             package_path = windows_get_app_package_manifest_path(inst);
+            package_path_origin = SEARCH_PATH_ORIGIN_WIN_APP_PACKAGE_PATH;
 #endif
             break;
         case LOADER_DATA_FILE_MANIFEST_IMPLICIT_LAYER:
             override_env = loader_secure_getenv(VK_IMPLICIT_LAYER_PATH_ENV_VAR, inst);
             additional_env = loader_secure_getenv(VK_ADDITIONAL_IMPLICIT_LAYER_PATH_ENV_VAR, inst);
+
+            if (override_env != NULL) {
+                override_path_origin = SEARCH_PATH_ORIGIN_VK_IMPLICIT_LAYER_PATH_ENV_VAR;
+            }
+
+            if (additional_env != NULL) {
+                additional_env_origin = SEARCH_PATH_ORIGIN_VK_ADDITIONAL_IMPLICIT_LAYER_PATH_ENV_VAR;
+            }
 #if COMMON_UNIX_PLATFORMS
             relative_location = VK_ILAYERS_INFO_RELATIVE_DIR;
 #endif
 #if defined(_WIN32)
             package_path = windows_get_app_package_manifest_path(inst);
+            package_path_origin = SEARCH_PATH_ORIGIN_WIN_APP_PACKAGE_PATH;
 #endif
             break;
         case LOADER_DATA_FILE_MANIFEST_EXPLICIT_LAYER:
             override_env = loader_secure_getenv(VK_EXPLICIT_LAYER_PATH_ENV_VAR, inst);
             additional_env = loader_secure_getenv(VK_ADDITIONAL_EXPLICIT_LAYER_PATH_ENV_VAR, inst);
+
+            if (override_env != NULL) {
+                override_path_origin = SEARCH_PATH_ORIGIN_VK_EXPLICIT_LAYER_PATH_ENV_VAR;
+            }
+
+            if (additional_env != NULL) {
+                additional_env_origin = SEARCH_PATH_ORIGIN_VK_ADDITIONAL_EXPLICIT_LAYER_PATH_ENV_VAR;
+            }
 #if COMMON_UNIX_PLATFORMS
             relative_location = VK_ELAYERS_INFO_RELATIVE_DIR;
 #endif
@@ -3674,84 +3720,88 @@ VkResult read_data_files_in_search_paths(const struct loader_instance *inst, enu
 
     if (path_override != NULL) {
         override_path = path_override;
+        override_path_origin = SEARCH_PATH_ORIGIN_OVERRIDE_FILE;
     } else if (override_env != NULL) {
         override_path = override_env;
     }
 
-    // Add two by default for NULL terminator and one path separator on end (just in case)
-    search_path_size = 2;
+    if (vk_result != VK_SUCCESS) {
+        goto out;
+    }
 
     // If there's an override, use that (and the local folder if required) and nothing else
     if (NULL != override_path) {
-        // Local folder and null terminator
-        search_path_size += strlen(override_path) + 2;
-    } else {
-        // Add the size of any additional search paths defined in the additive environment variable
-        if (NULL != additional_env) {
-            search_path_size += determine_data_file_path_size(additional_env, 0) + 2;
-#if defined(_WIN32)
-        }
-        if (NULL != package_path) {
-            search_path_size += determine_data_file_path_size(package_path, 0) + 2;
-        }
-        if (search_path_size == 2) {
+        vk_result = append_raw_data_file_path_to_search_path_list(inst, &search_paths, override_path, relative_location, rel_size,
+                                                                  override_path_origin);
+        if (vk_result != VK_SUCCESS) {
             goto out;
         }
-#elif COMMON_UNIX_PLATFORMS
+#if COMMON_UNIX_PLATFORMS
+    } else {
+        // Add any additional search paths defined in the additive environment variable
+        if (NULL != additional_env) {
+            vk_result = append_raw_data_file_path_to_search_path_list(inst, &search_paths, additional_env, relative_location,
+                                                                      rel_size, additional_env_origin);
+            if (vk_result != VK_SUCCESS) {
+                goto out;
+            }
         }
 
         // Add the general search folders (with the appropriate relative folder added)
         rel_size = strlen(relative_location);
         if (rel_size > 0) {
-#if defined(__APPLE__)
-            search_path_size += MAXPATHLEN;
-#endif
             // Only add the home folders if defined
             if (NULL != home_config_dir) {
-                search_path_size += determine_data_file_path_size(home_config_dir, rel_size);
+                vk_result = append_raw_data_file_path_to_search_path_list(inst, &search_paths, home_config_dir, relative_location,
+                                                                          rel_size, home_config_dir_origin);
+                if (vk_result != VK_SUCCESS) {
+                    goto out;
+                }
             }
-            search_path_size += determine_data_file_path_size(xdg_config_dirs, rel_size);
-            search_path_size += determine_data_file_path_size(SYSCONFDIR, rel_size);
+
+            vk_result = append_raw_data_file_path_to_search_path_list(inst, &search_paths, xdg_config_dirs, relative_location,
+                                                                      rel_size, xdg_config_dirs_origin);
+            if (vk_result != VK_SUCCESS) {
+                goto out;
+            }
+
+            vk_result = append_raw_data_file_path_to_search_path_list(inst, &search_paths, SYSCONFDIR, relative_location, rel_size,
+                                                                      SEARCH_PATH_ORIGIN_SYSCONFDIR);
+            if (vk_result != VK_SUCCESS) {
+                goto out;
+            }
 #if defined(EXTRASYSCONFDIR)
-            search_path_size += determine_data_file_path_size(EXTRASYSCONFDIR, rel_size);
+            vk_result = append_raw_data_file_path_to_search_path_list(inst, &search_paths, EXTRASYSCONFDIR, relative_location,
+                                                                      rel_size, SEARCH_PATH_ORIGIN_EXTRASYSCONFDIR);
+            if (vk_result != VK_SUCCESS) {
+                goto out;
+            }
 #endif
             // Only add the home folders if defined
             if (NULL != home_data_dir) {
-                search_path_size += determine_data_file_path_size(home_data_dir, rel_size);
+                vk_result = append_raw_data_file_path_to_search_path_list(inst, &search_paths, home_data_dir, relative_location,
+                                                                          rel_size, home_data_dir_origin);
+                if (vk_result != VK_SUCCESS) {
+                    goto out;
+                }
             }
-            search_path_size += determine_data_file_path_size(xdg_data_dirs, rel_size);
+
+            vk_result = append_raw_data_file_path_to_search_path_list(inst, &search_paths, xdg_data_dirs, relative_location,
+                                                                      rel_size, xdg_data_dirs_origin);
+            if (vk_result != VK_SUCCESS) {
+                goto out;
+            }
         }
-#else
-#warning read_data_files_in_search_paths unsupported platform
 #endif
-    }
-
-    // Allocate the required space
-    search_path = loader_instance_heap_calloc(inst, search_path_size, VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
-    if (NULL == search_path) {
-        loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0,
-                   "read_data_files_in_search_paths: Failed to allocate space for search path of length %d",
-                   (uint32_t)search_path_size);
-        vk_result = VK_ERROR_OUT_OF_HOST_MEMORY;
-        goto out;
-    }
-
-    cur_path_ptr = search_path;
-
-    // Add the remaining paths to the list
-    if (NULL != override_path) {
-        size_t override_path_len = strlen(override_path);
-        loader_strncpy(cur_path_ptr, search_path_size, override_path, override_path_len);
-        cur_path_ptr += override_path_len;
-    } else {
-        // Add any additional search paths defined in the additive environment variable
-        if (NULL != additional_env) {
-            copy_data_file_info(additional_env, NULL, 0, &cur_path_ptr);
-        }
 
 #if defined(_WIN32)
         if (NULL != package_path) {
-            copy_data_file_info(package_path, NULL, 0, &cur_path_ptr);
+            vk_result =
+                append_raw_data_file_path_to_search_path_list(inst, &search_paths, package_path, NULL, 0, package_path_origin);
+
+            if (vk_result != VK_SUCCESS) {
+                goto out;
+            }
         }
 #elif COMMON_UNIX_PLATFORMS
         if (rel_size > 0) {
@@ -3764,111 +3814,77 @@ VkResult read_data_files_in_search_paths(const struct loader_instance *inst, enu
             if (NULL != main_bundle) {
                 CFURLRef ref = CFBundleCopyResourcesDirectoryURL(main_bundle);
                 if (NULL != ref) {
-                    if (CFURLGetFileSystemRepresentation(ref, TRUE, (UInt8 *)cur_path_ptr, search_path_size)) {
-                        cur_path_ptr += strlen(cur_path_ptr);
-                        *cur_path_ptr++ = DIRECTORY_SYMBOL;
-                        memcpy(cur_path_ptr, relative_location, rel_size);
-                        cur_path_ptr += rel_size;
-                        *cur_path_ptr++ = PATH_SEPARATOR;
+                    char bundle_resource_path_base[MAX_STRING_SIZE] = {0};
+                    if (CFURLGetFileSystemRepresentation(ref, TRUE, (UInt8 *)bundle_resource_path_base, MAX_STRING_SIZE)) {
+                        char *bundle_resource_path_cursor = bundle_resource_path_base;
+                        assert(strlen(bundle_resource_path_base) + rel_size < MAX_STRING_SIZE);
+                        bundle_resource_path_cursor += strlen(bundle_resource_path_base);
+                        *bundle_resource_path_cursor++ = DIRECTORY_SYMBOL;
+                        vk_result = append_raw_data_file_path_to_search_path_list(inst, &search_paths, bundle_resource_path_base,
+                                                                                  relative_location, rel_size,
+                                                                                  SEARCH_PATH_ORIGIN_APPLE_APP_BUNDLE);
                     }
                     CFRelease(ref);
                 }
             }
 #endif  // __APPLE__
-
-            // Only add the home folders if not NULL
-            if (NULL != home_config_dir) {
-                copy_data_file_info(home_config_dir, relative_location, rel_size, &cur_path_ptr);
-            }
-            copy_data_file_info(xdg_config_dirs, relative_location, rel_size, &cur_path_ptr);
-            copy_data_file_info(SYSCONFDIR, relative_location, rel_size, &cur_path_ptr);
-#if defined(EXTRASYSCONFDIR)
-            copy_data_file_info(EXTRASYSCONFDIR, relative_location, rel_size, &cur_path_ptr);
-#endif
-
-            // Only add the home folders if not NULL
-            if (NULL != home_data_dir) {
-                copy_data_file_info(home_data_dir, relative_location, rel_size, &cur_path_ptr);
-            }
-            copy_data_file_info(xdg_data_dirs, relative_location, rel_size, &cur_path_ptr);
         }
-
-        // Remove the last path separator
-        --cur_path_ptr;
-
-        assert(cur_path_ptr - search_path < (ptrdiff_t)search_path_size);
-        *cur_path_ptr = '\0';
 #else
 #warning read_data_files_in_search_paths unsupported platform
 #endif
     }
 
-    // Remove duplicate paths, or it would result in duplicate extensions, duplicate devices, etc.
-    // This uses minimal memory, but is O(N^2) on the number of paths. Expect only a few paths.
-    char path_sep_str[2] = {PATH_SEPARATOR, '\0'};
-    size_t search_path_updated_size = strlen(search_path);
-    for (size_t first = 0; first < search_path_updated_size;) {
-        // If this is an empty path, erase it
-        if (search_path[first] == PATH_SEPARATOR) {
-            memmove(&search_path[first], &search_path[first + 1], search_path_updated_size - first + 1);
-            search_path_updated_size -= 1;
+    // Print out the paths being searched if debugging is enabled
+    uint32_t log_flags = 0;
+
+    if (manifest_type == LOADER_DATA_FILE_MANIFEST_DRIVER) {
+        log_flags = VULKAN_LOADER_DRIVER_BIT;
+        loader_log(inst, VULKAN_LOADER_DRIVER_BIT, 0, "Searching for driver manifest files");
+    } else {
+        log_flags = VULKAN_LOADER_LAYER_BIT;
+        loader_log(inst, VULKAN_LOADER_LAYER_BIT, 0, "Searching for %s layer manifest files",
+                   manifest_type == LOADER_DATA_FILE_MANIFEST_EXPLICIT_LAYER ? "explicit" : "implicit");
+    }
+
+    const char *visited_origins[32] = {NULL};
+    uint32_t visited_count = 0;
+
+    for (size_t i = 0; i < search_paths.count; ++i) {
+        struct loader_search_path *paths = search_paths.list;
+        const char *current_origin = paths[i].origin;
+        bool origin_already_seen = false;
+
+        for (size_t ii = 0; ii < visited_count; ++ii) {
+            if (visited_origins[ii] == current_origin) {
+                origin_already_seen = true;
+                break;
+            }
+        }
+
+        if (true == origin_already_seen) {
             continue;
         }
 
-        size_t first_end = first + 1;
-        first_end += strcspn(&search_path[first_end], path_sep_str);
-        for (size_t second = first_end + 1; second < search_path_updated_size;) {
-            size_t second_end = second + 1;
-            second_end += strcspn(&search_path[second_end], path_sep_str);
-            if (first_end - first == second_end - second &&
-                !strncmp(&search_path[first], &search_path[second], second_end - second)) {
-                // Found duplicate. Include PATH_SEPARATOR in second_end, then erase it from search_path.
-                if (search_path[second_end] == PATH_SEPARATOR) {
-                    second_end++;
-                }
-                memmove(&search_path[second], &search_path[second_end], search_path_updated_size - second_end + 1);
-                search_path_updated_size -= second_end - second;
-            } else {
-                second = second_end + 1;
-            }
-        }
-        first = first_end + 1;
-    }
-    search_path_size = search_path_updated_size;
+        visited_origins[visited_count++] = current_origin;
+        loader_log(inst, log_flags, 0, "    In %s:", current_origin);
 
-    // Print out the paths being searched if debugging is enabled
-    uint32_t log_flags = 0;
-    if (search_path_size > 0) {
-        char *tmp_search_path = loader_instance_heap_alloc(inst, search_path_size + 1, VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
-        if (NULL != tmp_search_path) {
-            loader_strncpy(tmp_search_path, search_path_size + 1, search_path, search_path_size);
-            tmp_search_path[search_path_size] = '\0';
-            if (manifest_type == LOADER_DATA_FILE_MANIFEST_DRIVER) {
-                log_flags = VULKAN_LOADER_DRIVER_BIT;
-                loader_log(inst, VULKAN_LOADER_DRIVER_BIT, 0, "Searching for driver manifest files");
-            } else {
-                log_flags = VULKAN_LOADER_LAYER_BIT;
-                loader_log(inst, VULKAN_LOADER_LAYER_BIT, 0, "Searching for %s layer manifest files",
-                           manifest_type == LOADER_DATA_FILE_MANIFEST_EXPLICIT_LAYER ? "explicit" : "implicit");
+        for (size_t ii = 0; ii < search_paths.count; ++ii) {
+            const char *origin_to_compare = paths[ii].origin;
+            if (current_origin == origin_to_compare) {
+                loader_log(inst, log_flags, 0, "        %s", paths[ii].raw_string);
             }
-            loader_log(inst, log_flags, 0, "   In following locations:");
-            char *cur_file;
-            char *next_file = tmp_search_path;
-            while (NULL != next_file && *next_file != '\0') {
-                cur_file = next_file;
-                next_file = loader_get_next_path(cur_file);
-                loader_log(inst, log_flags, 0, "      %s", cur_file);
-            }
-            loader_instance_heap_free(inst, tmp_search_path);
         }
     }
 
-    // Now, parse the paths and add any manifest files found in them.
-    vk_result = add_data_files(inst, search_path, out_files);
+    // Now add any manifest files found in them.
+    for (size_t i = 0; i < search_paths.count; ++i) {
+        struct loader_search_path *paths = search_paths.list;
+        (void)add_data_files(inst, paths[i].raw_string, out_files);
+    }
 
     if (log_flags != 0 && out_files->count > 0) {
         loader_log(inst, log_flags, 0, "   Found the following files:");
-        for (uint32_t cur_file = 0; cur_file < out_files->count; ++cur_file) {
+        for (size_t cur_file = 0; cur_file < out_files->count; ++cur_file) {
             loader_log(inst, log_flags, 0, "      %s", out_files->list[cur_file]);
         }
     } else {
@@ -3882,7 +3898,12 @@ VkResult read_data_files_in_search_paths(const struct loader_instance *inst, enu
     }
 
 out:
+    for (uint32_t i = 0; i < search_paths.count; i++) {
+        struct loader_search_path *paths = search_paths.list;
+        loader_instance_heap_free(inst, paths[i].raw_string);
+    }
 
+    loader_destroy_generic_list(inst, &search_paths);
     loader_free_getenv(additional_env, inst);
     loader_free_getenv(override_env, inst);
 #if defined(_WIN32)
@@ -3899,8 +3920,6 @@ out:
 #else
 #warning read_data_files_in_search_paths unsupported platform
 #endif
-
-    loader_instance_heap_free(inst, search_path);
 
     return vk_result;
 }
@@ -4611,8 +4630,8 @@ VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL loader_gpa_instance_terminator(VkInstan
     if (!strcmp(pName, "vkCreateInstance")) {
         return (PFN_vkVoidFunction)terminator_CreateInstance;
     }
-    // If a layer is querying pre-instance functions using vkGetInstanceProcAddr, we need to return function pointers that match the
-    // Vulkan API
+    // If a layer is querying pre-instance functions using vkGetInstanceProcAddr, we need to return function pointers that match
+    // the Vulkan API
     if (!strcmp(pName, "vkEnumerateInstanceLayerProperties")) {
         return (PFN_vkVoidFunction)terminator_EnumerateInstanceLayerProperties;
     }
@@ -4623,8 +4642,8 @@ VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL loader_gpa_instance_terminator(VkInstan
         return (PFN_vkVoidFunction)terminator_EnumerateInstanceVersion;
     }
 
-    // While the spec is very clear that querying vkCreateDevice requires a valid VkInstance, because the loader allowed querying
-    // with a NULL VkInstance handle for a long enough time, it is impractical to fix this bug in the loader
+    // While the spec is very clear that querying vkCreateDevice requires a valid VkInstance, because the loader allowed
+    // querying with a NULL VkInstance handle for a long enough time, it is impractical to fix this bug in the loader
 
     // As such, this is a bug to maintain compatibility for the RTSS layer (Riva Tuner Statistics Server) but may
     // be depended upon by other layers out in the wild.
@@ -4780,7 +4799,8 @@ VkResult loader_add_implicit_layers(const struct loader_instance *inst, const ch
     for (uint32_t src_layer = 0; src_layer < source_list->count; src_layer++) {
         struct loader_layer_properties *prop = &source_list->list[src_layer];
         if (0 == (prop->type_flags & VK_LAYER_TYPE_FLAG_EXPLICIT_LAYER)) {
-            // If this layer appears in the enabled_layers_env, don't add it. We will let loader_add_environment_layers handle it
+            // If this layer appears in the enabled_layers_env, don't add it. We will let loader_add_environment_layers handle
+            // it
             if (NULL == enabled_layers_env || NULL == strstr(enabled_layers_env, prop->info.layerName)) {
                 VkResult result = loader_add_implicit_layer(inst, prop, filters, target_list, expanded_target_list, source_list);
                 if (result == VK_ERROR_OUT_OF_HOST_MEMORY) return result;
@@ -5302,11 +5322,11 @@ VkResult loader_create_instance_chain(const VkInstanceCreateInfo *pCreateInfo, c
     feature_flags = windows_initialize_dxgi();
 #endif
 
-    // The following line of code is actually invalid at least according to the Vulkan spec with header update 1.2.193 and onwards.
-    // The update required calls to vkGetInstanceProcAddr querying "global" functions (which includes vkCreateInstance) to pass NULL
-    // for the instance parameter. Because it wasn't required to be NULL before, there may be layers which expect the loader's
-    // behavior of passing a non-NULL value into vkGetInstanceProcAddr.
-    // In an abundance of caution, the incorrect code remains as is, with a big comment to indicate that its wrong
+    // The following line of code is actually invalid at least according to the Vulkan spec with header update 1.2.193 and
+    // onwards. The update required calls to vkGetInstanceProcAddr querying "global" functions (which includes vkCreateInstance)
+    // to pass NULL for the instance parameter. Because it wasn't required to be NULL before, there may be layers which expect
+    // the loader's behavior of passing a non-NULL value into vkGetInstanceProcAddr. In an abundance of caution, the incorrect
+    // code remains as is, with a big comment to indicate that its wrong
     PFN_vkCreateInstance fpCreateInstance = (PFN_vkCreateInstance)next_gipa(*created_instance, "vkCreateInstance");
     if (fpCreateInstance) {
         VkLayerInstanceCreateInfo instance_dispatch;
