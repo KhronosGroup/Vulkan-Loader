@@ -302,6 +302,9 @@ typedef struct VkLayerInstanceDispatchTable_ {
     PFN_vkGetPhysicalDeviceQueueFamilyDataGraphPropertiesARM GetPhysicalDeviceQueueFamilyDataGraphPropertiesARM;
     PFN_vkGetPhysicalDeviceQueueFamilyDataGraphProcessingEnginePropertiesARM GetPhysicalDeviceQueueFamilyDataGraphProcessingEnginePropertiesARM;
 
+    // ---- VK_ARM_data_graph_instruction_set_tosa extension commands
+    PFN_vkGetPhysicalDeviceQueueFamilyDataGraphEngineOperationPropertiesARM GetPhysicalDeviceQueueFamilyDataGraphEngineOperationPropertiesARM;
+
     // ---- VK_OHOS_surface extension commands
 #if defined(VK_USE_PLATFORM_OHOS)
     PFN_vkCreateSurfaceOHOS CreateSurfaceOHOS;
@@ -1053,6 +1056,9 @@ typedef struct VkLayerDispatchTable_ {
     PFN_vkSetPrivateDataEXT SetPrivateDataEXT;
     PFN_vkGetPrivateDataEXT GetPrivateDataEXT;
 
+    // ---- VK_QCOM_queue_perf_hint extension commands
+    PFN_vkQueueSetPerfHintQCOM QueueSetPerfHintQCOM;
+
     // ---- VK_NV_cuda_kernel_launch extension commands
 #if defined(VK_ENABLE_BETA_EXTENSIONS)
     PFN_vkCreateCudaModuleNV CreateCudaModuleNV;
@@ -1187,6 +1193,9 @@ typedef struct VkLayerDispatchTable_ {
 
     // ---- VK_EXT_pageable_device_local_memory extension commands
     PFN_vkSetDeviceMemoryPriorityEXT SetDeviceMemoryPriorityEXT;
+
+    // ---- VK_ARM_scheduling_controls extension commands
+    PFN_vkCmdSetDispatchParametersARM CmdSetDispatchParametersARM;
 
     // ---- VK_VALVE_descriptor_set_host_mapping extension commands
     PFN_vkGetDescriptorSetLayoutHostMappingInfoVALVE GetDescriptorSetLayoutHostMappingInfoVALVE;
@@ -1367,6 +1376,9 @@ typedef struct VkLayerDispatchTable_ {
 
     // ---- VK_NV_compute_occupancy_priority extension commands
     PFN_vkCmdSetComputeOccupancyPriorityNV CmdSetComputeOccupancyPriorityNV;
+
+    // ---- VK_EXT_primitive_restart_index extension commands
+    PFN_vkCmdSetPrimitiveRestartIndexEXT CmdSetPrimitiveRestartIndexEXT;
 
     // ---- VK_KHR_acceleration_structure extension commands
     PFN_vkCreateAccelerationStructureKHR CreateAccelerationStructureKHR;

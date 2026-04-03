@@ -493,6 +493,9 @@ struct loader_icd_term_dispatch {
     PFN_vkGetPhysicalDeviceQueueFamilyDataGraphPropertiesARM GetPhysicalDeviceQueueFamilyDataGraphPropertiesARM;
     PFN_vkGetPhysicalDeviceQueueFamilyDataGraphProcessingEnginePropertiesARM GetPhysicalDeviceQueueFamilyDataGraphProcessingEnginePropertiesARM;
 
+    // ---- VK_ARM_data_graph_instruction_set_tosa extension commands
+    PFN_vkGetPhysicalDeviceQueueFamilyDataGraphEngineOperationPropertiesARM GetPhysicalDeviceQueueFamilyDataGraphEngineOperationPropertiesARM;
+
     // ---- VK_OHOS_surface extension commands
 #if defined(VK_USE_PLATFORM_OHOS)
     PFN_vkCreateSurfaceOHOS CreateSurfaceOHOS;
