@@ -326,6 +326,9 @@ VKAPI_ATTR bool VKAPI_CALL loader_icd_init_entries(struct loader_instance* inst,
     LOOKUP_GIPA(GetPhysicalDeviceQueueFamilyDataGraphPropertiesARM);
     LOOKUP_GIPA(GetPhysicalDeviceQueueFamilyDataGraphProcessingEnginePropertiesARM);
 
+    // ---- VK_ARM_data_graph_instruction_set_tosa extension commands
+    LOOKUP_GIPA(GetPhysicalDeviceQueueFamilyDataGraphEngineOperationPropertiesARM);
+
     // ---- VK_OHOS_surface extension commands
 #if defined(VK_USE_PLATFORM_OHOS)
     LOOKUP_GIPA(CreateSurfaceOHOS);
@@ -1094,6 +1097,9 @@ VKAPI_ATTR void VKAPI_CALL loader_init_device_extension_dispatch_table(struct lo
     table->SetPrivateDataEXT = (PFN_vkSetPrivateDataEXT)gdpa(dev, "vkSetPrivateDataEXT");
     table->GetPrivateDataEXT = (PFN_vkGetPrivateDataEXT)gdpa(dev, "vkGetPrivateDataEXT");
 
+    // ---- VK_QCOM_queue_perf_hint extension commands
+    table->QueueSetPerfHintQCOM = (PFN_vkQueueSetPerfHintQCOM)gdpa(dev, "vkQueueSetPerfHintQCOM");
+
     // ---- VK_NV_cuda_kernel_launch extension commands
 #if defined(VK_ENABLE_BETA_EXTENSIONS)
     table->CreateCudaModuleNV = (PFN_vkCreateCudaModuleNV)gdpa(dev, "vkCreateCudaModuleNV");
@@ -1228,6 +1234,9 @@ VKAPI_ATTR void VKAPI_CALL loader_init_device_extension_dispatch_table(struct lo
 
     // ---- VK_EXT_pageable_device_local_memory extension commands
     table->SetDeviceMemoryPriorityEXT = (PFN_vkSetDeviceMemoryPriorityEXT)gdpa(dev, "vkSetDeviceMemoryPriorityEXT");
+
+    // ---- VK_ARM_scheduling_controls extension commands
+    table->CmdSetDispatchParametersARM = (PFN_vkCmdSetDispatchParametersARM)gdpa(dev, "vkCmdSetDispatchParametersARM");
 
     // ---- VK_VALVE_descriptor_set_host_mapping extension commands
     table->GetDescriptorSetLayoutHostMappingInfoVALVE = (PFN_vkGetDescriptorSetLayoutHostMappingInfoVALVE)gdpa(dev, "vkGetDescriptorSetLayoutHostMappingInfoVALVE");
@@ -1408,6 +1417,9 @@ VKAPI_ATTR void VKAPI_CALL loader_init_device_extension_dispatch_table(struct lo
 
     // ---- VK_NV_compute_occupancy_priority extension commands
     table->CmdSetComputeOccupancyPriorityNV = (PFN_vkCmdSetComputeOccupancyPriorityNV)gdpa(dev, "vkCmdSetComputeOccupancyPriorityNV");
+
+    // ---- VK_EXT_primitive_restart_index extension commands
+    table->CmdSetPrimitiveRestartIndexEXT = (PFN_vkCmdSetPrimitiveRestartIndexEXT)gdpa(dev, "vkCmdSetPrimitiveRestartIndexEXT");
 
     // ---- VK_KHR_acceleration_structure extension commands
     table->CreateAccelerationStructureKHR = (PFN_vkCreateAccelerationStructureKHR)gdpa(dev, "vkCreateAccelerationStructureKHR");
@@ -1710,6 +1722,9 @@ VKAPI_ATTR void VKAPI_CALL loader_init_instance_extension_dispatch_table(VkLayer
     // ---- VK_ARM_data_graph extension commands
     table->GetPhysicalDeviceQueueFamilyDataGraphPropertiesARM = (PFN_vkGetPhysicalDeviceQueueFamilyDataGraphPropertiesARM)gpa(inst, "vkGetPhysicalDeviceQueueFamilyDataGraphPropertiesARM");
     table->GetPhysicalDeviceQueueFamilyDataGraphProcessingEnginePropertiesARM = (PFN_vkGetPhysicalDeviceQueueFamilyDataGraphProcessingEnginePropertiesARM)gpa(inst, "vkGetPhysicalDeviceQueueFamilyDataGraphProcessingEnginePropertiesARM");
+
+    // ---- VK_ARM_data_graph_instruction_set_tosa extension commands
+    table->GetPhysicalDeviceQueueFamilyDataGraphEngineOperationPropertiesARM = (PFN_vkGetPhysicalDeviceQueueFamilyDataGraphEngineOperationPropertiesARM)gpa(inst, "vkGetPhysicalDeviceQueueFamilyDataGraphEngineOperationPropertiesARM");
 
     // ---- VK_OHOS_surface extension commands
 #if defined(VK_USE_PLATFORM_OHOS)
@@ -3152,6 +3167,9 @@ VKAPI_ATTR void* VKAPI_CALL loader_lookup_device_dispatch_table(const VkLayerDis
     if (!strcmp(name, "SetPrivateDataEXT")) return (void *)table->SetPrivateDataEXT;
     if (!strcmp(name, "GetPrivateDataEXT")) return (void *)table->GetPrivateDataEXT;
 
+    // ---- VK_QCOM_queue_perf_hint extension commands
+    if (!strcmp(name, "QueueSetPerfHintQCOM")) return (void *)table->QueueSetPerfHintQCOM;
+
     // ---- VK_NV_cuda_kernel_launch extension commands
 #if defined(VK_ENABLE_BETA_EXTENSIONS)
     if (!strcmp(name, "CreateCudaModuleNV")) return (void *)table->CreateCudaModuleNV;
@@ -3286,6 +3304,9 @@ VKAPI_ATTR void* VKAPI_CALL loader_lookup_device_dispatch_table(const VkLayerDis
 
     // ---- VK_EXT_pageable_device_local_memory extension commands
     if (!strcmp(name, "SetDeviceMemoryPriorityEXT")) return (void *)table->SetDeviceMemoryPriorityEXT;
+
+    // ---- VK_ARM_scheduling_controls extension commands
+    if (!strcmp(name, "CmdSetDispatchParametersARM")) return (void *)table->CmdSetDispatchParametersARM;
 
     // ---- VK_VALVE_descriptor_set_host_mapping extension commands
     if (!strcmp(name, "GetDescriptorSetLayoutHostMappingInfoVALVE")) return (void *)table->GetDescriptorSetLayoutHostMappingInfoVALVE;
@@ -3466,6 +3487,9 @@ VKAPI_ATTR void* VKAPI_CALL loader_lookup_device_dispatch_table(const VkLayerDis
 
     // ---- VK_NV_compute_occupancy_priority extension commands
     if (!strcmp(name, "CmdSetComputeOccupancyPriorityNV")) return (void *)table->CmdSetComputeOccupancyPriorityNV;
+
+    // ---- VK_EXT_primitive_restart_index extension commands
+    if (!strcmp(name, "CmdSetPrimitiveRestartIndexEXT")) return (void *)table->CmdSetPrimitiveRestartIndexEXT;
 
     // ---- VK_KHR_acceleration_structure extension commands
     if (!strcmp(name, "CreateAccelerationStructureKHR")) return (void *)table->CreateAccelerationStructureKHR;
@@ -3773,6 +3797,9 @@ VKAPI_ATTR void* VKAPI_CALL loader_lookup_instance_dispatch_table(const VkLayerI
     // ---- VK_ARM_data_graph extension commands
     if (!strcmp(name, "GetPhysicalDeviceQueueFamilyDataGraphPropertiesARM")) return (void *)table->GetPhysicalDeviceQueueFamilyDataGraphPropertiesARM;
     if (!strcmp(name, "GetPhysicalDeviceQueueFamilyDataGraphProcessingEnginePropertiesARM")) return (void *)table->GetPhysicalDeviceQueueFamilyDataGraphProcessingEnginePropertiesARM;
+
+    // ---- VK_ARM_data_graph_instruction_set_tosa extension commands
+    if (!strcmp(name, "GetPhysicalDeviceQueueFamilyDataGraphEngineOperationPropertiesARM")) return (void *)table->GetPhysicalDeviceQueueFamilyDataGraphEngineOperationPropertiesARM;
 
     // ---- VK_OHOS_surface extension commands
 #if defined(VK_USE_PLATFORM_OHOS)
@@ -7575,7 +7602,7 @@ VKAPI_ATTR void VKAPI_CALL DestroyAccelerationStructureNV(
 VKAPI_ATTR void VKAPI_CALL GetAccelerationStructureMemoryRequirementsNV(
     VkDevice                                    device,
     const VkAccelerationStructureMemoryRequirementsInfoNV* pInfo,
-    VkMemoryRequirements2KHR*                   pMemoryRequirements) {
+    VkMemoryRequirements2*                      pMemoryRequirements) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(device);
     if (NULL == disp) {
         loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
@@ -8834,6 +8861,22 @@ VKAPI_ATTR void VKAPI_CALL GetPrivateDataEXT(
 }
 
 
+// ---- VK_QCOM_queue_perf_hint extension trampoline/terminators
+
+VKAPI_ATTR VkResult                   VKAPI_CALL QueueSetPerfHintQCOM(
+    VkQueue                                     queue,
+    const VkPerfHintInfoQCOM*                   pPerfHintInfo) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(queue);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkQueueSetPerfHintQCOM: Invalid queue "
+                   "[VUID-vkQueueSetPerfHintQCOM-queue-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    return disp->QueueSetPerfHintQCOM(queue, pPerfHintInfo);
+}
+
+
 // ---- VK_NV_cuda_kernel_launch extension trampoline/terminators
 
 #if defined(VK_ENABLE_BETA_EXTENSIONS)
@@ -9498,7 +9541,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetMemoryRemoteAddressNV(
 
 VKAPI_ATTR VkResult VKAPI_CALL GetPipelinePropertiesEXT(
     VkDevice                                    device,
-    const VkPipelineInfoEXT*                    pPipelineInfo,
+    const VkPipelineInfoKHR*                    pPipelineInfo,
     VkBaseOutStructure*                         pPipelineProperties) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(device);
     if (NULL == disp) {
@@ -9886,6 +9929,22 @@ VKAPI_ATTR void VKAPI_CALL SetDeviceMemoryPriorityEXT(
         abort(); /* Intentionally fail so user can correct issue. */
     }
     disp->SetDeviceMemoryPriorityEXT(device, memory, priority);
+}
+
+
+// ---- VK_ARM_scheduling_controls extension trampoline/terminators
+
+VKAPI_ATTR void VKAPI_CALL CmdSetDispatchParametersARM(
+    VkCommandBuffer                             commandBuffer,
+    const VkDispatchParametersARM*              pDispatchParameters) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkCmdSetDispatchParametersARM: Invalid commandBuffer "
+                   "[VUID-vkCmdSetDispatchParametersARM-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    disp->CmdSetDispatchParametersARM(commandBuffer, pDispatchParameters);
 }
 
 
@@ -11240,6 +11299,41 @@ VKAPI_ATTR void VKAPI_CALL terminator_GetPhysicalDeviceQueueFamilyDataGraphProce
 }
 
 
+// ---- VK_ARM_data_graph_instruction_set_tosa extension trampoline/terminators
+
+VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceQueueFamilyDataGraphEngineOperationPropertiesARM(
+    VkPhysicalDevice                            physicalDevice,
+    uint32_t                                    queueFamilyIndex,
+    const VkQueueFamilyDataGraphPropertiesARM*  pQueueFamilyDataGraphProperties,
+    VkBaseOutStructure*                         pProperties) {
+    const VkLayerInstanceDispatchTable *disp;
+    VkPhysicalDevice unwrapped_phys_dev = loader_unwrap_physical_device(physicalDevice);
+    if (VK_NULL_HANDLE == unwrapped_phys_dev) {
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkGetPhysicalDeviceQueueFamilyDataGraphEngineOperationPropertiesARM: Invalid physicalDevice "
+                   "[VUID-vkGetPhysicalDeviceQueueFamilyDataGraphEngineOperationPropertiesARM-physicalDevice-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    disp = loader_get_instance_layer_dispatch(physicalDevice);
+    return disp->GetPhysicalDeviceQueueFamilyDataGraphEngineOperationPropertiesARM(unwrapped_phys_dev, queueFamilyIndex, pQueueFamilyDataGraphProperties, pProperties);
+}
+
+VKAPI_ATTR VkResult VKAPI_CALL terminator_GetPhysicalDeviceQueueFamilyDataGraphEngineOperationPropertiesARM(
+    VkPhysicalDevice                            physicalDevice,
+    uint32_t                                    queueFamilyIndex,
+    const VkQueueFamilyDataGraphPropertiesARM*  pQueueFamilyDataGraphProperties,
+    VkBaseOutStructure*                         pProperties) {
+    struct loader_physical_device_term *phys_dev_term = (struct loader_physical_device_term *)physicalDevice;
+    struct loader_icd_term *icd_term = phys_dev_term->this_icd_term;
+    if (NULL == icd_term->dispatch.GetPhysicalDeviceQueueFamilyDataGraphEngineOperationPropertiesARM) {
+        loader_log(icd_term->this_instance, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT, 0,
+                   "ICD associated with VkPhysicalDevice does not support GetPhysicalDeviceQueueFamilyDataGraphEngineOperationPropertiesARM");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    return icd_term->dispatch.GetPhysicalDeviceQueueFamilyDataGraphEngineOperationPropertiesARM(phys_dev_term->phys_dev, queueFamilyIndex, pQueueFamilyDataGraphProperties, pProperties);
+}
+
+
 // ---- VK_EXT_attachment_feedback_loop_dynamic_state extension trampoline/terminators
 
 VKAPI_ATTR void VKAPI_CALL CmdSetAttachmentFeedbackLoopEnableEXT(
@@ -11936,6 +12030,22 @@ VKAPI_ATTR VkBool32 VKAPI_CALL terminator_GetPhysicalDeviceUbmPresentationSuppor
 }
 
 #endif // VK_USE_PLATFORM_UBM_SEC
+
+// ---- VK_EXT_primitive_restart_index extension trampoline/terminators
+
+VKAPI_ATTR void VKAPI_CALL CmdSetPrimitiveRestartIndexEXT(
+    VkCommandBuffer                             commandBuffer,
+    uint32_t                                    primitiveRestartIndex) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkCmdSetPrimitiveRestartIndexEXT: Invalid commandBuffer "
+                   "[VUID-vkCmdSetPrimitiveRestartIndexEXT-commandBuffer-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    disp->CmdSetPrimitiveRestartIndexEXT(commandBuffer, primitiveRestartIndex);
+}
+
 
 // ---- VK_KHR_acceleration_structure extension trampoline/terminators
 
@@ -13890,6 +14000,12 @@ bool extension_instance_gpa(struct loader_instance *ptr_instance, const char *na
         return true;
     }
 
+    // ---- VK_QCOM_queue_perf_hint extension commands
+    if (!strcmp("vkQueueSetPerfHintQCOM", name)) {
+        *addr = (void *)QueueSetPerfHintQCOM;
+        return true;
+    }
+
     // ---- VK_NV_cuda_kernel_launch extension commands
 #if defined(VK_ENABLE_BETA_EXTENSIONS)
     if (!strcmp("vkCreateCudaModuleNV", name)) {
@@ -14225,6 +14341,12 @@ bool extension_instance_gpa(struct loader_instance *ptr_instance, const char *na
     // ---- VK_EXT_pageable_device_local_memory extension commands
     if (!strcmp("vkSetDeviceMemoryPriorityEXT", name)) {
         *addr = (void *)SetDeviceMemoryPriorityEXT;
+        return true;
+    }
+
+    // ---- VK_ARM_scheduling_controls extension commands
+    if (!strcmp("vkCmdSetDispatchParametersARM", name)) {
+        *addr = (void *)CmdSetDispatchParametersARM;
         return true;
     }
 
@@ -14610,6 +14732,12 @@ bool extension_instance_gpa(struct loader_instance *ptr_instance, const char *na
         return true;
     }
 
+    // ---- VK_ARM_data_graph_instruction_set_tosa extension commands
+    if (!strcmp("vkGetPhysicalDeviceQueueFamilyDataGraphEngineOperationPropertiesARM", name)) {
+        *addr = (void *)GetPhysicalDeviceQueueFamilyDataGraphEngineOperationPropertiesARM;
+        return true;
+    }
+
     // ---- VK_EXT_attachment_feedback_loop_dynamic_state extension commands
     if (!strcmp("vkCmdSetAttachmentFeedbackLoopEnableEXT", name)) {
         *addr = (void *)CmdSetAttachmentFeedbackLoopEnableEXT;
@@ -14813,6 +14941,12 @@ bool extension_instance_gpa(struct loader_instance *ptr_instance, const char *na
         return true;
     }
 #endif // VK_USE_PLATFORM_UBM_SEC
+
+    // ---- VK_EXT_primitive_restart_index extension commands
+    if (!strcmp("vkCmdSetPrimitiveRestartIndexEXT", name)) {
+        *addr = (void *)CmdSetPrimitiveRestartIndexEXT;
+        return true;
+    }
 
     // ---- VK_KHR_acceleration_structure extension commands
     if (!strcmp("vkCreateAccelerationStructureKHR", name)) {
@@ -15443,6 +15577,9 @@ const VkLayerInstanceDispatchTable instance_disp = {
     // ---- VK_ARM_data_graph extension commands
     .GetPhysicalDeviceQueueFamilyDataGraphPropertiesARM = terminator_GetPhysicalDeviceQueueFamilyDataGraphPropertiesARM,
     .GetPhysicalDeviceQueueFamilyDataGraphProcessingEnginePropertiesARM = terminator_GetPhysicalDeviceQueueFamilyDataGraphProcessingEnginePropertiesARM,
+
+    // ---- VK_ARM_data_graph_instruction_set_tosa extension commands
+    .GetPhysicalDeviceQueueFamilyDataGraphEngineOperationPropertiesARM = terminator_GetPhysicalDeviceQueueFamilyDataGraphEngineOperationPropertiesARM,
 
     // ---- VK_OHOS_surface extension commands
 #if defined(VK_USE_PLATFORM_OHOS)
