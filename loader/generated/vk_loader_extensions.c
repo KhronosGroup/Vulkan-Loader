@@ -343,6 +343,9 @@ VKAPI_ATTR bool VKAPI_CALL loader_icd_init_entries(struct loader_instance* inst,
     // ---- VK_ARM_shader_instrumentation extension commands
     LOOKUP_GIPA(EnumeratePhysicalDeviceShaderInstrumentationMetricsARM);
 
+    // ---- VK_ARM_data_graph_optical_flow extension commands
+    LOOKUP_GIPA(GetPhysicalDeviceQueueFamilyDataGraphOpticalFlowImageFormatsARM);
+
     // ---- VK_SEC_ubm_surface extension commands
 #if defined(VK_USE_PLATFORM_UBM_SEC)
     LOOKUP_GIPA(CreateUbmSurfaceSEC);
@@ -1739,6 +1742,9 @@ VKAPI_ATTR void VKAPI_CALL loader_init_instance_extension_dispatch_table(VkLayer
 
     // ---- VK_ARM_shader_instrumentation extension commands
     table->EnumeratePhysicalDeviceShaderInstrumentationMetricsARM = (PFN_vkEnumeratePhysicalDeviceShaderInstrumentationMetricsARM)gpa(inst, "vkEnumeratePhysicalDeviceShaderInstrumentationMetricsARM");
+
+    // ---- VK_ARM_data_graph_optical_flow extension commands
+    table->GetPhysicalDeviceQueueFamilyDataGraphOpticalFlowImageFormatsARM = (PFN_vkGetPhysicalDeviceQueueFamilyDataGraphOpticalFlowImageFormatsARM)gpa(inst, "vkGetPhysicalDeviceQueueFamilyDataGraphOpticalFlowImageFormatsARM");
 
     // ---- VK_SEC_ubm_surface extension commands
 #if defined(VK_USE_PLATFORM_UBM_SEC)
@@ -3814,6 +3820,9 @@ VKAPI_ATTR void* VKAPI_CALL loader_lookup_instance_dispatch_table(const VkLayerI
 
     // ---- VK_ARM_shader_instrumentation extension commands
     if (!strcmp(name, "EnumeratePhysicalDeviceShaderInstrumentationMetricsARM")) return (void *)table->EnumeratePhysicalDeviceShaderInstrumentationMetricsARM;
+
+    // ---- VK_ARM_data_graph_optical_flow extension commands
+    if (!strcmp(name, "GetPhysicalDeviceQueueFamilyDataGraphOpticalFlowImageFormatsARM")) return (void *)table->GetPhysicalDeviceQueueFamilyDataGraphOpticalFlowImageFormatsARM;
 
     // ---- VK_SEC_ubm_surface extension commands
 #if defined(VK_USE_PLATFORM_UBM_SEC)
@@ -11947,6 +11956,45 @@ VKAPI_ATTR void VKAPI_CALL CmdBeginCustomResolveEXT(
 }
 
 
+// ---- VK_ARM_data_graph_optical_flow extension trampoline/terminators
+
+VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceQueueFamilyDataGraphOpticalFlowImageFormatsARM(
+    VkPhysicalDevice                            physicalDevice,
+    uint32_t                                    queueFamilyIndex,
+    const VkQueueFamilyDataGraphPropertiesARM*  pQueueFamilyDataGraphProperties,
+    const VkDataGraphOpticalFlowImageFormatInfoARM* pOpticalFlowImageFormatInfo,
+    uint32_t*                                   pFormatCount,
+    VkDataGraphOpticalFlowImageFormatPropertiesARM* pImageFormatProperties) {
+    const VkLayerInstanceDispatchTable *disp;
+    VkPhysicalDevice unwrapped_phys_dev = loader_unwrap_physical_device(physicalDevice);
+    if (VK_NULL_HANDLE == unwrapped_phys_dev) {
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkGetPhysicalDeviceQueueFamilyDataGraphOpticalFlowImageFormatsARM: Invalid physicalDevice "
+                   "[VUID-vkGetPhysicalDeviceQueueFamilyDataGraphOpticalFlowImageFormatsARM-physicalDevice-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    disp = loader_get_instance_layer_dispatch(physicalDevice);
+    return disp->GetPhysicalDeviceQueueFamilyDataGraphOpticalFlowImageFormatsARM(unwrapped_phys_dev, queueFamilyIndex, pQueueFamilyDataGraphProperties, pOpticalFlowImageFormatInfo, pFormatCount, pImageFormatProperties);
+}
+
+VKAPI_ATTR VkResult VKAPI_CALL terminator_GetPhysicalDeviceQueueFamilyDataGraphOpticalFlowImageFormatsARM(
+    VkPhysicalDevice                            physicalDevice,
+    uint32_t                                    queueFamilyIndex,
+    const VkQueueFamilyDataGraphPropertiesARM*  pQueueFamilyDataGraphProperties,
+    const VkDataGraphOpticalFlowImageFormatInfoARM* pOpticalFlowImageFormatInfo,
+    uint32_t*                                   pFormatCount,
+    VkDataGraphOpticalFlowImageFormatPropertiesARM* pImageFormatProperties) {
+    struct loader_physical_device_term *phys_dev_term = (struct loader_physical_device_term *)physicalDevice;
+    struct loader_icd_term *icd_term = phys_dev_term->this_icd_term;
+    if (NULL == icd_term->dispatch.GetPhysicalDeviceQueueFamilyDataGraphOpticalFlowImageFormatsARM) {
+        loader_log(icd_term->this_instance, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT, 0,
+                   "ICD associated with VkPhysicalDevice does not support GetPhysicalDeviceQueueFamilyDataGraphOpticalFlowImageFormatsARM");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    return icd_term->dispatch.GetPhysicalDeviceQueueFamilyDataGraphOpticalFlowImageFormatsARM(phys_dev_term->phys_dev, queueFamilyIndex, pQueueFamilyDataGraphProperties, pOpticalFlowImageFormatInfo, pFormatCount, pImageFormatProperties);
+}
+
+
 // ---- VK_NV_compute_occupancy_priority extension trampoline/terminators
 
 VKAPI_ATTR void VKAPI_CALL CmdSetComputeOccupancyPriorityNV(
@@ -14918,6 +14966,12 @@ bool extension_instance_gpa(struct loader_instance *ptr_instance, const char *na
         return true;
     }
 
+    // ---- VK_ARM_data_graph_optical_flow extension commands
+    if (!strcmp("vkGetPhysicalDeviceQueueFamilyDataGraphOpticalFlowImageFormatsARM", name)) {
+        *addr = (void *)GetPhysicalDeviceQueueFamilyDataGraphOpticalFlowImageFormatsARM;
+        return true;
+    }
+
     // ---- VK_NV_compute_occupancy_priority extension commands
     if (!strcmp("vkCmdSetComputeOccupancyPriorityNV", name)) {
         *addr = (void *)CmdSetComputeOccupancyPriorityNV;
@@ -15594,6 +15648,9 @@ const VkLayerInstanceDispatchTable instance_disp = {
 
     // ---- VK_ARM_shader_instrumentation extension commands
     .EnumeratePhysicalDeviceShaderInstrumentationMetricsARM = terminator_EnumeratePhysicalDeviceShaderInstrumentationMetricsARM,
+
+    // ---- VK_ARM_data_graph_optical_flow extension commands
+    .GetPhysicalDeviceQueueFamilyDataGraphOpticalFlowImageFormatsARM = terminator_GetPhysicalDeviceQueueFamilyDataGraphOpticalFlowImageFormatsARM,
 
     // ---- VK_SEC_ubm_surface extension commands
 #if defined(VK_USE_PLATFORM_UBM_SEC)
