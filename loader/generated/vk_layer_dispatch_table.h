@@ -884,6 +884,20 @@ typedef struct VkLayerDispatchTable_ {
     PFN_vkGetMemoryAndroidHardwareBufferANDROID GetMemoryAndroidHardwareBufferANDROID;
 #endif // VK_USE_PLATFORM_ANDROID_KHR
 
+    // ---- VK_AMD_gpa_interface extension commands
+    PFN_vkCreateGpaSessionAMD CreateGpaSessionAMD;
+    PFN_vkDestroyGpaSessionAMD DestroyGpaSessionAMD;
+    PFN_vkSetGpaDeviceClockModeAMD SetGpaDeviceClockModeAMD;
+    PFN_vkGetGpaDeviceClockInfoAMD GetGpaDeviceClockInfoAMD;
+    PFN_vkCmdBeginGpaSessionAMD CmdBeginGpaSessionAMD;
+    PFN_vkCmdEndGpaSessionAMD CmdEndGpaSessionAMD;
+    PFN_vkCmdBeginGpaSampleAMD CmdBeginGpaSampleAMD;
+    PFN_vkCmdEndGpaSampleAMD CmdEndGpaSampleAMD;
+    PFN_vkGetGpaSessionStatusAMD GetGpaSessionStatusAMD;
+    PFN_vkGetGpaSessionResultsAMD GetGpaSessionResultsAMD;
+    PFN_vkResetGpaSessionAMD ResetGpaSessionAMD;
+    PFN_vkCmdCopyGpaSessionResultsAMD CmdCopyGpaSessionResultsAMD;
+
     // ---- VK_AMDX_shader_enqueue extension commands
 #if defined(VK_ENABLE_BETA_EXTENSIONS)
     PFN_vkCreateExecutionGraphPipelinesAMDX CreateExecutionGraphPipelinesAMDX;
