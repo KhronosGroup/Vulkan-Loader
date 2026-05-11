@@ -1,306 +1,35 @@
 version = 1
 
-# ---------------------------------------------------------------------------
-# Default: all files not matched by a later rule use Apache-2.0
-# ---------------------------------------------------------------------------
 
 [[annotations]]
 path = "**"
-SPDX-FileCopyrightText = "2014-2026 The Khronos Group, Inc."
-SPDX-License-Identifier = "Apache-2.0"
-
-# ---------------------------------------------------------------------------
-# Top-level repo files (no license header)
-# ---------------------------------------------------------------------------
-
-[[annotations]]
-path = [
-    "LICENSE.txt",
-    "CONTRIBUTING.md",
-    "README.md",
-    "BUILD.md",
-    "GOVERNANCE.md",
-    "SECURITY.md",
-    "CODE_OF_CONDUCT.md",
+precedence = "closest"
+SPDX-FileCopyrightText = [
+    "The Khronos Group Inc.",
 ]
-SPDX-FileCopyrightText = "2014-2026 The Khronos Group, Inc."
 SPDX-License-Identifier = "Apache-2.0"
 
-# ---------------------------------------------------------------------------
-# Repository config files
-# ---------------------------------------------------------------------------
-
-[[annotations]]
-path = [
-    ".clang-format",
-    ".gitattributes",
-    ".gitignore",
-]
-SPDX-FileCopyrightText = "2014-2026 The Khronos Group, Inc."
-SPDX-License-Identifier = "Apache-2.0"
-
-# ---------------------------------------------------------------------------
-# GitHub config files
-# ---------------------------------------------------------------------------
-
-[[annotations]]
-path = [
-    ".github/dependabot.yml",
-    ".github/ISSUE_TEMPLATE/bug_report.md",
-    ".github/ISSUE_TEMPLATE/feature_request.md",
-]
-SPDX-FileCopyrightText = "2014-2026 The Khronos Group, Inc."
-SPDX-License-Identifier = "Apache-2.0"
-
-# ---------------------------------------------------------------------------
-# GitHub workflow files (have explicit headers)
-# ---------------------------------------------------------------------------
-
-[[annotations]]
-path = ".github/workflows/build.yml"
-SPDX-FileCopyrightText = ["2021-2024 Valve Corporation", "2021-2024 LunarG, Inc."]
-SPDX-License-Identifier = "Apache-2.0"
-
-[[annotations]]
-path = ".github/workflows/codeql.yml"
-SPDX-FileCopyrightText = "2023 Google LLC"
-SPDX-License-Identifier = "Apache-2.0"
-
-[[annotations]]
-path = ".github/workflows/format.yml"
-SPDX-FileCopyrightText = ["2026 Valve Corporation", "2026 LunarG, Inc."]
-SPDX-License-Identifier = "Apache-2.0"
-
-[[annotations]]
-path = ".github/workflows/reuse-compliance.yml"
-SPDX-FileCopyrightText = "2026 The Khronos Group Inc."
-SPDX-License-Identifier = "Apache-2.0"
-
-# ---------------------------------------------------------------------------
-# LICENSES directory
-# ---------------------------------------------------------------------------
-
-[[annotations]]
-path = "LICENSES/**"
-SPDX-FileCopyrightText = "2014-2026 The Khronos Group, Inc."
-SPDX-License-Identifier = "Apache-2.0"
-
-# ---------------------------------------------------------------------------
-# Loader source files (Apache-2.0, multi-author)
-# ---------------------------------------------------------------------------
 
 [[annotations]]
 path = "loader/**"
+precedence = "closest"
 SPDX-FileCopyrightText = [
-    "2014-2026 The Khronos Group Inc.",
-    "2014-2026 Valve Corporation",
-    "2014-2026 LunarG, Inc.",
+    "The Khronos Group Inc.",
+    "Valve Corporation",
+    "LunarG, Inc.",
 ]
 SPDX-License-Identifier = "Apache-2.0"
 
-[[annotations]]
-path = "loader/vulkan.pc.in"
-SPDX-FileCopyrightText = "2014-2026 The Khronos Group, Inc."
-SPDX-License-Identifier = "Apache-2.0"
-
-# cJSON: MIT license (Dave Gamble and cJSON contributors)
-[[annotations]]
-path = ["loader/cJSON.c", "loader/cJSON.h"]
-SPDX-FileCopyrightText = "2009-2017 Dave Gamble and cJSON contributors"
-SPDX-License-Identifier = "MIT"
-
-# dirent: custom Kevlin Henney permissive license
-[[annotations]]
-path = ["loader/dirent_on_windows.c", "loader/dirent_on_windows.h"]
-SPDX-FileCopyrightText = [
-    "1997, 2003, 2012 Kevlin Henney",
-    "2015-2021 The Khronos Group Inc.",
-    "2015-2021 Valve Corporation",
-    "2015-2021 LunarG, Inc.",
-]
-SPDX-License-Identifier = "LicenseRef-dirent"
-
-# ---------------------------------------------------------------------------
-# Build files
-# ---------------------------------------------------------------------------
-
-[[annotations]]
-path = "CMakeLists.txt"
-SPDX-FileCopyrightText = [
-    "2014-2023 Valve Corporation",
-    "2014-2023 LunarG, Inc.",
-    "2021-2022 NVIDIA CORPORATION & AFFILIATES",
-    "2023-2023 RasterGrid Kft.",
-]
-SPDX-License-Identifier = "Apache-2.0"
-
-[[annotations]]
-path = "BUILD.gn"
-SPDX-FileCopyrightText = [
-    "2018-2019 The ANGLE Project Authors",
-    "2019-2023 LunarG, Inc.",
-]
-SPDX-License-Identifier = "Apache-2.0"
-
-# ---------------------------------------------------------------------------
-# Scripts
-# ---------------------------------------------------------------------------
-
-[[annotations]]
-path = "scripts/**"
-SPDX-FileCopyrightText = [
-    "2019-2025 The Khronos Group Inc.",
-    "2019-2025 Valve Corporation",
-    "2019-2025 LunarG, Inc.",
-]
-SPDX-License-Identifier = "Apache-2.0"
-
-[[annotations]]
-path = "scripts/CodeCoverage.cmake"
-SPDX-FileCopyrightText = "2018-2020 George Cave"
-SPDX-License-Identifier = "Apache-2.0"
-
-[[annotations]]
-path = ["scripts/gn/DEPS", "scripts/known_good.json"]
-SPDX-FileCopyrightText = "2014-2026 The Khronos Group, Inc."
-SPDX-License-Identifier = "Apache-2.0"
-
-[[annotations]]
-path = "scripts/qnx/**"
-SPDX-FileCopyrightText = "2014-2026 The Khronos Group, Inc."
-SPDX-License-Identifier = "Apache-2.0"
-
-# ---------------------------------------------------------------------------
-# Documentation Markdown files
-# ---------------------------------------------------------------------------
 
 [[annotations]]
 path = [
-    "docs/LoaderApplicationInterface.md",
-    "docs/LoaderDebugging.md",
-    "docs/LoaderDriverInterface.md",
-    "docs/LoaderInterfaceArchitecture.md",
-    "docs/LoaderLayerInterface.md",
-    "docs/LoaderSettingsFile.md",
-    "loader/LoaderAndLayerInterface.md",
-    "loader/README.md",
-    "tests/README.md",
-    "tests/framework/README.md",
-    "scripts/qnx/README.md",
-    "tests/live_verification/dynamic_loader_behavior/dynamic_loading_behavior.md",
+    "tests/**",
 ]
-SPDX-FileCopyrightText = "2014-2026 The Khronos Group, Inc."
-SPDX-License-Identifier = "Apache-2.0"
-
-# ---------------------------------------------------------------------------
-# Documentation images (Valve Corporation and LunarG, Inc. per README.txt)
-# ---------------------------------------------------------------------------
-
-[[annotations]]
-path = [
-    "docs/images/*.png",
-    "docs/images/svgs/*.svg",
-    "docs/images/svgs/README.txt",
-]
-SPDX-FileCopyrightText = ["Valve Corporation", "LunarG, Inc."]
-SPDX-License-Identifier = "Apache-2.0"
-
-# ---------------------------------------------------------------------------
-# Tests: CMakeLists.txt files (Apache-2.0)
-# ---------------------------------------------------------------------------
-
-[[annotations]]
-path = [
-    "tests/CMakeLists.txt",
-    "tests/framework/CMakeLists.txt",
-    "tests/framework/icd/CMakeLists.txt",
-    "tests/framework/layer/CMakeLists.txt",
-    "tests/framework/shim/CMakeLists.txt",
-    "tests/framework/util/CMakeLists.txt",
-    "tests/integration/CMakeLists.txt",
-    "tests/live_verification/CMakeLists.txt",
-    "tests/live_verification/dynamic_loader_behavior/CMakeLists.txt",
-]
-SPDX-FileCopyrightText = ["Valve Corporation", "LunarG, Inc."]
-SPDX-License-Identifier = "Apache-2.0"
-
-# tests/framework/data/CMakeLists.txt has no copyright header
-[[annotations]]
-path = "tests/framework/data/CMakeLists.txt"
-SPDX-FileCopyrightText = "2014-2026 The Khronos Group, Inc."
-SPDX-License-Identifier = "Apache-2.0"
-
-# ---------------------------------------------------------------------------
-# Tests: source files using LicenseRef-KhronosFreeUse
-# ---------------------------------------------------------------------------
-
-[[annotations]]
-path = [
-    "tests/*.cpp",
-    "tests/framework/*.cpp",
-    "tests/framework/*.h",
-    "tests/framework/icd/test_icd.cpp",
-    "tests/framework/icd/test_icd.h",
-    "tests/framework/layer/test_layer.cpp",
-    "tests/framework/layer/test_layer.h",
-    "tests/framework/layer/wrap_objects.cpp",
-    "tests/framework/layer/layer_util.h",
-    "tests/framework/shim/shim_common.cpp",
-    "tests/framework/shim/shim.h",
-    "tests/framework/shim/unix_shim.cpp",
-    "tests/framework/shim/windows_shim.cpp",
-    "tests/framework/util/*.cpp",
-    "tests/framework/util/*.h",
-    "tests/framework/generated/vk_result_to_string_helper.h",
-    "tests/framework/layer/generated/vk_dispatch_table_helper.h",
-    "tests/framework/framework_config.h.in",
-    "tests/live_verification/*.cpp",
-    "tests/live_verification/dynamic_loader_behavior/*.cpp",
-    "tests/live_verification/dynamic_loader_behavior/*.h",
-]
+precedence = "closest"
 SPDX-FileCopyrightText = [
-    "2021-2025 The Khronos Group Inc.",
-    "2021-2025 Valve Corporation",
-    "2021-2025 LunarG, Inc.",
+    "The Khronos Group Inc.",
+    "Valve Corporation",
+    "LunarG, Inc.",
 ]
-SPDX-License-Identifier = "LicenseRef-KhronosFreeUse"
+SPDX-License-Identifier = "MIT-Khronos-old"
 
-# ---------------------------------------------------------------------------
-# Tests: data files (no license header, default fallback)
-# ---------------------------------------------------------------------------
-
-[[annotations]]
-path = [
-    "tests/framework/data/.gitignore",
-    "tests/framework/data/stub.cpp",
-    "tests/framework/data/fuzzer_output.json",
-    "tests/framework/data/VkLayer_complex_file.json",
-    "tests/corpus/config.json",
-    "tests/corpus/VkLayer_complex_file.json",
-    "tests/corpus/config_with_other_arch.json",
-    "tests/corpus/config_with_unordered_layer_location.json",
-]
-SPDX-FileCopyrightText = "2014-2026 The Khronos Group, Inc."
-SPDX-License-Identifier = "Apache-2.0"
-
-[[annotations]]
-path = "tests/framework/data/fuzz_test_minimized_test_cases/**"
-SPDX-FileCopyrightText = "2014-2026 The Khronos Group, Inc."
-SPDX-License-Identifier = "Apache-2.0"
-
-[[annotations]]
-path = "tests/framework/data/binaries/**"
-SPDX-FileCopyrightText = "2014-2026 The Khronos Group, Inc."
-SPDX-License-Identifier = "Apache-2.0"
-
-# ---------------------------------------------------------------------------
-# Tests: Windows .def export definition files
-# ---------------------------------------------------------------------------
-
-[[annotations]]
-path = [
-    "tests/framework/icd/export_definitions/**",
-    "tests/framework/layer/export_definitions/**",
-]
-SPDX-FileCopyrightText = "2014-2026 The Khronos Group, Inc."
-SPDX-License-Identifier = "Apache-2.0"
