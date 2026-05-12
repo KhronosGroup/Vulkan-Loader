@@ -1131,7 +1131,7 @@ VkResult loader_add_to_ext_list(const struct loader_instance *inst, struct loade
 
         // add to list at end
         // check for enough capacity
-        if (ext_list->count * sizeof(VkExtensionProperties) >= ext_list->capacity) {
+        if (ext_list->count >= ext_list->capacity / sizeof(VkExtensionProperties)) {
             void *new_ptr = loader_instance_heap_realloc(inst, ext_list->list, ext_list->capacity, ext_list->capacity * 2,
                                                          VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
             if (new_ptr == NULL) {
@@ -1174,7 +1174,7 @@ VkResult loader_add_to_dev_ext_list(const struct loader_instance *inst, struct l
     uint32_t idx = ext_list->count;
     // add to list at end
     // check for enough capacity
-    if (idx * sizeof(struct loader_dev_ext_props) >= ext_list->capacity) {
+    if (idx >= ext_list->capacity / sizeof(struct loader_dev_ext_props)) {
         void *new_ptr = loader_instance_heap_realloc(inst, ext_list->list, ext_list->capacity, ext_list->capacity * 2,
                                                      VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
 
