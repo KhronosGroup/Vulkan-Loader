@@ -240,9 +240,8 @@ TEST(Allocation, EnumeratePhysicalDevices) {
 TEST(Allocation, InstanceAndDevice) {
     FrameworkEnvironment env{};
     env.add_icd(TEST_ICD_PATH_VERSION_2)
-        .add_physical_device(PhysicalDevice{"physical_device_0"}
-                                 .add_queue_family_properties({{VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}}, false})
-                                 .finish());
+        .add_physical_device(
+            PhysicalDevice{"physical_device_0"}.add_queue_family_properties({{VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}}, false}));
 
     MemoryTracker tracker;
     {
@@ -289,9 +288,8 @@ TEST(Allocation, InstanceAndDevice) {
 TEST(Allocation, InstanceButNotDevice) {
     FrameworkEnvironment env{};
     env.add_icd(TEST_ICD_PATH_VERSION_2)
-        .add_physical_device(PhysicalDevice{"physical_device_0"}
-                                 .add_queue_family_properties({{VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}}, false})
-                                 .finish());
+        .add_physical_device(
+            PhysicalDevice{"physical_device_0"}.add_queue_family_properties({{VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}}, false}));
 
     MemoryTracker tracker;
     {
@@ -338,9 +336,8 @@ TEST(Allocation, InstanceButNotDevice) {
 TEST(Allocation, DeviceButNotInstance) {
     FrameworkEnvironment env{};
     env.add_icd(TEST_ICD_PATH_VERSION_2)
-        .add_physical_device(PhysicalDevice{"physical_device_0"}
-                                 .add_queue_family_properties({{VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}}, false})
-                                 .finish());
+        .add_physical_device(
+            PhysicalDevice{"physical_device_0"}.add_queue_family_properties({{VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}}, false}));
 
     const char* layer_name = "VK_LAYER_implicit";
     env.add_implicit_layer({}, ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
@@ -633,12 +630,10 @@ TEST(Allocation, DriverEnvVarIntentionalAllocFail) {
 TEST(Allocation, CreateDeviceIntentionalAllocFail) {
     FrameworkEnvironment env{FrameworkSettings{}.set_log_filter("error,warn")};
     env.add_icd(TEST_ICD_PATH_VERSION_2)
-        .add_physical_device(PhysicalDevice{"physical_device_0"}
-                                 .add_queue_family_properties({{VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}}, false})
-                                 .finish())
-        .add_physical_device(PhysicalDevice{"physical_device_1"}
-                                 .add_queue_family_properties({{VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}}, false})
-                                 .finish());
+        .add_physical_device(
+            PhysicalDevice{"physical_device_0"}.add_queue_family_properties({{VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}}, false}))
+        .add_physical_device(
+            PhysicalDevice{"physical_device_1"}.add_queue_family_properties({{VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}}, false}));
 
     const char* layer_name = "VK_LAYER_implicit";
     env.add_implicit_layer({}, ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}

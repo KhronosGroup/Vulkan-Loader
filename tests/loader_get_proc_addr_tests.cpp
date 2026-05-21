@@ -331,7 +331,7 @@ TEST(GetDeviceProcAddr, AppQueries11FunctionsWhileOnlyEnabling10) {
         env.add_icd(TEST_ICD_PATH_VERSION_2, {}, ManifestICD{}.set_api_version(VK_API_VERSION_1_1))
             .set_icd_api_version(VK_API_VERSION_1_1)
             .add_and_get_physical_device(
-                PhysicalDevice{}.set_api_version(VK_API_VERSION_1_1).add_extension(VK_KHR_MAINTENANCE_5_EXTENSION_NAME).finish());
+                PhysicalDevice{}.set_api_version(VK_API_VERSION_1_1).add_extension(VK_KHR_MAINTENANCE_5_EXTENSION_NAME));
 
     std::vector<const char*> functions = {"vkGetDeviceQueue2", "vkCmdDispatchBase", "vkCreateDescriptorUpdateTemplate"};
     for (const auto& f : functions) {
@@ -385,7 +385,7 @@ TEST(GetDeviceProcAddr, AppQueries12FunctionsWhileOnlyEnabling11) {
         env.add_icd(TEST_ICD_PATH_VERSION_2, {}, ManifestICD{}.set_api_version(VK_API_VERSION_1_2))
             .set_icd_api_version(VK_API_VERSION_1_2)
             .add_and_get_physical_device(
-                PhysicalDevice{}.set_api_version(VK_API_VERSION_1_2).add_extension(VK_KHR_MAINTENANCE_5_EXTENSION_NAME).finish());
+                PhysicalDevice{}.set_api_version(VK_API_VERSION_1_2).add_extension(VK_KHR_MAINTENANCE_5_EXTENSION_NAME));
     std::vector<const char*> functions = {"vkCmdDrawIndirectCount", "vkCmdNextSubpass2", "vkGetBufferDeviceAddress",
                                           "vkGetDeviceMemoryOpaqueCaptureAddress"};
     for (const auto& f : functions) {
@@ -442,7 +442,7 @@ TEST(GetDeviceProcAddr, AppQueries13FunctionsWhileOnlyEnabling12) {
         env.add_icd(TEST_ICD_PATH_VERSION_2, {}, ManifestICD{}.set_api_version(VK_API_VERSION_1_3))
             .set_icd_api_version(VK_API_VERSION_1_3)
             .add_and_get_physical_device(
-                PhysicalDevice{}.set_api_version(VK_API_VERSION_1_3).add_extension(VK_KHR_MAINTENANCE_5_EXTENSION_NAME).finish());
+                PhysicalDevice{}.set_api_version(VK_API_VERSION_1_3).add_extension(VK_KHR_MAINTENANCE_5_EXTENSION_NAME));
     std::vector<const char*> functions = {"vkCreatePrivateDataSlot", "vkGetDeviceBufferMemoryRequirements", "vkCmdWaitEvents2",
                                           "vkGetDeviceImageSparseMemoryRequirements"};
 

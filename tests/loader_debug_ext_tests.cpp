@@ -1138,7 +1138,7 @@ TEST(DebugUtils, WrappingLayer) {
     FrameworkEnvironment env{};
     env.add_icd(TEST_ICD_PATH_VERSION_2)
         .set_min_icd_interface_version(5)
-        .add_physical_device(PhysicalDevice{}.add_extension(VK_EXT_DEBUG_MARKER_EXTENSION_NAME).finish())
+        .add_physical_device(PhysicalDevice{}.add_extension(VK_EXT_DEBUG_MARKER_EXTENSION_NAME))
         .add_instance_extension(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
 
     const char* wrap_objects_name = "VK_LAYER_LUNARG_wrap_objects";
