@@ -4775,9 +4775,8 @@ TEST(LayerPhysDeviceMod, AddPhysicalDevices) {
 #endif
             added_phys_devs[dev] = &cur_icd.add_and_get_physical_device({}).set_properties(properties);
         }
-        cur_icd.physical_device_groups.emplace_back(added_phys_devs[0]);
-        cur_icd.physical_device_groups.emplace_back(added_phys_devs[1]);
-        cur_icd.physical_device_groups.back().use_physical_device(added_phys_devs[2]);
+        cur_icd.physical_device_groups.emplace_back(0);
+        cur_icd.physical_device_groups.push_back(PhysicalDeviceGroup({1, 2}));
     }
     const uint32_t icd_devices = 6;
 
@@ -4851,9 +4850,8 @@ TEST(LayerPhysDeviceMod, RemovePhysicalDevices) {
 #endif
             added_phys_devs[dev] = &cur_icd.add_and_get_physical_device({}).set_properties(properties);
         }
-        cur_icd.physical_device_groups.emplace_back(added_phys_devs[0]);
-        cur_icd.physical_device_groups.emplace_back(added_phys_devs[1]);
-        cur_icd.physical_device_groups.back().use_physical_device(added_phys_devs[2]);
+        cur_icd.physical_device_groups.emplace_back(0);
+        cur_icd.physical_device_groups.push_back(PhysicalDeviceGroup({1, 2}));
     }
     const uint32_t icd_devices = 6;
 
@@ -4900,9 +4898,8 @@ TEST(LayerPhysDeviceMod, ReorderPhysicalDevices) {
 #endif
             added_phys_devs[dev] = &cur_icd.add_and_get_physical_device({}).set_properties(properties);
         }
-        cur_icd.physical_device_groups.emplace_back(added_phys_devs[0]);
-        cur_icd.physical_device_groups.emplace_back(added_phys_devs[1]);
-        cur_icd.physical_device_groups.back().use_physical_device(added_phys_devs[2]);
+        cur_icd.physical_device_groups.emplace_back(0);
+        cur_icd.physical_device_groups.push_back(PhysicalDeviceGroup({1, 2}));
     }
     const uint32_t icd_devices = 6;
 
@@ -4949,9 +4946,8 @@ TEST(LayerPhysDeviceMod, AddRemoveAndReorderPhysicalDevices) {
 #endif
             added_phys_devs[dev] = &cur_icd.add_and_get_physical_device({}).set_properties(properties);
         }
-        cur_icd.physical_device_groups.emplace_back(added_phys_devs[0]);
-        cur_icd.physical_device_groups.emplace_back(added_phys_devs[1]);
-        cur_icd.physical_device_groups.back().use_physical_device(added_phys_devs[2]);
+        cur_icd.physical_device_groups.emplace_back(0);
+        cur_icd.physical_device_groups.push_back(PhysicalDeviceGroup({1, 2}));
     }
     const uint32_t icd_devices = 6;
 
@@ -5024,9 +5020,8 @@ TEST(LayerPhysDeviceMod, AddPhysicalDeviceGroups) {
 #endif
             added_phys_devs[dev] = &cur_icd.add_and_get_physical_device({}).set_properties(properties);
         }
-        cur_icd.physical_device_groups.emplace_back(added_phys_devs[0]);
-        cur_icd.physical_device_groups.emplace_back(added_phys_devs[1]);
-        cur_icd.physical_device_groups.back().use_physical_device(added_phys_devs[2]);
+        cur_icd.physical_device_groups.emplace_back(0);
+        cur_icd.physical_device_groups.push_back(PhysicalDeviceGroup({1, 2}));
     }
     const uint32_t icd_groups = 4;
 
@@ -5110,9 +5105,8 @@ TEST(LayerPhysDeviceMod, RemovePhysicalDeviceGroups) {
 #endif
             added_phys_devs[dev] = &cur_icd.add_and_get_physical_device({}).set_properties(properties);
         }
-        cur_icd.physical_device_groups.emplace_back(added_phys_devs[0]);
-        cur_icd.physical_device_groups.emplace_back(added_phys_devs[1]);
-        cur_icd.physical_device_groups.back().use_physical_device(added_phys_devs[2]);
+        cur_icd.physical_device_groups.emplace_back(0);
+        cur_icd.physical_device_groups.push_back(PhysicalDeviceGroup({1, 2}));
     }
     const uint32_t icd_groups = 3;
 
@@ -5161,9 +5155,8 @@ TEST(LayerPhysDeviceMod, ReorderPhysicalDeviceGroups) {
 #endif
             added_phys_devs[dev] = &cur_icd.add_and_get_physical_device({}).set_properties(properties);
         }
-        cur_icd.physical_device_groups.emplace_back(added_phys_devs[0]);
-        cur_icd.physical_device_groups.emplace_back(added_phys_devs[1]);
-        cur_icd.physical_device_groups.back().use_physical_device(added_phys_devs[2]);
+        cur_icd.physical_device_groups.emplace_back(0);
+        cur_icd.physical_device_groups.push_back(PhysicalDeviceGroup({1, 2}));
     }
     const uint32_t icd_groups = 4;
 
@@ -5212,9 +5205,8 @@ TEST(LayerPhysDeviceMod, AddRemoveAndReorderPhysicalDeviceGroups) {
 #endif
             added_phys_devs[dev] = &cur_icd.add_and_get_physical_device({}).set_properties(properties);
         }
-        cur_icd.physical_device_groups.emplace_back(added_phys_devs[0]);
-        cur_icd.physical_device_groups.back().use_physical_device(added_phys_devs[1]);
-        cur_icd.physical_device_groups.emplace_back(added_phys_devs[2]);
+        cur_icd.physical_device_groups.push_back(PhysicalDeviceGroup({0, 1}));
+        cur_icd.physical_device_groups.emplace_back(2);
     }
     const uint32_t icd_groups = 4;
 

@@ -162,8 +162,10 @@ TEST(EnvVarICDOverrideSetup, TestOnlyDriverEnvVarInFolder) {
     ASSERT_EQ(inst1->vkEnumeratePhysicalDevices(inst1.inst, &phys_dev_count, phys_devs_array.data()), VK_SUCCESS);
     ASSERT_EQ(phys_dev_count, 1U);
 
+    // Make sure that the ICD's aren't double counted if the path appears multiple times
     for (uint32_t add = 0; add < 2; ++add) {
-        env.add_icd(TEST_ICD_PATH_EXPORT_NONE, ManifestOptions{}.set_discovery_type(ManifestDiscoveryType::env_var))
+        env.add_icd(TEST_ICD_PATH_EXPORT_NONE,
+                    ManifestOptions{}.set_discovery_type(ManifestDiscoveryType::env_var).set_is_dir(true))
             .add_physical_device("pd" + std::to_string(add) + "0")
             .add_physical_device("pd" + std::to_string(add) + "1");
     }
