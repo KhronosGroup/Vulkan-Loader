@@ -2837,11 +2837,11 @@ TEST(SettingsFile, TooManyLayers) {
 
 TEST(SettingsFile, EnvVarsWorkTogether) {
     FrameworkEnvironment env{};
-    env.add_icd(TEST_ICD_PATH_VERSION_2).add_physical_device(PhysicalDevice{}.set_deviceName("regular").finish());
+    env.add_icd(TEST_ICD_PATH_VERSION_2).add_physical_device(PhysicalDevice{}.set_deviceName("regular"));
     env.add_icd(TEST_ICD_PATH_VERSION_2, ManifestOptions{}.set_discovery_type(ManifestDiscoveryType::env_var))
-        .add_physical_device(PhysicalDevice{}.set_deviceName("env_var").finish());
+        .add_physical_device(PhysicalDevice{}.set_deviceName("env_var"));
     env.add_icd(TEST_ICD_PATH_VERSION_2, ManifestOptions{}.set_discovery_type(ManifestDiscoveryType::add_env_var))
-        .add_physical_device(PhysicalDevice{}.set_deviceName("add_env_var").finish());
+        .add_physical_device(PhysicalDevice{}.set_deviceName("add_env_var"));
 
     const char* regular_explicit_layer = "VK_LAYER_regular_explicit_layer";
     env.add_explicit_layer(
@@ -3053,9 +3053,9 @@ TEST(SettingsFile, AdditionalDrivers) {
     FrameworkEnvironment env{FrameworkSettings{}.set_log_filter("")};
     const char* regular_driver_name = "regular";
     const char* settings_driver_name = "settings";
-    env.add_icd(TEST_ICD_PATH_VERSION_2).add_physical_device(PhysicalDevice{}.set_deviceName(regular_driver_name).finish());
+    env.add_icd(TEST_ICD_PATH_VERSION_2).add_physical_device(PhysicalDevice{}.set_deviceName(regular_driver_name));
     env.add_icd(TEST_ICD_PATH_VERSION_2, ManifestOptions{}.set_discovery_type(ManifestDiscoveryType::override_folder))
-        .add_physical_device(PhysicalDevice{}.set_deviceName(settings_driver_name).finish());
+        .add_physical_device(PhysicalDevice{}.set_deviceName(settings_driver_name));
 
     env.loader_settings.set_file_format_version({1, 0, 0}).add_app_specific_setting(
         AppSpecificSettings{}.add_stderr_log_filter("all").add_driver_configuration(
@@ -3077,9 +3077,9 @@ TEST(SettingsFile, ExclusiveAdditionalDrivers) {
     FrameworkEnvironment env{};
     const char* regular_driver_name = "regular";
     const char* settings_driver_name = "settings";
-    env.add_icd(TEST_ICD_PATH_VERSION_2).add_physical_device(PhysicalDevice{}.set_deviceName(regular_driver_name).finish());
+    env.add_icd(TEST_ICD_PATH_VERSION_2).add_physical_device(PhysicalDevice{}.set_deviceName(regular_driver_name));
     env.add_icd(TEST_ICD_PATH_VERSION_2, ManifestOptions{}.set_discovery_type(ManifestDiscoveryType::override_folder))
-        .add_physical_device(PhysicalDevice{}.set_deviceName(settings_driver_name).finish());
+        .add_physical_device(PhysicalDevice{}.set_deviceName(settings_driver_name));
 
     env.loader_settings.set_file_format_version({1, 0, 0}).add_app_specific_setting(
         AppSpecificSettings{}.set_additional_drivers_use_exclusively(true).add_driver_configuration(
@@ -3099,9 +3099,9 @@ TEST(SettingsFile, AdditionalDriversReplacesVK_LOADER_DRIVERS_SELECT) {
     FrameworkEnvironment env{};
     const char* regular_driver_name = "regular";
     const char* settings_driver_name = "settings";
-    env.add_icd(TEST_ICD_PATH_VERSION_2).add_physical_device(PhysicalDevice{}.set_deviceName(regular_driver_name).finish());
+    env.add_icd(TEST_ICD_PATH_VERSION_2).add_physical_device(PhysicalDevice{}.set_deviceName(regular_driver_name));
     env.add_icd(TEST_ICD_PATH_VERSION_2, ManifestOptions{}.set_discovery_type(ManifestDiscoveryType::override_folder))
-        .add_physical_device(PhysicalDevice{}.set_deviceName(settings_driver_name).finish());
+        .add_physical_device(PhysicalDevice{}.set_deviceName(settings_driver_name));
 
     env.loader_settings.set_file_format_version({1, 0, 0}).add_app_specific_setting(
         AppSpecificSettings{}.add_driver_configuration(LoaderSettingsDriverConfiguration{}.set_path(env.get_icd_manifest_path(1))));
@@ -3161,8 +3161,8 @@ TEST(SettingsFile, InvalidAdditionalDriversField) {
     const char* driver_name = "driver";
     const char* settings_driver_name = "settings_driver";
     env.add_icd(TEST_ICD_PATH_VERSION_2, ManifestOptions{}.set_discovery_type(ManifestDiscoveryType::override_folder))
-        .add_physical_device(PhysicalDevice{}.set_deviceName(settings_driver_name).finish());
-    env.add_icd(TEST_ICD_PATH_VERSION_2).add_physical_device(PhysicalDevice{}.set_deviceName(driver_name).finish());
+        .add_physical_device(PhysicalDevice{}.set_deviceName(settings_driver_name));
+    env.add_icd(TEST_ICD_PATH_VERSION_2).add_physical_device(PhysicalDevice{}.set_deviceName(driver_name));
 
     env.add_explicit_layer(
         ManifestOptions{}.set_discovery_type(ManifestDiscoveryType::override_folder),
@@ -3216,8 +3216,7 @@ TEST(SettingsFile, DriverConfigurationsInSpecifiedOrder) {
         icd.add_physical_device(PhysicalDevice()
                                     .set_deviceName("PhysicalDevice_" + std::to_string(uuids.size() - 1 - i))
                                     .set_api_version(VK_API_VERSION_1_1)
-                                    .set_deviceUUID(uuids[uuids.size() - 1 - i])
-                                    .finish());
+                                    .set_deviceUUID(uuids[uuids.size() - 1 - i]));
     }
 
     env.loader_settings.set_file_format_version({1, 0, 0}).add_app_specific_setting(AppSpecificSettings{});
@@ -3254,8 +3253,7 @@ TEST(SettingsFile, OnlyOneDriverConfiguration) {
     auto& icd = env.add_icd(TEST_ICD_PATH_VERSION_2).set_icd_api_version(VK_API_VERSION_1_1);
     for (uint32_t i = 0; i < uuids.size(); i++) {
         // add the physical devices in reverse order of UUID's
-        icd.add_physical_device(
-            PhysicalDevice().set_api_version(VK_API_VERSION_1_1).set_deviceUUID(uuids[uuids.size() - 1 - i]).finish());
+        icd.add_physical_device(PhysicalDevice().set_api_version(VK_API_VERSION_1_1).set_deviceUUID(uuids[uuids.size() - 1 - i]));
     }
 
     env.loader_settings.set_file_format_version({1, 0, 0}).add_app_specific_setting(AppSpecificSettings{});
@@ -3295,7 +3293,7 @@ TEST(SettingsFile, MissingDriverConfiguration) {
     }
 
     auto& icd = env.add_icd(TEST_ICD_PATH_VERSION_2).set_icd_api_version(VK_API_VERSION_1_1);
-    icd.add_physical_device(PhysicalDevice().set_api_version(VK_API_VERSION_1_1).set_deviceUUID(uuids[1]).finish());
+    icd.add_physical_device(PhysicalDevice().set_api_version(VK_API_VERSION_1_1).set_deviceUUID(uuids[1]));
 
     env.loader_settings.set_file_format_version({1, 0, 0}).add_app_specific_setting(AppSpecificSettings{});
 
@@ -3320,8 +3318,7 @@ TEST(SettingsFile, DeviceConfigurationWithSameDriver) {
                                                             .set_api_version(VK_API_VERSION_1_2)
                                                             .set_deviceUUID(device_uuid)
                                                             .set_driverUUID(driver_uuid)
-                                                            .set_deviceName("foobar")
-                                                            .finish());
+                                                            .set_deviceName("foobar"));
     phys_dev_0.properties.driverVersion = 1000;
     std::string("Fake Driver XYZ").copy(phys_dev_0.driver_properties.driverName, VK_MAX_EXTENSION_NAME_SIZE);
 
@@ -3330,8 +3327,7 @@ TEST(SettingsFile, DeviceConfigurationWithSameDriver) {
                                                             .set_api_version(VK_API_VERSION_1_2)
                                                             .set_deviceUUID(device_uuid)
                                                             .set_driverUUID(driver_uuid)
-                                                            .set_deviceName("foobar")
-                                                            .finish());
+                                                            .set_deviceName("foobar"));
     phys_dev_1.properties.driverVersion = 30;
     std::string("Fake Driver XYZ, but differently named").copy(phys_dev_1.driver_properties.driverName, VK_MAX_EXTENSION_NAME_SIZE);
 
@@ -3373,15 +3369,13 @@ TEST(SettingsFile, DriverConfigurationIgnoresDriverEnvVars) {
         count++;
     }
 
-    env.add_icd(TEST_ICD_PATH_VERSION_2)
-        .add_physical_device(PhysicalDevice().set_deviceName("A").set_deviceUUID(uuids[0]).finish());
+    env.add_icd(TEST_ICD_PATH_VERSION_2).add_physical_device(PhysicalDevice().set_deviceName("A").set_deviceUUID(uuids[0]));
 
     auto& icd = env.add_icd(TEST_ICD_PATH_VERSION_2).set_icd_api_version(VK_API_VERSION_1_1);
-    icd.add_physical_device(
-        PhysicalDevice().set_api_version(VK_API_VERSION_1_1).set_deviceName("B").set_deviceUUID(uuids[1]).finish());
+    icd.add_physical_device(PhysicalDevice().set_api_version(VK_API_VERSION_1_1).set_deviceName("B").set_deviceUUID(uuids[1]));
 
     env.add_icd(TEST_ICD_PATH_VERSION_2, ManifestOptions{}.set_discovery_type(ManifestDiscoveryType::env_var))
-        .add_physical_device(PhysicalDevice().set_deviceName("C").set_deviceUUID(uuids[2]).finish());
+        .add_physical_device(PhysicalDevice().set_deviceName("C").set_deviceUUID(uuids[2]));
 
     env.loader_settings.set_file_format_version({1, 0, 0}).add_app_specific_setting(AppSpecificSettings{});
 
@@ -3418,19 +3412,15 @@ TEST(SettingsFile, DriverConfigurationsAndAdditionalDrivers) {
     }
 
     env.add_icd(TEST_ICD_PATH_VERSION_2, ManifestOptions{}.set_discovery_type(ManifestDiscoveryType::override_folder))
-        .add_physical_device(PhysicalDevice{}
-                                 .set_api_version(VK_API_VERSION_1_1)
-                                 .set_deviceName("additional_device")
-                                 .set_deviceUUID(uuids[0])
-                                 .finish());
+        .add_physical_device(
+            PhysicalDevice{}.set_api_version(VK_API_VERSION_1_1).set_deviceName("additional_device").set_deviceUUID(uuids[0]));
 
     auto& icd = env.add_icd(TEST_ICD_PATH_VERSION_2)
                     .set_icd_api_version(VK_API_VERSION_1_1)
                     .add_physical_device(PhysicalDevice()
                                              .set_api_version(VK_API_VERSION_1_1)
                                              .set_deviceName("device_configuration_device")
-                                             .set_deviceUUID(uuids[1])
-                                             .finish());
+                                             .set_deviceUUID(uuids[1]));
     env.loader_settings.set_file_format_version({1, 0, 0}).add_app_specific_setting(AppSpecificSettings{});
     env.loader_settings.app_specific_settings.at(0).add_driver_configuration(
         LoaderSettingsDriverConfiguration().set_path(env.get_icd_manifest_path(0)));
@@ -3467,18 +3457,12 @@ TEST(SettingsFile, InvalidDriverConfigurations) {
     }
     env.add_icd(TEST_ICD_PATH_VERSION_2)
         .set_icd_api_version(VK_API_VERSION_1_1)
-        .add_physical_device(PhysicalDevice{}
-                                 .set_api_version(VK_API_VERSION_1_1)
-                                 .set_deviceName("regular_driver")
-                                 .set_deviceUUID(uuids[0])
-                                 .finish());
+        .add_physical_device(
+            PhysicalDevice{}.set_api_version(VK_API_VERSION_1_1).set_deviceName("regular_driver").set_deviceUUID(uuids[0]));
 
     env.add_icd(TEST_ICD_PATH_VERSION_2, ManifestOptions{}.set_discovery_type(ManifestDiscoveryType::override_folder))
-        .add_physical_device(PhysicalDevice{}
-                                 .set_api_version(VK_API_VERSION_1_1)
-                                 .set_deviceName("additional_device")
-                                 .set_deviceUUID(uuids[2])
-                                 .finish());
+        .add_physical_device(
+            PhysicalDevice{}.set_api_version(VK_API_VERSION_1_1).set_deviceName("additional_device").set_deviceUUID(uuids[2]));
 
     env.loader_settings.set_file_format_version({1, 0, 0}).add_app_specific_setting(
         AppSpecificSettings{}
@@ -3505,26 +3489,17 @@ TEST(SettingsFile, DeviceConfigurationReordersAdditionalDrivers) {
 
     env.add_icd(TEST_ICD_PATH_VERSION_2)
         .set_icd_api_version(VK_API_VERSION_1_1)
-        .add_physical_device(PhysicalDevice{}
-                                 .set_api_version(VK_API_VERSION_1_1)
-                                 .set_deviceName("regular_driverA")
-                                 .set_deviceUUID(uuids[0])
-                                 .finish());
+        .add_physical_device(
+            PhysicalDevice{}.set_api_version(VK_API_VERSION_1_1).set_deviceName("regular_driverA").set_deviceUUID(uuids[0]));
     env.add_icd(TEST_ICD_PATH_VERSION_2)
         .set_icd_api_version(VK_API_VERSION_1_1)
-        .add_physical_device(PhysicalDevice{}
-                                 .set_api_version(VK_API_VERSION_1_1)
-                                 .set_deviceName("regular_driverB")
-                                 .set_deviceUUID(uuids[1])
-                                 .finish());
+        .add_physical_device(
+            PhysicalDevice{}.set_api_version(VK_API_VERSION_1_1).set_deviceName("regular_driverB").set_deviceUUID(uuids[1]));
 
     env.add_icd(TEST_ICD_PATH_VERSION_2, ManifestOptions{}.set_discovery_type(ManifestDiscoveryType::override_folder))
         .set_icd_api_version(VK_API_VERSION_1_1)
-        .add_physical_device(PhysicalDevice{}
-                                 .set_api_version(VK_API_VERSION_1_1)
-                                 .set_deviceName("additional_device")
-                                 .set_deviceUUID(uuids[2])
-                                 .finish());
+        .add_physical_device(
+            PhysicalDevice{}.set_api_version(VK_API_VERSION_1_1).set_deviceName("additional_device").set_deviceUUID(uuids[2]));
 
     env.loader_settings.set_file_format_version({1, 0, 0}).add_app_specific_setting(
         AppSpecificSettings{}
@@ -3574,26 +3549,17 @@ TEST(SettingsFile, DeviceConfigurationReordersExclusiveAdditionalDrivers) {
 
     env.add_icd(TEST_ICD_PATH_VERSION_2)
         .set_icd_api_version(VK_API_VERSION_1_1)
-        .add_physical_device(PhysicalDevice{}
-                                 .set_api_version(VK_API_VERSION_1_1)
-                                 .set_deviceName("regular_driverA")
-                                 .set_deviceUUID(uuids[0])
-                                 .finish());
+        .add_physical_device(
+            PhysicalDevice{}.set_api_version(VK_API_VERSION_1_1).set_deviceName("regular_driverA").set_deviceUUID(uuids[0]));
     env.add_icd(TEST_ICD_PATH_VERSION_2)
         .set_icd_api_version(VK_API_VERSION_1_1)
-        .add_physical_device(PhysicalDevice{}
-                                 .set_api_version(VK_API_VERSION_1_1)
-                                 .set_deviceName("regular_driverB")
-                                 .set_deviceUUID(uuids[1])
-                                 .finish());
+        .add_physical_device(
+            PhysicalDevice{}.set_api_version(VK_API_VERSION_1_1).set_deviceName("regular_driverB").set_deviceUUID(uuids[1]));
 
     env.add_icd(TEST_ICD_PATH_VERSION_2, ManifestOptions{}.set_discovery_type(ManifestDiscoveryType::override_folder))
         .set_icd_api_version(VK_API_VERSION_1_1)
-        .add_physical_device(PhysicalDevice{}
-                                 .set_api_version(VK_API_VERSION_1_1)
-                                 .set_deviceName("additional_device")
-                                 .set_deviceUUID(uuids[2])
-                                 .finish());
+        .add_physical_device(
+            PhysicalDevice{}.set_api_version(VK_API_VERSION_1_1).set_deviceName("additional_device").set_deviceUUID(uuids[2]));
 
     env.loader_settings.set_file_format_version({1, 0, 0}).add_app_specific_setting(
         AppSpecificSettings{}

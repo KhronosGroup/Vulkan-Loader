@@ -3508,7 +3508,7 @@ TEST(TestLayers, ExplicitlyEnableImplicitLayer) {
     uint32_t api_version = VK_API_VERSION_1_2;
     env.add_icd(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA, {}, ManifestICD{}.set_api_version(api_version))
         .set_icd_api_version(api_version)
-        .add_physical_device(PhysicalDevice{}.set_api_version(api_version).finish());
+        .add_physical_device(PhysicalDevice{}.set_api_version(api_version));
 
     const char* regular_layer_name = "VK_LAYER_TestLayer1";
     env.add_implicit_layer({}, ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
@@ -3538,7 +3538,7 @@ TEST(TestLayers, NewerInstanceVersionThanImplicitLayer) {
     uint32_t api_version = VK_API_VERSION_1_2;
     env.add_icd(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA, {}, ManifestICD{}.set_api_version(api_version))
         .set_icd_api_version(api_version)
-        .add_physical_device(PhysicalDevice{}.set_api_version(api_version).finish());
+        .add_physical_device(PhysicalDevice{}.set_api_version(api_version));
 
     const char* regular_layer_name = "VK_LAYER_TestLayer1";
     env.add_implicit_layer({}, ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
@@ -3578,7 +3578,7 @@ TEST(TestLayers, ImplicitLayerPre10APIVersion) {
     uint32_t api_version = VK_API_VERSION_1_2;
     env.add_icd(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA, {}, ManifestICD{}.set_api_version(api_version))
         .set_icd_api_version(api_version)
-        .add_physical_device(PhysicalDevice{}.set_api_version(api_version).finish());
+        .add_physical_device(PhysicalDevice{}.set_api_version(api_version));
 
     const char* regular_layer_name = "VK_LAYER_TestLayer1";
     env.add_implicit_layer({}, ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
@@ -3639,7 +3639,7 @@ TEST(TestLayers, InstEnvironEnableExplicitLayer) {
     uint32_t api_version = VK_API_VERSION_1_2;
     env.add_icd(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA, {}, ManifestICD{}.set_api_version(api_version))
         .set_icd_api_version(api_version)
-        .add_physical_device(PhysicalDevice{}.set_api_version(api_version).finish());
+        .add_physical_device(PhysicalDevice{}.set_api_version(api_version));
 
     const char* explicit_layer_name = "VK_LAYER_LUNARG_wrap_objects";
     env.add_explicit_layer(
@@ -4639,7 +4639,7 @@ TEST(TestLayers, DoNotUseDeviceLayer) {
     FrameworkEnvironment env;
     env.add_icd(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA, {}, ManifestICD{}.set_api_version(VK_API_VERSION_1_2))
         .set_icd_api_version(VK_API_VERSION_1_2)
-        .add_physical_device(PhysicalDevice{}.set_api_version(VK_API_VERSION_1_2).finish());
+        .add_physical_device(PhysicalDevice{}.set_api_version(VK_API_VERSION_1_2));
 
     const char* explicit_layer_name = "VK_LAYER_LUNARG_wrap_objects";
     env.add_explicit_layer(
@@ -4698,7 +4698,7 @@ TEST(TestLayers, InstanceAndDeviceLayer) {
     FrameworkEnvironment env;
     env.add_icd(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA, {}, ManifestICD{}.set_api_version(VK_API_VERSION_1_2))
         .set_icd_api_version(VK_API_VERSION_1_2)
-        .add_physical_device(PhysicalDevice{}.set_api_version(VK_API_VERSION_1_2).finish());
+        .add_physical_device(PhysicalDevice{}.set_api_version(VK_API_VERSION_1_2));
 
     const char* explicit_layer_name = "VK_LAYER_LUNARG_wrap_objects";
     env.add_explicit_layer(
@@ -4734,7 +4734,7 @@ TEST(TestLayers, DeviceLayerNotPresent) {
     FrameworkEnvironment env;
     env.add_icd(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA, {}, ManifestICD{}.set_api_version(VK_API_VERSION_1_2))
         .set_icd_api_version(VK_API_VERSION_1_2)
-        .add_physical_device(PhysicalDevice{}.set_api_version(VK_API_VERSION_1_2).finish());
+        .add_physical_device(PhysicalDevice{}.set_api_version(VK_API_VERSION_1_2));
     const char* explicit_layer_name = "VK_LAYER_LUNARG_wrap_objects";
 
     InstWrapper inst{env.vulkan_functions};

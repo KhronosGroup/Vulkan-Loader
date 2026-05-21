@@ -3170,7 +3170,7 @@ TEST(ExtensionManual, ToolingProperties) {
         env.add_icd(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA)
             .set_supports_tooling_info_ext(true)
             .add_tooling_property(icd_tool_props)
-            .add_physical_device(PhysicalDevice{}.add_extension(VK_EXT_TOOLING_INFO_EXTENSION_NAME).finish());
+            .add_physical_device(PhysicalDevice{}.add_extension(VK_EXT_TOOLING_INFO_EXTENSION_NAME));
 
         InstWrapper inst{env.vulkan_functions};
         inst.CheckCreate();
@@ -4963,8 +4963,7 @@ void add_driver_for_unloading_testing(FrameworkEnvironment& env) {
         .setup_WSI()
         .add_physical_device(PhysicalDevice{}
                                  .add_extension("VK_KHR_swapchain")
-                                 .add_queue_family_properties({{VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}}, true})
-                                 .finish());
+                                 .add_queue_family_properties({{VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}}, true}));
 }
 
 void add_empty_driver_for_unloading_testing(FrameworkEnvironment& env) {
