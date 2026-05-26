@@ -1160,7 +1160,7 @@ VkResult enable_correct_layers_from_settings(const struct loader_instance* inst,
                                              struct loader_pointer_layer_list* target_layer_list,
                                              struct loader_pointer_layer_list* activated_layer_list) {
     VkResult res = VK_SUCCESS;
-    char* vk_instance_layers_env = loader_getenv(ENABLED_LAYERS_ENV, inst);
+    char* vk_instance_layers_env = loader_secure_getenv(ENABLED_LAYERS_ENV, inst);
     size_t vk_instance_layers_env_len = 0;
     char* vk_instance_layers_env_copy = NULL;
     if (vk_instance_layers_env != NULL) {

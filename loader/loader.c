@@ -4743,7 +4743,7 @@ VkResult loader_enable_instance_layers(struct loader_instance *inst, const VkIns
         goto out;
     }
 
-    enabled_layers_env = loader_getenv(ENABLED_LAYERS_ENV, inst);
+    enabled_layers_env = loader_secure_getenv(ENABLED_LAYERS_ENV, inst);
 
     // Add any implicit layers first
     res = loader_add_implicit_layers(inst, enabled_layers_env, layer_filters, &inst->app_activated_layer_list,
@@ -5643,7 +5643,7 @@ VkResult loader_validate_instance_extensions(struct loader_instance *inst, const
             goto out;
         }
     } else {
-        enabled_layers_env = loader_getenv(ENABLED_LAYERS_ENV, inst);
+        enabled_layers_env = loader_secure_getenv(ENABLED_LAYERS_ENV, inst);
 
         // Build the lists of active layers (including meta layers) and expanded layers (with meta layers resolved to their
         // components)
