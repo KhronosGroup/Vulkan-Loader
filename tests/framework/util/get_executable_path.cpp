@@ -51,7 +51,7 @@ std::string test_platform_executable_path() {
     buffer.resize(1024);
     pid_t pid = getpid();
     int ret = proc_pidpath(pid, &buffer[0], static_cast<uint32_t>(buffer.size()));
-    if (ret <= 0) return NULL;
+    if (ret <= 0) return "";
     buffer[ret] = '\0';
     buffer.resize(ret);
     return buffer;
