@@ -67,10 +67,6 @@ static inline VkLayerInstanceDispatchTable *loader_get_instance_layer_dispatch(c
     return *((VkLayerInstanceDispatchTable **)obj);
 }
 
-static inline struct loader_instance_dispatch_table *loader_get_instance_dispatch(const void *obj) {
-    return *((struct loader_instance_dispatch_table **)obj);
-}
-
 static inline void loader_init_dispatch(void *obj, const void *data) {
 #if defined(DEBUG)
     assert(valid_loader_magic_value(obj) &&
