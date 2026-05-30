@@ -1624,6 +1624,11 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vkGetCalibratedTimestampsEXT(VkDevice device
     return VK_SUCCESS;
 }
 
+VKAPI_ATTR VkResult VKAPI_CALL test_icd_internal_function(VkPhysicalDevice physicalDevice, uint32_t a, uint32_t b, float c) {
+    check_valid_physical_device(physicalDevice);
+    return VK_SUCCESS;
+}
+
 #if defined(WIN32)
 VKAPI_ATTR VkResult VKAPI_CALL test_vk_icdEnumerateAdapterPhysicalDevices(VkInstance instance, LUID adapterLUID,
                                                                           uint32_t* pPhysicalDeviceCount,
@@ -1955,7 +1960,9 @@ VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL get_physical_device_func(VkInstance ins
         if (string_eq(pName, "vkGetPhysicalDeviceToolPropertiesEXT"))
             return to_vkVoidFunction(test_vkGetPhysicalDeviceToolPropertiesEXT);
     }
-
+    if (icd.supports_internal_function && string_eq(pName, TEST_ICD_INTERNAL_FUNCTION_NAME_STRING)) {
+        return to_vkVoidFunction(test_icd_internal_function);
+    }
     for (auto const& [phys_dev_handle, phys_dev] : icd.created_physical_device_details) {
         if (phys_dev.instance_created_from != instance) {
             continue;

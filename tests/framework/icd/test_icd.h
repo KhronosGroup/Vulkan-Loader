@@ -83,6 +83,8 @@ inline std::ostream& operator<<(std::ostream& os, const InterfaceVersionCheck& r
 
 using VulkanUUID = std::array<uint8_t, VK_UUID_SIZE>;
 
+using PFN_test_icd_internal_function = VKAPI_ATTR VkResult (VKAPI_CALL *)(VkPhysicalDevice physicalDevice, uint32_t a, uint32_t b, float c);
+#define TEST_ICD_INTERNAL_FUNCTION_NAME_STRING "TEST_ICD_INTERNAL_FUNCTION_NAME"
 // clang-format on
 
 // Move only type because it holds a DispatchableHandle<VkPhysicalDevice>
@@ -287,6 +289,9 @@ struct TestICD {
     // custom_physical_device_functions. To add unknown device functions, add it to the PhysicalDevice directly (in the
     // known_device_functions member)
     BUILDER_VECTOR(VulkanFunction, custom_instance_functions, custom_instance_function)
+
+    // When true, this ICD returns function pointers when TEST_ICD_INTERNAL_FUNCTION_NAME is queried.
+    BUILDER_VALUE(bool, supports_internal_function)
 
     // Must explicitely state support for the tooling info extension, that way we can control if vkGetInstanceProcAddr returns a
     // function pointer for vkGetPhysicalDeviceToolPropertiesEXT or vkGetPhysicalDeviceToolProperties (core version)
