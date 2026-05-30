@@ -33,6 +33,7 @@
 #include <mutex>
 #include <ostream>
 #include <unordered_map>
+#include <unordered_set>
 
 #include "util/dispatchable_handle.h"
 #include "util/platform_wsi.h"
@@ -312,6 +313,8 @@ struct TestICD {
     std::unordered_map<VkInstance, CreatedInstanceDetails> created_instance_details;
     std::unordered_map<VkPhysicalDevice, CreatedPhysicalDeviceDetails> created_physical_device_details;
     std::unordered_map<VkDevice, CreatedDeviceDetails> created_device_details;
+    std::unordered_set<VkQueue> created_queues;
+    std::unordered_set<VkCommandBuffer> created_command_buffers;
 };
 
 using GetTestICDFunc = TestICD* (*)();
