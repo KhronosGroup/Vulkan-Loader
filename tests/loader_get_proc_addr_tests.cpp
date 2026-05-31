@@ -294,7 +294,10 @@ TEST(GetDeviceProcAddr, SwapchainFuncsWithTerminator) {
         infos[1].sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
         infos[1].surface = surface2;
 
-        ASSERT_EQ(VK_SUCCESS, CreateSharedSwapchainsKHR(dev.dev, 2, infos.data(), nullptr, &swapchain));
+        std::array<VkSwapchainKHR, 2> swapchains{};
+        ASSERT_EQ(VK_SUCCESS, CreateSharedSwapchainsKHR(dev.dev, static_cast<uint32_t>(swapchains.size()), infos.data(), nullptr,
+                                                        swapchains.data()));
+        ASSERT_FALSE(log.find("vkCreateSharedSwapchainsKHR Terminator: No VkSurfaceKHR objects were created"));
     }
     env.vulkan_functions.vkDestroySurfaceKHR(inst.inst, surface, nullptr);
     env.vulkan_functions.vkDestroySurfaceKHR(inst.inst, surface2, nullptr);
