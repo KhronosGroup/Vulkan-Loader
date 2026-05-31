@@ -2207,12 +2207,6 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateSharedSwapchainsKHR(VkDevice dev
                    "[VUID-vkCreateSharedSwapchainsKHR-device-parameter]");
         abort(); /* Intentionally fail so user can correct issue. */
     }
-    if (NULL != icd_term->surface_list.list) {
-        loader_log(NULL, VULKAN_LOADER_ERROR_BIT, 0,
-                   "vkCreateSharedSwapchainsKHR Terminator: No VkSurfaceKHR objects were created, indicating an application "
-                   "bug. Returning VK_SUCCESS. ");
-        return VK_SUCCESS;
-    }
     if (NULL == dev->loader_dispatch.extension_terminator_dispatch.CreateSharedSwapchainsKHR) {
         loader_log(NULL, VULKAN_LOADER_ERROR_BIT, 0,
                    "vkCreateSharedSwapchainsKHR Terminator: Driver's function pointer was NULL, returning VK_SUCCESS. Was the "
