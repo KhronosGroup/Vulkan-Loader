@@ -267,7 +267,7 @@ VkResult parse_additional_drivers(const struct loader_instance* inst, cJSON* set
     loader_settings->additional_driver_count = additional_driver_count;
 
     loader_settings->additional_drivers = loader_instance_heap_calloc(
-        inst, sizeof(loader_settings_layer_configuration) * additional_driver_count, VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
+        inst, sizeof(loader_settings_driver_configuration) * additional_driver_count, VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
     if (NULL == loader_settings->additional_drivers) {
         res = VK_ERROR_OUT_OF_HOST_MEMORY;
         goto out;
