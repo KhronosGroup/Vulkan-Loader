@@ -3018,7 +3018,8 @@ VkResult loader_read_layer_json(const struct loader_instance *inst, struct loade
             loader_instance_heap_free(inst, spec_version);
             bool ext_unsupported = wsi_unsupported_instance_extension(&ext_prop);
             if (!ext_unsupported) {
-                loader_add_to_ext_list(inst, &props.instance_extension_list, 1, &ext_prop);
+                result = loader_add_to_ext_list(inst, &props.instance_extension_list, 1, &ext_prop);
+                if (result == VK_ERROR_OUT_OF_HOST_MEMORY) goto out;
             }
         }
     }
@@ -7617,7 +7618,10 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_EnumerateInstanceExtensionProperties(c
         }
         for (uint32_t i = 0; i < instance_layers.count; i++) {
             struct loader_extension_list *ext_list = &instance_layers.list[i].instance_extension_list;
-            loader_add_to_ext_list(NULL, &local_ext_list, ext_list->count, ext_list->list);
+            res = loader_add_to_ext_list(NULL, &local_ext_list, ext_list->count, ext_list->list);
+            if (VK_SUCCESS != res) {
+                goto out;
+            }
         }
 
         global_ext_list = &local_ext_list;
