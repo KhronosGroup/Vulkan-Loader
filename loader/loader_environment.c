@@ -586,6 +586,14 @@ void parse_id_filter_environment_var(const struct loader_instance *inst, const c
     char *context = NULL;
     char *token = thread_safe_strtok(parsing_string, ",", &context);
     while (NULL != token) {
+        if (filter_struct->count >= MAX_ADDITIONAL_FILTERS) {
+            loader_log(inst, VULKAN_LOADER_WARN_BIT, 0,
+                       "parse_id_filter_environment_var: Exceeded maximum number of filters (%d) for env var '%s'. "
+                       "Remaining entries will be ignored.",
+                       MAX_ADDITIONAL_FILTERS, env_var_name);
+            break;
+        }
+
         struct loader_envvar_id_filter_value *filter_value = &filter_struct->filters[filter_struct->count];
 
         char *pEnd;
