@@ -393,7 +393,12 @@ VkResult parse_layer_environment_var_filters(const struct loader_instance *inst,
 //  - full string names "string"
 bool check_name_matches_filter_environment_var(const char *name, const struct loader_envvar_filter *filter_struct) {
     bool ret_value = false;
-    const size_t name_len = strlen(name);
+    size_t name_len = strlen(name);
+    // name may be a manifest filename (from the driver select/disable filters) which, unlike layer names, is not capped to
+    // VK_MAX_EXTENSION_NAME_SIZE at parse time. Clamp so the lowercase copy stays inside lower_name.
+    if (name_len >= VK_MAX_EXTENSION_NAME_SIZE) {
+        name_len = VK_MAX_EXTENSION_NAME_SIZE - 1;
+    }
     char lower_name[VK_MAX_EXTENSION_NAME_SIZE];
     for (uint32_t iii = 0; iii < name_len; ++iii) {
         lower_name[iii] = (char)tolower(name[iii]);
