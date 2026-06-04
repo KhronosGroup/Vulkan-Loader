@@ -131,6 +131,10 @@ bool windows_add_json_entry(const struct loader_instance *inst,
     }
 
     if (NULL == *reg_data) {
+        // json_size is the registry value size and can be larger than the default buffer, so grow until it fits.
+        while (json_size + 1 > *total_size) {
+            *total_size *= 2;
+        }
         *reg_data = loader_instance_heap_alloc(inst, *total_size, VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
         if (NULL == *reg_data) {
             loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0,
@@ -140,24 +144,28 @@ bool windows_add_json_entry(const struct loader_instance *inst,
         }
         *reg_data[0] = '\0';
     } else if (strlen(*reg_data) + json_size + 1 > *total_size) {
-        void *new_ptr =
-            loader_instance_heap_realloc(inst, *reg_data, *total_size, *total_size * 2, VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
+        DWORD new_size = *total_size;
+        while (strlen(*reg_data) + json_size + 1 > new_size) {
+            new_size *= 2;
+        }
+        void *new_ptr = loader_instance_heap_realloc(inst, *reg_data, *total_size, new_size, VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
         if (NULL == new_ptr) {
             loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0,
-                       "windows_add_json_entry: Failed to reallocate space for registry value of size %ld for key %s",
-                       *total_size * 2, json_path);
+                       "windows_add_json_entry: Failed to reallocate space for registry value of size %ld for key %s", new_size,
+                       json_path);
             *result = VK_ERROR_OUT_OF_HOST_MEMORY;
             return false;
         }
         *reg_data = new_ptr;
-        *total_size *= 2;
+        *total_size = new_size;
     }
 
     for (char *curr_filename = json_path; curr_filename[0] != '\0'; curr_filename += strlen(curr_filename) + 1) {
-        if (strlen(*reg_data) == 0) {
-            (void)snprintf(*reg_data, json_size + 1, "%s", curr_filename);
+        size_t cur_len = strlen(*reg_data);
+        if (cur_len == 0) {
+            (void)snprintf(*reg_data, *total_size, "%s", curr_filename);
         } else {
-            (void)snprintf(*reg_data + strlen(*reg_data), json_size + 2, "%c%s", PATH_SEPARATOR, curr_filename);
+            (void)snprintf(*reg_data + cur_len, *total_size - cur_len, "%c%s", PATH_SEPARATOR, curr_filename);
         }
         loader_log(inst, VULKAN_LOADER_INFO_BIT, 0, "%s: Located json file \"%s\" from PnP registry: %s", __FUNCTION__,
                    curr_filename, key_name);
@@ -445,19 +453,23 @@ VkResult windows_get_registry_files(const struct loader_instance *inst, char *lo
                         }
                         *reg_data[0] = '\0';
                     } else if (strlen(*reg_data) + name_size + 1 > *reg_data_size) {
-                        void *new_ptr = loader_instance_heap_realloc(inst, *reg_data, *reg_data_size, *reg_data_size * 2,
+                        DWORD new_size = *reg_data_size;
+                        while (strlen(*reg_data) + name_size + 1 > new_size) {
+                            new_size *= 2;
+                        }
+                        void *new_ptr = loader_instance_heap_realloc(inst, *reg_data, *reg_data_size, new_size,
                                                                      VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
                         if (NULL == new_ptr) {
                             loader_log(
                                 inst, VULKAN_LOADER_ERROR_BIT | log_target_flag, 0,
                                 "windows_get_registry_files: Failed to reallocate space for registry value of size %ld for key %s",
-                                *reg_data_size * 2, name);
+                                new_size, name);
                             RegCloseKey(key);
                             result = VK_ERROR_OUT_OF_HOST_MEMORY;
                             goto out;
                         }
                         *reg_data = new_ptr;
-                        *reg_data_size *= 2;
+                        *reg_data_size = new_size;
                     }
 
                     // We've now found a json file. If this is an ICD, we still need to check if there is actually a device
@@ -516,7 +528,7 @@ VkResult windows_get_registry_files(const struct loader_instance *inst, char *lo
 
                     if (strlen(*reg_data) == 0) {
                         // The list is emtpy. Add the first entry.
-                        (void)snprintf(*reg_data, name_size + 1, "%s", name);
+                        (void)snprintf(*reg_data, *reg_data_size, "%s", name);
                         found = true;
                     } else {
                         // At this point the reg_data variable contains other JSON paths, likely from the PNP/device section
@@ -536,7 +548,8 @@ VkResult windows_get_registry_files(const struct loader_instance *inst, char *lo
                         // Only skip if we are adding a driver and a duplicate was found
                         if (!is_driver || (is_driver && foundDuplicate == false)) {
                             // Add the new entry to the list.
-                            (void)snprintf(*reg_data + strlen(*reg_data), name_size + 2, "%c%s", PATH_SEPARATOR, name);
+                            size_t cur_len = strlen(*reg_data);
+                            (void)snprintf(*reg_data + cur_len, *reg_data_size - cur_len, "%c%s", PATH_SEPARATOR, name);
                             found = true;
                         } else {
                             loader_log(
