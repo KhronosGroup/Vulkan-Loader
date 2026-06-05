@@ -130,8 +130,24 @@ bool windows_add_json_entry(const struct loader_instance *inst,
         return true;
     }
 
+    // The destination buffer must hold the existing contents plus the new value (json_size) and a null terminator.
+    // json_size is the size of an externally-supplied registry/adapter value and is not otherwise bounded, so size the
+    // buffer from the data length rather than assuming the initial *total_size is large enough.
+    size_t current_len = (NULL == *reg_data) ? 0 : strlen(*reg_data);
+    DWORD required_size = *total_size;
+    // Grow by doubling, stopping before required_size (a DWORD) would overflow.
+    while (current_len + json_size + 1 > required_size && required_size <= UINT32_MAX / 2) {
+        required_size *= 2;
+    }
+    if (current_len + json_size + 1 > required_size) {
+        loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0, "windows_add_json_entry: Registry value for key %s is too large to store",
+                   json_path);
+        *result = VK_ERROR_OUT_OF_HOST_MEMORY;
+        return false;
+    }
+
     if (NULL == *reg_data) {
-        *reg_data = loader_instance_heap_alloc(inst, *total_size, VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
+        *reg_data = loader_instance_heap_alloc(inst, required_size, VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
         if (NULL == *reg_data) {
             loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0,
                        "windows_add_json_entry: Failed to allocate space for registry data for key %s", json_path);
@@ -139,25 +155,27 @@ bool windows_add_json_entry(const struct loader_instance *inst,
             return false;
         }
         *reg_data[0] = '\0';
-    } else if (strlen(*reg_data) + json_size + 1 > *total_size) {
+        *total_size = required_size;
+    } else if (required_size > *total_size) {
         void *new_ptr =
-            loader_instance_heap_realloc(inst, *reg_data, *total_size, *total_size * 2, VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
+            loader_instance_heap_realloc(inst, *reg_data, *total_size, required_size, VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
         if (NULL == new_ptr) {
             loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0,
-                       "windows_add_json_entry: Failed to reallocate space for registry value of size %ld for key %s",
-                       *total_size * 2, json_path);
+                       "windows_add_json_entry: Failed to reallocate space for registry value of size %lu for key %s",
+                       required_size, json_path);
             *result = VK_ERROR_OUT_OF_HOST_MEMORY;
             return false;
         }
         *reg_data = new_ptr;
-        *total_size *= 2;
+        *total_size = required_size;
     }
 
     for (char *curr_filename = json_path; curr_filename[0] != '\0'; curr_filename += strlen(curr_filename) + 1) {
-        if (strlen(*reg_data) == 0) {
-            (void)snprintf(*reg_data, json_size + 1, "%s", curr_filename);
+        size_t cur_len = strlen(*reg_data);
+        if (cur_len == 0) {
+            (void)snprintf(*reg_data, *total_size, "%s", curr_filename);
         } else {
-            (void)snprintf(*reg_data + strlen(*reg_data), json_size + 2, "%c%s", PATH_SEPARATOR, curr_filename);
+            (void)snprintf(*reg_data + cur_len, *total_size - cur_len, "%c%s", PATH_SEPARATOR, curr_filename);
         }
         loader_log(inst, VULKAN_LOADER_INFO_BIT, 0, "%s: Located json file \"%s\" from PnP registry: %s", __FUNCTION__,
                    curr_filename, key_name);

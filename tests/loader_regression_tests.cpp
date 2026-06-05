@@ -4337,6 +4337,26 @@ TEST(DuplicateRegistryEntries, Drivers) {
                                    "\" from registry \"HKEY_LOCAL_MACHINE\\" VK_DRIVERS_INFO_REGISTRY_LOC
                                    "\" to the list due to duplication"));
 }
+
+// Regression test for a heap buffer overflow in windows_add_json_entry(). The buffer that aggregates manifest paths
+// discovered through the registry/D3DKMT enumeration starts at a fixed 4096 bytes, and the snprintf calls that append
+// to it were bounded by the source length instead of the destination's remaining capacity. As a result, a manifest
+// path longer than the buffer was written past the end of the allocation. This exercises that path with an oversized
+// value to ensure the destination buffer is grown to fit before writing.
+TEST(RegistryManifestParsing, OversizedD3DKMTDriverPathDoesNotOverflow) {
+    FrameworkEnvironment env{};
+
+    // Build a driver manifest path whose length exceeds the loader's initial 4096-byte registry buffer.
+    std::filesystem::path oversized_path = std::filesystem::path(std::string(5000, 'a')) / "test_icd.json";
+    ASSERT_GT(oversized_path.native().size(), 4096u);
+
+    env.platform_shim->add_d3dkmt_adapter(D3DKMT_Adapter{0, _LUID{10, 1000}}.add_driver_manifest_path(oversized_path));
+
+    // The path does not point at a real manifest, so no driver is found - but the loader must reach that conclusion
+    // without overflowing its internal buffer while enumerating the path.
+    InstWrapper inst{env.vulkan_functions};
+    inst.CheckCreate(VK_ERROR_INCOMPATIBLE_DRIVER);
+}
 #endif
 
 TEST(LibraryLoading, SystemLocations) {
