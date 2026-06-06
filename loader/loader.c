@@ -194,7 +194,7 @@ bool is_json(const char *path, size_t len) {
     if (len < 5) {
         return false;
     }
-    return !strncmp(path, ".json", 5);
+    return !strncmp(path + len - 5, ".json", 5);
 }
 
 // Handle error from to library loading
@@ -3298,7 +3298,7 @@ void copy_data_file_info(const char *cur_path, const char *relative_path, size_t
 
                 // If this is a specific JSON file, just add it and don't add any
                 // relative path or directory symbol to it.
-                if (!is_json(cur_write - 5, s)) {
+                if (!is_json(cur_write - s, s)) {
                     // Add the relative directory if present.
                     if (relative_path_size > 0) {
                         // If last symbol written was not a directory symbol, add it.
@@ -3325,8 +3325,7 @@ VkResult add_if_manifest_file(const struct loader_instance *inst, const char *fi
 
     // Look for files ending with ".json" suffix
     size_t name_len = strlen(file_name);
-    const char *name_suffix = file_name + name_len - 5;
-    if (!is_json(name_suffix, name_len)) {
+    if (!is_json(file_name, name_len)) {
         // Use incomplete to indicate invalid name, but to keep going.
         return VK_INCOMPLETE;
     }
@@ -3341,8 +3340,7 @@ VkResult prepend_if_manifest_file(const struct loader_instance *inst, const char
 
     // Look for files ending with ".json" suffix
     size_t name_len = strlen(file_name);
-    const char *name_suffix = file_name + name_len - 5;
-    if (!is_json(name_suffix, name_len)) {
+    if (!is_json(file_name, name_len)) {
         // Use incomplete to indicate invalid name, but to keep going.
         return VK_INCOMPLETE;
     }
@@ -3368,7 +3366,7 @@ VkResult add_data_files(const struct loader_instance *inst, char *search_path, s
 
         // Is this a JSON file, then try to open it.
         size_t len = strlen(cur_file);
-        if (is_json(cur_file + len - 5, len)) {
+        if (is_json(cur_file, len)) {
 #if defined(_WIN32)
             name = cur_file;
 #elif COMMON_UNIX_PLATFORMS
