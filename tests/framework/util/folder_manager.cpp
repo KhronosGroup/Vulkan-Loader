@@ -65,6 +65,13 @@ std::filesystem::path Folder::write_manifest(std::filesystem::path const& name, 
     std::filesystem::path out_path = (folder / name).lexically_normal();
     if (!::testing::internal::InDeathTestChild()) {
         auto file = std::ofstream(out_path, std::ios_base::trunc | std::ios_base::out);
+#if defined(_WIN32)
+        // If the manifest path is too long for Windows, retry with the \\?\ absolute-path prefix.
+        if (!file) {
+            std::wstring long_path = L"\\\\?\\" + std::filesystem::absolute(out_path).native();
+            file = std::ofstream(long_path.c_str(), std::ios_base::trunc | std::ios_base::out);
+        }
+#endif
         if (!file) {
             std::cerr << "Failed to create manifest " << name << " at " << out_path << "\n";
             return out_path;

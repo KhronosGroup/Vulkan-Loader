@@ -712,6 +712,64 @@ TEST(EnvVarICDOverrideSetup, FilterSelectDriver) {
     ASSERT_FALSE(env.debug_log.find_prefix_then_postfix("CDE_ICD.json", "ignored because it was disabled by env var"));
 }
 
+// Exercise the driver select/disable filters against a manifest name that is much longer than VK_MAX_EXTENSION_NAME_SIZE
+// would have allowed when the matcher copied the name into a fixed-size buffer. The whole name has to be considered for
+// every filter type, not just the first 255 characters. See KhronosGroup/Vulkan-Loader#1913.
+TEST(EnvVarICDOverrideSetup, FilterDriverLongManifestName) {
+    FrameworkEnvironment env{};
+    EnvVarWrapper filter_select_env_var{"VK_LOADER_DRIVERS_SELECT"};
+    EnvVarWrapper filter_disable_env_var{"VK_LOADER_DRIVERS_DISABLE"};
+
+    // Filesystems cap a single filename at NAME_MAX (255 on the platforms the tests run on), so use the longest practical
+    // name. The distinguishing part lives at the very end so any matcher that stops early gets it wrong.
+    const std::string long_name = "long_driver_" + std::string(220, 'a') + "_unique_ICD.json";
+    ASSERT_LT(long_name.size(), static_cast<size_t>(255));
+    env.add_icd(TEST_ICD_PATH_VERSION_6, ManifestOptions{}.set_json_name(long_name));
+
+    // A suffix filter that only matches via characters past the old 255 limit should still select the driver.
+    filter_select_env_var.set_new_value("*_unique_ICD.json");
+    {
+        InstWrapper inst{env.vulkan_functions};
+        FillDebugUtilsCreateDetails(inst.create_info, env.debug_log);
+        inst.CheckCreate();
+        ASSERT_TRUE(env.debug_log.find_prefix_then_postfix("Found ICD manifest file", long_name.c_str()));
+        ASSERT_FALSE(env.debug_log.find_prefix_then_postfix(long_name.c_str(), "ignored because not selected by env var"));
+    }
+
+    // A substring filter spanning the tail of the name should match as well.
+    env.debug_log.clear();
+    filter_select_env_var.set_new_value("*a_unique*");
+    {
+        InstWrapper inst{env.vulkan_functions};
+        FillDebugUtilsCreateDetails(inst.create_info, env.debug_log);
+        inst.CheckCreate();
+        ASSERT_TRUE(env.debug_log.find_prefix_then_postfix("Found ICD manifest file", long_name.c_str()));
+        ASSERT_FALSE(env.debug_log.find_prefix_then_postfix(long_name.c_str(), "ignored because not selected by env var"));
+    }
+
+    // The full long name matched exactly must select the driver.
+    env.debug_log.clear();
+    filter_select_env_var.set_new_value(long_name);
+    {
+        InstWrapper inst{env.vulkan_functions};
+        FillDebugUtilsCreateDetails(inst.create_info, env.debug_log);
+        inst.CheckCreate();
+        ASSERT_TRUE(env.debug_log.find_prefix_then_postfix("Found ICD manifest file", long_name.c_str()));
+        ASSERT_FALSE(env.debug_log.find_prefix_then_postfix(long_name.c_str(), "ignored because not selected by env var"));
+    }
+
+    // A disable filter keyed off the tail must drop the driver, leaving no usable ICD.
+    env.debug_log.clear();
+    filter_select_env_var.remove_value();
+    filter_disable_env_var.set_new_value("*_unique_ICD.json");
+    {
+        InstWrapper inst{env.vulkan_functions};
+        FillDebugUtilsCreateDetails(inst.create_info, env.debug_log);
+        inst.CheckCreate(VK_ERROR_INCOMPATIBLE_DRIVER);
+        ASSERT_TRUE(env.debug_log.find_prefix_then_postfix(long_name.c_str(), "ignored because it was disabled by env var"));
+    }
+}
+
 // Test that the driver filter disable disables driver manifest files that match the filter
 TEST(EnvVarICDOverrideSetup, FilterDisableDriver) {
     FrameworkEnvironment env{};
