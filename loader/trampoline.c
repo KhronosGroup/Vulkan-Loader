@@ -500,7 +500,11 @@ static void loader_log_instance_create_info(const struct loader_instance *inst, 
                "vkCreateInstance: Requested %u instance layer(s):", pCreateInfo->enabledLayerCount);
     if (pCreateInfo->ppEnabledLayerNames) {
         for (uint32_t i = 0; i < pCreateInfo->enabledLayerCount; ++i) {
-            loader_log(inst, VULKAN_LOADER_INFO_BIT, 0, "   %s", pCreateInfo->ppEnabledLayerNames[i]);
+            if (pCreateInfo->ppEnabledLayerNames[i]) {
+                loader_log(inst, VULKAN_LOADER_INFO_BIT, 0, "   %s", pCreateInfo->ppEnabledLayerNames[i]);
+            } else {
+                loader_log(inst, VULKAN_LOADER_INFO_BIT, 0, "   <NULL>");
+            }
         }
     }
 
@@ -508,7 +512,11 @@ static void loader_log_instance_create_info(const struct loader_instance *inst, 
                "vkCreateInstance: Requested %u instance extension(s):", pCreateInfo->enabledExtensionCount);
     if (pCreateInfo->ppEnabledExtensionNames) {
         for (uint32_t i = 0; i < pCreateInfo->enabledExtensionCount; ++i) {
-            loader_log(inst, VULKAN_LOADER_INFO_BIT, 0, "   %s", pCreateInfo->ppEnabledExtensionNames[i]);
+            if (pCreateInfo->ppEnabledExtensionNames[i]) {
+                loader_log(inst, VULKAN_LOADER_INFO_BIT, 0, "   %s", pCreateInfo->ppEnabledExtensionNames[i]);
+            } else {
+                loader_log(inst, VULKAN_LOADER_INFO_BIT, 0, "   <NULL>");
+            }
         }
     }
 }
