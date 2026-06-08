@@ -116,93 +116,52 @@ BOOL WINAPI DllMain(HINSTANCE hinst, DWORD reason, LPVOID reserved) {
     return TRUE;
 }
 
-bool windows_add_json_entry(const struct loader_instance *inst,
-                            char **reg_data,    // list of JSON files
-                            PDWORD total_size,  // size of reg_data
-                            LPCSTR key_name,    // key name - used for debug prints - i.e. VulkanDriverName
-                            DWORD key_type,     // key data type
-                            LPSTR json_path,    // JSON string to add to the list reg_data
-                            DWORD json_size,    // size in bytes of json_path
-                            VkResult *result) {
-    // Check for and ignore duplicates.
-    if (*reg_data && strstr(*reg_data, json_path)) {
-        // Success. The json_path is already in the list.
-        return true;
-    }
-
-    // The destination buffer must hold the existing contents plus the new value (json_size) and a null terminator.
-    // json_size is the size of an externally-supplied registry/adapter value and is not otherwise bounded, so size the
-    // buffer from the data length rather than assuming the initial *total_size is large enough.
-    size_t current_len = (NULL == *reg_data) ? 0 : strlen(*reg_data);
-    DWORD required_size = *total_size;
-    // Grow by doubling, stopping before required_size (a DWORD) would overflow.
-    while (current_len + json_size + 1 > required_size && required_size <= UINT32_MAX / 2) {
-        required_size *= 2;
-    }
-    if (current_len + json_size + 1 > required_size) {
-        loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0, "windows_add_json_entry: Registry value for key %s is too large to store",
-                   json_path);
-        *result = VK_ERROR_OUT_OF_HOST_MEMORY;
-        return false;
-    }
-
-    if (NULL == *reg_data) {
-        *reg_data = loader_instance_heap_alloc(inst, required_size, VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
-        if (NULL == *reg_data) {
-            loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0,
-                       "windows_add_json_entry: Failed to allocate space for registry data for key %s", json_path);
-            *result = VK_ERROR_OUT_OF_HOST_MEMORY;
-            return false;
-        }
-        *reg_data[0] = '\0';
-        *total_size = required_size;
-    } else if (required_size > *total_size) {
-        void *new_ptr =
-            loader_instance_heap_realloc(inst, *reg_data, *total_size, required_size, VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
-        if (NULL == new_ptr) {
-            loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0,
-                       "windows_add_json_entry: Failed to reallocate space for registry value of size %lu for key %s",
-                       required_size, json_path);
-            *result = VK_ERROR_OUT_OF_HOST_MEMORY;
-            return false;
-        }
-        *reg_data = new_ptr;
-        *total_size = required_size;
-    }
-
+VkResult windows_add_json_entry(const struct loader_instance *inst, struct loader_string_list *search_paths,
+                                LPCSTR key_name,  // key name - used for debug prints - i.e. VulkanDriverName
+                                DWORD key_type,   // key data type
+                                LPSTR json_path,  // JSON string to add to the list reg_data
+                                DWORD json_size   // size in bytes of json_path
+) {
     for (char *curr_filename = json_path; curr_filename[0] != '\0'; curr_filename += strlen(curr_filename) + 1) {
-        size_t cur_len = strlen(*reg_data);
-        if (cur_len == 0) {
-            (void)snprintf(*reg_data, *total_size, "%s", curr_filename);
-        } else {
-            (void)snprintf(*reg_data + cur_len, *total_size - cur_len, "%c%s", PATH_SEPARATOR, curr_filename);
+        // Make sure we don't continue reading past the end of the buffer
+        if (curr_filename - json_path >= (long)json_size) {
+            break;
         }
-        loader_log(inst, VULKAN_LOADER_INFO_BIT, 0, "%s: Located json file \"%s\" from PnP registry: %s", __FUNCTION__,
-                   curr_filename, key_name);
+        // Check for and ignore duplicates.
+        size_t curr_filename_len = strlen(curr_filename) + 1;
+        for (size_t i = 0; i < search_paths->count; i++) {
+            if (strncmp(curr_filename, search_paths->list[i], curr_filename_len) == 0) {
+                // Success. The json_path is already in the list.
+                return VK_SUCCESS;
+            }
+        }
+        VkResult res = copy_str_to_string_list(inst, search_paths, curr_filename, curr_filename_len);
 
+        if (res == VK_SUCCESS) {
+            loader_log(inst, VULKAN_LOADER_INFO_BIT, 0, "%s: Located json file \"%s\" from PnP registry: %s", __FUNCTION__,
+                       curr_filename, key_name);
+        } else {
+            return res;
+        }
         if (key_type == REG_SZ) {
             break;
         }
     }
-    return true;
+    return VK_SUCCESS;
 }
 
-bool windows_get_device_registry_entry(const struct loader_instance *inst, char **reg_data, PDWORD total_size, DEVINST dev_id,
-                                       LPCSTR value_name, VkResult *result) {
+VkResult windows_get_device_registry_entry(const struct loader_instance *inst, struct loader_string_list *search_paths,
+                                           DEVINST dev_id, LPCSTR value_name) {
+    VkResult res = VK_SUCCESS;
     HKEY hkrKey = INVALID_HANDLE_VALUE;
     DWORD requiredSize, data_type;
     char *manifest_path = NULL;
-    bool found = false;
-
-    assert(reg_data != NULL && "windows_get_device_registry_entry: reg_data is a NULL pointer");
-    assert(total_size != NULL && "windows_get_device_registry_entry: total_size is a NULL pointer");
 
     CONFIGRET status = CM_Open_DevNode_Key(dev_id, KEY_QUERY_VALUE, 0, RegDisposition_OpenExisting, &hkrKey, CM_REGISTRY_SOFTWARE);
     if (status != CR_SUCCESS) {
         loader_log(inst, VULKAN_LOADER_WARN_BIT | VULKAN_LOADER_DRIVER_BIT, 0,
                    "windows_get_device_registry_entry: Failed to open registry key for DeviceID(%ld)", dev_id);
-        *result = VK_ERROR_INCOMPATIBLE_DRIVER;
-        return false;
+        return VK_ERROR_INCOMPATIBLE_DRIVER;
     }
 
     // query value
@@ -223,7 +182,7 @@ bool windows_get_device_registry_entry(const struct loader_instance *inst, char 
     if (manifest_path == NULL) {
         loader_log(inst, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_DRIVER_BIT, 0,
                    "windows_get_device_registry_entry: Failed to allocate space for DriverName.");
-        *result = VK_ERROR_OUT_OF_HOST_MEMORY;
+        res = VK_ERROR_OUT_OF_HOST_MEMORY;
         goto out;
     }
 
@@ -232,27 +191,27 @@ bool windows_get_device_registry_entry(const struct loader_instance *inst, char 
     if (ret != ERROR_SUCCESS) {
         loader_log(inst, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_DRIVER_BIT, 0,
                    "windows_get_device_registry_entry: DeviceID(%ld) Failed to obtain %s", dev_id, value_name);
-        *result = VK_ERROR_INCOMPATIBLE_DRIVER;
+        res = VK_ERROR_INCOMPATIBLE_DRIVER;
         goto out;
     }
 
     if (data_type != REG_SZ && data_type != REG_MULTI_SZ) {
         loader_log(inst, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_DRIVER_BIT, 0,
                    "windows_get_device_registry_entry: Invalid %s data type. Expected REG_SZ or REG_MULTI_SZ.", value_name);
-        *result = VK_ERROR_INCOMPATIBLE_DRIVER;
+        res = VK_ERROR_INCOMPATIBLE_DRIVER;
         goto out;
     }
 
-    found = windows_add_json_entry(inst, reg_data, total_size, value_name, data_type, manifest_path, requiredSize, result);
+    res = windows_add_json_entry(inst, search_paths, value_name, data_type, manifest_path, requiredSize);
 
 out:
     loader_instance_heap_free(inst, manifest_path);
     RegCloseKey(hkrKey);
-    return found;
+    return res;
 }
 
-VkResult windows_get_device_registry_files(const struct loader_instance *inst, uint32_t log_target_flag, char **reg_data,
-                                           PDWORD reg_data_size, LPCSTR value_name) {
+VkResult windows_get_device_registry_files(const struct loader_instance *inst, uint32_t log_target_flag,
+                                           struct loader_string_list *search_paths, LPCSTR value_name) {
     const wchar_t *softwareComponentGUID = L"{5c4c3332-344d-483c-8739-259e934c9cc8}";
     const wchar_t *displayGUID = L"{4d36e968-e325-11ce-bfc1-08002be10318}";
 #if defined(CM_GETIDLIST_FILTER_PRESENT)
@@ -271,9 +230,7 @@ VkResult windows_get_device_registry_files(const struct loader_instance *inst, u
     wchar_t *pDeviceNames = NULL;
     ULONG deviceNamesSize = 0;
     VkResult result = VK_SUCCESS;
-    bool found = false;
-
-    assert(reg_data != NULL && "windows_get_device_registry_files: reg_data is NULL");
+    uint32_t search_path_count_before = search_paths->count;
 
     // if after obtaining the DeviceNameSize, new device is added start over
     do {
@@ -315,10 +272,8 @@ VkResult windows_get_device_registry_files(const struct loader_instance *inst, u
             loader_log(inst, VULKAN_LOADER_INFO_BIT | log_target_flag, 0, "windows_get_device_registry_files: opening device %ls",
                        deviceName);
 
-            if (windows_get_device_registry_entry(inst, reg_data, reg_data_size, devID, value_name, &result)) {
-                found = true;
-                continue;
-            } else if (result == VK_ERROR_OUT_OF_HOST_MEMORY) {
+            result = windows_get_device_registry_entry(inst, search_paths, devID, value_name);
+            if (result == VK_ERROR_OUT_OF_HOST_MEMORY) {
                 break;
             }
 
@@ -351,9 +306,9 @@ VkResult windows_get_device_registry_files(const struct loader_instance *inst, u
                     continue;
                 }
 
-                if (windows_get_device_registry_entry(inst, reg_data, reg_data_size, childID, value_name, &result)) {
-                    found = true;
-                    break;  // check next-display-device
+                result = windows_get_device_registry_entry(inst, search_paths, childID, value_name);
+                if (result != VK_SUCCESS) {
+                    return result;
                 }
 
             } while (CM_Get_Sibling(&childID, childID, 0) == CR_SUCCESS);
@@ -362,7 +317,7 @@ VkResult windows_get_device_registry_files(const struct loader_instance *inst, u
         loader_instance_heap_free(inst, pDeviceNames);
     }
 
-    if (!found && result != VK_ERROR_OUT_OF_HOST_MEMORY) {
+    if (search_paths->count == search_path_count_before && result != VK_ERROR_OUT_OF_HOST_MEMORY) {
         loader_log(inst, log_target_flag, 0, "windows_get_device_registry_files: found no registry files");
         result = VK_ERROR_INCOMPATIBLE_DRIVER;
     }
@@ -370,8 +325,8 @@ VkResult windows_get_device_registry_files(const struct loader_instance *inst, u
     return result;
 }
 
-VkResult windows_get_registry_files(const struct loader_instance *inst, char *location, bool use_secondary_hive, char **reg_data,
-                                    PDWORD reg_data_size) {
+VkResult windows_get_registry_files(const struct loader_instance *inst, char *location, bool use_secondary_hive,
+                                    struct loader_string_list *search_paths) {
     // This list contains all of the allowed ICDs. This allows us to verify that a device is actually present from the vendor
     // specified. This does disallow other vendors, but any new driver should use the device-specific registries anyway.
     const struct {
@@ -425,12 +380,10 @@ VkResult windows_get_registry_files(const struct loader_instance *inst, char *lo
     DWORD value;
     DWORD value_size = sizeof(value);
     VkResult result = VK_SUCCESS;
-    bool found = false;
+    uint32_t search_path_count_before = search_paths->count;
     IDXGIFactory1 *dxgi_factory = NULL;
     bool is_driver = !strcmp(location, VK_DRIVERS_INFO_REGISTRY_LOC);
     uint32_t log_target_flag = is_driver ? VULKAN_LOADER_DRIVER_BIT : VULKAN_LOADER_LAYER_BIT;
-
-    assert(reg_data != NULL && "windows_get_registry_files: reg_data is a NULL pointer");
 
     if (is_driver) {
         HRESULT hres = fpCreateDXGIFactory1(&IID_IDXGIFactory1, (void **)&dxgi_factory);
@@ -452,32 +405,6 @@ VkResult windows_get_registry_files(const struct loader_instance *inst, char *lo
                  (rtn_value = RegEnumValue(key, idx++, name, &name_size, NULL, NULL, (LPBYTE)&value, &value_size)) == ERROR_SUCCESS;
                  name_size = sizeof(name), value_size = sizeof(value)) {
                 if (value_size == sizeof(value) && value == 0) {
-                    if (NULL == *reg_data) {
-                        *reg_data = loader_instance_heap_alloc(inst, *reg_data_size, VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
-                        if (NULL == *reg_data) {
-                            loader_log(inst, VULKAN_LOADER_ERROR_BIT | log_target_flag, 0,
-                                       "windows_get_registry_files: Failed to allocate space for registry data for key %s", name);
-                            RegCloseKey(key);
-                            result = VK_ERROR_OUT_OF_HOST_MEMORY;
-                            goto out;
-                        }
-                        *reg_data[0] = '\0';
-                    } else if (strlen(*reg_data) + name_size + 1 > *reg_data_size) {
-                        void *new_ptr = loader_instance_heap_realloc(inst, *reg_data, *reg_data_size, *reg_data_size * 2,
-                                                                     VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
-                        if (NULL == new_ptr) {
-                            loader_log(
-                                inst, VULKAN_LOADER_ERROR_BIT | log_target_flag, 0,
-                                "windows_get_registry_files: Failed to reallocate space for registry value of size %ld for key %s",
-                                *reg_data_size * 2, name);
-                            RegCloseKey(key);
-                            result = VK_ERROR_OUT_OF_HOST_MEMORY;
-                            goto out;
-                        }
-                        *reg_data = new_ptr;
-                        *reg_data_size *= 2;
-                    }
-
                     // We've now found a json file. If this is an ICD, we still need to check if there is actually a device
                     // that matches this ICD
                     loader_log(inst, VULKAN_LOADER_INFO_BIT | log_target_flag, 0,
@@ -532,37 +459,25 @@ VkResult windows_get_registry_files(const struct loader_instance *inst, char *lo
                         }
                     }
 
-                    if (strlen(*reg_data) == 0) {
-                        // The list is emtpy. Add the first entry.
-                        (void)snprintf(*reg_data, name_size + 1, "%s", name);
-                        found = true;
+                    // Check for and ignore duplicates.
+                    bool foundDuplicate = false;
+                    for (size_t i = 0; i < search_paths->count; i++) {
+                        if (strncmp(name, search_paths->list[i], name_size + 1) == 0) {
+                            foundDuplicate = true;
+                        }
+                    }
+
+                    if (!is_driver || (is_driver && foundDuplicate == false)) {
+                        result = copy_str_to_string_list(inst, search_paths, name, name_size + 1);
+                        if (result != VK_SUCCESS) {
+                            goto out;
+                        }
                     } else {
-                        // At this point the reg_data variable contains other JSON paths, likely from the PNP/device section
-                        // of the registry that we want to have precedence over this non-device specific section of the registry.
-                        // To make sure we avoid enumerating old JSON files/drivers that might be present in the non-device specific
-                        // area of the registry when a newer device specific JSON file is present, do a check before adding.
-                        // Find the file name, without path, of the JSON file found in the non-device specific registry location.
-                        // If the same JSON file name is already found in the list, don't add it again.
-                        bool foundDuplicate = false;
-                        char *pLastSlashName = strrchr(name, '\\');
-                        if (pLastSlashName != NULL) {
-                            char *foundMatch = strstr(*reg_data, pLastSlashName + 1);
-                            if (foundMatch != NULL) {
-                                foundDuplicate = true;
-                            }
-                        }
-                        // Only skip if we are adding a driver and a duplicate was found
-                        if (!is_driver || (is_driver && foundDuplicate == false)) {
-                            // Add the new entry to the list.
-                            (void)snprintf(*reg_data + strlen(*reg_data), name_size + 2, "%c%s", PATH_SEPARATOR, name);
-                            found = true;
-                        } else {
-                            loader_log(
-                                inst, VULKAN_LOADER_INFO_BIT | log_target_flag, 0,
-                                "Skipping adding of json file \"%s\" from registry \"%s\\%s\" to the list due to duplication", name,
-                                hive == DEFAULT_VK_REGISTRY_HIVE ? DEFAULT_VK_REGISTRY_HIVE_STR : SECONDARY_VK_REGISTRY_HIVE_STR,
-                                location);
-                        }
+                        loader_log(inst, VULKAN_LOADER_INFO_BIT | log_target_flag, 0,
+                                   "Skipping adding of json file \"%s\" from registry \"%s\\%s\" to the list due to duplication",
+                                   name,
+                                   hive == DEFAULT_VK_REGISTRY_HIVE ? DEFAULT_VK_REGISTRY_HIVE_STR : SECONDARY_VK_REGISTRY_HIVE_STR,
+                                   location);
                     }
                 }
             }
@@ -578,7 +493,7 @@ VkResult windows_get_registry_files(const struct loader_instance *inst, char *lo
         }
     }
 
-    if (!found && result != VK_ERROR_OUT_OF_HOST_MEMORY) {
+    if (search_paths->count == search_path_count_before && result != VK_ERROR_OUT_OF_HOST_MEMORY) {
         loader_log(inst, log_target_flag, 0, "Found no registry files in %s\\%s",
                    (hive == DEFAULT_VK_REGISTRY_HIVE) ? DEFAULT_VK_REGISTRY_HIVE_STR : SECONDARY_VK_REGISTRY_HIVE_STR, location);
         result = VK_ERROR_INCOMPATIBLE_DRIVER;
@@ -593,7 +508,7 @@ out:
 }
 
 // Read manifest JSON files using the Windows driver interface
-VkResult windows_read_manifest_from_d3d_adapters(const struct loader_instance *inst, char **reg_data, PDWORD reg_data_size,
+VkResult windows_read_manifest_from_d3d_adapters(const struct loader_instance *inst, struct loader_string_list *search_paths,
                                                  const wchar_t *value_name) {
     VkResult result = VK_INCOMPLETE;
     LoaderEnumAdapters2 adapters = {.adapter_count = 0, .adapters = NULL};
@@ -702,9 +617,8 @@ VkResult windows_read_manifest_from_d3d_adapters(const struct loader_instance *i
             WideCharToMultiByte(CP_UTF8, 0, curr_path, -1, json_path, (int)json_path_size, NULL, NULL);
 
             // Add the string to the output list
-            result = VK_SUCCESS;
-            windows_add_json_entry(inst, reg_data, reg_data_size, (LPCTSTR)L"EnumAdapters", REG_SZ, json_path,
-                                   (DWORD)strlen(json_path) + 1, &result);
+            result = windows_add_json_entry(inst, search_paths, (LPCTSTR)L"EnumAdapters", REG_SZ, json_path,
+                                            (DWORD)strlen(json_path) + 1);
             if (result != VK_SUCCESS) {
                 goto out;
             }
@@ -729,7 +643,7 @@ VkResult windows_read_data_files_in_registry(const struct loader_instance *inst,
                                              bool warn_if_not_present, char *registry_location,
                                              struct loader_string_list *out_files) {
     VkResult vk_result = VK_SUCCESS;
-    char *search_path = NULL;
+    struct loader_string_list search_paths = {0};
     uint32_t log_target_flag = 0;
 
     if (data_file_type == LOADER_DATA_FILE_MANIFEST_DRIVER) {
@@ -744,25 +658,21 @@ VkResult windows_read_data_files_in_registry(const struct loader_instance *inst,
 
     // These calls look at the PNP/Device section of the registry.
     VkResult regHKR_result = VK_SUCCESS;
-    DWORD reg_size = 4096;
     if (!strncmp(registry_location, VK_DRIVERS_INFO_REGISTRY_LOC, sizeof(VK_DRIVERS_INFO_REGISTRY_LOC))) {
         // If we're looking for drivers we need to try enumerating adapters
-        regHKR_result = windows_read_manifest_from_d3d_adapters(inst, &search_path, &reg_size, LoaderPnpDriverRegistryWide());
+        regHKR_result = windows_read_manifest_from_d3d_adapters(inst, &search_paths, LoaderPnpDriverRegistryWide());
         if (regHKR_result == VK_INCOMPLETE) {
-            regHKR_result =
-                windows_get_device_registry_files(inst, log_target_flag, &search_path, &reg_size, LoaderPnpDriverRegistry());
+            regHKR_result = windows_get_device_registry_files(inst, log_target_flag, &search_paths, LoaderPnpDriverRegistry());
         }
     } else if (!strncmp(registry_location, VK_ELAYERS_INFO_REGISTRY_LOC, sizeof(VK_ELAYERS_INFO_REGISTRY_LOC))) {
-        regHKR_result = windows_read_manifest_from_d3d_adapters(inst, &search_path, &reg_size, LoaderPnpELayerRegistryWide());
+        regHKR_result = windows_read_manifest_from_d3d_adapters(inst, &search_paths, LoaderPnpELayerRegistryWide());
         if (regHKR_result == VK_INCOMPLETE) {
-            regHKR_result =
-                windows_get_device_registry_files(inst, log_target_flag, &search_path, &reg_size, LoaderPnpELayerRegistry());
+            regHKR_result = windows_get_device_registry_files(inst, log_target_flag, &search_paths, LoaderPnpELayerRegistry());
         }
     } else if (!strncmp(registry_location, VK_ILAYERS_INFO_REGISTRY_LOC, sizeof(VK_ILAYERS_INFO_REGISTRY_LOC))) {
-        regHKR_result = windows_read_manifest_from_d3d_adapters(inst, &search_path, &reg_size, LoaderPnpILayerRegistryWide());
+        regHKR_result = windows_read_manifest_from_d3d_adapters(inst, &search_paths, LoaderPnpILayerRegistryWide());
         if (regHKR_result == VK_INCOMPLETE) {
-            regHKR_result =
-                windows_get_device_registry_files(inst, log_target_flag, &search_path, &reg_size, LoaderPnpILayerRegistry());
+            regHKR_result = windows_get_device_registry_files(inst, log_target_flag, &search_paths, LoaderPnpILayerRegistry());
         }
     }
 
@@ -773,13 +683,13 @@ VkResult windows_read_data_files_in_registry(const struct loader_instance *inst,
 
     // This call looks into the Khronos non-device specific section of the registry for layer files.
     bool use_secondary_hive = (data_file_type != LOADER_DATA_FILE_MANIFEST_DRIVER) && (!is_high_integrity());
-    VkResult reg_result = windows_get_registry_files(inst, registry_location, use_secondary_hive, &search_path, &reg_size);
+    VkResult reg_result = windows_get_registry_files(inst, registry_location, use_secondary_hive, &search_paths);
     if (reg_result == VK_ERROR_OUT_OF_HOST_MEMORY) {
         vk_result = VK_ERROR_OUT_OF_HOST_MEMORY;
         goto out;
     }
 
-    if ((VK_SUCCESS != reg_result && VK_SUCCESS != regHKR_result) || NULL == search_path) {
+    if ((VK_SUCCESS != reg_result && VK_SUCCESS != regHKR_result) || search_paths.count == 0) {
         if (data_file_type == LOADER_DATA_FILE_MANIFEST_DRIVER) {
             loader_log(inst, VULKAN_LOADER_ERROR_BIT | log_target_flag, 0,
                        "windows_read_data_files_in_registry: Registry lookup failed to get ICD manifest files.  Possibly missing "
@@ -805,11 +715,13 @@ VkResult windows_read_data_files_in_registry(const struct loader_instance *inst,
     }
 
     // Now, parse the paths and add any manifest files found in them.
-    vk_result = add_data_files(inst, search_path, out_files);
+    for (size_t i = 0; i < search_paths.count; i++) {
+        vk_result = add_data_files(inst, search_paths.list[i], out_files);
+    }
 
 out:
 
-    loader_instance_heap_free(inst, search_path);
+    free_string_list(inst, &search_paths);
 
     return vk_result;
 }
