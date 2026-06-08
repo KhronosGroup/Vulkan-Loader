@@ -355,11 +355,11 @@ VkResult prepend_str_to_string_list(const struct loader_instance *inst, struct l
 VkResult copy_str_to_string_list(const struct loader_instance *inst, struct loader_string_list *string_list, const char *str,
                                  size_t str_len) {
     assert(string_list && str);
-    char *new_str = loader_instance_heap_calloc(inst, sizeof(char *) * str_len + 1, VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
+    char *new_str = loader_instance_heap_calloc(inst, str_len + 1, VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
     if (NULL == new_str) {
         return VK_ERROR_OUT_OF_HOST_MEMORY;
     }
-    loader_strncpy(new_str, sizeof(char *) * str_len + 1, str, str_len);
+    loader_strncpy(new_str, str_len + 1, str, str_len);
     new_str[str_len] = '\0';
     return append_str_to_string_list(inst, string_list, new_str);
 }
@@ -367,11 +367,11 @@ VkResult copy_str_to_string_list(const struct loader_instance *inst, struct load
 VkResult copy_str_to_start_of_string_list(const struct loader_instance *inst, struct loader_string_list *string_list,
                                           const char *str, size_t str_len) {
     assert(string_list && str);
-    char *new_str = loader_instance_heap_calloc(inst, sizeof(char *) * str_len + 1, VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
+    char *new_str = loader_instance_heap_calloc(inst, str_len + 1, VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
     if (NULL == new_str) {
         return VK_ERROR_OUT_OF_HOST_MEMORY;
     }
-    loader_strncpy(new_str, sizeof(char *) * str_len + 1, str, str_len);
+    loader_strncpy(new_str, str_len + 1, str, str_len);
     new_str[str_len] = '\0';
     return prepend_str_to_string_list(inst, string_list, new_str);
 }
