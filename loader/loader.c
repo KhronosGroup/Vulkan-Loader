@@ -284,6 +284,16 @@ VkResult loader_init_library_list(struct loader_layer_list *instance_layers, loa
     return VK_SUCCESS;
 }
 
+bool is_string_in_string_list(struct loader_string_list *string_list, const char *str) {
+    // Remove duplicate paths, or it would result in duplicate extensions, duplicate devices, etc.
+    for (size_t i = 0; i < string_list->count; i++) {
+        if (strcmp(string_list->list[i], str) == 0) {
+            return true;
+        }
+    }
+    return false;
+}
+
 VkResult loader_copy_to_new_str(const struct loader_instance *inst, const char *source_str, char **dest_str) {
     assert(source_str && dest_str);
     size_t str_len = strlen(source_str) + 1;
@@ -338,6 +348,16 @@ VkResult append_str_to_string_list(const struct loader_instance *inst, struct lo
     return VK_SUCCESS;
 }
 
+VkResult append_str_to_string_list_if_unique(const struct loader_instance *inst, struct loader_string_list *string_list,
+                                             char *str) {
+    if (is_string_in_string_list(string_list, str)) {
+        // Since this string is a duplicate and this function takes ownership, we need to free it.
+        loader_instance_heap_free(inst, str);
+        return VK_SUCCESS;
+    }
+    return append_str_to_string_list(inst, string_list, str);
+}
+
 VkResult prepend_str_to_string_list(const struct loader_instance *inst, struct loader_string_list *string_list, char *str) {
     assert(string_list && str);
     VkResult res = increase_str_capacity_by_at_least_one(inst, string_list);
@@ -362,6 +382,14 @@ VkResult copy_str_to_string_list(const struct loader_instance *inst, struct load
     loader_strncpy(new_str, str_len + 1, str, str_len);
     new_str[str_len] = '\0';
     return append_str_to_string_list(inst, string_list, new_str);
+}
+
+VkResult copy_str_to_string_list_if_unique(const struct loader_instance *inst, struct loader_string_list *string_list,
+                                           const char *str, size_t str_len) {
+    if (is_string_in_string_list(string_list, str)) {
+        return VK_SUCCESS;
+    }
+    return copy_str_to_string_list(inst, string_list, str, str_len);
 }
 
 VkResult copy_str_to_start_of_string_list(const struct loader_instance *inst, struct loader_string_list *string_list,
@@ -3258,30 +3286,11 @@ out:
     return result;
 }
 
-size_t determine_data_file_path_size(const char *cur_path, size_t relative_path_size) {
-    size_t path_size = 0;
-
-    if (NULL != cur_path) {
-        // For each folder in cur_path, (detected by finding additional
-        // path separators in the string) we need to add the relative path on
-        // the end.  Plus, leave an additional two slots on the end to add an
-        // additional directory slash and path separator if needed
-        path_size += strlen(cur_path) + relative_path_size + 2;
-        for (const char *x = cur_path; *x; ++x) {
-            if (*x == PATH_SEPARATOR) {
-                path_size += relative_path_size + 2;
-            }
-        }
-    }
-
-    return path_size;
-}
-
-void copy_data_file_info(const char *cur_path, const char *relative_path, size_t relative_path_size, char **output_path) {
+VkResult copy_data_file_info(const struct loader_instance *inst, const char *cur_path, const char *relative_path,
+                             size_t relative_path_size, struct loader_string_list *search_paths) {
     if (NULL != cur_path) {
         uint32_t start = 0;
         uint32_t stop = 0;
-        char *cur_write = *output_path;
 
         while (cur_path[start] != '\0') {
             while (cur_path[start] == PATH_SEPARATOR && cur_path[start] != '\0') {
@@ -3293,29 +3302,41 @@ void copy_data_file_info(const char *cur_path, const char *relative_path, size_t
             }
             const size_t s = stop - start;
             if (s) {
-                memcpy(cur_write, &cur_path[start], s);
-                cur_write += s;
+                // space enough for base path, relative path, path separator, and null terminator
+                size_t new_str_len = s + relative_path_size + 2;
+
+                char *new_str = loader_instance_heap_calloc(inst, new_str_len, VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
+                if (NULL == new_str) {
+                    return VK_ERROR_OUT_OF_HOST_MEMORY;
+                }
+                memcpy(new_str, &cur_path[start], s);
+                new_str[s] = '\0';
 
                 // If this is a specific JSON file, just add it and don't add any
                 // relative path or directory symbol to it.
-                if (!is_json(cur_write - s, s)) {
+                if (!is_json(new_str, s)) {
                     // Add the relative directory if present.
                     if (relative_path_size > 0) {
+                        char *rel_start = new_str + s;
+
                         // If last symbol written was not a directory symbol, add it.
-                        if (*(cur_write - 1) != DIRECTORY_SYMBOL) {
-                            *cur_write++ = DIRECTORY_SYMBOL;
+                        if (*(rel_start - 1) != DIRECTORY_SYMBOL) {
+                            *rel_start++ = DIRECTORY_SYMBOL;
                         }
-                        memcpy(cur_write, relative_path, relative_path_size);
-                        cur_write += relative_path_size;
+                        memcpy(rel_start, relative_path, relative_path_size);
+                        rel_start[relative_path_size] = '\0';
                     }
                 }
 
-                *cur_write++ = PATH_SEPARATOR;
+                VkResult res = append_str_to_string_list_if_unique(inst, search_paths, new_str);
+                if (VK_SUCCESS != res) {
+                    return res;
+                }
                 start = stop;
             }
         }
-        *output_path = cur_write;
     }
+    return VK_SUCCESS;
 }
 
 // If the file found is a manifest file name, add it to the end of out_files manifest list.
@@ -3348,77 +3369,47 @@ VkResult prepend_if_manifest_file(const struct loader_instance *inst, const char
     return copy_str_to_start_of_string_list(inst, out_files, file_name, name_len);
 }
 
-// Add any files found in the search_path.  If any path in the search path points to a specific JSON, attempt to
-// only open that one JSON.  Otherwise, if the path is a folder, search the folder for JSON files.
-VkResult add_data_files(const struct loader_instance *inst, char *search_path, struct loader_string_list *out_files) {
+// Iterate all strings in search_paths and add any files found.  If any path in the search path points to a specific JSON, attempt
+// to only open that one JSON.  Otherwise, if the path is a folder, search the folder for JSON files.
+VkResult add_data_files(const struct loader_instance *inst, struct loader_string_list *search_paths,
+                        struct loader_string_list *out_files) {
     VkResult vk_result = VK_SUCCESS;
     char full_path[2048];
 #if !defined(_WIN32)
     char temp_path[2048];
 #endif
 
-    // Now, parse the paths
-    char *next_file = search_path;
-    while (NULL != next_file && *next_file != '\0') {
-        char *name = NULL;
-        char *cur_file = next_file;
-        next_file = loader_get_next_path(cur_file);
+    for (size_t i = 0; i < search_paths->count; i++) {
+        // Now, parse the paths
+        char *next_file = search_paths->list[i];
+        while (NULL != next_file && *next_file != '\0') {
+            char *name = NULL;
+            char *cur_file = next_file;
+            next_file = loader_get_next_path(cur_file);
 
-        // Is this a JSON file, then try to open it.
-        size_t len = strlen(cur_file);
-        if (is_json(cur_file, len)) {
+            // Is this a JSON file, then try to open it.
+            size_t len = strlen(cur_file);
+            if (is_json(cur_file, len)) {
 #if defined(_WIN32)
-            name = cur_file;
+                name = cur_file;
 #elif COMMON_UNIX_PLATFORMS
-            // Only Linux has relative paths, make a copy of location so it isn't modified
-            size_t str_len;
-            if (NULL != next_file) {
-                str_len = next_file - cur_file + 1;
-            } else {
-                str_len = strlen(cur_file) + 1;
-            }
-            if (str_len > sizeof(temp_path)) {
-                loader_log(inst, VULKAN_LOADER_DEBUG_BIT, 0, "add_data_files: Path to %s too long", cur_file);
-                continue;
-            }
-            strncpy(temp_path, cur_file, str_len);
-            name = temp_path;
+                // Only Linux has relative paths, make a copy of location so it isn't modified
+                size_t str_len;
+                if (NULL != next_file) {
+                    str_len = next_file - cur_file + 1;
+                } else {
+                    str_len = strlen(cur_file) + 1;
+                }
+                if (str_len > sizeof(temp_path)) {
+                    loader_log(inst, VULKAN_LOADER_DEBUG_BIT, 0, "add_data_files: Path to %s too long", cur_file);
+                    continue;
+                }
+                strncpy(temp_path, cur_file, str_len);
+                name = temp_path;
 #else
 #warning add_data_files must define relative path copy for this platform
 #endif
-            loader_get_fullpath(cur_file, name, sizeof(full_path), full_path);
-            name = full_path;
-
-            VkResult local_res;
-            local_res = add_if_manifest_file(inst, name, out_files);
-
-            // Incomplete means this was not a valid data file.
-            if (local_res == VK_INCOMPLETE) {
-                continue;
-            } else if (local_res != VK_SUCCESS) {
-                vk_result = local_res;
-                break;
-            }
-        } else {  // Otherwise, treat it as a directory
-            DIR *dir_stream = loader_opendir(inst, cur_file);
-            if (NULL == dir_stream) {
-                continue;
-            }
-            while (1) {
-                errno = 0;
-                struct dirent *dir_entry = readdir(dir_stream);
-#if !defined(WIN32)  // Windows doesn't use readdir, don't check errors on functions which aren't called
-                if (errno != 0) {
-                    loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0, "readdir failed with %d: %s", errno, strerror(errno));
-                    break;
-                }
-#endif
-                if (NULL == dir_entry) {
-                    break;
-                }
-
-                name = &(dir_entry->d_name[0]);
-                loader_get_fullpath(name, cur_file, sizeof(full_path), full_path);
+                loader_get_fullpath(cur_file, name, sizeof(full_path), full_path);
                 name = full_path;
 
                 VkResult local_res;
@@ -3431,10 +3422,43 @@ VkResult add_data_files(const struct loader_instance *inst, char *search_path, s
                     vk_result = local_res;
                     break;
                 }
-            }
-            loader_closedir(inst, dir_stream);
-            if (vk_result != VK_SUCCESS) {
-                goto out;
+            } else {  // Otherwise, treat it as a directory
+                DIR *dir_stream = loader_opendir(inst, cur_file);
+                if (NULL == dir_stream) {
+                    continue;
+                }
+                while (1) {
+                    errno = 0;
+                    struct dirent *dir_entry = readdir(dir_stream);
+#if !defined(WIN32)  // Windows doesn't use readdir, don't check errors on functions which aren't called
+                    if (errno != 0) {
+                        loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0, "readdir failed with %d: %s", errno, strerror(errno));
+                        break;
+                    }
+#endif
+                    if (NULL == dir_entry) {
+                        break;
+                    }
+
+                    name = &(dir_entry->d_name[0]);
+                    loader_get_fullpath(name, cur_file, sizeof(full_path), full_path);
+                    name = full_path;
+
+                    VkResult local_res;
+                    local_res = add_if_manifest_file(inst, name, out_files);
+
+                    // Incomplete means this was not a valid data file.
+                    if (local_res == VK_INCOMPLETE) {
+                        continue;
+                    } else if (local_res != VK_SUCCESS) {
+                        vk_result = local_res;
+                        break;
+                    }
+                }
+                loader_closedir(inst, dir_stream);
+                if (vk_result != VK_SUCCESS) {
+                    goto out;
+                }
             }
         }
     }
@@ -3447,17 +3471,20 @@ out:
 // Look for data files in the provided paths, but first check the environment override to determine if we should use that
 // instead.
 VkResult read_data_files_in_search_paths(const struct loader_instance *inst, enum loader_data_files_type manifest_type,
-                                         const char *path_override, bool *override_active, struct loader_string_list *out_files) {
+                                         const struct loader_string_list *path_overrides, bool *override_active,
+                                         struct loader_string_list *out_files) {
     VkResult vk_result = VK_SUCCESS;
     char *override_env = NULL;
-    const char *override_path = NULL;
     char *additional_env = NULL;
-    size_t search_path_size = 0;
-    char *search_path = NULL;
-    char *cur_path_ptr = NULL;
+    struct loader_string_list search_paths = {0};
+
 #if COMMON_UNIX_PLATFORMS
     const char *relative_location = NULL;  // Only used on unix platforms
     size_t rel_size = 0;                   // unused in windows, dont declare so no compiler warnings are generated
+#endif
+
+#if defined(__APPLE__)
+    char *bundle_path = NULL;
 #endif
 
 #if defined(_WIN32)
@@ -3570,95 +3597,64 @@ VkResult read_data_files_in_search_paths(const struct loader_instance *inst, enu
     }
 
     // Log a message when VK_LAYER_PATH is set but the override layer paths take priority
-    if (manifest_type == LOADER_DATA_FILE_MANIFEST_EXPLICIT_LAYER && NULL != override_env && NULL != path_override) {
+    if (manifest_type == LOADER_DATA_FILE_MANIFEST_EXPLICIT_LAYER &&
+        (NULL != override_env || (NULL != path_overrides && path_overrides->count > 0))) {
         loader_log(inst, VULKAN_LOADER_INFO_BIT | VULKAN_LOADER_LAYER_BIT, 0,
                    "Ignoring VK_LAYER_PATH. The Override layer is active and has override paths set, which takes priority. "
                    "VK_LAYER_PATH is set to %s",
                    override_env);
     }
 
-    if (path_override != NULL) {
-        override_path = path_override;
+    // Add the remaining paths to the list
+    if (NULL != path_overrides && path_overrides->count > 0) {
+        // Log a message when VK_LAYER_PATH is set but the override layer paths take priority
+        if (manifest_type == LOADER_DATA_FILE_MANIFEST_EXPLICIT_LAYER) {
+            loader_log(inst, VULKAN_LOADER_INFO_BIT | VULKAN_LOADER_LAYER_BIT, 0,
+                       "Ignoring VK_LAYER_PATH. The Override layer is active and has override paths set, which takes priority. "
+                       "VK_LAYER_PATH is:");
+        }
+        for (size_t i = 0; i < path_overrides->count; i++) {
+            if (NULL != path_overrides->list[i]) {
+                if (manifest_type == LOADER_DATA_FILE_MANIFEST_EXPLICIT_LAYER) {
+                    loader_log(inst, VULKAN_LOADER_INFO_BIT | VULKAN_LOADER_LAYER_BIT, 0, "%s", path_overrides->list[i]);
+                }
+                vk_result = copy_data_file_info(inst, path_overrides->list[i], NULL, 0, &search_paths);
+                if (vk_result == VK_ERROR_OUT_OF_HOST_MEMORY) {
+                    goto out;
+                }
+            }
+        }
     } else if (override_env != NULL) {
-        override_path = override_env;
-    }
-
-    // Add two by default for NULL terminator and one path separator on end (just in case)
-    search_path_size = 2;
-
-    // If there's an override, use that (and the local folder if required) and nothing else
-    if (NULL != override_path) {
-        // Local folder and null terminator
-        search_path_size += strlen(override_path) + 2;
-    } else {
-        // Add the size of any additional search paths defined in the additive environment variable
-        if (NULL != additional_env) {
-            search_path_size += determine_data_file_path_size(additional_env, 0) + 2;
-#if defined(_WIN32)
+        // Log a message when VK_LAYER_PATH is set but the override layer paths take priority
+        if (manifest_type == LOADER_DATA_FILE_MANIFEST_EXPLICIT_LAYER) {
+            loader_log(inst, VULKAN_LOADER_INFO_BIT | VULKAN_LOADER_LAYER_BIT, 0,
+                       "Ignoring VK_LAYER_PATH. The Override layer is active and has override paths set, which takes priority. "
+                       "VK_LAYER_PATH is set to %s",
+                       override_env);
         }
-        if (NULL != package_path) {
-            search_path_size += determine_data_file_path_size(package_path, 0) + 2;
-        }
-        if (search_path_size == 2) {
+
+        vk_result = copy_data_file_info(inst, override_env, NULL, 0, &search_paths);
+        if (vk_result == VK_ERROR_OUT_OF_HOST_MEMORY) {
             goto out;
         }
-#elif COMMON_UNIX_PLATFORMS
-        }
-
-        // Add the general search folders (with the appropriate relative folder added)
-        rel_size = strlen(relative_location);
-        if (rel_size > 0) {
-#if defined(__APPLE__)
-            search_path_size += MAXPATHLEN;
-#endif
-            // Only add the home folders if defined
-            if (NULL != home_config_dir) {
-                search_path_size += determine_data_file_path_size(home_config_dir, rel_size);
-            }
-            search_path_size += determine_data_file_path_size(xdg_config_dirs, rel_size);
-            search_path_size += determine_data_file_path_size(SYSCONFDIR, rel_size);
-#if defined(EXTRASYSCONFDIR)
-            search_path_size += determine_data_file_path_size(EXTRASYSCONFDIR, rel_size);
-#endif
-            // Only add the home folders if defined
-            if (NULL != home_data_dir) {
-                search_path_size += determine_data_file_path_size(home_data_dir, rel_size);
-            }
-            search_path_size += determine_data_file_path_size(xdg_data_dirs, rel_size);
-        }
-#else
-#warning read_data_files_in_search_paths unsupported platform
-#endif
-    }
-
-    // Allocate the required space
-    search_path = loader_instance_heap_calloc(inst, search_path_size, VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
-    if (NULL == search_path) {
-        loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0,
-                   "read_data_files_in_search_paths: Failed to allocate space for search path of length %d",
-                   (uint32_t)search_path_size);
-        vk_result = VK_ERROR_OUT_OF_HOST_MEMORY;
-        goto out;
-    }
-
-    cur_path_ptr = search_path;
-
-    // Add the remaining paths to the list
-    if (NULL != override_path) {
-        size_t override_path_len = strlen(override_path);
-        loader_strncpy(cur_path_ptr, search_path_size, override_path, override_path_len);
-        cur_path_ptr += override_path_len;
     } else {
         // Add any additional search paths defined in the additive environment variable
         if (NULL != additional_env) {
-            copy_data_file_info(additional_env, NULL, 0, &cur_path_ptr);
+            vk_result = copy_data_file_info(inst, additional_env, NULL, 0, &search_paths);
+            if (vk_result == VK_ERROR_OUT_OF_HOST_MEMORY) {
+                goto out;
+            }
         }
 
 #if defined(_WIN32)
         if (NULL != package_path) {
-            copy_data_file_info(package_path, NULL, 0, &cur_path_ptr);
+            vk_result = copy_data_file_info(inst, package_path, NULL, 0, &search_paths);
+            if (vk_result == VK_ERROR_OUT_OF_HOST_MEMORY) {
+                goto out;
+            }
         }
 #elif COMMON_UNIX_PLATFORMS
+        rel_size = strlen(relative_location);
         if (rel_size > 0) {
 #if defined(__APPLE__)
             // Add the bundle's Resources dir to the beginning of the search path.
@@ -3669,12 +3665,49 @@ VkResult read_data_files_in_search_paths(const struct loader_instance *inst, enu
             if (NULL != main_bundle) {
                 CFURLRef ref = CFBundleCopyResourcesDirectoryURL(main_bundle);
                 if (NULL != ref) {
-                    if (CFURLGetFileSystemRepresentation(ref, TRUE, (UInt8 *)cur_path_ptr, search_path_size)) {
-                        cur_path_ptr += strlen(cur_path_ptr);
-                        *cur_path_ptr++ = DIRECTORY_SYMBOL;
-                        memcpy(cur_path_ptr, relative_location, rel_size);
-                        cur_path_ptr += rel_size;
-                        *cur_path_ptr++ = PATH_SEPARATOR;
+                    // Allocate large scratch buffer to hold the bundles path, the relative location inside the bundle, plus a path
+                    // separator and null terminator. Since we are using a while loop, initialize length with half the intended size
+                    size_t bundle_path_len = (MAXPATHLEN + rel_size + 2) / 2;
+                    bool bundle_query_success = false;
+                    uint32_t retry_count = 0;
+                    while (!bundle_query_success && retry_count < 4) {
+                        void *new_bundle_path = loader_instance_heap_realloc(
+                            inst, bundle_path, bundle_path_len, bundle_path_len * 2, VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
+                        if (NULL == new_bundle_path) {
+                            loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0,
+                                       "read_data_files_in_search_paths: Failed to allocate space for bundle path of length %d",
+                                       (uint32_t)bundle_path_len * 2);
+                            vk_result = VK_ERROR_OUT_OF_HOST_MEMORY;
+                            goto out;
+                        }
+                        bundle_path = new_bundle_path;
+                        bundle_path_len = bundle_path_len * 2;
+                        memset(bundle_path, 0, bundle_path_len);
+                        bundle_query_success = CFURLGetFileSystemRepresentation(ref, TRUE, (UInt8 *)bundle_path, bundle_path_len);
+                        retry_count++;
+                    }
+
+                    if (bundle_query_success) {
+                        size_t cur_bundle_len = strlen(bundle_path);
+
+                        if (cur_bundle_len + rel_size + 2 > bundle_path_len) {
+                            loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0,
+                                       "read_data_files_in_search_paths: bundle_path %s of size %d does not have enough space to "
+                                       "append relative_path",
+                                       bundle_path, (uint32_t)bundle_path_len);
+                            vk_result = VK_ERROR_INITIALIZATION_FAILED;
+                            goto out;
+                        }
+                        bundle_path[cur_bundle_len] = DIRECTORY_SYMBOL;
+                        cur_bundle_len++;
+                        memcpy(bundle_path + cur_bundle_len, relative_location, rel_size);
+                        cur_bundle_len += rel_size;
+                        bundle_path[cur_bundle_len] = '\0';
+
+                        vk_result = copy_data_file_info(inst, bundle_path, NULL, 0, &search_paths);
+                        if (vk_result == VK_ERROR_OUT_OF_HOST_MEMORY) {
+                            goto out;
+                        }
                     }
                     CFRelease(ref);
                 }
@@ -3683,93 +3716,62 @@ VkResult read_data_files_in_search_paths(const struct loader_instance *inst, enu
 
             // Only add the home folders if not NULL
             if (NULL != home_config_dir) {
-                copy_data_file_info(home_config_dir, relative_location, rel_size, &cur_path_ptr);
+                vk_result = copy_data_file_info(inst, home_config_dir, relative_location, rel_size, &search_paths);
+                if (VK_SUCCESS != vk_result) {
+                    goto out;
+                }
             }
-            copy_data_file_info(xdg_config_dirs, relative_location, rel_size, &cur_path_ptr);
-            copy_data_file_info(SYSCONFDIR, relative_location, rel_size, &cur_path_ptr);
+            vk_result = copy_data_file_info(inst, xdg_config_dirs, relative_location, rel_size, &search_paths);
+            if (VK_SUCCESS != vk_result) {
+                goto out;
+            }
+            vk_result = copy_data_file_info(inst, SYSCONFDIR, relative_location, rel_size, &search_paths);
+            if (VK_SUCCESS != vk_result) {
+                goto out;
+            }
 #if defined(EXTRASYSCONFDIR)
-            copy_data_file_info(EXTRASYSCONFDIR, relative_location, rel_size, &cur_path_ptr);
+            vk_result = copy_data_file_info(inst, EXTRASYSCONFDIR, relative_location, rel_size, &search_paths);
+            if (VK_SUCCESS != vk_result) {
+                goto out;
+            }
 #endif
 
             // Only add the home folders if not NULL
             if (NULL != home_data_dir) {
-                copy_data_file_info(home_data_dir, relative_location, rel_size, &cur_path_ptr);
+                vk_result = copy_data_file_info(inst, home_data_dir, relative_location, rel_size, &search_paths);
+                if (VK_SUCCESS != vk_result) {
+                    goto out;
+                }
             }
-            copy_data_file_info(xdg_data_dirs, relative_location, rel_size, &cur_path_ptr);
+            vk_result = copy_data_file_info(inst, xdg_data_dirs, relative_location, rel_size, &search_paths);
+            if (VK_SUCCESS != vk_result) {
+                goto out;
+            }
         }
-
-        // Remove the last path separator
-        --cur_path_ptr;
-
-        assert(cur_path_ptr - search_path < (ptrdiff_t)search_path_size);
-        *cur_path_ptr = '\0';
 #else
 #warning read_data_files_in_search_paths unsupported platform
 #endif
     }
 
-    // Remove duplicate paths, or it would result in duplicate extensions, duplicate devices, etc.
-    // This uses minimal memory, but is O(N^2) on the number of paths. Expect only a few paths.
-    char path_sep_str[2] = {PATH_SEPARATOR, '\0'};
-    size_t search_path_updated_size = strlen(search_path);
-    for (size_t first = 0; first < search_path_updated_size;) {
-        // If this is an empty path, erase it
-        if (search_path[first] == PATH_SEPARATOR) {
-            memmove(&search_path[first], &search_path[first + 1], search_path_updated_size - first + 1);
-            search_path_updated_size -= 1;
-            continue;
-        }
-
-        size_t first_end = first + 1;
-        first_end += strcspn(&search_path[first_end], path_sep_str);
-        for (size_t second = first_end + 1; second < search_path_updated_size;) {
-            size_t second_end = second + 1;
-            second_end += strcspn(&search_path[second_end], path_sep_str);
-            if (first_end - first == second_end - second &&
-                !strncmp(&search_path[first], &search_path[second], second_end - second)) {
-                // Found duplicate. Include PATH_SEPARATOR in second_end, then erase it from search_path.
-                if (search_path[second_end] == PATH_SEPARATOR) {
-                    second_end++;
-                }
-                memmove(&search_path[second], &search_path[second_end], search_path_updated_size - second_end + 1);
-                search_path_updated_size -= second_end - second;
-            } else {
-                second = second_end + 1;
-            }
-        }
-        first = first_end + 1;
-    }
-    search_path_size = search_path_updated_size;
-
     // Print out the paths being searched if debugging is enabled
     uint32_t log_flags = 0;
-    if (search_path_size > 0) {
-        char *tmp_search_path = loader_instance_heap_alloc(inst, search_path_size + 1, VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
-        if (NULL != tmp_search_path) {
-            loader_strncpy(tmp_search_path, search_path_size + 1, search_path, search_path_size);
-            tmp_search_path[search_path_size] = '\0';
-            if (manifest_type == LOADER_DATA_FILE_MANIFEST_DRIVER) {
-                log_flags = VULKAN_LOADER_DRIVER_BIT;
-                loader_log(inst, VULKAN_LOADER_DRIVER_BIT, 0, "Searching for driver manifest files");
-            } else {
-                log_flags = VULKAN_LOADER_LAYER_BIT;
-                loader_log(inst, VULKAN_LOADER_LAYER_BIT, 0, "Searching for %s layer manifest files",
-                           manifest_type == LOADER_DATA_FILE_MANIFEST_EXPLICIT_LAYER ? "explicit" : "implicit");
-            }
-            loader_log(inst, log_flags, 0, "   In following locations:");
-            char *cur_file;
-            char *next_file = tmp_search_path;
-            while (NULL != next_file && *next_file != '\0') {
-                cur_file = next_file;
-                next_file = loader_get_next_path(cur_file);
-                loader_log(inst, log_flags, 0, "      %s", cur_file);
-            }
-            loader_instance_heap_free(inst, tmp_search_path);
-        }
+
+    if (manifest_type == LOADER_DATA_FILE_MANIFEST_DRIVER) {
+        log_flags = VULKAN_LOADER_DRIVER_BIT;
+        loader_log(inst, VULKAN_LOADER_DRIVER_BIT, 0, "Searching for driver manifest files");
+    } else {
+        log_flags = VULKAN_LOADER_LAYER_BIT;
+        loader_log(inst, VULKAN_LOADER_LAYER_BIT, 0, "Searching for %s layer manifest files",
+                   manifest_type == LOADER_DATA_FILE_MANIFEST_EXPLICIT_LAYER ? "explicit" : "implicit");
+    }
+    loader_log(inst, log_flags, 0, "   In following locations:");
+
+    for (size_t i = 0; i < search_paths.count; i++) {
+        loader_log(inst, log_flags, 0, "      %s", search_paths.list[i]);
     }
 
     // Now, parse the paths and add any manifest files found in them.
-    vk_result = add_data_files(inst, search_path, out_files);
+    vk_result = add_data_files(inst, &search_paths, out_files);
 
     if (log_flags != 0 && out_files->count > 0) {
         loader_log(inst, log_flags, 0, "   Found the following files:");
@@ -3780,7 +3782,7 @@ VkResult read_data_files_in_search_paths(const struct loader_instance *inst, enu
         loader_log(inst, log_flags, 0, "   Found no files");
     }
 
-    if (NULL != override_path) {
+    if ((NULL != path_overrides && path_overrides->count > 0) || NULL != override_env) {
         *override_active = true;
     } else {
         *override_active = false;
@@ -3793,6 +3795,9 @@ out:
 #if defined(_WIN32)
     loader_instance_heap_free(inst, package_path);
 #elif COMMON_UNIX_PLATFORMS
+#if defined(__APPLE__)
+    loader_instance_heap_free(inst, bundle_path);
+#endif
     loader_free_getenv(xdg_config_home, inst);
     loader_free_getenv(xdg_config_dirs, inst);
     loader_free_getenv(xdg_data_home, inst);
@@ -3805,7 +3810,7 @@ out:
 #warning read_data_files_in_search_paths unsupported platform
 #endif
 
-    loader_instance_heap_free(inst, search_path);
+    free_string_list(inst, &search_paths);
 
     return vk_result;
 }
@@ -3834,14 +3839,14 @@ out:
 // Linux Layer| dirs     | dirs
 
 VkResult loader_get_data_files(const struct loader_instance *inst, enum loader_data_files_type manifest_type,
-                               const char *path_override, struct loader_string_list *out_files) {
+                               const struct loader_string_list *path_overrides, struct loader_string_list *out_files) {
     VkResult res = VK_SUCCESS;
     bool override_active = false;
 
     // Free and init the out_files information so there's no false data left from uninitialized variables.
     free_string_list(inst, out_files);
 
-    res = read_data_files_in_search_paths(inst, manifest_type, path_override, &override_active, out_files);
+    res = read_data_files_in_search_paths(inst, manifest_type, path_overrides, &override_active, out_files);
     if (VK_SUCCESS != res) {
         goto out;
     }
@@ -4193,12 +4198,12 @@ out:
 // into instance_layers
 // Manifest type must be either implicit or explicit
 VkResult loader_parse_instance_layers(struct loader_instance *inst, enum loader_data_files_type manifest_type,
-                                      const char *path_override, struct loader_layer_list *instance_layers) {
+                                      const struct loader_string_list *path_overrides, struct loader_layer_list *instance_layers) {
     assert(manifest_type == LOADER_DATA_FILE_MANIFEST_IMPLICIT_LAYER || manifest_type == LOADER_DATA_FILE_MANIFEST_EXPLICIT_LAYER);
     VkResult res = VK_SUCCESS;
     struct loader_string_list manifest_files = {0};
 
-    res = loader_get_data_files(inst, manifest_type, path_override, &manifest_files);
+    res = loader_get_data_files(inst, manifest_type, path_overrides, &manifest_files);
     if (VK_SUCCESS != res) {
         goto out;
     }
@@ -4238,31 +4243,16 @@ out:
 // Given a loader_layer_properties struct that is a valid override layer, concatenate the properties override paths and put them
 // into the output parameter override_paths
 VkResult get_override_layer_override_paths(struct loader_instance *inst, struct loader_layer_properties *prop,
-                                           char **override_paths) {
+                                           struct loader_string_list *override_paths) {
     if (prop->override_paths.count > 0) {
-        char *cur_write_ptr = NULL;
-        size_t override_path_size = 0;
         for (uint32_t j = 0; j < prop->override_paths.count; j++) {
-            override_path_size += determine_data_file_path_size(prop->override_paths.list[j], 0);
+            VkResult result = copy_data_file_info(inst, prop->override_paths.list[j], NULL, 0, override_paths);
+            if (VK_SUCCESS != result) {
+                return result;
+            }
+            loader_log(inst, VULKAN_LOADER_WARN_BIT | VULKAN_LOADER_LAYER_BIT, 0, "Override layer has override path %s",
+                       prop->override_paths.list[j]);
         }
-        *override_paths = loader_instance_heap_alloc(inst, override_path_size, VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
-        if (*override_paths == NULL) {
-            return VK_ERROR_OUT_OF_HOST_MEMORY;
-        }
-        cur_write_ptr = &(*override_paths)[0];
-        for (uint32_t j = 0; j < prop->override_paths.count; j++) {
-            copy_data_file_info(prop->override_paths.list[j], NULL, 0, &cur_write_ptr);
-        }
-
-        // Subtract one from cur_write_ptr only if something was written so we can set the null terminator
-        if (*override_paths < cur_write_ptr) {
-            --cur_write_ptr;
-            assert(cur_write_ptr - (*override_paths) < (ptrdiff_t)override_path_size);
-        }
-        // Remove the last path separator
-        *cur_write_ptr = '\0';
-        loader_log(inst, VULKAN_LOADER_WARN_BIT | VULKAN_LOADER_LAYER_BIT, 0, "Override layer has override paths set to %s",
-                   *override_paths);
     }
     return VK_SUCCESS;
 }
@@ -4294,7 +4284,7 @@ VkResult loader_scan_for_layers(struct loader_instance *inst, struct loader_laye
     struct loader_layer_list settings_layers = {0};
     struct loader_layer_list regular_instance_layers = {0};
     bool override_layer_valid = false;
-    char *override_paths = NULL;
+    struct loader_string_list override_paths = {0};
 
     bool should_search_for_other_layers = true;
     res = get_settings_layers(inst, &settings_layers, &should_search_for_other_layers);
@@ -4331,7 +4321,7 @@ VkResult loader_scan_for_layers(struct loader_instance *inst, struct loader_laye
     }
 
     // Get a list of manifest files for explicit layers
-    res = loader_parse_instance_layers(inst, LOADER_DATA_FILE_MANIFEST_EXPLICIT_LAYER, override_paths, &regular_instance_layers);
+    res = loader_parse_instance_layers(inst, LOADER_DATA_FILE_MANIFEST_EXPLICIT_LAYER, &override_paths, &regular_instance_layers);
     if (VK_SUCCESS != res) {
         goto out;
     }
@@ -4367,7 +4357,7 @@ out:
     loader_delete_layer_list_and_properties(inst, &settings_layers);
     loader_delete_layer_list_and_properties(inst, &regular_instance_layers);
 
-    loader_instance_heap_free(inst, override_paths);
+    free_string_list(inst, &override_paths);
     return res;
 }
 
@@ -4377,7 +4367,7 @@ VkResult loader_scan_for_implicit_layers(struct loader_instance *inst, struct lo
     struct loader_layer_list settings_layers = {0};
     struct loader_layer_list regular_instance_layers = {0};
     bool override_layer_valid = false;
-    char *override_paths = NULL;
+    struct loader_string_list override_paths = {0};
     bool implicit_metalayer_present = false;
 
     bool should_search_for_other_layers = true;
@@ -4433,7 +4423,7 @@ VkResult loader_scan_for_implicit_layers(struct loader_instance *inst, struct lo
     // in the override layer will be removed below in loader_remove_layers_in_blacklist().
     if (override_layer_valid || implicit_metalayer_present) {
         res =
-            loader_parse_instance_layers(inst, LOADER_DATA_FILE_MANIFEST_EXPLICIT_LAYER, override_paths, &regular_instance_layers);
+            loader_parse_instance_layers(inst, LOADER_DATA_FILE_MANIFEST_EXPLICIT_LAYER, &override_paths, &regular_instance_layers);
         if (VK_SUCCESS != res) {
             goto out;
         }
@@ -4470,7 +4460,7 @@ out:
     loader_delete_layer_list_and_properties(inst, &settings_layers);
     loader_delete_layer_list_and_properties(inst, &regular_instance_layers);
 
-    loader_instance_heap_free(inst, override_paths);
+    free_string_list(inst, &override_paths);
     return res;
 }
 

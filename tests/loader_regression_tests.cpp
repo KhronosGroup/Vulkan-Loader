@@ -4329,17 +4329,20 @@ TEST(DuplicateRegistryEntries, Drivers) {
     auto null_path = env.get_folder(ManifestLocation::null).location() / "test_icd_0.json";
     env.platform_shim->add_manifest_to_registry(ManifestCategory::icd, null_path);
 
-    env.add_icd(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA, ManifestOptions{}.set_discovery_type(ManifestDiscoveryType::null_dir))
-        .add_physical_device("physical_device_0")
-        .set_adapterLUID(_LUID{10, 1000});
+    auto& real_driver =
+        env.add_icd(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA, ManifestOptions{}.set_discovery_type(ManifestDiscoveryType::null_dir))
+            .add_physical_device("physical_device_0")
+            .set_adapterLUID(_LUID{10, 1000});
     env.platform_shim->add_d3dkmt_adapter(D3DKMT_Adapter{0, _LUID{10, 1000}}.add_driver_manifest_path(env.get_icd_manifest_path()));
 
     InstWrapper inst{env.vulkan_functions};
     FillDebugUtilsCreateDetails(inst.create_info, env.debug_log);
     inst.CheckCreate();
-    ASSERT_TRUE(env.debug_log.find(std::string("Skipping adding of json file \"") + null_path.string() +
-                                   "\" from registry \"HKEY_LOCAL_MACHINE\\" VK_DRIVERS_INFO_REGISTRY_LOC
-                                   "\" to the list due to duplication"));
+    auto phys_devs = inst.GetPhysDevs(1);
+    ASSERT_EQ(phys_devs.size(), 1U);
+    ASSERT_TRUE(env.debug_log.find(std::string("Located json file \"") + env.get_icd_manifest_path().string() +
+                                   "\" from registry \"HKEY_LOCAL_MACHINE\\" VK_DRIVERS_INFO_REGISTRY_LOC));
+    ASSERT_TRUE(env.debug_log.find("Found no registry files in HKEY_LOCAL_MACHINE\\" VK_DRIVERS_INFO_REGISTRY_LOC));
 }
 
 // Regression test for a heap buffer overflow in windows_add_json_entry(). The buffer that aggregates manifest paths

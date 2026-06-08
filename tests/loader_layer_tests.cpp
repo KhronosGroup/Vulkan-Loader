@@ -1822,7 +1822,7 @@ TEST(OverrideMetaLayer, OverridePathsInteractionWithVK_LAYER_PATH) {
         std::string("Ignoring VK_LAYER_PATH. The Override layer is active and has override paths set, which takes priority. "
                     "VK_LAYER_PATH is set to ") +
         env.env_var_vk_layer_paths.value()));
-    ASSERT_TRUE(env.debug_log.find("Override layer has override paths set to " + meta_layer_path.string()));
+    ASSERT_TRUE(env.debug_log.find("Override layer has override path " + meta_layer_path.string()));
 
     env.layers.clear();
 }
