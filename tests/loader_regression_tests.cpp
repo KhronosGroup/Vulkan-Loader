@@ -142,6 +142,27 @@ TEST(CreateInstance, ApiVersionBelow1_0) {
                        "greater than or equal to the value of VK_API_VERSION_1_0 [VUID-VkApplicationInfo-apiVersion]"));
 }
 
+// The loader should log the application's VkInstanceCreateInfo so it shows up under VK_LOADER_DEBUG. See #1819.
+TEST(CreateInstance, LogsInstanceCreateInfo) {
+    FrameworkEnvironment env{};
+    env.add_icd(TEST_ICD_PATH_VERSION_2);
+
+    DebugUtilsLogger debug_log{VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT};
+    InstWrapper inst{env.vulkan_functions};
+    inst.create_info.set_app_name("MyTestApp")
+        .set_app_version(42)
+        .set_engine_name("MyTestEngine")
+        .set_engine_version(7)
+        .set_api_version(1, 2, 0);
+    FillDebugUtilsCreateDetails(inst.create_info, debug_log);
+    inst.CheckCreate();
+
+    ASSERT_TRUE(debug_log.find("applicationName: \"MyTestApp\", applicationVersion: 42"));
+    ASSERT_TRUE(debug_log.find("engineName: \"MyTestEngine\", engineVersion: 7, apiVersion: 1.2.0"));
+    // FillDebugUtilsCreateDetails enables VK_EXT_debug_utils, so it should appear in the requested-extensions dump.
+    ASSERT_TRUE(debug_log.find("VK_EXT_debug_utils"));
+}
+
 TEST(CreateInstance, ConsecutiveCreate) {
     FrameworkEnvironment env{};
     env.add_icd(TEST_ICD_PATH_VERSION_2);
