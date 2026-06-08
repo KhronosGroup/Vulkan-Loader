@@ -154,7 +154,7 @@ TEST_F(CreateDestroyInstanceReport, WarnInCreateIgnored) {
     expected_object_type = VK_DEBUG_REPORT_OBJECT_TYPE_INSTANCE_EXT;
     expected_flag = VK_DEBUG_REPORT_WARNING_BIT_EXT;
 
-    VkApplicationInfo app_info;
+    VkApplicationInfo app_info{};
     app_info.apiVersion = VK_MAKE_API_VERSION(1, 1, 0, 0);
     VkInstance inst = VK_NULL_HANDLE;
     ASSERT_EQ(VK_SUCCESS, CreateReportInstance(VK_DEBUG_REPORT_ERROR_BIT_EXT, &inst, &app_info));
@@ -170,7 +170,7 @@ TEST_F(CreateDestroyInstanceReport, WarnInCreate) {
     expected_object_type = VK_DEBUG_REPORT_OBJECT_TYPE_INSTANCE_EXT;
     expected_flag = VK_DEBUG_REPORT_WARNING_BIT_EXT;
 
-    VkApplicationInfo app_info;
+    VkApplicationInfo app_info{};
     app_info.apiVersion = VK_MAKE_API_VERSION(1, 1, 0, 0);
     VkInstance inst = VK_NULL_HANDLE;
     ASSERT_EQ(VK_SUCCESS, CreateReportInstance(VK_DEBUG_REPORT_WARNING_BIT_EXT, &inst, &app_info));
@@ -498,7 +498,7 @@ TEST_F(CreateDestroyInstanceMessenger, WarnInCreateIgnored) {
     expected_message_flags = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT;
     expected_severity_flags = VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT;
 
-    VkApplicationInfo app_info;
+    VkApplicationInfo app_info{};
     app_info.apiVersion = VK_MAKE_API_VERSION(1, 1, 0, 0);
 
     VkInstance inst = VK_NULL_HANDLE;
@@ -516,7 +516,7 @@ TEST_F(CreateDestroyInstanceMessenger, WarnInCreate) {
     expected_message_flags = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT;
     expected_severity_flags = VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT;
 
-    VkApplicationInfo app_info;
+    VkApplicationInfo app_info{};
     app_info.apiVersion = VK_MAKE_API_VERSION(1, 1, 0, 0);
 
     VkInstance inst = VK_NULL_HANDLE;
