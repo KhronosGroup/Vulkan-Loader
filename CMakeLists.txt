@@ -160,7 +160,15 @@ target_link_libraries(loader_common_options INTERFACE platform_wsi)
 # Enable beta Vulkan extensions
 target_compile_definitions(loader_common_options INTERFACE VK_ENABLE_BETA_EXTENSIONS)
 
-string(TOLOWER "${CMAKE_SYSTEM_PROCESSOR}" SYSTEM_PROCESSOR)
+# Use the target architecture when it is known. Visual Studio generators set CMAKE_GENERATOR_PLATFORM from the -A option
+# (e.g. arm64, arm64ec), which is what we need to pick the right assembler when the host and target differ (such as
+# building arm64/arm64ec on an x64 host). Other generators (Ninja, Makefiles, non-Windows) leave it empty, so fall back
+# to the host processor there.
+if (CMAKE_GENERATOR_PLATFORM)
+    string(TOLOWER "${CMAKE_GENERATOR_PLATFORM}" SYSTEM_PROCESSOR)
+else()
+    string(TOLOWER "${CMAKE_SYSTEM_PROCESSOR}" SYSTEM_PROCESSOR)
+endif()
 
 option(BUILD_WERROR "Enable warnings as errors")
 
