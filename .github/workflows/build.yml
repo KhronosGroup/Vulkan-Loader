@@ -271,6 +271,32 @@ jobs:
             - run: cmake --build build/ --config Release
             - run: ctest --parallel --output-on-failure -C Release -E UnknownFunction --test-dir build/
 
+    windows_arm:
+        # Native Windows on Arm: covers the arm64 and arm64ec MARMASM paths the x64 runners can't.
+        # windows is 2x expensive to run on GitHub machines, so only run if we know something else simple passed as well
+        needs: linux-no-asm
+        runs-on: windows-11-arm
+        timeout-minutes: 30
+        strategy:
+            matrix:
+                arch: [ arm64, arm64ec ]
+                config: [ Debug, Release ]
+        steps:
+            - uses: actions/checkout@v6
+            - uses: actions/setup-python@v5
+              with:
+                python-version: '3.x'
+            - run: |
+                cmake -S. -B build `
+                -D BUILD_TESTS=ON `
+                -D UPDATE_DEPS=ON `
+                -D CMAKE_BUILD_TYPE=${{matrix.config}} `
+                -A ${{ matrix.arch }} `
+                -D BUILD_WERROR=ON
+            - run: cmake --build build/ --config ${{matrix.config}}
+            - run: cmake --install build --prefix build/install --config ${{matrix.config}}
+            - run: ctest --parallel --output-on-failure -C ${{matrix.config}} --test-dir build/
+
     # Test both clang and clang-cl (Chromium project uses clang-cl)
     windows_clang:
       # windows is 2x expensive to run on GitHub machines, so only run if we know something else simple passed as well
