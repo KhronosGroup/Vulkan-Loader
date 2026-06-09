@@ -297,6 +297,49 @@ jobs:
             - run: cmake --install build --prefix build/install --config ${{matrix.config}}
             - run: ctest --parallel --output-on-failure -C ${{matrix.config}} --test-dir build/
 
+  windows_arm64x:
+        # Native Windows on Arm: Tests building a genuine arm64x binary and validates that an x64 test suite passes
+        # windows is 2x expensive to run on GitHub machines, so only run if we know something else simple passed as well
+        # needs: windows_arm
+        runs-on: windows-11-arm
+        timeout-minutes: 30
+        steps:
+            - uses: actions/checkout@v6
+            - uses: actions/setup-python@v5
+              with:
+                python-version: '3.x'
+            - run: python scripts/update_deps.py --arch arm64 --api vulkan --dir external --clean-build --clean-install
+            - run: |
+                cmake -S. -B build_arm64x `
+                -A arm64 `
+                -D BUILD_AS_ARM64X=ARM64 `
+                -D CMAKE_BUILD_TYPE=Release `
+                -D BUILD_WERROR=ON `
+                -C external/helper.cmake
+            - run: cmake --build build_arm64x/ --config Release
+            - run: |
+                cmake -S. -B build_arm64xec `
+                -A arm64ec `
+                -D BUILD_AS_ARM64X=ARM64EC `
+                -D BUILD_TESTS=ON `
+                -D CMAKE_BUILD_TYPE=Release `
+                -D BUILD_WERROR=ON `
+                -C external/helper.cmake
+            - run: cmake --build build_arm64xec/ --config Release
+            - run: cmake --install build_arm64xec --prefix build/install --config Release
+            - run: ctest --parallel --output-on-failure -C Release --test-dir build_arm64xec/
+            - run: |
+                cmake -S. -B build_x64 `
+                -A x64 `
+                -D BUILD_TESTS=ON `
+                -D CMAKE_BUILD_TYPE=Release `
+                -D BUILD_WERROR=ON `
+                -C external/helper.cmake
+            - run: cmake --build build_x64/ --config Release
+            - run: ctest --parallel --output-on-failure -C Release --test-dir build_x64/
+              env:
+                VK_LOADER_TEST_LOADER_PATH: ${{ github.workspace }}/build_arm64xec/loader/Release/vulkan-1.dll
+
     # Test both clang and clang-cl (Chromium project uses clang-cl)
     windows_clang:
       # windows is 2x expensive to run on GitHub machines, so only run if we know something else simple passed as well
