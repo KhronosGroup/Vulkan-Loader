@@ -7279,12 +7279,12 @@ VkResult loader_apply_settings_device_configurations(struct loader_instance *ins
                 if (pd_details[j].pd_supports_driver_properties) {
                     loader_log(inst, VULKAN_LOADER_DEBUG_BIT, 0,
                                "pPhysicalDevices array index %d is set to \"%s\" (%s, version %d) ", written_output_index,
-                               pd_details[j].properties.deviceName, pd_details[i].driver_properties.driverName,
-                               pd_details[i].properties.driverVersion);
+                               pd_details[j].properties.deviceName, pd_details[j].driver_properties.driverName,
+                               pd_details[j].properties.driverVersion);
                 } else {
                     loader_log(inst, VULKAN_LOADER_DEBUG_BIT, 0,
                                "pPhysicalDevices array index %d is set to \"%s\" (driver version %d) ", written_output_index,
-                               pd_details[j].properties.deviceName, pd_details[i].properties.driverVersion);
+                               pd_details[j].properties.deviceName, pd_details[j].properties.driverVersion);
                 }
                 pPhysicalDevices[written_output_index++] = (VkPhysicalDevice)inst->phys_devs_term[j];
                 pd_details[j].pd_was_added = true;
