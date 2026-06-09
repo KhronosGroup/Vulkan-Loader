@@ -27,6 +27,62 @@
 
 #include "test_environment.h"
 
+// On arm64x the loader has two views of each entry point. An x64 caller (an arm64ec build, or a plain
+// x64 process emulated on an Arm64 host) gets an export's x64 fast-forward-sequence thunk back from
+// GetProcAddress, while the loader resolves its own name to the native arm64ec function. Same command,
+// different address, and the spec doesn't require them to match, so in that case compare behavior
+// instead of raw pointer identity. Everywhere else the pointers are expected to be identical.
+static bool proc_addr_identity_expected() {
+#if defined(_M_ARM64EC)
+    return false;
+#elif defined(_WIN32)
+    USHORT process_machine = 0, native_machine = 0;
+    if (IsWow64Process2(GetCurrentProcess(), &process_machine, &native_machine)) {
+        // On an Arm64 host vulkan-1.dll may be arm64x, in which case an x64 (emulated) or arm64ec
+        // caller gets a fast-forward-sequence thunk that differs from the loader's native pointer.
+        // Note x64-on-Arm64 is not classic WOW64, so process_machine is UNKNOWN there, not AMD64;
+        // key off the native machine instead.
+        return native_machine != IMAGE_FILE_MACHINE_ARM64;
+    }
+    return true;
+#else
+    return true;
+#endif
+}
+
+static void assert_gipa_equivalent(PFN_vkGetInstanceProcAddr from_loader, PFN_vkGetInstanceProcAddr from_query) {
+    if (proc_addr_identity_expected()) {
+        ASSERT_EQ(from_loader, from_query);
+        return;
+    }
+    ASSERT_NE(from_loader, nullptr);
+    ASSERT_NE(from_query, nullptr);
+    ASSERT_EQ(from_loader(nullptr, "vkThisCommandDoesNotExist"), nullptr);
+    ASSERT_EQ(from_query(nullptr, "vkThisCommandDoesNotExist"), nullptr);
+    PFN_vkVoidFunction create_from_loader = from_loader(nullptr, "vkCreateInstance");
+    PFN_vkVoidFunction create_from_query = from_query(nullptr, "vkCreateInstance");
+    ASSERT_NE(create_from_loader, nullptr);
+    ASSERT_EQ(create_from_loader, create_from_query);
+}
+
+static void assert_gdpa_equivalent(PFN_vkGetDeviceProcAddr from_loader, PFN_vkGetDeviceProcAddr from_query, VkDevice device) {
+    if (proc_addr_identity_expected()) {
+        (void)device;
+        ASSERT_EQ(from_loader, from_query);
+        return;
+    }
+    ASSERT_NE(from_loader, nullptr);
+    ASSERT_NE(from_query, nullptr);
+    if (device != VK_NULL_HANDLE) {
+        ASSERT_EQ(from_loader(device, "vkThisCommandDoesNotExist"), nullptr);
+        ASSERT_EQ(from_query(device, "vkThisCommandDoesNotExist"), nullptr);
+        PFN_vkVoidFunction destroy_from_loader = from_loader(device, "vkDestroyDevice");
+        PFN_vkVoidFunction destroy_from_query = from_query(device, "vkDestroyDevice");
+        ASSERT_NE(destroy_from_loader, nullptr);
+        ASSERT_EQ(destroy_from_loader, destroy_from_query);
+    }
+}
+
 // Verify that the various ways to get vkGetInstanceProcAddr return the same value
 TEST(GetProcAddr, VerifyGetInstanceProcAddr) {
     FrameworkEnvironment env{};
@@ -41,7 +97,7 @@ TEST(GetProcAddr, VerifyGetInstanceProcAddr) {
         PFN_vkGetInstanceProcAddr gipa_loader = env.vulkan_functions.vkGetInstanceProcAddr;
         PFN_vkGetInstanceProcAddr gipa_queried = reinterpret_cast<PFN_vkGetInstanceProcAddr>(
             env.vulkan_functions.vkGetInstanceProcAddr(inst.inst, "vkGetInstanceProcAddr"));
-        ASSERT_EQ(gipa_loader, gipa_queried);
+        assert_gipa_equivalent(gipa_loader, gipa_queried);
     }
 
     {
@@ -54,7 +110,7 @@ TEST(GetProcAddr, VerifyGetInstanceProcAddr) {
         PFN_vkGetInstanceProcAddr gipa_loader = env.vulkan_functions.vkGetInstanceProcAddr;
         PFN_vkGetInstanceProcAddr gipa_queried = reinterpret_cast<PFN_vkGetInstanceProcAddr>(
             env.vulkan_functions.vkGetInstanceProcAddr(inst.inst, "vkGetInstanceProcAddr"));
-        ASSERT_EQ(gipa_loader, gipa_queried);
+        assert_gipa_equivalent(gipa_loader, gipa_queried);
     }
 }
 
@@ -72,13 +128,13 @@ TEST(GetProcAddr, VerifyGetDeviceProcAddr) {
     //       that to what is returned by asking it what the various Vulkan get proc addr functions are.
     PFN_vkGetDeviceProcAddr gdpa_loader = env.vulkan_functions.vkGetDeviceProcAddr;
     PFN_vkGetDeviceProcAddr gdpa_inst_queried = inst.load("vkGetDeviceProcAddr");
-    ASSERT_EQ(gdpa_loader, gdpa_inst_queried);
+    assert_gdpa_equivalent(gdpa_loader, gdpa_inst_queried, VK_NULL_HANDLE);
 
     DeviceWrapper dev{inst};
     dev.CheckCreate(phys_dev);
 
     PFN_vkGetDeviceProcAddr gdpa_dev_queried = dev.load("vkGetDeviceProcAddr");
-    ASSERT_EQ(gdpa_loader, gdpa_dev_queried);
+    assert_gdpa_equivalent(gdpa_loader, gdpa_dev_queried, dev);
 }
 
 // Load the global function pointers with and without a NULL vkInstance handle.
@@ -164,7 +220,7 @@ TEST(GetProcAddr, GlobalFunctions) {
         handle_assert_null(CreateInstance);
 
         PFN_vkGetInstanceProcAddr GetInstanceProcAddr = inst.load("vkGetInstanceProcAddr");
-        handle_assert_equal(env.vulkan_functions.vkGetInstanceProcAddr, GetInstanceProcAddr);
+        assert_gipa_equivalent(env.vulkan_functions.vkGetInstanceProcAddr, GetInstanceProcAddr);
         ASSERT_EQ(GetInstanceProcAddr,
                   reinterpret_cast<PFN_vkGetInstanceProcAddr>(GetInstanceProcAddr(inst, "vkGetInstanceProcAddr")));
         ASSERT_EQ(GetInstanceProcAddr,
