@@ -297,7 +297,7 @@ jobs:
             - run: cmake --install build --prefix build/install --config ${{matrix.config}}
             - run: ctest --parallel --output-on-failure -C ${{matrix.config}} --test-dir build/
 
-  windows_arm64x:
+    windows_arm64x:
         # Native Windows on Arm: Tests building a genuine arm64x binary and validates that an x64 test suite passes
         # windows is 2x expensive to run on GitHub machines, so only run if we know something else simple passed as well
         # needs: windows_arm
