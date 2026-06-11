@@ -462,7 +462,8 @@ VkResult windows_get_registry_files(const struct loader_instance *inst, char *lo
                             goto out;
                         }
                         *reg_data[0] = '\0';
-                    } else if (strlen(*reg_data) + name_size + 1 > *reg_data_size) {
+                        // Reserve room for the existing contents, a PATH_SEPARATOR, the new value, and the null terminator.
+                    } else if (strlen(*reg_data) + name_size + 2 > *reg_data_size) {
                         void *new_ptr = loader_instance_heap_realloc(inst, *reg_data, *reg_data_size, *reg_data_size * 2,
                                                                      VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
                         if (NULL == new_ptr) {
@@ -534,7 +535,8 @@ VkResult windows_get_registry_files(const struct loader_instance *inst, char *lo
 
                     if (strlen(*reg_data) == 0) {
                         // The list is emtpy. Add the first entry.
-                        (void)snprintf(*reg_data, name_size + 1, "%s", name);
+                        // Bound the write by the actual destination size, not the source length.
+                        (void)snprintf(*reg_data, *reg_data_size, "%s", name);
                         found = true;
                     } else {
                         // At this point the reg_data variable contains other JSON paths, likely from the PNP/device section
@@ -554,7 +556,10 @@ VkResult windows_get_registry_files(const struct loader_instance *inst, char *lo
                         // Only skip if we are adding a driver and a duplicate was found
                         if (!is_driver || (is_driver && foundDuplicate == false)) {
                             // Add the new entry to the list.
-                            (void)snprintf(*reg_data + strlen(*reg_data), name_size + 2, "%c%s", PATH_SEPARATOR, name);
+                            // Bound the write by the remaining destination size, not the source length, so the
+                            // PATH_SEPARATOR + name + null terminator can never spill past the allocation.
+                            size_t cur_len = strlen(*reg_data);
+                            (void)snprintf(*reg_data + cur_len, *reg_data_size - cur_len, "%c%s", PATH_SEPARATOR, name);
                             found = true;
                         } else {
                             loader_log(

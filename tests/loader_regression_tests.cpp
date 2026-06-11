@@ -4361,6 +4361,39 @@ TEST(RegistryManifestParsing, OversizedD3DKMTDriverPathDoesNotOverflow) {
     InstWrapper inst{env.vulkan_functions};
     inst.CheckCreate(VK_ERROR_INCOMPATIBLE_DRIVER);
 }
+
+// Regression test for an off-by-one heap buffer overflow in windows_get_registry_files(). That function accumulates
+// manifest paths enumerated from the generic Khronos\Vulkan registry locations into a heap buffer that starts at 4096
+// bytes and grows by doubling. Each appended entry is written as PATH_SEPARATOR + name + null terminator, but the
+// grow check only reserved name + null (it forgot the separator). When the running length lined up so that
+// strlen(reg_data) + name_size + 1 == reg_data_size exactly, the buffer was not grown and the terminating null byte
+// was written one element past the end of the allocation.
+//
+// The registry value names below are sized so the third append lands the write exactly on the 4096-byte boundary:
+//   entry 0:            strlen -> 2000
+//   entry 1: +sep+name  strlen -> 2000 + 1 + 2000 = 4001
+//   entry 2: +sep+name  writes 1 + 94 + 1 = 96 bytes at offset 4001 -> last index 4096 (one past a 4096-byte buffer)
+// 2000 + 2000 + 94 == 4094, and 4001 + 94 + 1 == 4096, so the unpatched grow check (which compares against
+// name_size + 1) does not trigger a realloc and the write overflows by a single null byte. Run under ASAN this
+// aborts before the fix; with the fix the buffer is grown to fit and instance creation completes cleanly.
+TEST(RegistryManifestParsing, AppendAtBufferBoundaryDoesNotOverflow) {
+    FrameworkEnvironment env{};
+    env.add_icd(TEST_ICD_PATH_VERSION_2).add_physical_device("physical_device_0");
+
+    auto make_named_path = [](size_t total_len) {
+        const std::string suffix = ".json";
+        return std::filesystem::path(std::string(total_len - suffix.size(), 'a') + suffix);
+    };
+
+    env.platform_shim->add_manifest_to_registry(ManifestCategory::explicit_layer, make_named_path(2000));
+    env.platform_shim->add_manifest_to_registry(ManifestCategory::explicit_layer, make_named_path(2000));
+    env.platform_shim->add_manifest_to_registry(ManifestCategory::explicit_layer, make_named_path(94));
+
+    // None of the registry entries point at a real manifest, so no layers are added - the loader simply needs to
+    // enumerate the (bogus) paths without overflowing its accumulation buffer.
+    InstWrapper inst{env.vulkan_functions};
+    inst.CheckCreate();
+}
 #endif
 
 TEST(LibraryLoading, SystemLocations) {

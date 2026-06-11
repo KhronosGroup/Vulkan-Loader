@@ -337,12 +337,15 @@ LSTATUS __stdcall ShimRegEnumValueA(HKEY hKey, DWORD dwIndex, LPSTR lpValueName,
     if (dwIndex >= location.size()) return ERROR_NO_MORE_ITEMS;
 
     std::string name = narrow(location[dwIndex].name);
-    if (*lpcchValueName < name.size()) return ERROR_NO_MORE_ITEMS;
+    // The destination buffer must hold the name plus a null terminator, matching the real RegEnumValueA contract.
+    if (*lpcchValueName <= name.size()) return ERROR_NO_MORE_ITEMS;
     for (size_t i = 0; i < name.size(); i++) {
         lpValueName[i] = name[i];
     }
     lpValueName[name.size()] = '\0';
-    *lpcchValueName = static_cast<DWORD>(name.size() + 1);
+    // RegEnumValueA reports the number of characters in the name *excluding* the null terminator. Reporting the
+    // length including the terminator (off by one) hides destination-buffer-sizing bugs in callers, so match the API.
+    *lpcchValueName = static_cast<DWORD>(name.size());
     if (*lpcbData < sizeof(DWORD)) return ERROR_NO_MORE_ITEMS;
     DWORD *lpcbData_dword = reinterpret_cast<DWORD *>(lpData);
     *lpcbData_dword = location[dwIndex].value;
