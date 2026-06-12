@@ -998,7 +998,7 @@ VkResult windows_read_sorted_physical_devices(struct loader_instance *inst, uint
                 uint32_t old_size = icd_phys_devs_array_size * sizeof(struct loader_icd_physical_devices);
                 void *new_ptr = loader_instance_heap_realloc(inst, *icd_phys_devs_array, old_size, 2 * old_size,
                                                              VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
-                if (*icd_phys_devs_array == NULL) {
+                if (new_ptr == NULL) {
                     adapter->lpVtbl->Release(adapter);
                     res = VK_ERROR_OUT_OF_HOST_MEMORY;
                     goto out;
