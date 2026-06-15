@@ -283,7 +283,7 @@ jobs:
                 config: [ Debug, Release ]
         steps:
             - uses: actions/checkout@v6
-            - uses: actions/setup-python@v5
+            - uses: actions/setup-python@v6
               with:
                 python-version: '3.x'
             - run: |
@@ -305,7 +305,7 @@ jobs:
         timeout-minutes: 30
         steps:
             - uses: actions/checkout@v6
-            - uses: actions/setup-python@v5
+            - uses: actions/setup-python@v6
               with:
                 python-version: '3.x'
             - run: python scripts/update_deps.py --arch arm64 --api vulkan --dir external --clean-build --clean-install
