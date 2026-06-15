@@ -7285,7 +7285,7 @@ VkResult loader_apply_settings_device_configurations(struct loader_instance *ins
             char device_uuid_str[UUID_STR_LEN] = {0};
             loader_log_generate_uuid_string(current_deviceUUID, device_uuid_str);
             char driver_uuid_str[UUID_STR_LEN] = {0};
-            loader_log_generate_uuid_string(current_deviceUUID, driver_uuid_str);
+            loader_log_generate_uuid_string(current_driverUUID, driver_uuid_str);
 
             // Log that this configuration was missing.
             if (inst->settings.device_configurations[i].deviceName[0] != '\0' &&
