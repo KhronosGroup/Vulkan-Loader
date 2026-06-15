@@ -465,7 +465,7 @@ VKAPI_ATTR void VKAPI_CALL terminator_GetPhysicalDeviceSparseImageFormatProperti
         } else {
             // Allocate a temporary array for the output of the old function
             VkSparseImageFormatProperties *properties =
-                loader_stack_alloc(*pPropertyCount * sizeof(VkSparseImageMemoryRequirements));
+                loader_stack_alloc(*pPropertyCount * sizeof(VkSparseImageFormatProperties));
             if (properties == NULL) {
                 *pPropertyCount = 0;
                 loader_log(icd_term->this_instance, VULKAN_LOADER_ERROR_BIT, 0,
