@@ -6023,7 +6023,8 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateInstance(const VkInstanceCreateI
             res = VK_ERROR_OUT_OF_HOST_MEMORY;
             goto out;
         } else if (VK_SUCCESS != icd_result) {
-            loader_log(ptr_instance, VULKAN_LOADER_WARN_BIT, 0,
+            VkFlags log_level = VK_ERROR_INCOMPATIBLE_DRIVER == icd_result ? VULKAN_LOADER_DEBUG_BIT : VULKAN_LOADER_WARN_BIT;
+            loader_log(ptr_instance, log_level, 0,
                        "terminator_CreateInstance: Received return code %i from call to vkCreateInstance in ICD %s. Skipping "
                        "this driver.",
                        icd_result, icd_term->scanned_icd->lib_name);
