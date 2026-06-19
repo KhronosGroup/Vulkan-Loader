@@ -2372,7 +2372,8 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_GetPhysicalDeviceDisplayProperties2KHR
     }
 
     // If we do have to write to pProperties, then we need to write to a temporary array of VkDisplayPropertiesKHR and copy it
-    VkDisplayPropertiesKHR *properties = loader_stack_alloc(*pPropertyCount * sizeof(VkDisplayPropertiesKHR));
+    uint32_t allocated_count = *pPropertyCount;
+    VkDisplayPropertiesKHR *properties = loader_stack_alloc(allocated_count * sizeof(VkDisplayPropertiesKHR));
     if (properties == NULL) {
         return VK_ERROR_OUT_OF_HOST_MEMORY;
     }
@@ -2380,7 +2381,8 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_GetPhysicalDeviceDisplayProperties2KHR
     if (res < 0) {
         return res;
     }
-    for (uint32_t i = 0; i < *pPropertyCount; ++i) {
+    // The driver reports the written count back in pPropertyCount; never copy past the array we sized.
+    for (uint32_t i = 0; i < *pPropertyCount && i < allocated_count; ++i) {
         memcpy(&pProperties[i].displayProperties, &properties[i], sizeof(VkDisplayPropertiesKHR));
     }
     return res;
@@ -2427,7 +2429,8 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_GetPhysicalDeviceDisplayPlanePropertie
     }
 
     // If we do have to write to pProperties, then we need to write to a temporary array of VkDisplayPlanePropertiesKHR and copy it
-    VkDisplayPlanePropertiesKHR *properties = loader_stack_alloc(*pPropertyCount * sizeof(VkDisplayPlanePropertiesKHR));
+    uint32_t allocated_count = *pPropertyCount;
+    VkDisplayPlanePropertiesKHR *properties = loader_stack_alloc(allocated_count * sizeof(VkDisplayPlanePropertiesKHR));
     if (properties == NULL) {
         return VK_ERROR_OUT_OF_HOST_MEMORY;
     }
@@ -2436,7 +2439,8 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_GetPhysicalDeviceDisplayPlanePropertie
     if (res < 0) {
         return res;
     }
-    for (uint32_t i = 0; i < *pPropertyCount; ++i) {
+    // The driver reports the written count back in pPropertyCount; never copy past the array we sized.
+    for (uint32_t i = 0; i < *pPropertyCount && i < allocated_count; ++i) {
         memcpy(&pProperties[i].displayPlaneProperties, &properties[i], sizeof(VkDisplayPlanePropertiesKHR));
     }
     return res;
@@ -2484,7 +2488,8 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_GetDisplayModeProperties2KHR(VkPhysica
     }
 
     // If we do have to write to pProperties, then we need to write to a temporary array of VkDisplayModePropertiesKHR and copy it
-    VkDisplayModePropertiesKHR *properties = loader_stack_alloc(*pPropertyCount * sizeof(VkDisplayModePropertiesKHR));
+    uint32_t allocated_count = *pPropertyCount;
+    VkDisplayModePropertiesKHR *properties = loader_stack_alloc(allocated_count * sizeof(VkDisplayModePropertiesKHR));
     if (properties == NULL) {
         return VK_ERROR_OUT_OF_HOST_MEMORY;
     }
@@ -2492,7 +2497,8 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_GetDisplayModeProperties2KHR(VkPhysica
     if (res < 0) {
         return res;
     }
-    for (uint32_t i = 0; i < *pPropertyCount; ++i) {
+    // The driver reports the written count back in pPropertyCount; never copy past the array we sized.
+    for (uint32_t i = 0; i < *pPropertyCount && i < allocated_count; ++i) {
         memcpy(&pProperties[i].displayModeProperties, &properties[i], sizeof(VkDisplayModePropertiesKHR));
     }
     return res;
@@ -2818,14 +2824,16 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_GetPhysicalDeviceSurfaceFormats2KHR(Vk
                                                                          NULL);
         } else {
             // Allocate a temporary array for the output of the old function
-            VkSurfaceFormatKHR *formats = loader_stack_alloc(*pSurfaceFormatCount * sizeof(VkSurfaceFormatKHR));
+            uint32_t allocated_count = *pSurfaceFormatCount;
+            VkSurfaceFormatKHR *formats = loader_stack_alloc(allocated_count * sizeof(VkSurfaceFormatKHR));
             if (formats == NULL) {
                 return VK_ERROR_OUT_OF_HOST_MEMORY;
             }
 
             VkResult res = icd_term->dispatch.GetPhysicalDeviceSurfaceFormatsKHR(phys_dev_term->phys_dev, surface,
                                                                                  pSurfaceFormatCount, formats);
-            for (uint32_t i = 0; i < *pSurfaceFormatCount; ++i) {
+            // The driver reports the written count back in pSurfaceFormatCount; never copy past the array we sized.
+            for (uint32_t i = 0; i < *pSurfaceFormatCount && i < allocated_count; ++i) {
                 pSurfaceFormats[i].surfaceFormat = formats[i];
                 if (pSurfaceFormats[i].pNext != NULL) {
                     loader_log(icd_term->this_instance, VULKAN_LOADER_WARN_BIT, 0,
