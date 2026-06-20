@@ -262,7 +262,8 @@ VkResult linux_read_sorted_physical_devices(struct loader_instance *inst, uint32
 
             icd_term->dispatch.GetPhysicalDeviceProperties(sorted_device_info[index].physical_device, &dev_props);
             sorted_device_info[index].device_type = dev_props.deviceType;
-            strncpy(sorted_device_info[index].device_name, dev_props.deviceName, VK_MAX_PHYSICAL_DEVICE_NAME_SIZE);
+            strncpy(sorted_device_info[index].device_name, dev_props.deviceName, VK_MAX_PHYSICAL_DEVICE_NAME_SIZE - 1);
+            sorted_device_info[index].device_name[VK_MAX_PHYSICAL_DEVICE_NAME_SIZE - 1] = '\0';
             sorted_device_info[index].vendor_id = dev_props.vendorID;
             sorted_device_info[index].device_id = dev_props.deviceID;
 
@@ -365,7 +366,8 @@ VkResult linux_sort_physical_device_groups(struct loader_instance *inst, uint32_
                                                            &dev_props);
             sorted_group_term[group].internal_device_info[gpu].device_type = dev_props.deviceType;
             strncpy(sorted_group_term[group].internal_device_info[gpu].device_name, dev_props.deviceName,
-                    VK_MAX_PHYSICAL_DEVICE_NAME_SIZE);
+                    VK_MAX_PHYSICAL_DEVICE_NAME_SIZE - 1);
+            sorted_group_term[group].internal_device_info[gpu].device_name[VK_MAX_PHYSICAL_DEVICE_NAME_SIZE - 1] = '\0';
             sorted_group_term[group].internal_device_info[gpu].vendor_id = dev_props.vendorID;
             sorted_group_term[group].internal_device_info[gpu].device_id = dev_props.deviceID;
 
