@@ -7806,6 +7806,12 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_EnumeratePhysicalDeviceGroups(
             if (NULL == fpEnumeratePhysicalDeviceGroups) {
                 icd_term->dispatch.EnumeratePhysicalDevices(icd_term->instance, &count_this_time, NULL);
 
+                // The driver can report more devices on this query than it did during the counting pass above. The local arrays
+                // were sized to total_count, so never let this ICD write past the space still reserved for it.
+                if (count_this_time > total_count - cur_icd_group_count) {
+                    count_this_time = total_count - cur_icd_group_count;
+                }
+
                 VkPhysicalDevice *phys_dev_array = loader_stack_alloc(sizeof(VkPhysicalDevice) * count_this_time);
                 if (NULL == phys_dev_array) {
                     loader_log(
@@ -7841,6 +7847,10 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_EnumeratePhysicalDeviceGroups(
                                "\'EnumeratePhysicalDeviceGroups\' to ICD %s to get group count.",
                                icd_term->scanned_icd->lib_name);
                     goto out;
+                }
+                // Same guard as the plain-device path: the re-queried count can exceed the space sized during the counting pass.
+                if (count_this_time > total_count - cur_icd_group_count) {
+                    count_this_time = total_count - cur_icd_group_count;
                 }
                 if (cur_icd_group_count + count_this_time < *pPhysicalDeviceGroupCount) {
                     // The total amount is still less than the amount of physical device group data passed in
