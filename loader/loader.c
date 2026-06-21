@@ -1002,6 +1002,7 @@ VkResult loader_add_instance_extensions(const struct loader_instance *inst,
     }
     memset(ext_props, 0, count * sizeof(VkExtensionProperties));
 
+    uint32_t allocated_count = count;
     res = fp_get_props(NULL, &count, ext_props);
     if (res != VK_SUCCESS) {
         loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0, "loader_add_instance_extensions: Error getting Instance extensions from %s",
@@ -1009,7 +1010,8 @@ VkResult loader_add_instance_extensions(const struct loader_instance *inst,
         goto out;
     }
 
-    for (i = 0; i < count; i++) {
+    // The count returned by the second call sizes the array, but never read past what we actually allocated.
+    for (i = 0; i < count && i < allocated_count; i++) {
         bool ext_unsupported = wsi_unsupported_instance_extension(&ext_props[i]);
         if (!ext_unsupported) {
             res = loader_add_to_ext_list(inst, ext_list, 1, &ext_props[i]);
@@ -1045,11 +1047,13 @@ VkResult loader_add_device_extensions(const struct loader_instance *inst,
                        lib_name);
             return VK_ERROR_OUT_OF_HOST_MEMORY;
         }
+        uint32_t allocated_count = count;
         res = fpEnumerateDeviceExtensionProperties(physical_device, NULL, &count, ext_props);
         if (res != VK_SUCCESS) {
             return res;
         }
-        for (i = 0; i < count; i++) {
+        // The count returned by the second call sizes the array, but never read past what we actually allocated.
+        for (i = 0; i < count && i < allocated_count; i++) {
             res = loader_add_to_ext_list(inst, ext_list, 1, &ext_props[i]);
             if (res != VK_SUCCESS) {
                 return res;
@@ -7167,12 +7171,14 @@ VkResult check_physical_device_extensions_for_driver_properties_extension(struct
         return VK_ERROR_OUT_OF_HOST_MEMORY;
     }
 
+    uint32_t allocated_count = extension_count;
     res = phys_dev_term->this_icd_term->dispatch.EnumerateDeviceExtensionProperties(phys_dev_term->phys_dev, NULL, &extension_count,
                                                                                     extension_data);
     if (res != VK_SUCCESS) {
         return VK_SUCCESS;
     }
-    for (uint32_t j = 0; j < extension_count; j++) {
+    // The count returned by the second call sizes the array, but never read past what we actually allocated.
+    for (uint32_t j = 0; j < extension_count && j < allocated_count; j++) {
         if (!strcmp(extension_data[j].extensionName, VK_KHR_DRIVER_PROPERTIES_EXTENSION_NAME)) {
             *supports_driver_properties = true;
             return VK_SUCCESS;
