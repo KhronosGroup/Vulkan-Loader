@@ -7874,6 +7874,10 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_EnumeratePhysicalDeviceGroups(
                     for (uint32_t group = 0; group < count_this_time; ++group) {
                         uint32_t cur_index = group + cur_icd_group_count;
                         local_phys_dev_groups[cur_index].group_props = pPhysicalDeviceGroupProperties[cur_index];
+                        // physicalDevices is a fixed VK_MAX_DEVICE_GROUP_SIZE array; don't trust a larger count from the ICD.
+                        if (local_phys_dev_groups[cur_index].group_props.physicalDeviceCount > VK_MAX_DEVICE_GROUP_SIZE) {
+                            local_phys_dev_groups[cur_index].group_props.physicalDeviceCount = VK_MAX_DEVICE_GROUP_SIZE;
+                        }
                         local_phys_dev_groups[cur_index].this_icd_term = icd_term;
                     }
                 } else {
@@ -7904,6 +7908,10 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_EnumeratePhysicalDeviceGroups(
                     for (uint32_t group = 0; group < count_this_time; ++group) {
                         uint32_t cur_index = group + cur_icd_group_count;
                         local_phys_dev_groups[cur_index].group_props = tmp_group_props[group];
+                        // physicalDevices is a fixed VK_MAX_DEVICE_GROUP_SIZE array; don't trust a larger count from the ICD.
+                        if (local_phys_dev_groups[cur_index].group_props.physicalDeviceCount > VK_MAX_DEVICE_GROUP_SIZE) {
+                            local_phys_dev_groups[cur_index].group_props.physicalDeviceCount = VK_MAX_DEVICE_GROUP_SIZE;
+                        }
                         local_phys_dev_groups[cur_index].this_icd_term = icd_term;
                     }
                 }
