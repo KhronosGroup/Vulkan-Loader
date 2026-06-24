@@ -28,6 +28,7 @@
 #include "framework/test_environment.h"
 
 #include <fstream>
+#include <vector>
 
 extern "C" {
 #include "loader.h"
@@ -340,4 +341,23 @@ TEST(BadJsonInput, ClusterFuzzTestCase_5123849246867456) {
 }
 TEST(BadJsonInput, ClusterFuzzTestCase_4626669072875520) {
     execute_setting_fuzzer("clusterfuzz-testcase-minimized-settings_fuzzer-4626669072875520");
+}
+
+// A string that ends in the middle of a multi-byte UTF-8 character must not make vk_string_validate read
+// past the terminator. Each buffer is sized to its exact contents so ASAN flags any over-read.
+TEST(StringValidation, TruncatedMultiByteDoesNotReadPastTerminator) {
+    // 2-, 3- and 4-byte lead bytes, each immediately followed by the terminator.
+    for (unsigned char lead : {0xC2u, 0xE2u, 0xF0u}) {
+        std::vector<char> truncated = {static_cast<char>(lead), '\0'};
+        EXPECT_EQ(vk_string_validate(MaxLoaderStringLength, truncated.data()), VK_STRING_ERROR_BAD_DATA);
+    }
+    // A lead byte with one valid continuation byte but still short of the required count.
+    std::vector<char> short_seq = {static_cast<char>(0xE2), static_cast<char>(0x82), '\0'};
+    EXPECT_EQ(vk_string_validate(MaxLoaderStringLength, short_seq.data()), VK_STRING_ERROR_BAD_DATA);
+
+    // Well-formed strings still validate cleanly.
+    std::vector<char> ascii = {'a', 'b', 'c', '\0'};
+    EXPECT_EQ(vk_string_validate(MaxLoaderStringLength, ascii.data()), VK_STRING_ERROR_NONE);
+    std::vector<char> two_byte = {static_cast<char>(0xC2), static_cast<char>(0xA9), '\0'};
+    EXPECT_EQ(vk_string_validate(MaxLoaderStringLength, two_byte.data()), VK_STRING_ERROR_NONE);
 }
