@@ -171,7 +171,9 @@ VkResult windows_get_device_registry_entry(const struct loader_instance *inst, s
         goto out;
     }
 
-    manifest_path = loader_instance_heap_alloc(inst, requiredSize, VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
+    // Registry string values are not guaranteed to be stored with a terminating null (see RegQueryValueEx). Reserve two
+    // extra bytes so the value can be terminated after it is read, before it is walked with strlen below.
+    manifest_path = loader_instance_heap_alloc(inst, requiredSize + 2, VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
     if (manifest_path == NULL) {
         loader_log(inst, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_DRIVER_BIT, 0,
                    "windows_get_device_registry_entry: Failed to allocate space for DriverName.");
@@ -194,6 +196,11 @@ VkResult windows_get_device_registry_entry(const struct loader_instance *inst, s
         res = VK_ERROR_INCOMPATIBLE_DRIVER;
         goto out;
     }
+
+    // requiredSize now holds the number of bytes RegQueryValueEx wrote, which is at most the size queried for the
+    // allocation, so the two terminators always fit. This keeps the strlen walk in windows_add_json_entry in bounds.
+    manifest_path[requiredSize] = '\0';
+    manifest_path[requiredSize + 1] = '\0';
 
     res = windows_add_json_entry(inst, search_paths, value_name, data_type, manifest_path, requiredSize);
 
