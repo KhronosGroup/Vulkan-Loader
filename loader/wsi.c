@@ -311,6 +311,22 @@ VKAPI_ATTR void VKAPI_CALL terminator_DestroySurfaceKHR(VkInstance instance, VkS
 
     VkIcdSurface *icd_surface = (VkIcdSurface *)(uintptr_t)(surface);
     if (NULL != icd_surface) {
+#if defined(VK_USE_PLATFORM_ANDROID_KHR)
+        if (icd_surface->base.platform == VK_ICD_WSI_PLATFORM_ANDROID) {
+            // Android surfaces are not loader-created VkIcdSurface objects: they are a smaller VkIcdSurfaceAndroid with no
+            // surface_index or create_info, so reading those fields would run past the allocation. Just free the handle,
+            // matching the early-out in wsi_unwrap_icd_surface.
+            loader_instance_heap_free(loader_inst, (void *)(uintptr_t)surface);
+            return;
+        }
+#endif  // VK_USE_PLATFORM_ANDROID_KHR
+#if defined(VK_USE_PLATFORM_MACOS_MVK)
+        if (icd_surface->base.platform == VK_ICD_WSI_PLATFORM_IOS) {
+            // Same as Android: an iOS surface is a smaller VkIcdSurfaceIOS without a surface_index or create_info.
+            loader_instance_heap_free(loader_inst, (void *)(uintptr_t)surface);
+            return;
+        }
+#endif  // VK_USE_PLATFORM_MACOS_MVK
         for (struct loader_icd_term *icd_term = loader_inst->icd_terms; icd_term != NULL; icd_term = icd_term->next) {
             if (icd_term->enabled_instance_extensions.khr_surface &&
                 icd_term->scanned_icd->interface_version >= ICD_VER_SUPPORTS_ICD_SURFACE_KHR &&
