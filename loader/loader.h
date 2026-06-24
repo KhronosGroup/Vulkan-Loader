@@ -233,7 +233,7 @@ void unload_drivers_without_physical_devices(struct loader_instance *inst);
 VkResult loader_apply_settings_device_configurations(struct loader_instance *inst, uint32_t *pPhysicalDeviceCount,
                                                      VkPhysicalDevice *pPhysicalDevices);
 
-VkStringErrorFlags vk_string_validate(const int max_length, const char *char_array);
+TEST_FUNCTION_EXPORT VkStringErrorFlags vk_string_validate(const int max_length, const char *char_array);
 char *loader_get_next_path(char *path);
 VkResult add_if_manifest_file(const struct loader_instance *inst, const char *file_name, struct loader_string_list *out_files);
 VkResult prepend_if_manifest_file(const struct loader_instance *inst, const char *file_name, struct loader_string_list *out_files);

@@ -7487,7 +7487,7 @@ out:
     return res;
 }
 
-VkStringErrorFlags vk_string_validate(const int max_length, const char *utf8) {
+TEST_FUNCTION_EXPORT VkStringErrorFlags vk_string_validate(const int max_length, const char *utf8) {
     VkStringErrorFlags result = VK_STRING_ERROR_NONE;
     int num_char_bytes = 0;
     int i, j;
@@ -7519,6 +7519,12 @@ VkStringErrorFlags vk_string_validate(const int max_length, const char *utf8) {
             if (++i == max_length) {
                 result |= VK_STRING_ERROR_LENGTH;
                 break;
+            }
+            if (utf8[i] == 0) {
+                // The string terminated in the middle of a multi-byte character. Stop here so the
+                // continuation-byte scan doesn't read past the terminator.
+                result |= VK_STRING_ERROR_BAD_DATA;
+                return result;
             }
             if ((utf8[i] & UTF8_DATA_BYTE_MASK) != UTF8_DATA_BYTE_CODE) {
                 result |= VK_STRING_ERROR_BAD_DATA;
