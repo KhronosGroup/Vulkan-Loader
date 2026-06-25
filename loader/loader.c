@@ -6802,6 +6802,7 @@ VkResult setup_loader_term_phys_devs(struct loader_instance *inst) {
                 goto out;
             }
 
+            uint32_t allocated_count = icd_phys_dev_array[icd_idx].device_count;
             res = icd_term->dispatch.EnumeratePhysicalDevices(icd_term->instance, &(icd_phys_dev_array[icd_idx].device_count),
                                                               icd_phys_dev_array[icd_idx].physical_devices);
             if (VK_ERROR_OUT_OF_HOST_MEMORY == res) {
@@ -6818,6 +6819,9 @@ VkResult setup_loader_term_phys_devs(struct loader_instance *inst) {
                     icd_term->scanned_icd->lib_name, res);
                 icd_phys_dev_array[icd_idx].device_count = 0;
                 icd_phys_dev_array[icd_idx].physical_devices = 0;
+            } else if (icd_phys_dev_array[icd_idx].device_count > allocated_count) {
+                // The fill call sizes the array, but never read past what we actually allocated.
+                icd_phys_dev_array[icd_idx].device_count = allocated_count;
             }
         } else {
             loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0,
