@@ -1,0 +1,45 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema",
+    "id": "https://schema.khronos.org/vulkan/driver_manifest_1_0_1.json",
+    "title": "Vulkan Driver Manifest Version 1.0.1",
+    "description": "JSON Schema for Driver Manifest files for the Vulkan Loader",
+    "type": "object",
+    "additionalProperties": true,
+    "properties": {
+        "file_format_version": {
+            "type": "string",
+            "pattern": "^1.0.1$"
+        },
+        "ICD": {
+            "type": "object",
+            "properties": {
+                "library_path": {
+                    "type": "string",
+                    "description": "Path validation is not feasible to validate with regex since valid paths are different per platform"
+                },
+                "api_version": {
+                    "type": "string",
+                    "pattern": "^[0-9]*\\.[0-9]*\\.[0-9]*$|^[0-9]*\\.[0-9]*\\.[0-9]*\\.[0-9]*$",
+                    "description": "Matches 3 and 4 component versions"
+                },
+                "library_arch": {
+                    "enum": [
+                        "32",
+                        "64"
+                    ]
+                },
+                "is_portability_driver": {
+                    "type": "boolean"
+                }
+            },
+            "required": [
+                "library_path",
+                "api_version"
+            ]
+        }
+    },
+    "required": [
+        "file_format_version",
+        "ICD"
+    ]
+}
