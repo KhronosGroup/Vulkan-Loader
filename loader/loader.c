@@ -476,6 +476,7 @@ VkResult normalize_path(const struct loader_instance *inst, char **passed_in_pat
         char *new_path = loader_instance_heap_realloc(inst, path, path_len, actual_len + 1, VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
         if (NULL == new_path) {
             loader_instance_heap_free(inst, path);
+            path = NULL;
             res = VK_ERROR_OUT_OF_HOST_MEMORY;
             goto out;
         }
