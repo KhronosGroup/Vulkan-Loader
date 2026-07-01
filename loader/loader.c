@@ -814,22 +814,6 @@ bool loader_find_layer_name_in_list(const char *name, const struct loader_pointe
     return false;
 }
 
-// Search the given meta-layer's component list for a layer matching the given layer name
-bool loader_find_layer_name_in_meta_layer(const struct loader_instance *inst, const char *layer_name,
-                                          struct loader_layer_list *layer_list, struct loader_layer_properties *meta_layer_props) {
-    for (uint32_t comp_layer = 0; comp_layer < meta_layer_props->component_layer_names.count; comp_layer++) {
-        if (!strcmp(meta_layer_props->component_layer_names.list[comp_layer], layer_name)) {
-            return true;
-        }
-        struct loader_layer_properties *comp_layer_props =
-            loader_find_layer_property(meta_layer_props->component_layer_names.list[comp_layer], layer_list);
-        if (comp_layer_props->type_flags & VK_LAYER_TYPE_FLAG_META_LAYER) {
-            return loader_find_layer_name_in_meta_layer(inst, layer_name, layer_list, comp_layer_props);
-        }
-    }
-    return false;
-}
-
 // Search the override layer's blacklist for a layer matching the given layer name
 bool loader_find_layer_name_in_blacklist(const char *layer_name, struct loader_layer_properties *meta_layer_props) {
     for (uint32_t black_layer = 0; black_layer < meta_layer_props->blacklist_layer_names.count; ++black_layer) {
@@ -940,8 +924,10 @@ void loader_remove_layers_not_in_implicit_meta_layers(const struct loader_instan
 
             if (layer_to_check->type_flags & VK_LAYER_TYPE_FLAG_META_LAYER) {
                 // For all layers found in this meta layer, we want to keep them as well.
-                if (loader_find_layer_name_in_meta_layer(inst, cur_layer_prop->info.layerName, layer_list, layer_to_check)) {
-                    cur_layer_prop->keep = true;
+                for (uint32_t comp_layer = 0; comp_layer < layer_to_check->component_layer_names.count; comp_layer++) {
+                    if (!strcmp(layer_to_check->component_layer_names.list[comp_layer], cur_layer_prop->info.layerName)) {
+                        cur_layer_prop->keep = true;
+                    }
                 }
             }
         }
