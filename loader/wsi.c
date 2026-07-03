@@ -1420,7 +1420,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateHeadlessSurfaceEXT(VkInstance in
         loader_log(loader_inst, VULKAN_LOADER_ERROR_BIT, 0,
                    "VK_EXT_headless_surface extension not enabled.  "
                    "vkCreateHeadlessSurfaceEXT not executed!");
-        return VK_SUCCESS;
+        goto out;
     }
 
     // Next, if so, proceed with the implementation of this function:
