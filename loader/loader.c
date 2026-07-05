@@ -1065,14 +1065,18 @@ VkResult loader_init_generic_list(const struct loader_instance *inst, struct loa
 }
 
 VkResult loader_resize_generic_list(const struct loader_instance *inst, struct loader_generic_list *list_info) {
-    void *new_ptr = loader_instance_heap_realloc(inst, list_info->list, list_info->capacity, list_info->capacity * 2,
-                                                 VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
+    size_t new_capacity = list_info->capacity * 2;
+    void *new_ptr =
+        loader_instance_heap_realloc(inst, list_info->list, list_info->capacity, new_capacity, VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
     if (new_ptr == NULL) {
         loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0, "loader_resize_generic_list: Failed to allocate space for generic list");
         return VK_ERROR_OUT_OF_HOST_MEMORY;
     }
+    // Consumers of the grown region expect unused entries to read as zero (eg a VK_NULL_HANDLE surface). An app supplied
+    // pfnReallocation is not required to zero the newly grown bytes, so do it here rather than relying on the allocator.
+    memset((uint8_t *)new_ptr + list_info->capacity, 0, new_capacity - list_info->capacity);
     list_info->list = new_ptr;
-    list_info->capacity = list_info->capacity * 2;
+    list_info->capacity = new_capacity;
     return VK_SUCCESS;
 }
 
