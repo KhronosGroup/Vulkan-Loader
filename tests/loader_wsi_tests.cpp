@@ -835,6 +835,25 @@ TEST(WsiTests, ForgetEnableSurfaceExtensions) {
     ASSERT_EQ(VK_ERROR_EXTENSION_NOT_PRESENT, create_surface(inst, surface));
 }
 
+#if defined(VK_USE_PLATFORM_METAL_EXT)
+// Calling the exported vkCreateMetalSurfaceEXT trampoline when VK_EXT_metal_surface was not enabled must be
+// rejected with VK_ERROR_EXTENSION_NOT_PRESENT, matching every other surface-creation terminator. The
+// terminator used to fall through and hand back a live surface with VK_SUCCESS.
+TEST(WsiTests, CreateMetalSurfaceWithoutEnablingExtension) {
+    FrameworkEnvironment env{};
+    env.add_icd(TEST_ICD_PATH_VERSION_2).setup_WSI().add_physical_device(PhysicalDevice{}.add_extension("VK_KHR_swapchain"));
+
+    InstWrapper inst{env.vulkan_functions};
+    inst.create_info.add_extension("VK_KHR_surface");
+    ASSERT_NO_FATAL_FAILURE(inst.CheckCreate());
+
+    VkMetalSurfaceCreateInfoEXT surf_create_info{VK_STRUCTURE_TYPE_METAL_SURFACE_CREATE_INFO_EXT};
+    VkSurfaceKHR surface = VK_NULL_HANDLE;
+    ASSERT_EQ(VK_ERROR_EXTENSION_NOT_PRESENT,
+              env.vulkan_functions.vkCreateMetalSurfaceEXT(inst, &surf_create_info, nullptr, &surface));
+}
+#endif  // VK_USE_PLATFORM_METAL_EXT
+
 TEST(WsiTests, SwapchainFunctional) {
     FrameworkEnvironment env{};
     env.add_icd(TEST_ICD_PATH_VERSION_2).setup_WSI().add_physical_device(PhysicalDevice{}.add_extension("VK_KHR_swapchain"));

@@ -1681,6 +1681,8 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateMetalSurfaceEXT(VkInstance insta
     if (!loader_inst->enabled_extensions.ext_metal_surface) {
         loader_log(loader_inst, VULKAN_LOADER_ERROR_BIT, 0,
                    "VK_EXT_metal_surface extension not enabled. vkCreateMetalSurfaceEXT will not be executed.");
+        result = VK_ERROR_EXTENSION_NOT_PRESENT;
+        goto out;
     }
 
     // Next, if so, proceed with the implementation of this function:
