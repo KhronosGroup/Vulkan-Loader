@@ -52,6 +52,7 @@ class MemoryTracker {
     const static size_t UNKNOWN_ALLOCATION = std::numeric_limits<size_t>::max();
     size_t allocation_count = 0;
     size_t call_count = 0;
+    bool fail_next_growing_reallocation = false;
     std::unordered_map<void*, AllocationDetails> allocations;
 
     void* allocate(size_t size, size_t alignment, VkSystemAllocationScope alloc_scope) {
@@ -82,6 +83,10 @@ class MemoryTracker {
         size_t original_size = elem->second.requested_size_bytes;
 
         // We only care about the case where realloc is used to increase the size
+        if (size >= original_size && fail_next_growing_reallocation) {
+            fail_next_growing_reallocation = false;
+            return nullptr;
+        }
         if (size >= original_size && settings.should_fail_after_set_number_of_calls && call_count == settings.fail_after_calls)
             return nullptr;
         call_count++;
@@ -156,6 +161,13 @@ class MemoryTracker {
     VkAllocationCallbacks* get() noexcept { return &callbacks; }
 
     bool empty() noexcept { return allocation_count == 0; }
+
+    // Arm a single failure for the next reallocation that grows an existing block. Used to force the used-object
+    // list resize inside loader_get_next_available_entry to fail without disturbing prior allocations.
+    void arm_next_growing_reallocation_failure() noexcept {
+        std::lock_guard<std::mutex> lg(main_mutex);
+        fail_next_growing_reallocation = true;
+    }
 
     // Static callbacks
     static VKAPI_ATTR void* VKAPI_CALL public_allocation(void* pUserData, size_t size, size_t alignment,
@@ -504,6 +516,69 @@ TEST(Allocation, CreateSurfaceIntentionalAllocFail) {
         ASSERT_TRUE(tracker.empty());
         fail_index++;
     }
+}
+
+static VKAPI_ATTR VkBool32 VKAPI_CALL noop_debug_utils_callback(VkDebugUtilsMessageSeverityFlagBitsEXT,
+                                                                VkDebugUtilsMessageTypeFlagsEXT,
+                                                                const VkDebugUtilsMessengerCallbackDataEXT*, void*) {
+    return VK_FALSE;
+}
+
+// When a debug messenger create can't reserve a slot (the used-object status list is full and its resize is
+// refused), the error rollback used to be gated on the pNextIndex allocation instead of on a slot actually
+// being reserved. With next_index left at 0 the rollback destroyed the ICD handle of the messenger already
+// living in slot 0 - a driver-side double free once the application later destroyed that live messenger.
+TEST(Allocation, DebugUtilsMessengerReservationFailKeepsLiveMessenger) {
+    FrameworkEnvironment env{};
+    env.add_icd(TEST_ICD_PATH_VERSION_2)
+        .set_min_icd_interface_version(5)
+        .add_instance_extension(VK_EXT_DEBUG_UTILS_EXTENSION_NAME)
+        .add_physical_device({});
+
+    MemoryTracker tracker{};
+
+    VkInstance instance = VK_NULL_HANDLE;
+    InstanceCreateInfo inst_create_info{};
+    inst_create_info.add_extension(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+    ASSERT_EQ(VK_SUCCESS, env.vulkan_functions.vkCreateInstance(inst_create_info.get(), tracker.get(), &instance));
+
+    PFN_vkCreateDebugUtilsMessengerEXT create_messenger = reinterpret_cast<PFN_vkCreateDebugUtilsMessengerEXT>(
+        env.vulkan_functions.vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT"));
+    PFN_vkDestroyDebugUtilsMessengerEXT destroy_messenger = reinterpret_cast<PFN_vkDestroyDebugUtilsMessengerEXT>(
+        env.vulkan_functions.vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT"));
+    ASSERT_NE(create_messenger, nullptr);
+    ASSERT_NE(destroy_messenger, nullptr);
+
+    VkDebugUtilsMessengerCreateInfoEXT messenger_info{VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT};
+    messenger_info.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
+    messenger_info.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT;
+    messenger_info.pfnUserCallback = noop_debug_utils_callback;
+
+    // The used-object status list starts with room for 32 entries, so filling it makes the next reservation grow it.
+    std::vector<VkDebugUtilsMessengerEXT> messengers;
+    for (uint32_t i = 0; i < 32; i++) {
+        VkDebugUtilsMessengerEXT messenger = VK_NULL_HANDLE;
+        ASSERT_EQ(VK_SUCCESS, create_messenger(instance, &messenger_info, nullptr, &messenger));
+        messengers.push_back(messenger);
+    }
+
+    auto& icd_details = env.get_test_icd(0).created_instance_details.begin()->second;
+    ASSERT_EQ(icd_details.messenger_handles.size(), 32u);
+
+    // Make the used-object list resize fail so the reservation fails after pNextIndex is already allocated.
+    tracker.arm_next_growing_reallocation_failure();
+    VkDebugUtilsMessengerEXT failed_messenger = VK_NULL_HANDLE;
+    ASSERT_EQ(VK_ERROR_OUT_OF_HOST_MEMORY, create_messenger(instance, &messenger_info, nullptr, &failed_messenger));
+
+    // No slot was reserved, so the still-live messenger occupying slot 0 must remain untouched in the ICD.
+    EXPECT_EQ(icd_details.messenger_handles.size(), 32u);
+
+    for (auto messenger : messengers) {
+        destroy_messenger(instance, messenger, nullptr);
+    }
+    EXPECT_EQ(icd_details.messenger_handles.size(), 0u);
+    env.vulkan_functions.vkDestroyInstance(instance, tracker.get());
+    ASSERT_TRUE(tracker.empty());
 }
 
 // Test failure during vkCreateInstance to make sure we don't leak memory if

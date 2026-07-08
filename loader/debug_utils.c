@@ -238,7 +238,7 @@ out:
 
     // Roll back on errors
     if (VK_SUCCESS != res) {
-        if (pNextIndex) {
+        if (index_reserved) {
             for (struct loader_icd_term *icd_term = inst->icd_terms; icd_term; icd_term = icd_term->next) {
                 if (icd_term->debug_utils_messenger_list.list && icd_term->debug_utils_messenger_list.list[next_index] &&
                     NULL != icd_term->dispatch.DestroyDebugUtilsMessengerEXT) {
@@ -518,7 +518,7 @@ out:
 
     // Roll back on errors
     if (VK_SUCCESS != res) {
-        if (pNextIndex) {
+        if (index_reserved) {
             for (struct loader_icd_term *icd_term = inst->icd_terms; icd_term; icd_term = icd_term->next) {
                 if (icd_term->debug_report_callback_list.list && icd_term->debug_report_callback_list.list[next_index] &&
                     NULL != icd_term->dispatch.DestroyDebugReportCallbackEXT) {
