@@ -17,25 +17,25 @@ def BuildGn():
     if not os.path.exists(RepoRelative("depot_tools")):
         print("Cloning Chromium depot_tools\n", flush=True)
         clone_cmd = 'git clone https://chromium.googlesource.com/chromium/tools/depot_tools.git depot_tools'.split(" ")
-        subprocess.call(clone_cmd)
+        subprocess.run(clone_cmd, check=True)
 
     os.environ['PATH'] = os.environ.get('PATH') + ":" + RepoRelative("depot_tools")
 
     print("Updating Repo Dependencies and GN Toolchain\n", flush=True)
     update_cmd = './scripts/gn/update_deps.sh'
-    subprocess.call(update_cmd)
+    subprocess.run(update_cmd, check=True)
 
     print("Checking Header Dependencies\n", flush=True)
     gn_check_cmd = 'gn gen --check out/Debug'.split(" ")
-    subprocess.call(gn_check_cmd)
+    subprocess.run(gn_check_cmd, check=True)
 
     print("Generating Ninja Files\n", flush=True)
     gn_gen_cmd = 'gn gen out/Debug'.split(" ")
-    subprocess.call(gn_gen_cmd)
+    subprocess.run(gn_gen_cmd, check=True)
 
     print("Running Ninja Build\n", flush=True)
     ninja_build_cmd = 'ninja -C out/Debug'.split(" ")
-    subprocess.call(ninja_build_cmd)
+    subprocess.run(ninja_build_cmd, check=True)
 
 #
 # Module Entrypoint

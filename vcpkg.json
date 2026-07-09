@@ -1,0 +1,20 @@
+{
+  "name": "vulkan-loader",
+  "version": "1.4.356",
+  "builtin-baseline": "97a332dee1b4940a12cbc8feaa30570f41338950",
+  "dependencies": [
+    "vulkan-headers"
+  ],
+  "features": {
+    "tests": {
+      "description": "Build and run the loader test suite",
+      "dependencies": [
+        "gtest",
+        {
+          "name": "detours",
+          "platform": "windows"
+        }
+      ]
+    }
+  }
+}

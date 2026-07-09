@@ -33,6 +33,15 @@ on:
 
 permissions: read-all
 
+env:
+  # vcpkg's 'files' binary cache writes here; actions/cache persists it
+  # across runs so jobs don't rebuild every dependency from source.
+  # VCPKG_BINARY_SOURCES is pinned explicitly because vcpkg dropped the
+  # GitHub Actions cache backend ('x-gha'):
+  # https://github.com/lukka/run-vcpkg/issues/251
+  VCPKG_CACHE_DIR: ${{ github.workspace }}/vcpkg-binary-cache
+  VCPKG_BINARY_SOURCES: clear;files,${{ github.workspace }}/vcpkg-binary-cache,readwrite
+
 jobs:
     linux:
         needs: codegen
@@ -45,6 +54,9 @@ jobs:
                 os: [ ubuntu-22.04, ubuntu-24.04 ]
         steps:
             - uses: actions/checkout@v7
+            - uses: ./.github/actions/setup-vcpkg
+              with:
+                job-index: ${{ strategy.job-index }}
             - uses: actions/setup-python@v6
               with:
                 python-version: '3.11'
@@ -64,7 +76,8 @@ jobs:
                 cmake -S. -B build \
                 -D CMAKE_BUILD_TYPE=${{ matrix.config }} \
                 -D BUILD_TESTS=ON \
-                -D UPDATE_DEPS=ON \
+                -D VCPKG_MANIFEST_FEATURES=tests \
+                -D "CMAKE_TOOLCHAIN_FILE=${{ env.VCPKG_ROOT }}/scripts/buildsystems/vcpkg.cmake" \
                 -D LOADER_ENABLE_ADDRESS_SANITIZER=ON \
                 -D BUILD_WERROR=ON \
                 -D CMAKE_CXX_COMPILER=${{ matrix.compiler.cxx }} \
@@ -78,8 +91,12 @@ jobs:
       timeout-minutes: 30
       steps:
         - uses: actions/checkout@v7
-        - run: scripts/update_deps.py --dir ext --no-build
-        - run: scripts/generate_source.py --verify ext/Vulkan-Headers/registry/
+        - uses: ./.github/actions/setup-vcpkg
+          with:
+            job-index: ${{ strategy.job-index }}
+            run-vcpkg-install: 'true'
+            vcpkg-installed-dir: ${{ github.workspace }}/vcpkg_installed
+        - run: scripts/generate_source.py --verify vcpkg_installed/*/share/vulkan/registry
 
     linux-no-asm:
         needs: codegen
@@ -87,13 +104,17 @@ jobs:
         timeout-minutes: 30
         steps:
             - uses: actions/checkout@v7
+            - uses: ./.github/actions/setup-vcpkg
+              with:
+                job-index: ${{ strategy.job-index }}
             - run: sudo apt update
             - run: sudo apt install --yes --no-install-recommends libwayland-dev libxrandr-dev
             - run: |
                 cmake -S. -B build \
                 -D CMAKE_BUILD_TYPE=Release \
                 -D BUILD_TESTS=ON \
-                -D UPDATE_DEPS=ON \
+                -D VCPKG_MANIFEST_FEATURES=tests \
+                -D "CMAKE_TOOLCHAIN_FILE=${{ env.VCPKG_ROOT }}/scripts/buildsystems/vcpkg.cmake" \
                 -D BUILD_WERROR=ON \
                 -D USE_GAS=OFF \
                 -D CMAKE_C_COMPILER=clang \
@@ -106,11 +127,22 @@ jobs:
         needs: codegen
         runs-on: ubuntu-24.04
         timeout-minutes: 30
+        # This job builds 32-bit binaries on a 64-bit runner, so vcpkg needs two
+        # different triplets: one for the packages the loader links against
+        # (32-bit) and one for the runner vcpkg itself runs on (64-bit). The
+        # cmake invocation below sets the first explicitly via
+        # VCPKG_TARGET_TRIPLET; these env vars cover the second.
+        env:
+            VCPKG_DEFAULT_TRIPLET: x86-linux
+            VCPKG_DEFAULT_HOST_TRIPLET: x64-linux
         strategy:
             matrix:
                 config: [ Debug, Release ]
         steps:
             - uses: actions/checkout@v7
+            - uses: ./.github/actions/setup-vcpkg
+              with:
+                job-index: ${{ strategy.job-index }}
             - uses: actions/setup-python@v6
               with:
                 python-version: '3.11'
@@ -128,7 +160,9 @@ jobs:
                 cmake -S. -B build \
                 -D CMAKE_BUILD_TYPE=${{matrix.config}} \
                 -D BUILD_TESTS=ON \
-                -D UPDATE_DEPS=ON \
+                -D VCPKG_MANIFEST_FEATURES=tests \
+                -D "CMAKE_TOOLCHAIN_FILE=${{ env.VCPKG_ROOT }}/scripts/buildsystems/vcpkg.cmake" \
+                -D VCPKG_TARGET_TRIPLET=x86-linux \
                 -D BUILD_WERROR=ON \
                 -D SYSCONFDIR=/etc/not_vulkan \
                 -D CMAKE_CXX_FLAGS=-m32 \
@@ -145,8 +179,15 @@ jobs:
         needs: codegen
         runs-on: ubuntu-24.04
         timeout-minutes: 30
+        # See the linux-32 job above for why both triplets are needed.
+        env:
+            VCPKG_DEFAULT_TRIPLET: x86-linux
+            VCPKG_DEFAULT_HOST_TRIPLET: x64-linux
         steps:
             - uses: actions/checkout@v7
+            - uses: ./.github/actions/setup-vcpkg
+              with:
+                job-index: ${{ strategy.job-index }}
             - uses: actions/setup-python@v6
               with:
                 python-version: '3.11'
@@ -164,7 +205,9 @@ jobs:
                 cmake -S. -B build \
                 -D CMAKE_BUILD_TYPE=Release \
                 -D BUILD_TESTS=ON \
-                -D UPDATE_DEPS=ON \
+                -D VCPKG_MANIFEST_FEATURES=tests \
+                -D "CMAKE_TOOLCHAIN_FILE=${{ env.VCPKG_ROOT }}/scripts/buildsystems/vcpkg.cmake" \
+                -D VCPKG_TARGET_TRIPLET=x86-linux \
                 -D BUILD_WERROR=ON \
                 -D USE_GAS=OFF \
                 -D CMAKE_CXX_FLAGS=-m32 \
@@ -182,6 +225,9 @@ jobs:
         timeout-minutes: 30
         steps:
             - uses: actions/checkout@v7
+            - uses: ./.github/actions/setup-vcpkg
+              with:
+                job-index: ${{ strategy.job-index }}
             - uses: actions/setup-python@v6
               with:
                 python-version: '3.11'
@@ -195,7 +241,8 @@ jobs:
                   cmake -S. -B build \
                   -D CMAKE_BUILD_TYPE=Debug \
                   -D BUILD_TESTS=ON \
-                  -D UPDATE_DEPS=ON \
+                  -D VCPKG_MANIFEST_FEATURES=tests \
+                  -D "CMAKE_TOOLCHAIN_FILE=${{ env.VCPKG_ROOT }}/scripts/buildsystems/vcpkg.cmake" \
                   -D LOADER_ENABLE_ADDRESS_SANITIZER=ON \
                   -D BUILD_WERROR=ON
             - run: cmake --build build
@@ -208,6 +255,9 @@ jobs:
         timeout-minutes: 30
         steps:
             - uses: actions/checkout@v7
+            - uses: ./.github/actions/setup-vcpkg
+              with:
+                job-index: ${{ strategy.job-index }}
             - uses: actions/setup-python@v6
               with:
                 python-version: '3.11'
@@ -221,7 +271,8 @@ jobs:
                   cmake -S. -B build \
                   -D CMAKE_BUILD_TYPE=Debug \
                   -D BUILD_TESTS=ON \
-                  -D UPDATE_DEPS=ON \
+                  -D VCPKG_MANIFEST_FEATURES=tests \
+                  -D "CMAKE_TOOLCHAIN_FILE=${{ env.VCPKG_ROOT }}/scripts/buildsystems/vcpkg.cmake" \
                   -D LOADER_ENABLE_THREAD_SANITIZER=ON \
                   -D BUILD_WERROR=ON
             - run: cmake --build build
@@ -239,10 +290,14 @@ jobs:
                 config: [ Debug, Release ]
         steps:
             - uses: actions/checkout@v7
+            - uses: ./.github/actions/setup-vcpkg
+              with:
+                job-index: ${{ strategy.job-index }}
             - run: |
                 cmake -S. -B build `
                 -D BUILD_TESTS=ON `
-                -D UPDATE_DEPS=ON `
+                -D VCPKG_MANIFEST_FEATURES=tests `
+                -D "CMAKE_TOOLCHAIN_FILE=${{ env.VCPKG_ROOT }}/scripts/buildsystems/vcpkg.cmake" `
                 -D CMAKE_BUILD_TYPE=${{matrix.config}} `
                 -A ${{ matrix.arch }} `
                 -D BUILD_WERROR=ON
@@ -260,10 +315,14 @@ jobs:
                 arch: [ Win32, x64 ]
         steps:
             - uses: actions/checkout@v7
+            - uses: ./.github/actions/setup-vcpkg
+              with:
+                job-index: ${{ strategy.job-index }}
             - run: |
                 cmake -S. -B build `
                 -D BUILD_TESTS=ON `
-                -D UPDATE_DEPS=ON `
+                -D VCPKG_MANIFEST_FEATURES=tests `
+                -D "CMAKE_TOOLCHAIN_FILE=${{ env.VCPKG_ROOT }}/scripts/buildsystems/vcpkg.cmake" `
                 -D USE_MASM=OFF `
                 -D CMAKE_BUILD_TYPE=Release `
                 -A ${{ matrix.arch }} `
@@ -281,15 +340,28 @@ jobs:
             matrix:
                 arch: [ arm64, arm64ec ]
                 config: [ Debug, Release ]
+                include:
+                  - arch: arm64
+                    triplet: arm64-windows
+                  - arch: arm64ec
+                    triplet: arm64ec-windows
         steps:
             - uses: actions/checkout@v7
+            - uses: ./.github/actions/setup-vcpkg
+              with:
+                job-index: ${{ strategy.job-index }}
             - uses: actions/setup-python@v6
               with:
                 python-version: '3.x'
+            # CMake's -A only selects the MSBuild platform; it does not
+            # influence vcpkg's target triplet, which must be set explicitly
+            # or arm64ec ends up linking against a plain-arm64 detours.lib.
             - run: |
                 cmake -S. -B build `
                 -D BUILD_TESTS=ON `
-                -D UPDATE_DEPS=ON `
+                -D VCPKG_MANIFEST_FEATURES=tests `
+                -D "CMAKE_TOOLCHAIN_FILE=${{ env.VCPKG_ROOT }}/scripts/buildsystems/vcpkg.cmake" `
+                -D VCPKG_TARGET_TRIPLET=${{ matrix.triplet }} `
                 -D CMAKE_BUILD_TYPE=${{matrix.config}} `
                 -A ${{ matrix.arch }} `
                 -D BUILD_WERROR=ON
@@ -300,31 +372,35 @@ jobs:
     windows_arm64x:
         # Native Windows on Arm: Tests building a genuine arm64x binary and validates that an x64 test suite passes
         # windows is 2x expensive to run on GitHub machines, so only run if we know something else simple passed as well
-        # needs: windows_arm
+        needs: linux-no-asm
         runs-on: windows-11-arm
         timeout-minutes: 30
         steps:
             - uses: actions/checkout@v7
+            - uses: ./.github/actions/setup-vcpkg
+              with:
+                job-index: ${{ strategy.job-index }}
             - uses: actions/setup-python@v6
               with:
                 python-version: '3.x'
-            - run: python scripts/update_deps.py --arch arm64 --api vulkan --dir external --clean-build --clean-install
             - run: |
                 cmake -S. -B build_arm64x `
                 -A arm64 `
                 -D BUILD_AS_ARM64X=ARM64 `
                 -D CMAKE_BUILD_TYPE=Release `
                 -D BUILD_WERROR=ON `
-                -C external/helper.cmake
+                -D "CMAKE_TOOLCHAIN_FILE=${{ env.VCPKG_ROOT }}/scripts/buildsystems/vcpkg.cmake"
             - run: cmake --build build_arm64x/ --config Release
             - run: |
                 cmake -S. -B build_arm64xec `
                 -A arm64ec `
                 -D BUILD_AS_ARM64X=ARM64EC `
                 -D BUILD_TESTS=ON `
+                -D VCPKG_MANIFEST_FEATURES=tests `
                 -D CMAKE_BUILD_TYPE=Release `
                 -D BUILD_WERROR=ON `
-                -C external/helper.cmake
+                -D "CMAKE_TOOLCHAIN_FILE=${{ env.VCPKG_ROOT }}/scripts/buildsystems/vcpkg.cmake" `
+                -D VCPKG_TARGET_TRIPLET=arm64ec-windows
             - run: cmake --build build_arm64xec/ --config Release
             - run: cmake --install build_arm64xec --prefix build/install --config Release
             - run: ctest --parallel --output-on-failure -C Release --test-dir build_arm64xec/
@@ -332,9 +408,11 @@ jobs:
                 cmake -S. -B build_x64 `
                 -A x64 `
                 -D BUILD_TESTS=ON `
+                -D VCPKG_MANIFEST_FEATURES=tests `
                 -D CMAKE_BUILD_TYPE=Release `
                 -D BUILD_WERROR=ON `
-                -C external/helper.cmake
+                -D "CMAKE_TOOLCHAIN_FILE=${{ env.VCPKG_ROOT }}/scripts/buildsystems/vcpkg.cmake" `
+                -D VCPKG_TARGET_TRIPLET=x64-windows
             - run: cmake --build build_x64/ --config Release
             - run: ctest --parallel --output-on-failure -C Release --test-dir build_x64/
               env:
@@ -352,15 +430,22 @@ jobs:
                 config: [ Debug, Release ]
         steps:
           - uses: actions/checkout@v7
+          - uses: ./.github/actions/setup-vcpkg
+            with:
+              job-index: ${{ strategy.job-index }}
           - uses: ilammy/msvc-dev-cmd@v1
+          # ilammy/msvc-dev-cmd sets its own VCPKG_ROOT (VS's bundled vcpkg),
+          # clobbering the one lukka/run-vcpkg exported. RUNVCPKG_VCPKG_ROOT
+          # is a distinct output var that action doesn't touch.
           - run: |
               cmake -S. -B build `
               -D CMAKE_C_COMPILER=${{matrix.compiler}} `
               -D CMAKE_CXX_COMPILER=${{matrix.compiler}} `
-              -D UPDATE_DEPS=ON `
+              -D "CMAKE_TOOLCHAIN_FILE=${{ env.RUNVCPKG_VCPKG_ROOT }}/scripts/buildsystems/vcpkg.cmake" `
               -D CMAKE_BUILD_TYPE=${{matrix.config}} `
               -D BUILD_WERROR=ON `
               -D BUILD_TESTS=ON `
+              -D VCPKG_MANIFEST_FEATURES=tests `
               -G Ninja
           - run: cmake --build build/
           - run: ctest --parallel --output-on-failure --test-dir build/
@@ -377,6 +462,9 @@ jobs:
                 static_build: [ APPLE_STATIC_LOADER=ON, APPLE_STATIC_LOADER=OFF ]
         steps:
             - uses: actions/checkout@v7
+            - uses: ./.github/actions/setup-vcpkg
+              with:
+                job-index: ${{ strategy.job-index }}
             - uses: actions/setup-python@v6
               with:
                 python-version: '3.11'
@@ -385,7 +473,8 @@ jobs:
                 -D CMAKE_BUILD_TYPE=${{matrix.config}} \
                 -D ${{matrix.static_build}} \
                 -D BUILD_TESTS=ON \
-                -D UPDATE_DEPS=ON \
+                -D VCPKG_MANIFEST_FEATURES=tests \
+                -D "CMAKE_TOOLCHAIN_FILE=${{ env.VCPKG_ROOT }}/scripts/buildsystems/vcpkg.cmake" \
                 -D BUILD_WERROR=ON \
                 -D LOADER_ENABLE_ADDRESS_SANITIZER=ON \
                 -G Ninja
@@ -407,6 +496,9 @@ jobs:
                 CMAKE_SYSTEM_NAME: [ iOS, tvOS ]
         steps:
           - uses: actions/checkout@v7
+          - uses: ./.github/actions/setup-vcpkg
+            with:
+              job-index: ${{ strategy.job-index }}
           - uses: actions/setup-python@v6
             with:
               python-version: '3.11'
@@ -415,7 +507,7 @@ jobs:
               -D CMAKE_SYSTEM_NAME=${{ matrix.CMAKE_SYSTEM_NAME }} \
               "-D CMAKE_OSX_ARCHITECTURES=arm64;x86_64" \
               -D CMAKE_BUILD_TYPE=Debug \
-              -D UPDATE_DEPS=ON \
+              -D "CMAKE_TOOLCHAIN_FILE=${{ env.VCPKG_ROOT }}/scripts/buildsystems/vcpkg.cmake" \
               -D BUILD_WERROR=ON \
               -G Ninja
             env:
@@ -441,16 +533,27 @@ jobs:
                 generator: [ Ninja, Xcode ]
         steps:
             - uses: actions/checkout@v7
+            - uses: ./.github/actions/setup-vcpkg
+              with:
+                job-index: ${{ strategy.job-index }}
             - uses: actions/setup-python@v6
               with:
                 python-version: '3.11'
+            # vcpkg triplets are normally single-architecture, so gtest would
+            # only ever be installed for arm64 or x86_64, not both, and
+            # couldn't link into this job's universal (multi-arch) binaries.
+            # universal-osx is a custom triplet (see its comment) that gets a
+            # fat gtest instead, so tests can build and run here like anywhere else.
             - run: |
                 cmake -S. -B build \
                 -D CMAKE_BUILD_TYPE=Release \
                 -D APPLE_STATIC_LOADER=${{matrix.static}} \
                 "-D CMAKE_OSX_ARCHITECTURES=arm64;x86_64" \
                 -D BUILD_TESTS=ON \
-                -D UPDATE_DEPS=ON \
+                -D VCPKG_MANIFEST_FEATURES=tests \
+                -D VCPKG_TARGET_TRIPLET=universal-osx \
+                -D VCPKG_OVERLAY_TRIPLETS=${{ github.workspace }}/vcpkg-overlays/triplets \
+                -D "CMAKE_TOOLCHAIN_FILE=${{ env.VCPKG_ROOT }}/scripts/buildsystems/vcpkg.cmake" \
                 -D BUILD_WERROR=ON \
                 -G ${{ matrix.generator }}
               env:
@@ -482,6 +585,9 @@ jobs:
                 shell: bash
         steps:
             - uses: actions/checkout@v7
+            - uses: ./.github/actions/setup-vcpkg
+              with:
+                job-index: ${{ strategy.job-index }}
             - uses: actions/setup-python@v6
               with:
                 python-version: '3.11'
@@ -493,7 +599,7 @@ jobs:
               run: uasm -?
             - run: |
                 cmake -S. -B build \
-                -D UPDATE_DEPS=ON \
+                -D "CMAKE_TOOLCHAIN_FILE=${{ env.VCPKG_ROOT }}/scripts/buildsystems/vcpkg.cmake" \
                 -D CMAKE_BUILD_TYPE=Release \
                 -D BUILD_WERROR=ON \
                 -G Ninja
@@ -510,12 +616,15 @@ jobs:
                 shell: bash
         steps:
             - uses: actions/checkout@v7
+            - uses: ./.github/actions/setup-vcpkg
+              with:
+                job-index: ${{ strategy.job-index }}
             - uses: actions/setup-python@v6
               with:
                 python-version: '3.11'
             - run: |
                 cmake -S. -B build \
-                -D UPDATE_DEPS=ON \
+                -D "CMAKE_TOOLCHAIN_FILE=${{ env.VCPKG_ROOT }}/scripts/buildsystems/vcpkg.cmake" \
                 -D CMAKE_BUILD_TYPE=Release \
                 -D BUILD_WERROR=ON \
                 -D USE_GAS=ON \
@@ -533,13 +642,16 @@ jobs:
                 shell: bash
         steps:
             - uses: actions/checkout@v7
+            - uses: ./.github/actions/setup-vcpkg
+              with:
+                job-index: ${{ strategy.job-index }}
             - uses: actions/setup-python@v6
               with:
                 python-version: '3.11'
             # Make sure this doesn't fail even without explicitly setting '-D USE_MASM=OFF' and without uasm
             - run: |
                 cmake -S. -B build \
-                -D UPDATE_DEPS=ON \
+                -D "CMAKE_TOOLCHAIN_FILE=${{ env.VCPKG_ROOT }}/scripts/buildsystems/vcpkg.cmake" \
                 -D CMAKE_BUILD_TYPE=Release \
                 -D BUILD_WERROR=ON \
                 -G Ninja
@@ -556,9 +668,12 @@ jobs:
                 shell: bash
         steps:
             - uses: actions/checkout@v7
+            - uses: ./.github/actions/setup-vcpkg
+              with:
+                job-index: ${{ strategy.job-index }}
             - run: |
                 cmake -S. -B build \
-                -D UPDATE_DEPS=ON \
+                -D "CMAKE_TOOLCHAIN_FILE=${{ env.VCPKG_ROOT }}/scripts/buildsystems/vcpkg.cmake" \
                 -D CMAKE_BUILD_TYPE=Release \
                 -D BUILD_WERROR=ON \
                 -D USE_MASM=OFF \

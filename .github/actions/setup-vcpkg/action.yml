@@ -1,0 +1,56 @@
+# Copyright 2026 Valve Corporation
+# Copyright 2026 LunarG, Inc.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+name: 'Setup vcpkg'
+description: >-
+  Restores this job's vcpkg binary cache and bootstraps vcpkg. Every CI job
+  that configures with the vcpkg toolchain file should use this action
+  instead of repeating the cache + lukka/run-vcpkg steps by hand, so the
+  vcpkg caching setup only has to be understood and fixed in one place.
+  Requires actions/checkout to have already run.
+
+inputs:
+  job-index:
+    description: >-
+      Pass the calling job's strategy.job-index value here. The matrix and
+      strategy contexts aren't visible inside a composite action, so the
+      index has to be forwarded explicitly to keep each matrix leg's cache
+      entry separate from its siblings.
+    required: true
+  run-vcpkg-install:
+    description: >-
+      Set to 'true' to have this step also run 'vcpkg install' immediately.
+      Only the codegen job needs this, to materialize the Vulkan-Headers
+      registry before its CMake-less verification step runs. Every other
+      job installs its packages later, implicitly, when CMake configures
+      via the vcpkg toolchain file.
+    required: false
+    default: 'false'
+  vcpkg-installed-dir:
+    description: >-
+      Overrides VCPKG_INSTALLED_DIR for the install above. Only meaningful
+      together with run-vcpkg-install: 'true'.
+    required: false
+    default: ''
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Create vcpkg binary cache directory
+      shell: bash
+      run: mkdir -p "$VCPKG_CACHE_DIR"
+    - name: Cache vcpkg binary packages
+      uses: actions/cache@v5
+      with:
+        path: ${{ env.VCPKG_CACHE_DIR }}
+        key: vcpkg-binary-cache-${{ runner.os }}-${{ github.job }}-${{ inputs.job-index }}-${{ hashFiles('vcpkg.json', 'vcpkg-configuration.json') }}
+        restore-keys: |
+          vcpkg-binary-cache-${{ runner.os }}-${{ github.job }}-${{ inputs.job-index }}-
+    - uses: lukka/run-vcpkg@v11
+      with:
+        vcpkgJsonGlob: 'vcpkg.json'
+        runVcpkgInstall: ${{ inputs.run-vcpkg-install }}
+      env:
+        VCPKG_INSTALLED_DIR: ${{ inputs.vcpkg-installed-dir }}

@@ -18,9 +18,9 @@ By default the Vulkan-Loader repo doesn't enable testing.
 
 To turn on building of the tests, set `BUILD_TESTS=ON` in the CMake configuration.
 
-Use the CMake configuration `UPDATE_DEPS=ON` to automatically get all required test dependencies.
-Or Ensure that `googletest` is in the `external` directory.
-And on Windows only, ensure that the `Detours` library is in the `external` directory.
+Test dependencies (`googletest`, and on Windows, `Detours`) are resolved automatically via
+vcpkg when configuring with `-D CMAKE_TOOLCHAIN_FILE=<path-to-vcpkg>/scripts/buildsystems/vcpkg.cmake`;
+see [BUILD.md](../../BUILD.md#getting-dependencies-via-vcpkg).
 
 Linux & macOS only: The CMake Configuration `LOADER_ENABLE_ADDRESS_SANITIZER` can be used to
 enable Address Sanitizer.

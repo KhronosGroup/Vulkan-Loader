@@ -28,6 +28,11 @@ on:
 
 permissions: {}
 
+env:
+  # Same vcpkg binary cache setup as build.yml; see there for details.
+  VCPKG_CACHE_DIR: ${{ github.workspace }}/vcpkg-binary-cache
+  VCPKG_BINARY_SOURCES: clear;files,${{ github.workspace }}/vcpkg-binary-cache,readwrite
+
 jobs:
   analyze:
     name: Analyze
@@ -81,9 +86,14 @@ jobs:
         sudo apt update
         sudo apt install --yes --no-install-recommends libwayland-dev libxrandr-dev
 
+    - uses: ./.github/actions/setup-vcpkg
+      if: matrix.language == 'cpp'
+      with:
+        job-index: ${{ strategy.job-index }}
+
     - name: Generate build files
       if: matrix.language == 'cpp'
-      run: cmake -S. -B build -D CMAKE_BUILD_TYPE=Release -D UPDATE_DEPS=ON
+      run: cmake -S. -B build -D CMAKE_BUILD_TYPE=Release -D CMAKE_TOOLCHAIN_FILE=${{ env.VCPKG_ROOT }}/scripts/buildsystems/vcpkg.cmake
       env:
         CC: gcc
         CXX: g++

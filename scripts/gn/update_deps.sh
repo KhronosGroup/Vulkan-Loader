@@ -17,9 +17,6 @@
 # Execute at repo root
 cd "$(dirname $0)/../../"
 
-# Use update_deps.py to update source dependencies from /scripts/known_good.json
-scripts/update_deps.py --dir="external" --no-build
-
 cat << EOF > .gn
 buildconfig = "//build/config/BUILDCONFIG.gn"
 secondary_source = "//scripts/gn/secondary/"
