@@ -598,11 +598,16 @@ VkResult windows_read_manifest_from_d3d_adapters(const struct loader_instance *i
 
         // Iterate over each component string
         for (const wchar_t *curr_path = full_info->output_string; curr_path[0] != '\0'; curr_path += wcslen(curr_path) + 1) {
-            WideCharToMultiByte(CP_UTF8, 0, curr_path, -1, json_path, (int)json_path_size, NULL, NULL);
+            // json_path is only sized to the UTF-16 byte length, but the UTF-8 form can be longer (a U+0800-U+FFFF code
+            // point takes 2 bytes in UTF-16 and 3 in UTF-8). When it does not fit, WideCharToMultiByte returns 0 and does
+            // not null-terminate json_path, so use its return value for the length instead of running strlen off the end.
+            int json_path_len = WideCharToMultiByte(CP_UTF8, 0, curr_path, -1, json_path, (int)json_path_size, NULL, NULL);
+            if (json_path_len <= 0) {
+                continue;
+            }
 
             // Add the string to the output list
-            result = windows_add_json_entry(inst, search_paths, (LPCTSTR)L"EnumAdapters", REG_SZ, json_path,
-                                            (DWORD)strlen(json_path) + 1);
+            result = windows_add_json_entry(inst, search_paths, (LPCTSTR)L"EnumAdapters", REG_SZ, json_path, (DWORD)json_path_len);
             if (result != VK_SUCCESS) {
                 goto out;
             }
