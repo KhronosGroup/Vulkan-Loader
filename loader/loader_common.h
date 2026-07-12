@@ -198,6 +198,8 @@ struct loader_layer_properties {
     struct loader_string_list override_paths;
     bool is_override;
     bool keep;
+    // Set while this meta-layer is being expanded, used to break cyclic component references.
+    bool is_being_expanded;
     struct loader_string_list blacklist_layer_names;
     struct loader_string_list app_key_paths;
 };
