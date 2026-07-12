@@ -1465,6 +1465,21 @@ VkResult loader_add_meta_layer(const struct loader_instance *inst, const struct 
     VkResult result = VK_SUCCESS;
     bool found_all_component_layers = true;
 
+    // A meta-layer whose component chain loops back to itself would recurse here until the stack overflows.
+    // verify_all_meta_layers rejects such cycles for layers found through normal discovery, but layers pulled
+    // in from the settings file skip that check, so break the recursion on the second entry to the same layer.
+    if (prop->is_being_expanded) {
+        loader_log(inst, VULKAN_LOADER_WARN_BIT | VULKAN_LOADER_LAYER_BIT, 0,
+                   "loader_add_meta_layer: Meta-layer %s recursively references itself through its component layers. Skipping the "
+                   "recursive reference.",
+                   prop->info.layerName);
+        if (NULL != out_found_all_component_layers) {
+            *out_found_all_component_layers = false;
+        }
+        return VK_SUCCESS;
+    }
+    prop->is_being_expanded = true;
+
     // We need to add all the individual component layers
     loader_api_version meta_layer_api_version = loader_make_version(prop->info.specVersion);
     for (uint32_t comp_layer = 0; comp_layer < prop->component_layer_names.count; comp_layer++) {
@@ -1518,6 +1533,8 @@ VkResult loader_add_meta_layer(const struct loader_instance *inst, const struct 
             found_all_component_layers = false;
         }
     }
+
+    prop->is_being_expanded = false;
 
     // Add this layer to the overall target list (not the expanded one)
     if (found_all_component_layers) {

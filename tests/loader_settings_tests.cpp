@@ -3603,3 +3603,49 @@ TEST(SettingsFile, DeviceConfigurationPreservesLayerEnumeration) {
     auto layer_props = env.GetLayerProperties(1);
     EXPECT_TRUE(string_eq(layer_props.at(0).layerName, layer_name));
 }
+
+// A meta-layer whose component chain loops back to itself is normally rejected by
+// verify_all_meta_layers, but layers pulled in from the settings file skip that pass. Without a
+// recursion guard in loader_add_meta_layer this cyclic reference recurses until the stack overflows.
+TEST(SettingsFile, CyclicMetaLayerComponentDoesNotRecurse) {
+    FrameworkEnvironment env{};
+    env.add_icd(TEST_ICD_PATH_VERSION_2).add_physical_device({});
+
+    const char* meta_a = "VK_LAYER_meta_A";
+    const char* meta_b = "VK_LAYER_meta_B";
+    env.add_implicit_layer(
+        ManifestOptions{}.set_json_name("meta_a.json"),
+        ManifestLayer{}.set_file_format_version({1, 2, 0}).add_layer(ManifestLayer::LayerDescription{}
+                                                                         .set_name(meta_a)
+                                                                         .set_api_version(VK_MAKE_API_VERSION(0, 1, 1, 0))
+                                                                         .add_component_layer(meta_b)
+                                                                         .set_disable_environment("DISABLE_A")));
+    env.add_implicit_layer(
+        ManifestOptions{}.set_json_name("meta_b.json"),
+        ManifestLayer{}.set_file_format_version({1, 2, 0}).add_layer(ManifestLayer::LayerDescription{}
+                                                                         .set_name(meta_b)
+                                                                         .set_api_version(VK_MAKE_API_VERSION(0, 1, 1, 0))
+                                                                         .add_component_layer(meta_a)
+                                                                         .set_disable_environment("DISABLE_B")));
+
+    std::filesystem::path folder = env.get_folder(ManifestLocation::implicit_layer).location();
+    env.update_loader_settings(env.loader_settings.set_file_format_version({1, 0, 0}).add_app_specific_setting(
+        AppSpecificSettings{}
+            .add_stderr_log_filter("all")
+            .add_layer_configuration(LoaderSettingsLayerConfiguration{}
+                                         .set_name(meta_a)
+                                         .set_path(folder / "meta_a.json")
+                                         .set_control("on")
+                                         .set_treat_as_implicit_manifest(true))
+            .add_layer_configuration(LoaderSettingsLayerConfiguration{}
+                                         .set_name(meta_b)
+                                         .set_path(folder / "meta_b.json")
+                                         .set_control("on")
+                                         .set_treat_as_implicit_manifest(true))));
+
+    InstWrapper inst{env.vulkan_functions};
+    FillDebugUtilsCreateDetails(inst.create_info, env.debug_log);
+    // Before the recursion guard this call never returned - it recursed until the stack overflowed.
+    inst.CheckCreate();
+    ASSERT_TRUE(env.debug_log.find("recursively references itself through its component layers"));
+}
