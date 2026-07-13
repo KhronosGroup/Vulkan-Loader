@@ -53,6 +53,8 @@ class MemoryTracker {
     size_t allocation_count = 0;
     size_t call_count = 0;
     bool fail_next_growing_reallocation = false;
+    bool fail_growing_reallocation_after_skips = false;
+    size_t growing_reallocations_to_skip = 0;
     std::unordered_map<void*, AllocationDetails> allocations;
 
     void* allocate(size_t size, size_t alignment, VkSystemAllocationScope alloc_scope) {
@@ -86,6 +88,13 @@ class MemoryTracker {
         if (size >= original_size && fail_next_growing_reallocation) {
             fail_next_growing_reallocation = false;
             return nullptr;
+        }
+        if (size >= original_size && fail_growing_reallocation_after_skips) {
+            if (growing_reallocations_to_skip == 0) {
+                fail_growing_reallocation_after_skips = false;
+                return nullptr;
+            }
+            growing_reallocations_to_skip--;
         }
         if (size >= original_size && settings.should_fail_after_set_number_of_calls && call_count == settings.fail_after_calls)
             return nullptr;
@@ -167,6 +176,15 @@ class MemoryTracker {
     void arm_next_growing_reallocation_failure() noexcept {
         std::lock_guard<std::mutex> lg(main_mutex);
         fail_next_growing_reallocation = true;
+    }
+
+    // Arm a single failure for a later growing reallocation, allowing skip_count earlier growing reallocations
+    // to succeed first. Lets a test target a resize that is not the first one in a single loader call, eg the
+    // per-ICD debug list resize that runs after the used-object status list resize.
+    void arm_growing_reallocation_failure_after(size_t skip_count) noexcept {
+        std::lock_guard<std::mutex> lg(main_mutex);
+        fail_growing_reallocation_after_skips = true;
+        growing_reallocations_to_skip = skip_count;
     }
 
     // Static callbacks
@@ -573,6 +591,65 @@ TEST(Allocation, DebugUtilsMessengerReservationFailKeepsLiveMessenger) {
     // No slot was reserved, so the still-live messenger occupying slot 0 must remain untouched in the ICD.
     EXPECT_EQ(icd_details.messenger_handles.size(), 32u);
 
+    for (auto messenger : messengers) {
+        destroy_messenger(instance, messenger, nullptr);
+    }
+    EXPECT_EQ(icd_details.messenger_handles.size(), 0u);
+    env.vulkan_functions.vkDestroyInstance(instance, tracker.get());
+    ASSERT_TRUE(tracker.empty());
+}
+
+// Each ICD keeps its own debug_utils_messenger_list, resized one ICD at a time inside the create loop. If a
+// create fails after the used-object slot was reserved but before an ICD's list has been grown to cover the
+// reserved index (eg that ICD's resize is refused), the error rollback indexed list[next_index] without
+// checking that ICD's list capacity, reading past the end of the smaller allocation. Force the per-ICD resize
+// to fail on the entry that first needs the list grown and confirm the rollback stays in bounds.
+TEST(Allocation, DebugUtilsMessengerCreateRollbackStaysInBounds) {
+    FrameworkEnvironment env{};
+    env.add_icd(TEST_ICD_PATH_VERSION_2)
+        .set_min_icd_interface_version(5)
+        .add_instance_extension(VK_EXT_DEBUG_UTILS_EXTENSION_NAME)
+        .add_physical_device({});
+
+    MemoryTracker tracker{};
+
+    VkInstance instance = VK_NULL_HANDLE;
+    InstanceCreateInfo inst_create_info{};
+    inst_create_info.add_extension(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+    ASSERT_EQ(VK_SUCCESS, env.vulkan_functions.vkCreateInstance(inst_create_info.get(), tracker.get(), &instance));
+
+    PFN_vkCreateDebugUtilsMessengerEXT create_messenger = reinterpret_cast<PFN_vkCreateDebugUtilsMessengerEXT>(
+        env.vulkan_functions.vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT"));
+    PFN_vkDestroyDebugUtilsMessengerEXT destroy_messenger = reinterpret_cast<PFN_vkDestroyDebugUtilsMessengerEXT>(
+        env.vulkan_functions.vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT"));
+    ASSERT_NE(create_messenger, nullptr);
+    ASSERT_NE(destroy_messenger, nullptr);
+
+    VkDebugUtilsMessengerCreateInfoEXT messenger_info{VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT};
+    messenger_info.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
+    messenger_info.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT;
+    messenger_info.pfnUserCallback = noop_debug_utils_callback;
+
+    // Both the used-object status list and the per-ICD list start with room for 32 entries, so the 33rd create
+    // is the first that grows them.
+    std::vector<VkDebugUtilsMessengerEXT> messengers;
+    for (uint32_t i = 0; i < 32; i++) {
+        VkDebugUtilsMessengerEXT messenger = VK_NULL_HANDLE;
+        ASSERT_EQ(VK_SUCCESS, create_messenger(instance, &messenger_info, nullptr, &messenger));
+        messengers.push_back(messenger);
+    }
+
+    auto& icd_details = env.get_test_icd(0).created_instance_details.begin()->second;
+    ASSERT_EQ(icd_details.messenger_handles.size(), 32u);
+
+    // Let the used-object list resize succeed (so the slot is reserved) but fail the following per-ICD list
+    // resize, leaving that ICD's list too small for the reserved index when the rollback runs.
+    tracker.arm_growing_reallocation_failure_after(1);
+    VkDebugUtilsMessengerEXT failed_messenger = VK_NULL_HANDLE;
+    ASSERT_EQ(VK_ERROR_OUT_OF_HOST_MEMORY, create_messenger(instance, &messenger_info, nullptr, &failed_messenger));
+
+    // The 32 live messengers are untouched by the rollback and still destroy cleanly.
+    EXPECT_EQ(icd_details.messenger_handles.size(), 32u);
     for (auto messenger : messengers) {
         destroy_messenger(instance, messenger, nullptr);
     }
