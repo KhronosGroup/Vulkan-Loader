@@ -3610,7 +3610,7 @@ VkResult read_data_files_in_search_paths(const struct loader_instance *inst, enu
 
     // Log a message when VK_LAYER_PATH is set but the override layer paths take priority
     if (manifest_type == LOADER_DATA_FILE_MANIFEST_EXPLICIT_LAYER &&
-        (NULL != override_env || (NULL != path_overrides && path_overrides->count > 0))) {
+        (NULL != override_env && NULL != path_overrides && path_overrides->count > 0)) {
         loader_log(inst, VULKAN_LOADER_INFO_BIT | VULKAN_LOADER_LAYER_BIT, 0,
                    "Ignoring VK_LAYER_PATH. The Override layer is active and has override paths set, which takes priority. "
                    "VK_LAYER_PATH is set to %s",
@@ -3619,12 +3619,6 @@ VkResult read_data_files_in_search_paths(const struct loader_instance *inst, enu
 
     // Add the remaining paths to the list
     if (NULL != path_overrides && path_overrides->count > 0) {
-        // Log a message when VK_LAYER_PATH is set but the override layer paths take priority
-        if (manifest_type == LOADER_DATA_FILE_MANIFEST_EXPLICIT_LAYER) {
-            loader_log(inst, VULKAN_LOADER_INFO_BIT | VULKAN_LOADER_LAYER_BIT, 0,
-                       "Ignoring VK_LAYER_PATH. The Override layer is active and has override paths set, which takes priority. "
-                       "VK_LAYER_PATH is:");
-        }
         for (size_t i = 0; i < path_overrides->count; i++) {
             if (NULL != path_overrides->list[i]) {
                 if (manifest_type == LOADER_DATA_FILE_MANIFEST_EXPLICIT_LAYER) {
@@ -3637,14 +3631,6 @@ VkResult read_data_files_in_search_paths(const struct loader_instance *inst, enu
             }
         }
     } else if (override_env != NULL) {
-        // Log a message when VK_LAYER_PATH is set but the override layer paths take priority
-        if (manifest_type == LOADER_DATA_FILE_MANIFEST_EXPLICIT_LAYER) {
-            loader_log(inst, VULKAN_LOADER_INFO_BIT | VULKAN_LOADER_LAYER_BIT, 0,
-                       "Ignoring VK_LAYER_PATH. The Override layer is active and has override paths set, which takes priority. "
-                       "VK_LAYER_PATH is set to %s",
-                       override_env);
-        }
-
         vk_result = copy_data_file_info(inst, override_env, NULL, 0, &search_paths);
         if (vk_result == VK_ERROR_OUT_OF_HOST_MEMORY) {
             goto out;
