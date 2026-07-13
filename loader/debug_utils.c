@@ -240,7 +240,9 @@ out:
     if (VK_SUCCESS != res) {
         if (index_reserved) {
             for (struct loader_icd_term *icd_term = inst->icd_terms; icd_term; icd_term = icd_term->next) {
-                if (icd_term->debug_utils_messenger_list.list && icd_term->debug_utils_messenger_list.list[next_index] &&
+                if (icd_term->debug_utils_messenger_list.list &&
+                    icd_term->debug_utils_messenger_list.capacity > next_index * sizeof(VkDebugUtilsMessengerEXT) &&
+                    icd_term->debug_utils_messenger_list.list[next_index] &&
                     NULL != icd_term->dispatch.DestroyDebugUtilsMessengerEXT) {
                     icd_term->dispatch.DestroyDebugUtilsMessengerEXT(
                         icd_term->instance, icd_term->debug_utils_messenger_list.list[next_index], pAllocator);
@@ -272,7 +274,9 @@ VKAPI_ATTR void VKAPI_CALL terminator_DestroyDebugUtilsMessengerEXT(VkInstance i
     }
 
     for (struct loader_icd_term *icd_term = inst->icd_terms; icd_term; icd_term = icd_term->next) {
-        if (icd_term->debug_utils_messenger_list.list && icd_term->debug_utils_messenger_list.list[*debug_messenger_index] &&
+        if (icd_term->debug_utils_messenger_list.list &&
+            icd_term->debug_utils_messenger_list.capacity > *debug_messenger_index * sizeof(VkDebugUtilsMessengerEXT) &&
+            icd_term->debug_utils_messenger_list.list[*debug_messenger_index] &&
             NULL != icd_term->dispatch.DestroyDebugUtilsMessengerEXT) {
             icd_term->dispatch.DestroyDebugUtilsMessengerEXT(
                 icd_term->instance, icd_term->debug_utils_messenger_list.list[*debug_messenger_index], pAllocator);
@@ -520,7 +524,9 @@ out:
     if (VK_SUCCESS != res) {
         if (index_reserved) {
             for (struct loader_icd_term *icd_term = inst->icd_terms; icd_term; icd_term = icd_term->next) {
-                if (icd_term->debug_report_callback_list.list && icd_term->debug_report_callback_list.list[next_index] &&
+                if (icd_term->debug_report_callback_list.list &&
+                    icd_term->debug_report_callback_list.capacity > next_index * sizeof(VkDebugReportCallbackEXT) &&
+                    icd_term->debug_report_callback_list.list[next_index] &&
                     NULL != icd_term->dispatch.DestroyDebugReportCallbackEXT) {
                     icd_term->dispatch.DestroyDebugReportCallbackEXT(
                         icd_term->instance, icd_term->debug_report_callback_list.list[next_index], pAllocator);
@@ -551,7 +557,9 @@ VKAPI_ATTR void VKAPI_CALL terminator_DestroyDebugReportCallbackEXT(VkInstance i
         return;
     }
     for (struct loader_icd_term *icd_term = inst->icd_terms; icd_term; icd_term = icd_term->next) {
-        if (icd_term->debug_report_callback_list.list && icd_term->debug_report_callback_list.list[*debug_report_index] &&
+        if (icd_term->debug_report_callback_list.list &&
+            icd_term->debug_report_callback_list.capacity > *debug_report_index * sizeof(VkDebugReportCallbackEXT) &&
+            icd_term->debug_report_callback_list.list[*debug_report_index] &&
             NULL != icd_term->dispatch.DestroyDebugReportCallbackEXT) {
             icd_term->dispatch.DestroyDebugReportCallbackEXT(
                 icd_term->instance, icd_term->debug_report_callback_list.list[*debug_report_index], pAllocator);
