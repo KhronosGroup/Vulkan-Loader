@@ -17,10 +17,7 @@ Instructions for building this repository on Linux, Windows, and MacOS.
     - [Test Dependencies](#test-dependencies)
   - [Warnings as errors off by default!](#warnings-as-errors-off-by-default)
   - [Build and Install Directory Locations](#build-and-install-directory-locations)
-  - [Building Dependent Repositories with Known-Good Revisions](#building-dependent-repositories-with-known-good-revisions)
-    - [Automatically](#automatically)
-    - [Manually](#manually)
-      - [Notes About the Manual Option](#notes-about-the-manual-option)
+  - [Getting Dependencies via vcpkg](#getting-dependencies-via-vcpkg)
   - [Generated source code](#generated-source-code)
   - [Build Options](#build-options)
 - [Building On Windows](#building-on-windows)
@@ -82,6 +79,7 @@ indicated by *install_dir*:
 1. `C99` capable compiler
 2. `CMake` version 3.22.1 or greater
 3. `Git`
+4. `vcpkg` (see [Getting Dependencies via vcpkg](#getting-dependencies-via-vcpkg) below)
 
 ### Building with Code Generation Requirements
 
@@ -104,16 +102,9 @@ some other suitable source if you intend to run Vulkan applications.
 
 ### Repository Dependencies
 
-This repository attempts to resolve some of its dependencies by using
-components found from the following places, in this order:
-
-1. CMake or Environment variable overrides (e.g., -D VULKAN_HEADERS_INSTALL_DIR)
-2. System-installed packages, mostly applicable on Linux
-
-Dependencies that cannot be resolved by the SDK or installed packages must be
-resolved with the "install directory" override and are listed below. The
-"install directory" override can also be used to force the use of a specific
-version of that dependency.
+This repository resolves its dependencies using [vcpkg](https://github.com/microsoft/vcpkg)
+in manifest mode. See [Getting Dependencies via vcpkg](#getting-dependencies-via-vcpkg) below
+for setup instructions.
 
 #### Vulkan-Headers
 
@@ -125,12 +116,9 @@ required to build the loader.
 
 The loader tests depend on the [Google Test](https://github.com/google/googletest) library and
 on Windows platforms depends on the [Microsoft Detours](https://github.com/microsoft/Detours) library.
-
-To build the tests, pass both `-D UPDATE_DEPS=ON` and `-D BUILD_TESTS=ON` options when generating the project:
-```bash
-cmake ... -D UPDATE_DEPS=ON -D BUILD_TESTS=ON ...
-```
-This will ensure googletest and detours is downloaded and the appropriate version is used.
+Both are declared under the `tests` feature in [`vcpkg.json`](vcpkg.json). vcpkg only installs
+feature dependencies when explicitly requested, so building the tests requires passing both
+`-D BUILD_TESTS=ON` and `-D VCPKG_MANIFEST_FEATURES=tests` to CMake.
 
 ### Warnings as errors off by default!
 
@@ -149,67 +137,58 @@ the repository and place the `install` directory as a child of the `build`
 directory. The remainder of these instructions follow this convention,
 although you can place these directories in any location.
 
-### Building Dependent Repositories with Known-Good Revisions
+### Getting Dependencies via vcpkg
 
-There is a Python utility script, `scripts/update_deps.py`, that you can use
-to gather and build the dependent repositories mentioned above.
-This program uses information stored in the `scripts/known-good.json` file
-to checkout dependent repository revisions that are known to be compatible with
-the revision of this repository that you currently have checked out.
+This repository resolves its dependencies (Vulkan-Headers and, when building tests,
+googletest and detours) using [vcpkg](https://github.com/microsoft/vcpkg) in manifest
+mode. The [`vcpkg.json`](vcpkg.json) file at the root of the repository pins a
+`builtin-baseline` commit of vcpkg, so that everyone building the repository resolves
+the same dependency versions.
 
-You can choose to do this automatically or manually.
-The first step to either is cloning the Vulkan-Loader repo and stepping into
-that newly cloned folder:
+First, clone and bootstrap vcpkg somewhere on your machine (this only needs to be done
+once, and can be shared across other repositories that also use vcpkg):
+
+```
+  git clone https://github.com/microsoft/vcpkg.git
+  ./vcpkg/bootstrap-vcpkg.sh      # bootstrap-vcpkg.bat on Windows
+```
+
+Then set the `VCPKG_ROOT` environment variable to point at that clone. This is the
+standard vcpkg convention, and lets you reference vcpkg's toolchain file below without
+hardcoding its path (it's also what this repository's CI does, via
+[`lukka/run-vcpkg`](https://github.com/lukka/run-vcpkg)):
+
+```
+  export VCPKG_ROOT=<path-to-vcpkg>       # on Windows: setx VCPKG_ROOT <path-to-vcpkg>
+```
+
+Then, when configuring the Vulkan-Loader build, point CMake at vcpkg's toolchain file:
 
 ```
   git clone git@github.com:KhronosGroup/Vulkan-Loader.git
   cd Vulkan-Loader
-```
-
-#### Automatically
-
-On the other hand, if you choose to let the CMake scripts do all the
-heavy-lifting, you may just trigger the following CMake commands:
-
-```
-  cmake -S . -B build -D UPDATE_DEPS=On
+  cmake -S . -B build -D CMAKE_TOOLCHAIN_FILE=$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake
   cmake --build build
 ```
 
-#### Manually
+vcpkg installs the dependencies declared in `vcpkg.json` into `build/vcpkg_installed`
+automatically the first time CMake configures. To also build the tests, pass both
+`-D BUILD_TESTS=ON` and `-D VCPKG_MANIFEST_FEATURES=tests`; the latter tells vcpkg to
+additionally install googletest (and, on Windows, detours) via the `tests` feature.
 
-To manually update the dependencies you now must create the build folder, and
-run the update deps script followed by the necessary CMake build commands:
+> Note: `CMAKE_TOOLCHAIN_FILE` must be set on the initial `cmake` configure invocation;
+> it can't be set from inside `CMakeLists.txt` after `project()` has already run. On
+> Windows, `setx` only takes effect in new shells opened after running it.
 
-```
-  mkdir build
-  cd build
-  python ../scripts/update_deps.py
-  cmake -C helper.cmake ..
-  cmake --build .
-```
+CI does not check in a vcpkg clone; it bootstraps and caches vcpkg via the
+[`lukka/run-vcpkg`](https://github.com/lukka/run-vcpkg) GitHub Action, which exposes the
+resulting checkout to later steps as `VCPKG_ROOT` (see `.github/workflows/build.yml`).
 
-##### Notes About the Manual Option
-
-- You may need to adjust some of the CMake options based on your platform. See
-  the platform-specific sections later in this document.
-- The `update_deps.py` script fetches and builds the dependent repositories in
-  the current directory when it is invoked.
-- The `--dir` option for `update_deps.py` can be used to relocate the
-  dependent repositories to another arbitrary directory using an absolute or
-  relative path.
-- The `update_deps.py` script generates a file named `helper.cmake` and places
-  it in the same directory as the dependent repositories.
-  This file contains CMake commands to set the CMake `*_INSTALL_DIR` variables
-  that are used to point to the install artifacts of the dependent repositories.
-  The `-C helper.cmake` option is used to set these variables when you generate
-  the build files.
-- If using "MINGW" (Git For Windows), you may wish to run
-  `winpty update_deps.py` in order to avoid buffering all of the script's
-  "print" output until the end and to retain the ability to interrupt script
-  execution.
-- Please use `update_deps.py --help` to list additional options and read the
-  internal documentation in `update_deps.py` for further information.
+This repository also ships a `vulkan-headers` [overlay port](vcpkg-overlays/vulkan-headers)
+(registered in [`vcpkg-configuration.json`](vcpkg-configuration.json)) that pins Vulkan-Headers
+to the exact upstream tag this repository's generated code was built against. It is needed
+because vcpkg's registry port for `vulkan-headers` can lag behind the latest upstream release;
+once the registry catches up, the overlay can be removed in favor of the registry port.
 
 ### Generated source code
 
@@ -304,7 +283,7 @@ Open a developer command prompt and enter:
     cd Vulkan-Loader
     mkdir build
     cd build
-    cmake -A x64 -D UPDATE_DEPS=ON ..
+    cmake -A x64 -D CMAKE_TOOLCHAIN_FILE=%VCPKG_ROOT%/scripts/buildsystems/vcpkg.cmake ..
     cmake --build .
 
 The above commands instruct CMake to find and use the default Visual Studio
@@ -320,7 +299,7 @@ create a build directory and generate the Visual Studio project files:
     cd Vulkan-Loader
     mkdir build
     cd build
-    cmake -D UPDATE_DEPS=ON -G "Visual Studio 16 2019" -A x64 ..
+    cmake -D CMAKE_TOOLCHAIN_FILE=%VCPKG_ROOT%/scripts/buildsystems/vcpkg.cmake -G "Visual Studio 16 2019" -A x64 ..
 
 > Note: The `..` parameter tells `cmake` the location of the top of the
 > repository. If you place your build directory someplace else, you'll need to
@@ -332,15 +311,11 @@ Supported Visual Studio generators:
 * `Visual Studio 17 2022`
 * `Visual Studio 16 2019`
 
-The `-A` option is used to select either the "Win32", "x64", or "ARM64 architecture.
+The `-A` option is used to select either the "Win32", "x64", or "ARM64" architecture.
 
-When generating the project files, the absolute path to a Vulkan-Headers
-install directory must be provided. This can be done automatically by the
-`-D UPDATE_DEPS=ON` option, by directly setting the
-`VULKAN_HEADERS_INSTALL_DIR` environment variable, or by setting the
-`VULKAN_HEADERS_INSTALL_DIR` CMake variable with the `-D` CMake option. In
-either case, the variable should point to the installation directory of a
-Vulkan-Headers repository built with the install target.
+When generating the project files, `CMAKE_TOOLCHAIN_FILE` must point at
+`<path-to-vcpkg>/scripts/buildsystems/vcpkg.cmake` so that vcpkg can resolve the
+Vulkan-Headers dependency; see [Getting Dependencies via vcpkg](#getting-dependencies-via-vcpkg).
 
 The above steps create a Windows solution file named `Vulkan-Loader.sln` in
 the build directory.
@@ -409,7 +384,7 @@ CMake with the `--build` option or `make` to build from the command line.
     cd Vulkan-Loader
     mkdir build
     cd build
-    cmake -D UPDATE_DEPS=ON ..
+    cmake -D CMAKE_TOOLCHAIN_FILE=$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake ..
     make
 
 See below for the details.
@@ -423,7 +398,7 @@ create a build directory and generate the make files.
     mkdir build
     cd build
     cmake -D CMAKE_BUILD_TYPE=Debug \
-          -D VULKAN_HEADERS_INSTALL_DIR=absolute_path_to_install_dir \
+          -D CMAKE_TOOLCHAIN_FILE=$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake \
           -D CMAKE_INSTALL_PREFIX=install ..
 
 > Note: The `..` parameter tells `cmake` the location of the top of the
@@ -432,13 +407,9 @@ create a build directory and generate the make files.
 
 Use `-D CMAKE_BUILD_TYPE` to specify a Debug or Release build.
 
-When generating the project files, the absolute path to a Vulkan-Headers
-install directory must be provided. This can be done automatically by the
-`-D UPDATE_DEPS=ON` option, by directly setting the `VULKAN_HEADERS_INSTALL_DIR`
-environment variable, or by setting the `VULKAN_HEADERS_INSTALL_DIR` CMake
-variable with the `-D` CMake option.
-In either case, the variable should point to the installation directory of a
-Vulkan-Headers repository built with the install target.
+When generating the project files, `CMAKE_TOOLCHAIN_FILE` must point at
+`<path-to-vcpkg>/scripts/buildsystems/vcpkg.cmake` so that vcpkg can resolve the
+Vulkan-Headers dependency; see [Getting Dependencies via vcpkg](#getting-dependencies-via-vcpkg).
 
 > Note: For Linux, the default value for `CMAKE_INSTALL_PREFIX` is
 > `/usr/local`, which would be used if you do not specify
@@ -543,7 +514,7 @@ https://gitlab.kitware.com/cmake/cmake/-/issues/25317
 
 Your PKG_CONFIG configuration may be different, depending on your distribution.
 
-You can the `PKG_CONFIG_PATH` environment variable to address this issue.
+You can use the `PKG_CONFIG_PATH` environment variable to address this issue.
 
 Finally, build the repository normally as explained above.
 
@@ -577,17 +548,13 @@ Clone the Vulkan-Loader repository:
 
 This generator is the default generator.
 
-When generating the project files, the absolute path to a Vulkan-Headers
-install directory must be provided. This can be done automatically by the
-`-D UPDATE_DEPS=ON` option, by directly setting the
-`VULKAN_HEADERS_INSTALL_DIR` environment variable, or by setting the
-`VULKAN_HEADERS_INSTALL_DIR` CMake variable with the `-D` CMake option. In
-either case, the variable should point to the installation directory of a
-Vulkan-Headers repository built with the install target.
+When generating the project files, `CMAKE_TOOLCHAIN_FILE` must point at
+`<path-to-vcpkg>/scripts/buildsystems/vcpkg.cmake` so that vcpkg can resolve the
+Vulkan-Headers dependency; see [Getting Dependencies via vcpkg](#getting-dependencies-via-vcpkg).
 
     mkdir build
     cd build
-    cmake -D UPDATE_DEPS=ON -D VULKAN_HEADERS_INSTALL_DIR=absolute_path_to_install_dir -D CMAKE_BUILD_TYPE=Debug ..
+    cmake -D CMAKE_TOOLCHAIN_FILE=$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake -D CMAKE_BUILD_TYPE=Debug ..
     make
 
 To speed up the build on a multi-core machine, use the `-j` option for `make`
@@ -651,8 +618,9 @@ No guarantees are made about the use of the fallback code paths.
 
 ## Tests
 
-To build tests, make sure that the `BUILD_TESTS` option is set to true. Using
-the command line, this looks like `-D BUILD_TESTS=ON`.
+To build tests, make sure that the `BUILD_TESTS` option is set to true, and that the vcpkg
+`tests` manifest feature is enabled so vcpkg installs the test dependencies. Using the command
+line, this looks like `-D BUILD_TESTS=ON -D VCPKG_MANIFEST_FEATURES=tests`.
 
 This project is configured to run with `ctest`, which makes it easy to run the
 tests. To run the tests, change the directory to that of the build direction, and

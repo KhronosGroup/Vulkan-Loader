@@ -48,6 +48,6 @@ add_subdirectory(layer)
 
 add_library(testing_dependencies STATIC test_environment.cpp test_environment.h)
 target_link_libraries(testing_dependencies
-    PUBLIC gtest Vulkan::Headers testing_framework_util shim-library)
+    PUBLIC GTest::gtest Vulkan::Headers testing_framework_util shim-library)
 target_include_directories(testing_dependencies PUBLIC ${CMAKE_CURRENT_BINARY_DIR})
 

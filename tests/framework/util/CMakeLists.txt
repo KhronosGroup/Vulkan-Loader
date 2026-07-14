@@ -43,7 +43,7 @@ add_library(testing_framework_util STATIC
     wide_char_handling.cpp
     wide_char_handling.h
     )
-target_link_libraries(testing_framework_util PUBLIC loader_common_options Vulkan::Headers gtest)
+target_link_libraries(testing_framework_util PUBLIC loader_common_options Vulkan::Headers GTest::gtest)
 
 if(UNIX OR APPLE)
     target_link_libraries(testing_framework_util PUBLIC ${CMAKE_DL_LIBS})
@@ -69,8 +69,6 @@ if (UNIX)
     if (LOADER_ENABLE_THREAD_SANITIZER)
         target_compile_options(testing_framework_util PUBLIC -fsanitize=thread)
         target_link_options(testing_framework_util PUBLIC -fsanitize=thread)
-        target_compile_options(gtest PUBLIC -fsanitize=thread)
-        target_link_options(gtest PUBLIC -fsanitize=thread)
     endif()
 endif()
 

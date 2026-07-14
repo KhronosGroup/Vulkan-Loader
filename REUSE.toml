@@ -97,19 +97,6 @@ SPDX-License-Identifier = "Apache-2.0"
 
 [[annotations]]
 path = [
-    "scripts/update_deps.py",
-]
-precedence = "closest"
-SPDX-FileCopyrightText = [
-    "The Glslang Authors.",
-    "Valve Corporation",
-    "LunarG, Inc.",
-    "RasterGrid Kft.",
-]
-SPDX-License-Identifier = "Apache-2.0"
-
-[[annotations]]
-path = [
     "loader/asm_test_aarch32.S",
 ]
 precedence = "closest"

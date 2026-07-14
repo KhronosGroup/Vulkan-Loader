@@ -1,6 +1,9 @@
 # By default we install dependencies to the external directory
 /external/*
 
+# vcpkg manifest-mode install directory (when not nested under a build/ dir)
+/vcpkg_installed/
+
 # Ignore any build directories
 *build*/
 

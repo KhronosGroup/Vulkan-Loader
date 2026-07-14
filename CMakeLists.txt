@@ -31,8 +31,6 @@ endif()
 # variant (e.g. Vulkan SC)
 set(API_TYPE "vulkan")
 
-add_subdirectory(scripts)
-
 set(CMAKE_C_STANDARD 99)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 set(CMAKE_C_EXTENSIONS OFF)
@@ -294,9 +292,12 @@ endif()
 option(LOADER_CODEGEN "Enable vulkan loader code generation")
 if(LOADER_CODEGEN)
     find_package(Python3 REQUIRED)
+    # VulkanHeaders_DIR is <prefix>/share/cmake/VulkanHeaders (set by find_package(... CONFIG) above);
+    # walk back up to <prefix> since the package config doesn't expose the registry path directly.
+    get_filename_component(vulkan_headers_prefix "${VulkanHeaders_DIR}/../../.." ABSOLUTE)
     add_custom_target(loader_codegen
         COMMAND Python3::Interpreter ${PROJECT_SOURCE_DIR}/scripts/generate_source.py
-            "${VULKAN_HEADERS_INSTALL_DIR}/${CMAKE_INSTALL_DATADIR}/vulkan/registry"
+            "${vulkan_headers_prefix}/${CMAKE_INSTALL_DATADIR}/vulkan/registry"
             --generated-version ${VulkanHeaders_VERSION} --incremental --api ${API_TYPE}
     )
 endif()

@@ -1,0 +1,49 @@
+vcpkg_check_linkage(ONLY_STATIC_LIBRARY)
+
+vcpkg_from_github(
+    OUT_SOURCE_PATH SOURCE_PATH
+    REPO microsoft/Detours
+    REF 9764cebcb1a75940e68fa83d6730ffaf0f669401
+    SHA512 30f689a7f7dd3d762f1194ad8d7e05517678b754d6c0db297220f946485a8c8ec8a07cf5f3f893aabcc5623f64c81ee358e2a1c3ba23ba1fbd5856f6b3dd9eb7
+    HEAD_REF main
+)
+
+# Upstream's portfile passes PROCESSOR_ARCHITECTURE, but Detours' system.mak
+# only consults that macro as a last resort: if VSCMD_ARG_TGT_ARCH is set it
+# takes priority (system.mak lines 15-17). The ARM64EC toolset is invoked from
+# a plain ARM64 dev environment (VSCMD_ARG_TGT_ARCH=arm64) plus the /arm64EC
+# compiler switch, so PROCESSOR_ARCHITECTURE=arm64ec never wins and Detours
+# builds as plain ARM64, producing a LNK1392 arch-mismatch when linked into
+# the rest of the arm64ec-windows triplet's objects. Passing
+# DETOURS_TARGET_PROCESSOR directly is checked first and short-circuits that
+# fallback chain. It must be pre-uppercased: nmake macros set on the command
+# line take precedence over same-named macro assignments inside the makefile,
+# so system.mak's own "uppercase DETOURS_TARGET_PROCESSOR" conversion chain
+# (which works by plain `MACRO=$(MACRO:x=X)` reassignment) never runs on a
+# value supplied this way, and the Makefile's comparisons are all uppercase.
+string(TOUPPER "${VCPKG_TARGET_ARCHITECTURE}" DETOURS_TARGET_PROCESSOR)
+
+vcpkg_build_nmake(
+    SOURCE_PATH "${SOURCE_PATH}"
+    PROJECT_SUBPATH "src"
+    PROJECT_NAME "Makefile"
+    OPTIONS "DETOURS_TARGET_PROCESSOR=${DETOURS_TARGET_PROCESSOR}"
+    OPTIONS_RELEASE "DETOURS_CONFIG=Release"
+    OPTIONS_DEBUG "DETOURS_CONFIG=Debug"
+)
+
+if(NOT DEFINED VCPKG_BUILD_TYPE OR VCPKG_BUILD_TYPE STREQUAL "release")
+    file(INSTALL "${CURRENT_BUILDTREES_DIR}/${TARGET_TRIPLET}-rel/lib.${VCPKG_TARGET_ARCHITECTURE}Release/" DESTINATION "${CURRENT_PACKAGES_DIR}/lib")
+endif()
+if(NOT DEFINED VCPKG_BUILD_TYPE OR VCPKG_BUILD_TYPE STREQUAL "debug")
+    file(INSTALL "${CURRENT_BUILDTREES_DIR}/${TARGET_TRIPLET}-dbg/lib.${VCPKG_TARGET_ARCHITECTURE}Debug/" DESTINATION "${CURRENT_PACKAGES_DIR}/debug/lib")
+endif()
+
+if(NOT DEFINED VCPKG_BUILD_TYPE OR VCPKG_BUILD_TYPE STREQUAL "release")
+    file(INSTALL "${CURRENT_BUILDTREES_DIR}/${TARGET_TRIPLET}-rel/include/" DESTINATION "${CURRENT_PACKAGES_DIR}/include" RENAME detours)
+else()
+    file(INSTALL "${CURRENT_BUILDTREES_DIR}/${TARGET_TRIPLET}-dbg/include/" DESTINATION "${CURRENT_PACKAGES_DIR}/include" RENAME detours)
+endif()
+
+file(INSTALL "${SOURCE_PATH}/LICENSE.md" DESTINATION "${CURRENT_PACKAGES_DIR}/share/${PORT}" RENAME copyright)
+file(INSTALL "${CMAKE_CURRENT_LIST_DIR}/usage" DESTINATION "${CURRENT_PACKAGES_DIR}/share/${PORT}")

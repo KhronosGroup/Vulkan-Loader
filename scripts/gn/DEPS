@@ -34,6 +34,11 @@ deps = {
     'url': '{chromium_git}/chromium/src/tools/clang.git@566877f1ff1a5fa6beaca3ab4b47bd0b92eb614f',
   },
 
+  # Kept in sync with the vulkan-headers version in vcpkg.json; this isn't automated, but the "chromium" CI job will fail to build if the two drift far enough apart to matter.
+  'external/Vulkan-Headers': {
+    'url': 'https://github.com/KhronosGroup/Vulkan-Headers.git@e613b8277f4840b3f3292867bbd3639950676c37',
+  },
+
   'third_party/ninja': {
     'packages': [
       {

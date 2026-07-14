@@ -1,0 +1,6 @@
+{
+  "overlay-ports": [
+    "./vcpkg-overlays/vulkan-headers",
+    "./vcpkg-overlays/detours"
+  ]
+}
