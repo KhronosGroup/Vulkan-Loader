@@ -16,7 +16,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ~~~
-cmake_minimum_required(VERSION 3.22.1)
+cmake_minimum_required(VERSION 3.28.3)
 
 project(VULKAN_LOADER VERSION 1.4.358 LANGUAGES C)
 
@@ -58,7 +58,7 @@ if (DEFINED ${VulkanHeaders_VERSION} AND ${VulkanHeaders_VERSION} VERSION_GREATE
 endif()
 
 # Workaround AppleClang using the wrong headers when there are headers in /usr/local/include
-if (CMAKE_C_COMPILER_ID STREQUAL AppleClang AND TARGET Vulkan::Headers AND CMAKE_VERSION VERSION_GREATER_EQUAL 3.25)
+if (CMAKE_C_COMPILER_ID STREQUAL AppleClang AND TARGET Vulkan::Headers)
     set_target_properties(Vulkan::Headers PROPERTIES SYSTEM OFF)
 endif()
 
@@ -86,8 +86,6 @@ if (GIT_FOUND AND EXISTS "${CMAKE_CURRENT_LIST_DIR}/.git/HEAD")
     endif()
 endif()
 
-# Enable IDE GUI folders.  "Helper targets" that don't have interesting source code should set their FOLDER property to this
-set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 set(LOADER_HELPER_FOLDER "Helper Targets")
 
 if(UNIX)
