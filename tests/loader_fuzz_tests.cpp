@@ -361,3 +361,31 @@ TEST(StringValidation, TruncatedMultiByteDoesNotReadPastTerminator) {
     std::vector<char> two_byte = {static_cast<char>(0xC2), static_cast<char>(0xA9), '\0'};
     EXPECT_EQ(vk_string_validate(MaxLoaderStringLength, two_byte.data()), VK_STRING_ERROR_NONE);
 }
+
+// The loader's fork of print_string_ptr strips the escaping backslash, so it writes fewer bytes than the
+// upstream escape budget it terminates at. It must terminate at the real end, otherwise the gap up to that
+// larger length is read back as part of the string. PrintPreallocated hands the result to a caller-owned
+// buffer that is not required to be zeroed, so any stale bytes in the gap leak out.
+TEST(JsonStringPrint, PrintPreallocatedTerminatesAtRealEnd) {
+    std::filesystem::path json_path = std::filesystem::temp_directory_path() / "loader_print_string_ptr_test.json";
+    {
+        std::ofstream f(json_path, std::ios::binary | std::ios::trunc);
+        // Top-level JSON string whose decoded value needs escaping: decodes to a b <LF> c d \ e f (8 bytes).
+        f << "\"ab\\ncd\\\\ef\"";
+    }
+
+    cJSON* json = NULL;
+    ASSERT_EQ(loader_get_json(NULL, json_path.string().c_str(), &json), VK_SUCCESS);
+    ASSERT_NE(json, nullptr);
+
+    // Caller owns the buffer and it need not be zeroed - poison it so a short-write shows up.
+    char buffer[64];
+    for (char& c : buffer) c = 'X';
+    ASSERT_TRUE(loader_cJSON_PrintPreallocated(json, buffer, static_cast<int>(sizeof(buffer)), false));
+
+    const char expected[] = {'a', 'b', '\n', 'c', 'd', '\\', 'e', 'f', '\0'};
+    EXPECT_STREQ(buffer, expected);
+
+    loader_cJSON_Delete(json);
+    std::filesystem::remove(json_path);
+}
