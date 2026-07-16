@@ -987,7 +987,7 @@ loader_cJSON_PrintBuffered(const cJSON *item, int prebuffer, cJSON_bool fmt, boo
 }
 
 TEST_FUNCTION_EXPORT CJSON_PUBLIC(cJSON_bool)
-loader_cJSON_PrintPreallocated(cJSON *item, char *buffer, const int length, const cJSON_bool format) {
+    loader_cJSON_PrintPreallocated(cJSON *item, char *buffer, const int length, const cJSON_bool format) {
     printbuffer p = {0, 0, 0, 0, 0, 0, 0};
 
     if ((length < 0) || (buffer == NULL)) {
