@@ -4700,6 +4700,58 @@ TEST(InvalidManifest, Layer) {
     InstWrapper inst{env.vulkan_functions};
     inst.CheckCreate();
 }
+
+// A layer manifest that is well-formed JSON but omits a required field ("api_version" or "implementation_version")
+// must be skipped. loader_read_layer_json logs "skipping this layer" for these, but the two checks returned without
+// setting a failure result, so the layer was still appended - never having parsed its library_path, leaving lib_name
+// NULL. Such a layer later reaches loader_platform_open_library(NULL) and a NULL "%s" log in loader_open_layer_file.
+TEST(InvalidManifest, LayerMissingRequiredField) {
+    FrameworkEnvironment env{};
+    env.add_icd(TEST_ICD_PATH_VERSION_2).add_physical_device({});
+
+    // A valid explicit layer, so the explicit-layer search path is known to be active.
+    const char* valid_layer_name = "VK_LAYER_valid_regular";
+    env.add_explicit_layer(
+        {}, ManifestLayer{}.add_layer(
+                ManifestLayer::LayerDescription{}.set_name(valid_layer_name).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)));
+
+    std::vector<std::string> malformed_manifests;
+    malformed_manifests.push_back(  // omits "api_version"
+        "{\n"
+        "    \"file_format_version\": \"1.2.0\",\n"
+        "    \"layer\": {\n"
+        "        \"name\": \"VK_LAYER_missing_api_version\",\n"
+        "        \"type\": \"INSTANCE\",\n"
+        "        \"library_path\": \"./libVkLayer_missing.so\",\n"
+        "        \"implementation_version\": \"1\",\n"
+        "        \"description\": \"missing api_version\"\n"
+        "    }\n"
+        "}\n");
+    malformed_manifests.push_back(  // omits "implementation_version"
+        "{\n"
+        "    \"file_format_version\": \"1.2.0\",\n"
+        "    \"layer\": {\n"
+        "        \"name\": \"VK_LAYER_missing_impl_version\",\n"
+        "        \"type\": \"INSTANCE\",\n"
+        "        \"library_path\": \"./libVkLayer_missing.so\",\n"
+        "        \"api_version\": \"1.2.0\",\n"
+        "        \"description\": \"missing implementation_version\"\n"
+        "    }\n"
+        "}\n");
+
+    for (size_t i = 0; i < malformed_manifests.size(); i++) {
+        auto file_name = std::string("missing_field_layer_") + std::to_string(i) + ".json";
+        std::filesystem::path new_path =
+            env.get_folder(ManifestLocation::explicit_layer).write_manifest(file_name, malformed_manifests[i]);
+#if defined(WIN32)
+        env.platform_shim->add_manifest_to_registry(ManifestCategory::explicit_layer, new_path);
+#endif
+    }
+
+    // Only the valid layer is discovered; the two malformed manifests are skipped.
+    auto layer_props = env.GetLayerProperties(1);
+    EXPECT_TRUE(string_eq(layer_props.at(0).layerName, valid_layer_name));
+}
 #if defined(WIN32)
 void add_dxgi_adapter(FrameworkEnvironment& env, std::filesystem::path const& name, LUID luid, uint32_t vendor_id) {
     auto& driver = env.add_icd(TEST_ICD_PATH_VERSION_6, ManifestOptions{}.set_discovery_type(ManifestDiscoveryType::null_dir));

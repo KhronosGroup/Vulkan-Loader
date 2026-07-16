@@ -2847,6 +2847,7 @@ VkResult loader_read_layer_json(const struct loader_instance *inst, struct loade
             inst, VULKAN_LOADER_WARN_BIT, 0,
             "Layer located at %s didn't find required layer value \"api_version\" in manifest JSON file, skipping this layer",
             filename);
+        result = VK_ERROR_INITIALIZATION_FAILED;
         goto out;
     }
 
@@ -2869,6 +2870,7 @@ VkResult loader_read_layer_json(const struct loader_instance *inst, struct loade
                    "Layer located at %s didn't find required layer value \"implementation_version\" in manifest JSON file, "
                    "skipping this layer",
                    filename);
+        result = VK_ERROR_INITIALIZATION_FAILED;
         goto out;
     }
     props.info.implementationVersion = atoi(implementation_version);
