@@ -42,7 +42,7 @@ jobs:
             matrix:
                 compiler: [ {cc: gcc, cxx: g++}, {cc: clang, cxx: clang++} ]
                 config: [ Debug, Release ]
-                os: [ ubuntu-22.04, ubuntu-24.04 ]
+                os: [ ubuntu-26.04, ubuntu-24.04 ]
         steps:
             - uses: actions/checkout@v7
             - uses: actions/setup-python@v6
@@ -54,10 +54,10 @@ jobs:
               # practice to try and support them so they don't have to install
               # the CMake tarball. Ideally the minimum we use matches what the default
               # package provided by Ubuntu via APT.
-              if: ${{ matrix.os == 'ubuntu-22.04' }}
+              if: ${{ matrix.os == 'ubuntu-24.04' }}
               uses: lukka/get-cmake@latest
               with:
-                cmakeVersion: 3.22.1
+                cmakeVersion: 3.28.3
             - run: sudo apt update
             - run: sudo apt install --yes --no-install-recommends libwayland-dev libxrandr-dev
             - run: |
@@ -83,7 +83,7 @@ jobs:
 
     linux-no-asm:
         needs: codegen
-        runs-on: ubuntu-24.04
+        runs-on: ubuntu-26.04
         timeout-minutes: 30
         steps:
             - uses: actions/checkout@v7
@@ -104,7 +104,7 @@ jobs:
 
     linux-32:
         needs: codegen
-        runs-on: ubuntu-24.04
+        runs-on: ubuntu-26.04
         timeout-minutes: 30
         strategy:
             matrix:
@@ -116,7 +116,7 @@ jobs:
                 python-version: '3.11'
             - uses: lukka/get-cmake@latest
               with:
-                cmakeVersion: 3.22.1
+                cmakeVersion: 3.28.3
             - name: Enable 32 bit
               run: sudo dpkg --add-architecture i386
             - run: sudo apt-get update
@@ -143,7 +143,7 @@ jobs:
 
     linux-32-no-asm:
         needs: codegen
-        runs-on: ubuntu-24.04
+        runs-on: ubuntu-26.04
         timeout-minutes: 30
         steps:
             - uses: actions/checkout@v7
@@ -152,7 +152,7 @@ jobs:
                 python-version: '3.11'
             - uses: lukka/get-cmake@latest
               with:
-                cmakeVersion: 3.22.1
+                cmakeVersion: 3.28.3
             - name: Enable 32 bit
               run: sudo dpkg --add-architecture i386
             - run: sudo apt-get update
@@ -178,7 +178,7 @@ jobs:
 
     linux-arm:
         needs: codegen
-        runs-on: ubuntu-24.04-arm
+        runs-on: ubuntu-26.04-arm
         timeout-minutes: 30
         steps:
             - uses: actions/checkout@v7
@@ -188,7 +188,7 @@ jobs:
             - name: Test CMake min
               uses: lukka/get-cmake@latest
               with:
-                  cmakeVersion: 3.22.1
+                  cmakeVersion: 3.28.3
             - run: sudo apt update
             - run: sudo apt install --yes --no-install-recommends libwayland-dev libxrandr-dev
             - run: |
@@ -204,7 +204,7 @@ jobs:
 
     linux-threading:
         needs: codegen
-        runs-on: ubuntu-24.04-arm
+        runs-on: ubuntu-26.04-arm
         timeout-minutes: 30
         steps:
             - uses: actions/checkout@v7
@@ -214,7 +214,7 @@ jobs:
             - name: Test CMake min
               uses: lukka/get-cmake@latest
               with:
-                  cmakeVersion: 3.22.1
+                  cmakeVersion: 3.28.3
             - run: sudo apt update
             - run: sudo apt install --yes --no-install-recommends libwayland-dev libxrandr-dev
             - run: |
