@@ -406,10 +406,14 @@ VkResult parse_device_configurations(const struct loader_instance* inst, cJSON* 
         if (res == VK_ERROR_OUT_OF_HOST_MEMORY) {
             goto out;
         } else if (res != VK_SUCCESS) {
+            // Skip a malformed entry rather than discarding every device configuration in the file
+            res = VK_SUCCESS;
             continue;
         }
         i++;
     }
+    // Only the first i entries were successfully parsed; the trailing entries are unpopulated
+    loader_settings->device_configuration_count = i;
     loader_settings->device_configurations_active = true;
 out:
     if (res != VK_SUCCESS) {
