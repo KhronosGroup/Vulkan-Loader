@@ -1142,6 +1142,15 @@ VKAPI_ATTR void VKAPI_CALL loader_init_device_extension_dispatch_table(struct lo
     table->CmdBeginPerTileExecutionQCOM = (PFN_vkCmdBeginPerTileExecutionQCOM)gdpa(dev, "vkCmdBeginPerTileExecutionQCOM");
     table->CmdEndPerTileExecutionQCOM = (PFN_vkCmdEndPerTileExecutionQCOM)gdpa(dev, "vkCmdEndPerTileExecutionQCOM");
 
+    // ---- VK_NV_low_latency extension commands
+    table->SetLatencySleepModeLegacyNV = (PFN_vkSetLatencySleepModeLegacyNV)gdpa(dev, "vkSetLatencySleepModeLegacyNV");
+    table->LatencySleepLegacyNV = (PFN_vkLatencySleepLegacyNV)gdpa(dev, "vkLatencySleepLegacyNV");
+    table->SetLatencyMarkerLegacyNV = (PFN_vkSetLatencyMarkerLegacyNV)gdpa(dev, "vkSetLatencyMarkerLegacyNV");
+    table->GetLatencyTimingsLegacyNV = (PFN_vkGetLatencyTimingsLegacyNV)gdpa(dev, "vkGetLatencyTimingsLegacyNV");
+    table->QueueNotifyOutOfBandLegacyNV = (PFN_vkQueueNotifyOutOfBandLegacyNV)gdpa(dev, "vkQueueNotifyOutOfBandLegacyNV");
+    table->GetSleepStatusLegacyNV = (PFN_vkGetSleepStatusLegacyNV)gdpa(dev, "vkGetSleepStatusLegacyNV");
+    table->ShutdownLatencyDeviceLegacyNV = (PFN_vkShutdownLatencyDeviceLegacyNV)gdpa(dev, "vkShutdownLatencyDeviceLegacyNV");
+
     // ---- VK_EXT_metal_objects extension commands
 #if defined(VK_USE_PLATFORM_METAL_EXT)
     table->ExportMetalObjectsEXT = (PFN_vkExportMetalObjectsEXT)gdpa(dev, "vkExportMetalObjectsEXT");
@@ -3228,6 +3237,15 @@ VKAPI_ATTR void* VKAPI_CALL loader_lookup_device_dispatch_table(const VkLayerDis
     if (!strcmp(name, "CmdDispatchTileQCOM")) return (void *)table->CmdDispatchTileQCOM;
     if (!strcmp(name, "CmdBeginPerTileExecutionQCOM")) return (void *)table->CmdBeginPerTileExecutionQCOM;
     if (!strcmp(name, "CmdEndPerTileExecutionQCOM")) return (void *)table->CmdEndPerTileExecutionQCOM;
+
+    // ---- VK_NV_low_latency extension commands
+    if (!strcmp(name, "SetLatencySleepModeLegacyNV")) return (void *)table->SetLatencySleepModeLegacyNV;
+    if (!strcmp(name, "LatencySleepLegacyNV")) return (void *)table->LatencySleepLegacyNV;
+    if (!strcmp(name, "SetLatencyMarkerLegacyNV")) return (void *)table->SetLatencyMarkerLegacyNV;
+    if (!strcmp(name, "GetLatencyTimingsLegacyNV")) return (void *)table->GetLatencyTimingsLegacyNV;
+    if (!strcmp(name, "QueueNotifyOutOfBandLegacyNV")) return (void *)table->QueueNotifyOutOfBandLegacyNV;
+    if (!strcmp(name, "GetSleepStatusLegacyNV")) return (void *)table->GetSleepStatusLegacyNV;
+    if (!strcmp(name, "ShutdownLatencyDeviceLegacyNV")) return (void *)table->ShutdownLatencyDeviceLegacyNV;
 
     // ---- VK_EXT_metal_objects extension commands
 #if defined(VK_USE_PLATFORM_METAL_EXT)
@@ -9225,6 +9243,103 @@ VKAPI_ATTR void VKAPI_CALL CmdEndPerTileExecutionQCOM(
 }
 
 
+// ---- VK_NV_low_latency extension trampoline/terminators
+
+VKAPI_ATTR void VKAPI_CALL SetLatencySleepModeLegacyNV(
+    VkDevice                                    device,
+    VkBool32                                    lowLatencyMode,
+    VkBool32                                    lowLatencyBoost,
+    uint32_t                                    minimumIntervalUs) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkSetLatencySleepModeLegacyNV: Invalid device "
+                   "[VUID-vkSetLatencySleepModeLegacyNV-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    disp->SetLatencySleepModeLegacyNV(device, lowLatencyMode, lowLatencyBoost, minimumIntervalUs);
+}
+
+VKAPI_ATTR void VKAPI_CALL LatencySleepLegacyNV(
+    VkDevice                                    device,
+    VkSemaphore                                 signalSemaphore,
+    uint64_t                                    value) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkLatencySleepLegacyNV: Invalid device "
+                   "[VUID-vkLatencySleepLegacyNV-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    disp->LatencySleepLegacyNV(device, signalSemaphore, value);
+}
+
+VKAPI_ATTR void VKAPI_CALL SetLatencyMarkerLegacyNV(
+    VkDevice                                    device,
+    uint64_t                                    frameID,
+    uint32_t                                    marker) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkSetLatencyMarkerLegacyNV: Invalid device "
+                   "[VUID-vkSetLatencyMarkerLegacyNV-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    disp->SetLatencyMarkerLegacyNV(device, frameID, marker);
+}
+
+VKAPI_ATTR void VKAPI_CALL GetLatencyTimingsLegacyNV(
+    VkDevice                                    device,
+    void*                                       pTimings) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkGetLatencyTimingsLegacyNV: Invalid device "
+                   "[VUID-vkGetLatencyTimingsLegacyNV-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    disp->GetLatencyTimingsLegacyNV(device, pTimings);
+}
+
+VKAPI_ATTR void VKAPI_CALL QueueNotifyOutOfBandLegacyNV(
+    VkQueue                                     queue,
+    uint32_t                                    queueType) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(queue);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkQueueNotifyOutOfBandLegacyNV: Invalid queue "
+                   "[VUID-vkQueueNotifyOutOfBandLegacyNV-queue-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    disp->QueueNotifyOutOfBandLegacyNV(queue, queueType);
+}
+
+VKAPI_ATTR void VKAPI_CALL GetSleepStatusLegacyNV(
+    VkDevice                                    device,
+    VkBool32*                                   pLowLatencyMode) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkGetSleepStatusLegacyNV: Invalid device "
+                   "[VUID-vkGetSleepStatusLegacyNV-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    disp->GetSleepStatusLegacyNV(device, pLowLatencyMode);
+}
+
+VKAPI_ATTR void VKAPI_CALL ShutdownLatencyDeviceLegacyNV(
+    VkDevice                                    device) {
+    const VkLayerDispatchTable *disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkShutdownLatencyDeviceLegacyNV: Invalid device "
+                   "[VUID-vkShutdownLatencyDeviceLegacyNV-device-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    disp->ShutdownLatencyDeviceLegacyNV(device);
+}
+
+
 // ---- VK_EXT_metal_objects extension trampoline/terminators
 
 #if defined(VK_USE_PLATFORM_METAL_EXT)
@@ -14349,6 +14464,36 @@ bool extension_instance_gpa(struct loader_instance *ptr_instance, const char *na
     }
     if (!strcmp("vkCmdEndPerTileExecutionQCOM", name)) {
         *addr = (void *)CmdEndPerTileExecutionQCOM;
+        return true;
+    }
+
+    // ---- VK_NV_low_latency extension commands
+    if (!strcmp("vkSetLatencySleepModeLegacyNV", name)) {
+        *addr = (void *)SetLatencySleepModeLegacyNV;
+        return true;
+    }
+    if (!strcmp("vkLatencySleepLegacyNV", name)) {
+        *addr = (void *)LatencySleepLegacyNV;
+        return true;
+    }
+    if (!strcmp("vkSetLatencyMarkerLegacyNV", name)) {
+        *addr = (void *)SetLatencyMarkerLegacyNV;
+        return true;
+    }
+    if (!strcmp("vkGetLatencyTimingsLegacyNV", name)) {
+        *addr = (void *)GetLatencyTimingsLegacyNV;
+        return true;
+    }
+    if (!strcmp("vkQueueNotifyOutOfBandLegacyNV", name)) {
+        *addr = (void *)QueueNotifyOutOfBandLegacyNV;
+        return true;
+    }
+    if (!strcmp("vkGetSleepStatusLegacyNV", name)) {
+        *addr = (void *)GetSleepStatusLegacyNV;
+        return true;
+    }
+    if (!strcmp("vkShutdownLatencyDeviceLegacyNV", name)) {
+        *addr = (void *)ShutdownLatencyDeviceLegacyNV;
         return true;
     }
 

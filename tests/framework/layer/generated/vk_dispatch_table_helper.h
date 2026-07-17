@@ -603,6 +603,13 @@ static inline void layer_init_device_dispatch_table(VkDevice device, VkLayerDisp
     table->CmdDispatchTileQCOM = (PFN_vkCmdDispatchTileQCOM)gpa(device, "vkCmdDispatchTileQCOM");
     table->CmdBeginPerTileExecutionQCOM = (PFN_vkCmdBeginPerTileExecutionQCOM)gpa(device, "vkCmdBeginPerTileExecutionQCOM");
     table->CmdEndPerTileExecutionQCOM = (PFN_vkCmdEndPerTileExecutionQCOM)gpa(device, "vkCmdEndPerTileExecutionQCOM");
+    table->SetLatencySleepModeLegacyNV = (PFN_vkSetLatencySleepModeLegacyNV)gpa(device, "vkSetLatencySleepModeLegacyNV");
+    table->LatencySleepLegacyNV = (PFN_vkLatencySleepLegacyNV)gpa(device, "vkLatencySleepLegacyNV");
+    table->SetLatencyMarkerLegacyNV = (PFN_vkSetLatencyMarkerLegacyNV)gpa(device, "vkSetLatencyMarkerLegacyNV");
+    table->GetLatencyTimingsLegacyNV = (PFN_vkGetLatencyTimingsLegacyNV)gpa(device, "vkGetLatencyTimingsLegacyNV");
+    table->QueueNotifyOutOfBandLegacyNV = (PFN_vkQueueNotifyOutOfBandLegacyNV)gpa(device, "vkQueueNotifyOutOfBandLegacyNV");
+    table->GetSleepStatusLegacyNV = (PFN_vkGetSleepStatusLegacyNV)gpa(device, "vkGetSleepStatusLegacyNV");
+    table->ShutdownLatencyDeviceLegacyNV = (PFN_vkShutdownLatencyDeviceLegacyNV)gpa(device, "vkShutdownLatencyDeviceLegacyNV");
 #if defined(VK_USE_PLATFORM_METAL_EXT)
     table->ExportMetalObjectsEXT = (PFN_vkExportMetalObjectsEXT)gpa(device, "vkExportMetalObjectsEXT");
 #endif  // VK_USE_PLATFORM_METAL_EXT

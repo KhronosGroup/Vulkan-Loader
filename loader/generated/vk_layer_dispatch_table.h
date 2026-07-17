@@ -1101,6 +1101,15 @@ typedef struct VkLayerDispatchTable_ {
     PFN_vkCmdBeginPerTileExecutionQCOM CmdBeginPerTileExecutionQCOM;
     PFN_vkCmdEndPerTileExecutionQCOM CmdEndPerTileExecutionQCOM;
 
+    // ---- VK_NV_low_latency extension commands
+    PFN_vkSetLatencySleepModeLegacyNV SetLatencySleepModeLegacyNV;
+    PFN_vkLatencySleepLegacyNV LatencySleepLegacyNV;
+    PFN_vkSetLatencyMarkerLegacyNV SetLatencyMarkerLegacyNV;
+    PFN_vkGetLatencyTimingsLegacyNV GetLatencyTimingsLegacyNV;
+    PFN_vkQueueNotifyOutOfBandLegacyNV QueueNotifyOutOfBandLegacyNV;
+    PFN_vkGetSleepStatusLegacyNV GetSleepStatusLegacyNV;
+    PFN_vkShutdownLatencyDeviceLegacyNV ShutdownLatencyDeviceLegacyNV;
+
     // ---- VK_EXT_metal_objects extension commands
 #if defined(VK_USE_PLATFORM_METAL_EXT)
     PFN_vkExportMetalObjectsEXT ExportMetalObjectsEXT;
