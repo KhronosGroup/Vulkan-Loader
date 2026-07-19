@@ -413,8 +413,12 @@ VkResult windows_get_registry_files(const struct loader_instance *inst, char *lo
                                location);
                     if (is_driver) {
                         uint32_t i = 0;
+                        size_t name_len = strlen(name);
                         for (i = 0; i < sizeof(known_drivers) / sizeof(known_drivers[0]); ++i) {
-                            if (!strcmp(name + strlen(name) - strlen(known_drivers[i].filename), known_drivers[i].filename)) {
+                            size_t filename_len = strlen(known_drivers[i].filename);
+                            // A name shorter than the filename cannot end with it, and name + name_len - filename_len would
+                            // point before the start of the name buffer.
+                            if (name_len >= filename_len && !strcmp(name + name_len - filename_len, known_drivers[i].filename)) {
                                 break;
                             }
                         }
