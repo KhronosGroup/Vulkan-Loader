@@ -3357,6 +3357,55 @@ TEST(SettingsFile, DeviceConfigurationWithSameDriver) {
     ASSERT_EQ(props2.driverVersion, phys_dev_0.properties.driverVersion);
 }
 
+// A malformed device_configuration entry must be skipped, not cause every valid entry in the file to be dropped.
+TEST(SettingsFile, DeviceConfigurationSkipsMalformedEntry) {
+    FrameworkEnvironment env{};
+    VulkanUUID device_uuid = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15};
+    VulkanUUID driver_uuid = {16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31};
+
+    auto& icd = env.add_icd(TEST_ICD_PATH_VERSION_2).set_icd_api_version(VK_API_VERSION_1_1);
+    auto& phys_dev = icd.add_and_get_physical_device(PhysicalDevice()
+                                                         .set_api_version(VK_API_VERSION_1_2)
+                                                         .set_deviceUUID(device_uuid)
+                                                         .set_driverUUID(driver_uuid)
+                                                         .set_deviceName("configured_device"));
+    phys_dev.properties.driverVersion = 42;
+
+    auto uuid_to_json = [](VulkanUUID const& uuid) {
+        std::string out = "[";
+        for (size_t i = 0; i < uuid.size(); ++i) {
+            if (i != 0) out += ", ";
+            out += std::to_string(uuid[i]);
+        }
+        out += "]";
+        return out;
+    };
+
+    // First entry is valid and matches the physical device. The trailing entry has a deviceUUID that is shorter than
+    // VK_UUID_SIZE, so parse_device_configuration rejects it.
+    std::string valid_entry = "{ \"deviceUUID\": " + uuid_to_json(device_uuid) + ", \"driverUUID\": " + uuid_to_json(driver_uuid) +
+                              ", \"driverVersion\": 42 }";
+    std::string settings_contents =
+        "{\n  \"file_format_version\": \"1.0.0\",\n  \"settings\": {\n    \"device_configurations\": [\n      " + valid_entry +
+        ",\n      { \"deviceUUID\": [0, 1, 2] }\n    ]\n  }\n}\n";
+    env.write_settings_file(settings_contents, true);
+
+    InstWrapper inst{env.vulkan_functions};
+    inst.create_info.set_api_version(VK_API_VERSION_1_2);
+    inst.CheckCreate();
+
+    uint32_t returned_count = 0;
+    ASSERT_EQ(VK_SUCCESS, inst->vkEnumeratePhysicalDevices(inst, &returned_count, nullptr));
+    ASSERT_EQ(returned_count, 1U);
+    std::vector<VkPhysicalDevice> phys_devs(returned_count);
+    ASSERT_EQ(VK_SUCCESS, inst->vkEnumeratePhysicalDevices(inst, &returned_count, phys_devs.data()));
+    ASSERT_EQ(returned_count, 1U);
+
+    VkPhysicalDeviceProperties props{};
+    inst->vkGetPhysicalDeviceProperties(phys_devs.at(0), &props);
+    ASSERT_EQ(props.driverVersion, 42U);
+}
+
 // Three drivers, second on has the matching UUID in the settings file.
 TEST(SettingsFile, DriverConfigurationIgnoresDriverEnvVars) {
     FrameworkEnvironment env{};
