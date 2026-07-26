@@ -1265,6 +1265,10 @@ VkResult enable_correct_layers_from_settings(const struct loader_instance* inst,
         }
     }
 out:
+    if (vk_instance_layers_env != NULL) {
+        loader_free_getenv(vk_instance_layers_env, inst);
+    }
+
     return res;
 }
 
