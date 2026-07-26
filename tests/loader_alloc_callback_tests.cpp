@@ -694,6 +694,36 @@ TEST(Allocation, CreateInstanceIntentionalAllocFailWithSettingsFilePresent) {
     }
 }
 
+// An active layer configuration in the settings file routes layer selection through
+// enable_correct_layers_from_settings, which reads VK_INSTANCE_LAYERS itself. On Windows loader_getenv
+// allocates through the application's allocator, so that read has to be released like the ones in
+// loader_enable_instance_layers and loader_validate_instance_extensions.
+TEST(Allocation, SettingsLayerConfigurationWithInstanceLayersEnvVar) {
+    FrameworkEnvironment env{FrameworkSettings{}.set_log_filter("error,warn")};
+    env.add_icd(TEST_ICD_PATH_VERSION_2);
+
+    const char* layer_name = "VK_LAYER_TestLayer";
+    env.add_explicit_layer(
+        {}, ManifestLayer{}.add_layer(
+                ManifestLayer::LayerDescription{}.set_name(layer_name).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)));
+
+    env.update_loader_settings(
+        env.loader_settings.add_app_specific_setting(AppSpecificSettings{}.add_stderr_log_filter("all").add_layer_configuration(
+            LoaderSettingsLayerConfiguration{}
+                .set_name(layer_name)
+                .set_control("on")
+                .set_path(env.get_shimmed_layer_manifest_path(0)))));
+
+    EnvVarWrapper instance_layers_env_var{"VK_INSTANCE_LAYERS", layer_name};
+
+    MemoryTracker tracker{};
+    {
+        InstWrapper inst{env.vulkan_functions, tracker.get()};
+        ASSERT_NO_FATAL_FAILURE(inst.CheckCreate());
+    }
+    ASSERT_TRUE(tracker.empty());
+}
+
 // Test failure during vkCreateInstance & surface creation to make sure we don't leak memory if
 // one of the out-of-memory conditions trigger.
 TEST(Allocation, CreateSurfaceIntentionalAllocFailWithSettingsFilePresent) {
