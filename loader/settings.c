@@ -413,7 +413,7 @@ VkResult parse_device_configurations(const struct loader_instance* inst, cJSON* 
         i++;
     }
     // Only the first i entries were successfully parsed; the trailing entries are unpopulated
-    loader_settings->device_configuration_count = i;
+    loader_settings->device_configuration_count = (uint32_t)i;
     loader_settings->device_configurations_active = true;
 out:
     if (res != VK_SUCCESS) {
