@@ -60,6 +60,10 @@ jobs:
                 cmakeVersion: 3.22.1
             - run: sudo apt update
             - run: sudo apt install --yes --no-install-recommends libwayland-dev libxrandr-dev
+            - name: ccache
+              uses: hendrikmuhs/ccache-action@v1.2
+              with:
+                key: linux-${{ matrix.os }}-${{ matrix.compiler.cc }}-${{ matrix.config }}
             - run: |
                 cmake -S. -B build \
                 -D CMAKE_BUILD_TYPE=${{ matrix.config }} \
@@ -67,6 +71,8 @@ jobs:
                 -D UPDATE_DEPS=ON \
                 -D LOADER_ENABLE_ADDRESS_SANITIZER=ON \
                 -D BUILD_WERROR=ON \
+                -D CMAKE_C_COMPILER_LAUNCHER=ccache \
+                -D CMAKE_CXX_COMPILER_LAUNCHER=ccache \
                 -D CMAKE_CXX_COMPILER=${{ matrix.compiler.cxx }} \
                 -D CMAKE_C_COMPILER=${{ matrix.compiler.cc }}
             - run: cmake --build build
@@ -89,6 +95,10 @@ jobs:
             - uses: actions/checkout@v7
             - run: sudo apt update
             - run: sudo apt install --yes --no-install-recommends libwayland-dev libxrandr-dev
+            - name: ccache
+              uses: hendrikmuhs/ccache-action@v1.2
+              with:
+                key: linux-no-asm
             - run: |
                 cmake -S. -B build \
                 -D CMAKE_BUILD_TYPE=Release \
@@ -96,6 +106,8 @@ jobs:
                 -D UPDATE_DEPS=ON \
                 -D BUILD_WERROR=ON \
                 -D USE_GAS=OFF \
+                -D CMAKE_C_COMPILER_LAUNCHER=ccache \
+                -D CMAKE_CXX_COMPILER_LAUNCHER=ccache \
                 -D CMAKE_C_COMPILER=clang \
                 -D CMAKE_CXX_COMPILER=clang++
             - run: cmake --build build
@@ -124,6 +136,10 @@ jobs:
                 sudo apt install --yes --no-install-recommends \
                 gcc-multilib g++-multilib libc6:i386 libc6-dev-i386 libgcc-s1:i386 \
                 libwayland-dev:i386 libxrandr-dev:i386
+            - name: ccache
+              uses: hendrikmuhs/ccache-action@v1.2
+              with:
+                key: linux-32-${{ matrix.config }}
             - run: |
                 cmake -S. -B build \
                 -D CMAKE_BUILD_TYPE=${{matrix.config}} \
@@ -131,6 +147,8 @@ jobs:
                 -D UPDATE_DEPS=ON \
                 -D BUILD_WERROR=ON \
                 -D SYSCONFDIR=/etc/not_vulkan \
+                -D CMAKE_C_COMPILER_LAUNCHER=ccache \
+                -D CMAKE_CXX_COMPILER_LAUNCHER=ccache \
                 -D CMAKE_CXX_FLAGS=-m32 \
                 -D CMAKE_C_FLAGS=-m32 \
                 -G Ninja
@@ -160,6 +178,10 @@ jobs:
                 sudo apt install --yes --no-install-recommends \
                 gcc-multilib g++-multilib libc6:i386 libc6-dev-i386 libgcc-s1:i386 \
                 libwayland-dev:i386 libxrandr-dev:i386
+            - name: ccache
+              uses: hendrikmuhs/ccache-action@v1.2
+              with:
+                key: linux-32-no-asm
             - run: |
                 cmake -S. -B build \
                 -D CMAKE_BUILD_TYPE=Release \
@@ -167,6 +189,8 @@ jobs:
                 -D UPDATE_DEPS=ON \
                 -D BUILD_WERROR=ON \
                 -D USE_GAS=OFF \
+                -D CMAKE_C_COMPILER_LAUNCHER=ccache \
+                -D CMAKE_CXX_COMPILER_LAUNCHER=ccache \
                 -D CMAKE_CXX_FLAGS=-m32 \
                 -D CMAKE_C_FLAGS=-m32 \
                 -G Ninja
@@ -191,13 +215,19 @@ jobs:
                   cmakeVersion: 3.22.1
             - run: sudo apt update
             - run: sudo apt install --yes --no-install-recommends libwayland-dev libxrandr-dev
+            - name: ccache
+              uses: hendrikmuhs/ccache-action@v1.2
+              with:
+                key: linux-arm
             - run: |
                   cmake -S. -B build \
                   -D CMAKE_BUILD_TYPE=Debug \
                   -D BUILD_TESTS=ON \
                   -D UPDATE_DEPS=ON \
                   -D LOADER_ENABLE_ADDRESS_SANITIZER=ON \
-                  -D BUILD_WERROR=ON
+                  -D BUILD_WERROR=ON \
+                  -D CMAKE_C_COMPILER_LAUNCHER=ccache \
+                  -D CMAKE_CXX_COMPILER_LAUNCHER=ccache
             - run: cmake --build build
             - run: ctest --parallel --output-on-failure --test-dir build/
             - run: cmake --install build --prefix /tmp
@@ -217,20 +247,30 @@ jobs:
                   cmakeVersion: 3.22.1
             - run: sudo apt update
             - run: sudo apt install --yes --no-install-recommends libwayland-dev libxrandr-dev
+            - name: ccache
+              uses: hendrikmuhs/ccache-action@v1.2
+              with:
+                key: linux-threading
             - run: |
                   cmake -S. -B build \
                   -D CMAKE_BUILD_TYPE=Debug \
                   -D BUILD_TESTS=ON \
                   -D UPDATE_DEPS=ON \
                   -D LOADER_ENABLE_THREAD_SANITIZER=ON \
-                  -D BUILD_WERROR=ON
+                  -D BUILD_WERROR=ON \
+                  -D CMAKE_C_COMPILER_LAUNCHER=ccache \
+                  -D CMAKE_CXX_COMPILER_LAUNCHER=ccache
             - run: cmake --build build
             - run: ctest --parallel --output-on-failure --test-dir build/
             - run: cmake --install build --prefix /tmp
 
     windows_vs:
         # windows is 2x expensive to run on GitHub machines, so only run if we know something else simple passed as well
-        needs: linux-no-asm
+        # No ccache here: ccache's compiler-launcher hook only works with the Ninja/Makefiles
+        # generators, not the VS generator that -A ${{ matrix.arch }} requires below.
+        # The VS generator is also slower than Ninja, so this waits on the Ninja-based
+        # windows_clang job passing first rather than running in parallel with it.
+        needs: windows_clang
         runs-on: windows-latest
         timeout-minutes: 30
         strategy:
@@ -252,7 +292,8 @@ jobs:
 
     windows_vs-no-asm:
         # windows is 2x expensive to run on GitHub machines, so only run if we know something else simple passed as well
-        needs: linux-no-asm
+        # No ccache here, and gated on windows_clang: same reasons as windows_vs above.
+        needs: windows_clang
         runs-on: windows-latest
         timeout-minutes: 30
         strategy:
@@ -274,7 +315,13 @@ jobs:
     windows_arm:
         # Native Windows on Arm: covers the arm64 and arm64ec MARMASM paths the x64 runners can't.
         # windows is 2x expensive to run on GitHub machines, so only run if we know something else simple passed as well
-        needs: linux-no-asm
+        # No ccache here: -A arm64ec is what makes CMake configure the real ARM64EC toolset (see
+        # CMakeLists.txt's CMAKE_GENERATOR_PLATFORM comment). That only works with the VS generator,
+        # and ccache's compiler-launcher hook only works with Ninja/Makefiles, not the VS generator.
+        # Hand-rolling /arm64EC flags for Ninja risks silently building plain ARM64 instead of ARM64EC.
+        # The VS generator is also slower than Ninja, so this waits on the Ninja-based
+        # windows_clang job passing first rather than running in parallel with it.
+        needs: windows_clang
         runs-on: windows-11-arm
         timeout-minutes: 30
         strategy:
@@ -300,7 +347,12 @@ jobs:
     windows_arm64x:
         # Native Windows on Arm: Tests building a genuine arm64x binary and validates that an x64 test suite passes
         # windows is 2x expensive to run on GitHub machines, so only run if we know something else simple passed as well
+        # No ccache here: same reason as windows_arm above, this job needs the VS generator's -A arm64/arm64ec
+        # for the ARM64X binary merge (BUILD_AS_ARM64X) to produce genuine ARM64/ARM64EC object code.
+        # The VS generator is also slower than Ninja, so this waits on the Ninja-based
+        # windows_clang job passing first rather than running in parallel with it.
         # needs: windows_arm
+        needs: windows_clang
         runs-on: windows-11-arm
         timeout-minutes: 30
         steps:
@@ -353,12 +405,18 @@ jobs:
         steps:
           - uses: actions/checkout@v7
           - uses: ilammy/msvc-dev-cmd@v1
+          - name: ccache
+            uses: hendrikmuhs/ccache-action@v1.2
+            with:
+              key: windows_clang-${{ matrix.compiler }}-${{ matrix.config }}
           - run: |
               cmake -S. -B build `
               -D CMAKE_C_COMPILER=${{matrix.compiler}} `
               -D CMAKE_CXX_COMPILER=${{matrix.compiler}} `
               -D UPDATE_DEPS=ON `
               -D CMAKE_BUILD_TYPE=${{matrix.config}} `
+              -D CMAKE_C_COMPILER_LAUNCHER=ccache `
+              -D CMAKE_CXX_COMPILER_LAUNCHER=ccache `
               -D BUILD_WERROR=ON `
               -D BUILD_TESTS=ON `
               -G Ninja
@@ -380,6 +438,10 @@ jobs:
             - uses: actions/setup-python@v7
               with:
                 python-version: '3.11'
+            - name: ccache
+              uses: hendrikmuhs/ccache-action@v1.2
+              with:
+                key: mac-${{ matrix.config }}-${{ matrix.static_build }}
             - run: |
                 cmake -S. -B build \
                 -D CMAKE_BUILD_TYPE=${{matrix.config}} \
@@ -388,6 +450,8 @@ jobs:
                 -D UPDATE_DEPS=ON \
                 -D BUILD_WERROR=ON \
                 -D LOADER_ENABLE_ADDRESS_SANITIZER=ON \
+                -D CMAKE_C_COMPILER_LAUNCHER=ccache \
+                -D CMAKE_CXX_COMPILER_LAUNCHER=ccache \
                 -G Ninja
               env:
                 # Prevents regression of KhronosGroup/Vulkan-Loader/issues/1332
@@ -410,6 +474,10 @@ jobs:
           - uses: actions/setup-python@v7
             with:
               python-version: '3.11'
+          - name: ccache
+            uses: hendrikmuhs/ccache-action@v1.2
+            with:
+              key: apple-cross-compile-${{ matrix.CMAKE_SYSTEM_NAME }}
           - run: |
               cmake -S . -B build \
               -D CMAKE_SYSTEM_NAME=${{ matrix.CMAKE_SYSTEM_NAME }} \
@@ -417,6 +485,8 @@ jobs:
               -D CMAKE_BUILD_TYPE=Debug \
               -D UPDATE_DEPS=ON \
               -D BUILD_WERROR=ON \
+              -D CMAKE_C_COMPILER_LAUNCHER=ccache \
+              -D CMAKE_CXX_COMPILER_LAUNCHER=ccache \
               -G Ninja
             env:
               LDFLAGS: -Wl,-fatal_warnings
@@ -429,16 +499,58 @@ jobs:
 
     # Building a universal binary disables assembly automatically
     # Furthermore the Vulkan SDK ships universal binaries
-    mac-univeral:
+    mac-univeral-ninja:
         # Mac is 10x expensive to run on GitHub machines, so only run if we know something else passed as well
         needs: windows_clang
-        name: "Universal Binary Testing (STATIC ${{ matrix.static }}) w/ ${{ matrix.generator }}"
+        name: "Universal Binary Testing (STATIC ${{ matrix.static }}) w/ Ninja"
         runs-on: macos-latest
         timeout-minutes: 30
         strategy:
             matrix:
                 static: [ 'ON', 'OFF' ]
-                generator: [ Ninja, Xcode ]
+        steps:
+            - uses: actions/checkout@v7
+            - uses: actions/setup-python@v7
+              with:
+                python-version: '3.11'
+            - name: ccache
+              uses: hendrikmuhs/ccache-action@v1.2
+              with:
+                key: mac-universal-${{ matrix.static }}
+            - run: |
+                cmake -S. -B build \
+                -D CMAKE_BUILD_TYPE=Release \
+                -D APPLE_STATIC_LOADER=${{matrix.static}} \
+                "-D CMAKE_OSX_ARCHITECTURES=arm64;x86_64" \
+                -D BUILD_TESTS=ON \
+                -D UPDATE_DEPS=ON \
+                -D BUILD_WERROR=ON \
+                -D CMAKE_C_COMPILER_LAUNCHER=ccache \
+                -D CMAKE_CXX_COMPILER_LAUNCHER=ccache \
+                -G Ninja
+              env:
+                LDFLAGS: -Wl,-fatal_warnings
+            - run: cmake --build build --config Release
+            - run: ctest --parallel --output-on-failure --build-config Release -E UnknownFunction --test-dir build/
+            - run: cmake --install build --config Release --prefix /tmp
+            - name: Verify Universal Binary
+              if: ${{ matrix.static == 'OFF' }}
+              run: |
+                vtool -show-build /tmp/lib/libvulkan.dylib | grep 'architecture x86_64'
+                vtool -show-build /tmp/lib/libvulkan.dylib | grep 'architecture arm64'
+
+    # Xcode generator doesn't support ccache's compiler-launcher hook, and is slower than Ninja,
+    # so this waits on the Ninja-based mac-univeral-ninja job passing first rather than running
+    # in parallel with it.
+    mac-univeral-xcode:
+        # Mac is 10x expensive to run on GitHub machines, so only run if we know something else passed as well
+        needs: mac-univeral-ninja
+        name: "Universal Binary Testing (STATIC ${{ matrix.static }}) w/ Xcode"
+        runs-on: macos-latest
+        timeout-minutes: 30
+        strategy:
+            matrix:
+                static: [ 'ON', 'OFF' ]
         steps:
             - uses: actions/checkout@v7
             - uses: actions/setup-python@v7
@@ -452,7 +564,7 @@ jobs:
                 -D BUILD_TESTS=ON \
                 -D UPDATE_DEPS=ON \
                 -D BUILD_WERROR=ON \
-                -G ${{ matrix.generator }}
+                -G Xcode
               env:
                 LDFLAGS: -Wl,-fatal_warnings
             - run: cmake --build build --config Release
@@ -491,11 +603,17 @@ jobs:
                 printf '%s\n' 'C:/msys64/mingw64/bin' >> $GITHUB_PATH
             - name: UASM Check
               run: uasm -?
+            - name: ccache
+              uses: hendrikmuhs/ccache-action@v1.2
+              with:
+                key: mingw
             - run: |
                 cmake -S. -B build \
                 -D UPDATE_DEPS=ON \
                 -D CMAKE_BUILD_TYPE=Release \
                 -D BUILD_WERROR=ON \
+                -D CMAKE_C_COMPILER_LAUNCHER=ccache \
+                -D CMAKE_CXX_COMPILER_LAUNCHER=ccache \
                 -G Ninja
             - run: cmake --build build
             - run: cmake --install build --prefix /tmp
@@ -513,12 +631,18 @@ jobs:
             - uses: actions/setup-python@v7
               with:
                 python-version: '3.11'
+            - name: ccache
+              uses: hendrikmuhs/ccache-action@v1.2
+              with:
+                key: mingw-use-gas
             - run: |
                 cmake -S. -B build \
                 -D UPDATE_DEPS=ON \
                 -D CMAKE_BUILD_TYPE=Release \
                 -D BUILD_WERROR=ON \
                 -D USE_GAS=ON \
+                -D CMAKE_C_COMPILER_LAUNCHER=ccache \
+                -D CMAKE_CXX_COMPILER_LAUNCHER=ccache \
                 -G Ninja
             - run: cmake --build build
             - run: cmake --install build --prefix /tmp
@@ -536,12 +660,18 @@ jobs:
             - uses: actions/setup-python@v7
               with:
                 python-version: '3.11'
+            - name: ccache
+              uses: hendrikmuhs/ccache-action@v1.2
+              with:
+                key: mingw-no-asm
             # Make sure this doesn't fail even without explicitly setting '-D USE_MASM=OFF' and without uasm
             - run: |
                 cmake -S. -B build \
                 -D UPDATE_DEPS=ON \
                 -D CMAKE_BUILD_TYPE=Release \
                 -D BUILD_WERROR=ON \
+                -D CMAKE_C_COMPILER_LAUNCHER=ccache \
+                -D CMAKE_CXX_COMPILER_LAUNCHER=ccache \
                 -G Ninja
             - run: cmake --build build
             - run: cmake --install build --prefix /tmp
@@ -556,12 +686,18 @@ jobs:
                 shell: bash
         steps:
             - uses: actions/checkout@v7
+            - name: ccache
+              uses: hendrikmuhs/ccache-action@v1.2
+              with:
+                key: mingw-no-asm-explicit
             - run: |
                 cmake -S. -B build \
                 -D UPDATE_DEPS=ON \
                 -D CMAKE_BUILD_TYPE=Release \
                 -D BUILD_WERROR=ON \
                 -D USE_MASM=OFF \
+                -D CMAKE_C_COMPILER_LAUNCHER=ccache \
+                -D CMAKE_CXX_COMPILER_LAUNCHER=ccache \
                 -G Ninja
             - run: cmake --build build
             - run: cmake --install build --prefix /tmp
