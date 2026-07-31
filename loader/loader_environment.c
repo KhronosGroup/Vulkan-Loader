@@ -205,16 +205,18 @@ void determine_filter_type(const char *filter_string, enum loader_filter_string_
                 *filter_type = FILTER_STRING_SPECIAL;
                 *new_start = filter_string;
                 *new_length = filter_length;
+                return;
             } else {
                 star_begin = true;
             }
         }
         if ('*' == filter_string[filter_length - 1]) {
             // Not really valid, but just catch this case so if someone accidentally types "**" it will also mean everything
-            if (filter_length == 2) {
+            if (star_begin && filter_length == 2) {
                 *filter_type = FILTER_STRING_SPECIAL;
                 *new_start = filter_string;
                 *new_length = filter_length;
+                return;
             } else {
                 star_end = true;
             }

@@ -714,6 +714,51 @@ TEST(EnvVarICDOverrideSetup, FilterSelectDriver) {
     ASSERT_FALSE(env.debug_log.find_prefix_then_postfix("CDE_ICD.json", "ignored because it was disabled by env var"));
 }
 
+// '**' is one of the three documented whole-wildcard forms, alongside '*' and '~all~', and a two character glob such as
+// "A*" is an ordinary prefix match. Both were classified as something else entirely and matched no manifest name at all.
+TEST(EnvVarICDOverrideSetup, FilterDriverDoubleStarAndShortPrefix) {
+    FrameworkEnvironment env{};
+    EnvVarWrapper filter_select_env_var{"VK_LOADER_DRIVERS_SELECT"};
+    EnvVarWrapper filter_disable_env_var{"VK_LOADER_DRIVERS_DISABLE"};
+
+    env.add_icd(TEST_ICD_PATH_VERSION_6, ManifestOptions{}.set_json_name("ABC_ICD.json"));
+    env.add_icd(TEST_ICD_PATH_VERSION_6, ManifestOptions{}.set_json_name("BCD_ICD.json"),
+                ManifestICD{}.set_api_version(VK_API_VERSION_1_2));
+
+    // '**' selects every driver, the same as '*' and '~all~' do.
+    filter_select_env_var.set_new_value("**");
+    {
+        InstWrapper inst{env.vulkan_functions};
+        FillDebugUtilsCreateDetails(inst.create_info, env.debug_log);
+        inst.CheckCreate();
+        ASSERT_FALSE(env.debug_log.find_prefix_then_postfix("ABC_ICD.json", "ignored because not selected by env var"));
+        ASSERT_FALSE(env.debug_log.find_prefix_then_postfix("BCD_ICD.json", "ignored because not selected by env var"));
+    }
+
+    // A two character prefix glob matches on its single leading character.
+    env.debug_log.clear();
+    filter_select_env_var.set_new_value("A*");
+    {
+        InstWrapper inst{env.vulkan_functions};
+        FillDebugUtilsCreateDetails(inst.create_info, env.debug_log);
+        inst.CheckCreate();
+        ASSERT_FALSE(env.debug_log.find_prefix_then_postfix("ABC_ICD.json", "ignored because not selected by env var"));
+        ASSERT_TRUE(env.debug_log.find_prefix_then_postfix("BCD_ICD.json", "ignored because not selected by env var"));
+    }
+
+    // '**' on the disable filter drops every driver, leaving no usable ICD.
+    env.debug_log.clear();
+    filter_select_env_var.remove_value();
+    filter_disable_env_var.set_new_value("**");
+    {
+        InstWrapper inst{env.vulkan_functions};
+        FillDebugUtilsCreateDetails(inst.create_info, env.debug_log);
+        inst.CheckCreate(VK_ERROR_INCOMPATIBLE_DRIVER);
+        ASSERT_TRUE(env.debug_log.find_prefix_then_postfix("ABC_ICD.json", "ignored because it was disabled by env var"));
+        ASSERT_TRUE(env.debug_log.find_prefix_then_postfix("BCD_ICD.json", "ignored because it was disabled by env var"));
+    }
+}
+
 // Exercise the driver select/disable filters against a manifest name that is much longer than VK_MAX_EXTENSION_NAME_SIZE
 // would have allowed when the matcher copied the name into a fixed-size buffer. The whole name has to be considered for
 // every filter type, not just the first 255 characters. See KhronosGroup/Vulkan-Loader#1913.
