@@ -42,7 +42,7 @@ jobs:
             matrix:
                 compiler: [ {cc: gcc, cxx: g++}, {cc: clang, cxx: clang++} ]
                 config: [ Debug, Release ]
-                os: [ ubuntu-22.04, ubuntu-24.04 ]
+                os: [ ubuntu-24.04, ubuntu-26.04 ]
         steps:
             - uses: actions/checkout@v7
             - uses: actions/setup-python@v7
@@ -54,7 +54,7 @@ jobs:
               # practice to try and support them so they don't have to install
               # the CMake tarball. Ideally the minimum we use matches what the default
               # package provided by Ubuntu via APT.
-              if: ${{ matrix.os == 'ubuntu-22.04' }}
+              if: ${{ matrix.os == 'ubuntu-24.04' }}
               uses: lukka/get-cmake@latest
               with:
                 cmakeVersion: 3.22.1
@@ -396,7 +396,7 @@ jobs:
     windows_clang:
       # windows is 2x expensive to run on GitHub machines, so only run if we know something else simple passed as well
         needs: linux-no-asm
-        runs-on: windows-2022
+        runs-on: windows-2025
         timeout-minutes: 30
         strategy:
             matrix:
@@ -621,7 +621,7 @@ jobs:
     mingw-use-gas:
         # windows is 2x expensive to run on GitHub machines, so only run if we know something else simple passed as well
         needs: linux-no-asm
-        runs-on: windows-2022
+        runs-on: windows-2025
         timeout-minutes: 30
         defaults:
             run:
@@ -650,7 +650,7 @@ jobs:
     mingw-no-asm:
         # windows is 2x expensive to run on GitHub machines, so only run if we know something else simple passed as well
         needs: linux-no-asm
-        runs-on: windows-2022
+        runs-on: windows-2025
         timeout-minutes: 30
         defaults:
             run:
@@ -679,7 +679,7 @@ jobs:
     mingw-no-asm-explicit:
         # windows is 2x expensive to run on GitHub machines, so only run if we know something else simple passed as well
         needs: linux-no-asm
-        runs-on: windows-2022
+        runs-on: windows-2025
         timeout-minutes: 30
         defaults:
             run:
