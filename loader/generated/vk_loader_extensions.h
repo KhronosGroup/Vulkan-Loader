@@ -45,7 +45,9 @@ VKAPI_ATTR VkResult VKAPI_CALL vkDevExtError(VkDevice dev);
 
 // Extension interception for vkGetInstanceProcAddr function, so we can return
 // the appropriate information for any instance extensions we know about.
-bool extension_instance_gpa(struct loader_instance *ptr_instance, const char *name, void **addr);
+// name_hash must be loader_hash_string(name) - callers that already have it (e.g.
+// trampoline_get_proc_addr) pass it through instead of hashing name a second time.
+bool extension_instance_gpa(struct loader_instance *ptr_instance, const char *name, uint32_t name_hash, void **addr);
 
 struct loader_instance_extension_enable_list; // Forward declaration
 
