@@ -57,6 +57,10 @@ if (${VulkanHeaders_VERSION} VERSION_GREATER ${PROJECT_VERSION})
     message(WARNING "The Vulkan Headers version ${VulkanHeaders_VERSION} is newer than the expected version ${PROJECT_VERSION} used by the Vulkan-Loader. May cause issues.")
 endif()
 
+if (CMAKE_C_COMPILER_ID STREQUAL AppleClang AND TARGET Vulkan::Headers AND CMAKE_VERSION VERSION_GREATER_EQUAL 3.25)
+    set_target_properties(Vulkan::Headers PROPERTIES SYSTEM OFF)
+endif()
+
 include(GNUInstallDirs)
 
 set(GIT_BRANCH_NAME "--unknown--")
