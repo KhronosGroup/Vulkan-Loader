@@ -420,7 +420,7 @@ jobs:
               -D BUILD_WERROR=ON `
               -D BUILD_TESTS=ON `
               -G Ninja
-          - run: cmake --build build/
+          - run: cmake --build build/ --parallel 1
           - run: ctest --parallel --output-on-failure --test-dir build/
           - run: cmake --install build --prefix build/install
 
@@ -456,7 +456,7 @@ jobs:
               env:
                 # Prevents regression of KhronosGroup/Vulkan-Loader/issues/1332
                 LDFLAGS: -Wl,-fatal_warnings
-            - run: cmake --build build
+            - run: cmake --build build --parallel 1
             - run: cmake --install build --prefix /tmp
             - run: ctest --parallel --output-on-failure --test-dir build/
 
@@ -490,7 +490,7 @@ jobs:
               -G Ninja
             env:
               LDFLAGS: -Wl,-fatal_warnings
-          - run: cmake --build build
+          - run: cmake --build build --parallel 1
           - run: cmake --install build --prefix /tmp
           - name: Verify Universal Binary
             run: |
@@ -530,7 +530,7 @@ jobs:
                 -G Ninja
               env:
                 LDFLAGS: -Wl,-fatal_warnings
-            - run: cmake --build build --config Release
+            - run: cmake --build build --config Release --parallel 1
             - run: ctest --parallel --output-on-failure --build-config Release -E UnknownFunction --test-dir build/
             - run: cmake --install build --config Release --prefix /tmp
             - name: Verify Universal Binary
