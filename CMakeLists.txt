@@ -173,21 +173,19 @@ else()
     string(TOLOWER "${CMAKE_SYSTEM_PROCESSOR}" SYSTEM_PROCESSOR)
 endif()
 
+
 option(BUILD_WERROR "Enable warnings as errors")
+if (BUILD_WERROR)
+    set(CMAKE_COMPILE_WARNING_AS_ERROR ON)
+endif()
 
 # Set warnings as errors and the main diagnostic flags
 # Must be set first so the warning silencing later on works properly
 # Note that clang-cl.exe should use MSVC flavor flags, not GNU
 if (CMAKE_C_COMPILER_ID STREQUAL "MSVC" OR (CMAKE_C_COMPILER_ID STREQUAL "Clang" AND CMAKE_C_COMPILER_FRONTEND_VARIANT MATCHES "MSVC"))
-    if (BUILD_WERROR)
-        target_compile_options(loader_common_options INTERFACE $<$<COMPILE_LANGUAGE::CXX,C>:/WX>)
-    endif()
     target_compile_options(loader_common_options INTERFACE $<$<COMPILE_LANGUAGE::CXX,C>:/W4>)
 elseif(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
     # using GCC or Clang with the regular front end
-    if (BUILD_WERROR)
-        target_compile_options(loader_common_options INTERFACE $<$<COMPILE_LANGUAGE::CXX,C>:-Werror>)
-    endif()
     target_compile_options(loader_common_options INTERFACE
         $<$<COMPILE_LANGUAGE::CXX,C>:-Wall>
         $<$<COMPILE_LANGUAGE::CXX,C>:-Wextra>
