@@ -513,6 +513,9 @@ struct loader_icd_term_dispatch {
     // ---- VK_ARM_data_graph_optical_flow extension commands
     PFN_vkGetPhysicalDeviceQueueFamilyDataGraphOpticalFlowImageFormatsARM GetPhysicalDeviceQueueFamilyDataGraphOpticalFlowImageFormatsARM;
 
+    // ---- VK_EXT_cooperative_matrix_maintenance1 extension commands
+    PFN_vkGetPhysicalDeviceCooperativeMatrixProperties2EXT GetPhysicalDeviceCooperativeMatrixProperties2EXT;
+
     // ---- VK_SEC_ubm_surface extension commands
 #if defined(VK_USE_PLATFORM_UBM_SEC)
     PFN_vkCreateUbmSurfaceSEC CreateUbmSurfaceSEC;
