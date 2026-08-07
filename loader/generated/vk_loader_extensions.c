@@ -346,6 +346,9 @@ VKAPI_ATTR bool VKAPI_CALL loader_icd_init_entries(struct loader_instance* inst,
     // ---- VK_ARM_data_graph_optical_flow extension commands
     LOOKUP_GIPA(GetPhysicalDeviceQueueFamilyDataGraphOpticalFlowImageFormatsARM);
 
+    // ---- VK_EXT_cooperative_matrix_maintenance1 extension commands
+    LOOKUP_GIPA(GetPhysicalDeviceCooperativeMatrixProperties2EXT);
+
     // ---- VK_SEC_ubm_surface extension commands
 #if defined(VK_USE_PLATFORM_UBM_SEC)
     LOOKUP_GIPA(CreateUbmSurfaceSEC);
@@ -1768,6 +1771,9 @@ VKAPI_ATTR void VKAPI_CALL loader_init_instance_extension_dispatch_table(VkLayer
 
     // ---- VK_ARM_data_graph_optical_flow extension commands
     table->GetPhysicalDeviceQueueFamilyDataGraphOpticalFlowImageFormatsARM = (PFN_vkGetPhysicalDeviceQueueFamilyDataGraphOpticalFlowImageFormatsARM)gpa(inst, "vkGetPhysicalDeviceQueueFamilyDataGraphOpticalFlowImageFormatsARM");
+
+    // ---- VK_EXT_cooperative_matrix_maintenance1 extension commands
+    table->GetPhysicalDeviceCooperativeMatrixProperties2EXT = (PFN_vkGetPhysicalDeviceCooperativeMatrixProperties2EXT)gpa(inst, "vkGetPhysicalDeviceCooperativeMatrixProperties2EXT");
 
     // ---- VK_SEC_ubm_surface extension commands
 #if defined(VK_USE_PLATFORM_UBM_SEC)
@@ -3869,6 +3875,9 @@ VKAPI_ATTR void* VKAPI_CALL loader_lookup_instance_dispatch_table(const VkLayerI
 
     // ---- VK_ARM_data_graph_optical_flow extension commands
     if (!strcmp(name, "GetPhysicalDeviceQueueFamilyDataGraphOpticalFlowImageFormatsARM")) return (void *)table->GetPhysicalDeviceQueueFamilyDataGraphOpticalFlowImageFormatsARM;
+
+    // ---- VK_EXT_cooperative_matrix_maintenance1 extension commands
+    if (!strcmp(name, "GetPhysicalDeviceCooperativeMatrixProperties2EXT")) return (void *)table->GetPhysicalDeviceCooperativeMatrixProperties2EXT;
 
     // ---- VK_SEC_ubm_surface extension commands
 #if defined(VK_USE_PLATFORM_UBM_SEC)
@@ -12322,6 +12331,41 @@ VKAPI_ATTR void VKAPI_CALL CmdSetComputeOccupancyPriorityNV(
 }
 
 
+// ---- VK_EXT_cooperative_matrix_maintenance1 extension trampoline/terminators
+
+VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceCooperativeMatrixProperties2EXT(
+    VkPhysicalDevice                            physicalDevice,
+    const VkPhysicalDeviceCooperativeMatrixInfo2EXT* pCooperativeMatrixInfo,
+    uint32_t*                                   pPropertyCount,
+    VkCooperativeMatrixProperties2EXT*          pProperties) {
+    const VkLayerInstanceDispatchTable *disp;
+    VkPhysicalDevice unwrapped_phys_dev = loader_unwrap_physical_device(physicalDevice);
+    if (VK_NULL_HANDLE == unwrapped_phys_dev) {
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkGetPhysicalDeviceCooperativeMatrixProperties2EXT: Invalid physicalDevice "
+                   "[VUID-vkGetPhysicalDeviceCooperativeMatrixProperties2EXT-physicalDevice-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    disp = loader_get_instance_layer_dispatch(physicalDevice);
+    return disp->GetPhysicalDeviceCooperativeMatrixProperties2EXT(unwrapped_phys_dev, pCooperativeMatrixInfo, pPropertyCount, pProperties);
+}
+
+VKAPI_ATTR VkResult VKAPI_CALL terminator_GetPhysicalDeviceCooperativeMatrixProperties2EXT(
+    VkPhysicalDevice                            physicalDevice,
+    const VkPhysicalDeviceCooperativeMatrixInfo2EXT* pCooperativeMatrixInfo,
+    uint32_t*                                   pPropertyCount,
+    VkCooperativeMatrixProperties2EXT*          pProperties) {
+    struct loader_physical_device_term *phys_dev_term = (struct loader_physical_device_term *)physicalDevice;
+    struct loader_icd_term *icd_term = phys_dev_term->this_icd_term;
+    if (NULL == icd_term->dispatch.GetPhysicalDeviceCooperativeMatrixProperties2EXT) {
+        loader_log(icd_term->this_instance, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT, 0,
+                   "ICD associated with VkPhysicalDevice does not support GetPhysicalDeviceCooperativeMatrixProperties2EXT");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    return icd_term->dispatch.GetPhysicalDeviceCooperativeMatrixProperties2EXT(phys_dev_term->phys_dev, pCooperativeMatrixInfo, pPropertyCount, pProperties);
+}
+
+
 // ---- VK_SEC_ubm_surface extension trampoline/terminators
 
 #if defined(VK_USE_PLATFORM_UBM_SEC)
@@ -15369,6 +15413,12 @@ bool extension_instance_gpa(struct loader_instance *ptr_instance, const char *na
         return true;
     }
 
+    // ---- VK_EXT_cooperative_matrix_maintenance1 extension commands
+    if (!strcmp("vkGetPhysicalDeviceCooperativeMatrixProperties2EXT", name)) {
+        *addr = (void *)GetPhysicalDeviceCooperativeMatrixProperties2EXT;
+        return true;
+    }
+
     // ---- VK_SEC_ubm_surface extension commands
 #if defined(VK_USE_PLATFORM_UBM_SEC)
     if (!strcmp("vkCreateUbmSurfaceSEC", name)) {
@@ -16042,6 +16092,9 @@ const VkLayerInstanceDispatchTable instance_disp = {
 
     // ---- VK_ARM_data_graph_optical_flow extension commands
     .GetPhysicalDeviceQueueFamilyDataGraphOpticalFlowImageFormatsARM = terminator_GetPhysicalDeviceQueueFamilyDataGraphOpticalFlowImageFormatsARM,
+
+    // ---- VK_EXT_cooperative_matrix_maintenance1 extension commands
+    .GetPhysicalDeviceCooperativeMatrixProperties2EXT = terminator_GetPhysicalDeviceCooperativeMatrixProperties2EXT,
 
     // ---- VK_SEC_ubm_surface extension commands
 #if defined(VK_USE_PLATFORM_UBM_SEC)

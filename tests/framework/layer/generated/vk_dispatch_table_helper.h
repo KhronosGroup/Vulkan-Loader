@@ -1013,6 +1013,7 @@ static inline void layer_init_instance_dispatch_table(VkInstance instance, VkLay
     table->EnumeratePhysicalDeviceQueueFamilyPerformanceCountersByRegionARM = (PFN_vkEnumeratePhysicalDeviceQueueFamilyPerformanceCountersByRegionARM)gpa(instance, "vkEnumeratePhysicalDeviceQueueFamilyPerformanceCountersByRegionARM");
     table->EnumeratePhysicalDeviceShaderInstrumentationMetricsARM = (PFN_vkEnumeratePhysicalDeviceShaderInstrumentationMetricsARM)gpa(instance, "vkEnumeratePhysicalDeviceShaderInstrumentationMetricsARM");
     table->GetPhysicalDeviceQueueFamilyDataGraphOpticalFlowImageFormatsARM = (PFN_vkGetPhysicalDeviceQueueFamilyDataGraphOpticalFlowImageFormatsARM)gpa(instance, "vkGetPhysicalDeviceQueueFamilyDataGraphOpticalFlowImageFormatsARM");
+    table->GetPhysicalDeviceCooperativeMatrixProperties2EXT = (PFN_vkGetPhysicalDeviceCooperativeMatrixProperties2EXT)gpa(instance, "vkGetPhysicalDeviceCooperativeMatrixProperties2EXT");
 #if defined(VK_USE_PLATFORM_UBM_SEC)
     table->CreateUbmSurfaceSEC = (PFN_vkCreateUbmSurfaceSEC)gpa(instance, "vkCreateUbmSurfaceSEC");
 #endif  // VK_USE_PLATFORM_UBM_SEC
