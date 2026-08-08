@@ -1,0 +1,256 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema",
+    "id": "https://schema.khronos.org/vulkan/layer_manifest_1_1_0.json",
+    "title": "Vulkan Layer Manifest Version 1.1.0",
+    "description": "JSON Schema for Layer Manifest files for the Vulkan Loader",
+    "type": "object",
+    "additionalProperties": true,
+    "oneOf": [
+        {
+            "$ref": "#/$defs/single_layer"
+        },
+        {
+            "$ref": "#/$defs/layer_array"
+        }
+    ],
+    "$defs": {
+        "file_version": {
+            "type": "string",
+            "pattern": "^1.1.0$"
+        },
+        "regular_string": {
+            "type": "string"
+        },
+        "vulkan_string": {
+            "type": "string",
+            "maxLength": 256,
+            "description": "Vulkan API strings may not exceed 256 characters in length"
+        },
+        "supported_path_types": {
+            "type": "string",
+            "description": "Path validation is not feasible to validate with regex since valid paths are different per platform"
+        },
+        "vulkan_api_version": {
+            "type": "string",
+            "pattern": "^[0-9]*\\.[0-9]*\\.[0-9]*$|^[0-9]*\\.[0-9]*\\.[0-9]*\\.[0-9]*$",
+            "description": "Matches 3 and 4 component versions"
+        },
+        "extension_array": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "name": {
+                        "$ref": "#/$defs/vulkan_string"
+                    },
+                    "spec_version": {
+                        "type": "string"
+                    },
+                    "entrypoints": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    }
+                },
+                "required": [
+                    "name",
+                    "spec_version"
+                ],
+                "additionalProperties": false
+            }
+        },
+        "layer_type": {
+            "enum": [
+                "INSTANCE",
+                "GLOBAL"
+            ]
+        },
+        "architecture": {
+            "enum": [
+                "32",
+                "64"
+            ]
+        },
+        "environment_variable": {
+            "type": "object",
+            "patternProperties": {
+                "": {
+                    "type": "string"
+                }
+            },
+            "maxProperties": 1,
+            "additionalProperties": false
+        },
+        "function_definitions": {
+            "type": "object",
+            "patternProperties": {
+                "^$": {
+                    "type": "string"
+                }
+            }
+        },
+        "vulkan_string_array": {
+            "type": "array",
+            "items": {
+                "$ref": "#/$defs/vulkan_string"
+            }
+        },
+        "string_array": {
+            "type": "array",
+            "items": {
+                "type": "string"
+            }
+        },
+        "explicit_layer": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "$ref": "#/$defs/vulkan_string"
+                },
+                "type": {
+                    "$ref": "#/$defs/layer_type"
+                },
+                "library_path": {
+                    "$ref": "#/$defs/supported_path_types"
+                },
+                "api_version": {
+                    "$ref": "#/$defs/vulkan_api_version"
+                },
+                "implementation_version": {
+                    "type": "string"
+                },
+                "description": {
+                    "$ref": "#/$defs/vulkan_string"
+                },
+                "functions": {
+                    "$ref": "#/$defs/function_definitions"
+                },
+                "instance_extensions": {
+                    "$ref": "#/$defs/extension_array"
+                },
+                "device_extensions": {
+                    "$ref": "#/$defs/extension_array"
+                },
+                "enable_environment": false,
+                "disable_environment": false,
+                "pre_instance_functions": false,
+                "component_layers": false,
+                "blacklisted_layers": false,
+                "app_keys": false,
+                "override_paths": false,
+                "library_arch": false
+            },
+            "required": [
+                "name",
+                "type",
+                "api_version",
+                "library_path",
+                "implementation_version",
+                "description"
+            ]
+        },
+        "implicit_layer": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "$ref": "#/$defs/vulkan_string"
+                },
+                "type": {
+                    "$ref": "#/$defs/layer_type"
+                },
+                "library_path": {
+                    "$ref": "#/$defs/supported_path_types"
+                },
+                "api_version": {
+                    "$ref": "#/$defs/vulkan_api_version"
+                },
+                "implementation_version": {
+                    "type": "string"
+                },
+                "description": {
+                    "$ref": "#/$defs/vulkan_string"
+                },
+                "functions": {
+                    "$ref": "#/$defs/function_definitions"
+                },
+                "instance_extensions": {
+                    "$ref": "#/$defs/extension_array"
+                },
+                "device_extensions": {
+                    "$ref": "#/$defs/extension_array"
+                },
+                "enable_environment": {
+                    "$ref": "#/$defs/environment_variable"
+                },
+                "disable_environment": {
+                    "$ref": "#/$defs/environment_variable"
+                },
+                "pre_instance_functions": false,
+                "component_layers": false,
+                "blacklisted_layers": false,
+                "app_keys": false,
+                "override_paths": false,
+                "library_arch": false
+            },
+            "required": [
+                "name",
+                "type",
+                "library_path",
+                "api_version",
+                "implementation_version",
+                "description",
+                "disable_environment"
+            ]
+        },
+        "single_layer": {
+            "type": "object",
+            "properties": {
+                "file_format_version": {
+                    "$ref": "#/$defs/file_version"
+                },
+                "layer": {
+                    "oneOf": [
+                        {
+                            "$ref": "#/$defs/explicit_layer"
+                        },
+                        {
+                            "$ref": "#/$defs/implicit_layer"
+                        }
+                    ]
+                },
+                "layers": false
+            },
+            "required": [
+                "file_format_version",
+                "layer"
+            ]
+        },
+        "layer_array": {
+            "type": "object",
+            "properties": {
+                "file_format_version": {
+                    "$ref": "#/$defs/file_version"
+                },
+                "layers": {
+                    "type": "array",
+                    "items": {
+                        "oneOf": [
+                            {
+                                "$ref": "#/$defs/explicit_layer"
+                            },
+                            {
+                                "$ref": "#/$defs/implicit_layer"
+                            }
+                        ]
+                    }
+                },
+                "layer": false
+            },
+            "required": [
+                "file_format_version",
+                "layers"
+            ]
+        }
+    }
+}
