@@ -7656,7 +7656,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_pre_instance_EnumerateInstanceExtensio
 VKAPI_ATTR VkResult VKAPI_CALL terminator_EnumerateInstanceLayerProperties(uint32_t *pPropertyCount,
                                                                            VkLayerProperties *pProperties) {
     VkResult result = VK_SUCCESS;
-    struct loader_layer_list instance_layer_list;
+    struct loader_layer_list instance_layer_list = {0};
     struct loader_envvar_all_filters layer_filters = {0};
 
     LOADER_PLATFORM_THREAD_ONCE(&once_init, loader_initialize);
@@ -7667,7 +7667,6 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_EnumerateInstanceLayerProperties(uint3
     }
 
     // Get layer libraries
-    memset(&instance_layer_list, 0, sizeof(instance_layer_list));
     result = loader_scan_for_layers(NULL, &instance_layer_list, &layer_filters);
     if (VK_SUCCESS != result) {
         goto out;
