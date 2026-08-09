@@ -16,7 +16,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ~~~
-cmake_minimum_required(VERSION 3.22.1)
+cmake_minimum_required(VERSION 3.28.3)
 
 project(VULKAN_LOADER VERSION 1.4.359 LANGUAGES C)
 
@@ -58,7 +58,7 @@ if (DEFINED ${VulkanHeaders_VERSION} AND ${VulkanHeaders_VERSION} VERSION_GREATE
 endif()
 
 # Workaround AppleClang using the wrong headers when there are headers in /usr/local/include
-if (CMAKE_C_COMPILER_ID STREQUAL AppleClang AND TARGET Vulkan::Headers AND CMAKE_VERSION VERSION_GREATER_EQUAL 3.25)
+if (CMAKE_C_COMPILER_ID STREQUAL AppleClang AND TARGET Vulkan::Headers)
     set_target_properties(Vulkan::Headers PROPERTIES SYSTEM OFF)
 endif()
 
@@ -86,8 +86,6 @@ if (GIT_FOUND AND EXISTS "${CMAKE_CURRENT_LIST_DIR}/.git/HEAD")
     endif()
 endif()
 
-# Enable IDE GUI folders.  "Helper targets" that don't have interesting source code should set their FOLDER property to this
-set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 set(LOADER_HELPER_FOLDER "Helper Targets")
 
 if(UNIX)
@@ -175,21 +173,19 @@ else()
     string(TOLOWER "${CMAKE_SYSTEM_PROCESSOR}" SYSTEM_PROCESSOR)
 endif()
 
+
 option(BUILD_WERROR "Enable warnings as errors")
+if (BUILD_WERROR)
+    set(CMAKE_COMPILE_WARNING_AS_ERROR ON)
+endif()
 
 # Set warnings as errors and the main diagnostic flags
 # Must be set first so the warning silencing later on works properly
 # Note that clang-cl.exe should use MSVC flavor flags, not GNU
 if (CMAKE_C_COMPILER_ID STREQUAL "MSVC" OR (CMAKE_C_COMPILER_ID STREQUAL "Clang" AND CMAKE_C_COMPILER_FRONTEND_VARIANT MATCHES "MSVC"))
-    if (BUILD_WERROR)
-        target_compile_options(loader_common_options INTERFACE $<$<COMPILE_LANGUAGE::CXX,C>:/WX>)
-    endif()
     target_compile_options(loader_common_options INTERFACE $<$<COMPILE_LANGUAGE::CXX,C>:/W4>)
 elseif(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
     # using GCC or Clang with the regular front end
-    if (BUILD_WERROR)
-        target_compile_options(loader_common_options INTERFACE $<$<COMPILE_LANGUAGE::CXX,C>:-Werror>)
-    endif()
     target_compile_options(loader_common_options INTERFACE
         $<$<COMPILE_LANGUAGE::CXX,C>:-Wall>
         $<$<COMPILE_LANGUAGE::CXX,C>:-Wextra>
