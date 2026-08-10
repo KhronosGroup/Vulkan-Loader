@@ -59,7 +59,10 @@ endif()
 
 # Workaround AppleClang using the wrong headers when there are headers in /usr/local/include
 if (CMAKE_C_COMPILER_ID STREQUAL AppleClang AND TARGET Vulkan::Headers AND CMAKE_VERSION VERSION_GREATER_EQUAL 3.25)
-    set_target_properties(Vulkan::Headers PROPERTIES SYSTEM OFF)
+    get_target_property(vulkan_headers_aliased Vulkan::Headers ALIASED_TARGET)
+    if (NOT vulkan_headers_aliased)
+        set_target_properties(Vulkan::Headers PROPERTIES SYSTEM OFF)
+    endif()
 endif()
 
 include(GNUInstallDirs)
