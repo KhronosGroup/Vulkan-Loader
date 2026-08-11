@@ -1217,6 +1217,8 @@ VkResult loader_add_to_dev_ext_list(const struct loader_instance *inst, struct l
     if (entrys) {
         ext_list->list[idx].entrypoints = *entrys;
         should_free_entrys = false;
+    } else {
+        memset(&ext_list->list[idx].entrypoints, 0, sizeof(ext_list->list[idx].entrypoints));
     }
     ext_list->count++;
 out:

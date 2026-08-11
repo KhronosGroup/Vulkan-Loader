@@ -55,6 +55,7 @@ class MemoryTracker {
     bool fail_next_growing_reallocation = false;
     bool fail_growing_reallocation_after_skips = false;
     size_t growing_reallocations_to_skip = 0;
+    bool poison_growing_reallocations = false;
     std::unordered_map<void*, AllocationDetails> allocations;
 
     void* allocate(size_t size, size_t alignment, VkSystemAllocationScope alloc_scope) {
@@ -111,6 +112,11 @@ class MemoryTracker {
             allocation_count--;  // allocate() increments this, we we don't want that
             call_count--;        // allocate() also increments this, we don't want that
             memcpy(new_alloc, pOriginal, original_size);
+            if (poison_growing_reallocations && size > original_size) {
+                // The loader does not zero the region an app pfnReallocation grows, so fill it with a non-zero
+                // pattern to make any read of an unwritten grown slot deterministic.
+                memset(static_cast<char*>(new_alloc) + original_size, 0xff, size - original_size);
+            }
             allocations.erase(elem);
             return new_alloc;
         }
@@ -185,6 +191,13 @@ class MemoryTracker {
         std::lock_guard<std::mutex> lg(main_mutex);
         fail_growing_reallocation_after_skips = true;
         growing_reallocations_to_skip = skip_count;
+    }
+
+    // Fill the newly grown region of every growing reallocation with a non-zero pattern, matching what an app
+    // pfnReallocation that does not zero grown memory would leave behind.
+    void poison_grown_reallocations() noexcept {
+        std::lock_guard<std::mutex> lg(main_mutex);
+        poison_growing_reallocations = true;
     }
 
     // Static callbacks
@@ -1128,6 +1141,33 @@ TEST(Allocation, EnumeratePhysicalDevicesIntentionalAllocFail) {
         ASSERT_TRUE(tracker.empty());
         reached_the_end = true;
     }
+}
+
+// A layer device_extension entry with no "entrypoints" leaves loader_dev_ext_props::entrypoints unwritten.
+// The first 32 list slots come from a zero-filled allocation, but the 33rd lands in the region grown by the app
+// pfnReallocation, which the loader does not zero. Freeing the discovered layer then walks that indeterminate
+// loader_string_list. Poison the grown region so the read is deterministic.
+TEST(Allocation, LayerDeviceExtensionsWithoutEntrypoints) {
+    FrameworkEnvironment env{};
+    env.add_icd(TEST_ICD_PATH_VERSION_2);
+
+    std::vector<ManifestLayer::LayerDescription::Extension> layer_exts;
+    for (uint32_t i = 0; i < 40; i++) {
+        layer_exts.emplace_back(std::string("VK_TEST_dev_ext_") + std::to_string(i), i + 1);
+    }
+    env.add_explicit_layer(ManifestOptions{}.set_json_name("test_dev_ext_layer.json"),
+                           ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                         .set_name("VK_LAYER_test_dev_ext")
+                                                         .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                         .add_device_extensions(layer_exts)));
+
+    MemoryTracker tracker;
+    tracker.poison_grown_reallocations();
+    {
+        InstWrapper inst{env.vulkan_functions, tracker.get()};
+        ASSERT_NO_FATAL_FAILURE(inst.CheckCreate());
+    }
+    ASSERT_TRUE(tracker.empty());
 }
 #if defined(WIN32)
 // Test failure during vkCreateInstance and vkCreateDevice to make sure we don't
