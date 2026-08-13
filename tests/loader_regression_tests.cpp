@@ -4478,6 +4478,37 @@ TEST(ManifestDiscovery, AppleBundles) {
     ASSERT_EQ(test_physical_device_0.properties.deviceID, props.deviceID);
 }
 
+// Add two drivers, one to the bundle and one to the system locations
+TEST(ManifestDiscovery, AppleBundlesWithSearchOnlyInBundleEnvVar) {
+    FrameworkEnvironment env{};
+    env.env_var_search_only_in_bundle.set_new_value("1");
+    env.setup_macos_bundle();
+    env.add_icd(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA,
+                ManifestOptions{}.set_discovery_type(ManifestDiscoveryType::macos_bundle));
+    auto& test_physical_device_0 = env.get_test_icd(0).add_and_get_physical_device({});
+    test_physical_device_0.properties.deviceID = 1337;
+    env.add_icd(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA);
+    auto& test_physical_device_1 = env.get_test_icd(1).add_and_get_physical_device({});
+    test_physical_device_1.properties.deviceID = 9999;
+
+    env.add_explicit_layer(
+        {}, ManifestLayer{}.add_layer(
+                ManifestLayer::LayerDescription{}.set_name("VK_LAYER_test").set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)));
+
+    InstWrapper inst{env.vulkan_functions};
+    ASSERT_NO_FATAL_FAILURE(inst.CheckCreate());
+    auto physical_devices = inst.GetPhysDevs();
+    ASSERT_EQ(1, physical_devices.size());
+
+    // should only get bundled driver and layer
+    VkPhysicalDeviceProperties props{};
+    inst->vkGetPhysicalDeviceProperties(physical_devices[0], &props);
+    ASSERT_EQ(test_physical_device_0.properties.deviceID, props.deviceID);
+
+    // No layers should be found
+    env.GetLayerProperties(0);
+}
+
 // Add two drivers, one to the bundle and one using the driver env-var
 TEST(ManifestDiscovery, AppleBundlesEnvVarActive) {
     FrameworkEnvironment env{};
