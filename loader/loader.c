@@ -3501,6 +3501,7 @@ VkResult read_data_files_in_search_paths(const struct loader_instance *inst, enu
 
 #if defined(__APPLE__)
     char *bundle_path = NULL;
+    char *search_only_in_bundle_env_var = loader_secure_getenv(VK_LOADER_SEARCH_ONLY_IN_BUNDLE_ENV_VAR, inst);
 #endif
 
 #if defined(_WIN32)
@@ -3656,6 +3657,8 @@ VkResult read_data_files_in_search_paths(const struct loader_instance *inst, enu
             }
         }
 #elif COMMON_UNIX_PLATFORMS
+        bool search_outside_of_bundle = true;
+
         rel_size = strlen(relative_location);
         if (rel_size > 0) {
 #if defined(__APPLE__)
@@ -3714,40 +3717,45 @@ VkResult read_data_files_in_search_paths(const struct loader_instance *inst, enu
                     CFRelease(ref);
                 }
             }
-#endif  // __APPLE__
 
-            // Only add the home folders if not NULL
-            if (NULL != home_config_dir) {
-                vk_result = copy_data_file_info(inst, home_config_dir, relative_location, rel_size, &search_paths);
+            if (NULL != search_only_in_bundle_env_var) {
+                search_outside_of_bundle = false;
+            }
+#endif  // __APPLE__
+            if (search_outside_of_bundle) {
+                // Only add the home folders if not NULL
+                if (NULL != home_config_dir) {
+                    vk_result = copy_data_file_info(inst, home_config_dir, relative_location, rel_size, &search_paths);
+                    if (VK_SUCCESS != vk_result) {
+                        goto out;
+                    }
+                }
+                vk_result = copy_data_file_info(inst, xdg_config_dirs, relative_location, rel_size, &search_paths);
                 if (VK_SUCCESS != vk_result) {
                     goto out;
                 }
-            }
-            vk_result = copy_data_file_info(inst, xdg_config_dirs, relative_location, rel_size, &search_paths);
-            if (VK_SUCCESS != vk_result) {
-                goto out;
-            }
-            vk_result = copy_data_file_info(inst, SYSCONFDIR, relative_location, rel_size, &search_paths);
-            if (VK_SUCCESS != vk_result) {
-                goto out;
-            }
+                vk_result = copy_data_file_info(inst, SYSCONFDIR, relative_location, rel_size, &search_paths);
+                if (VK_SUCCESS != vk_result) {
+                    goto out;
+                }
 #if defined(EXTRASYSCONFDIR)
-            vk_result = copy_data_file_info(inst, EXTRASYSCONFDIR, relative_location, rel_size, &search_paths);
-            if (VK_SUCCESS != vk_result) {
-                goto out;
-            }
+                vk_result = copy_data_file_info(inst, EXTRASYSCONFDIR, relative_location, rel_size, &search_paths);
+                if (VK_SUCCESS != vk_result) {
+                    goto out;
+                }
 #endif
 
-            // Only add the home folders if not NULL
-            if (NULL != home_data_dir) {
-                vk_result = copy_data_file_info(inst, home_data_dir, relative_location, rel_size, &search_paths);
+                // Only add the home folders if not NULL
+                if (NULL != home_data_dir) {
+                    vk_result = copy_data_file_info(inst, home_data_dir, relative_location, rel_size, &search_paths);
+                    if (VK_SUCCESS != vk_result) {
+                        goto out;
+                    }
+                }
+                vk_result = copy_data_file_info(inst, xdg_data_dirs, relative_location, rel_size, &search_paths);
                 if (VK_SUCCESS != vk_result) {
                     goto out;
                 }
-            }
-            vk_result = copy_data_file_info(inst, xdg_data_dirs, relative_location, rel_size, &search_paths);
-            if (VK_SUCCESS != vk_result) {
-                goto out;
             }
         }
 #else
@@ -3799,6 +3807,7 @@ out:
 #elif COMMON_UNIX_PLATFORMS
 #if defined(__APPLE__)
     loader_instance_heap_free(inst, bundle_path);
+    loader_free_getenv(search_only_in_bundle_env_var, inst);
 #endif
     loader_free_getenv(xdg_config_home, inst);
     loader_free_getenv(xdg_config_dirs, inst);
