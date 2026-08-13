@@ -985,6 +985,10 @@ TEST_FUNCTION_EXPORT VkResult get_settings_layers(const struct loader_instance* 
             continue;
         }
 
+        if (!is_json(layer_config->path, strlen(layer_config->path))) {
+            continue;
+        }
+
         cJSON* json = NULL;
         VkResult local_res = loader_get_json(inst, layer_config->path, &json);
         if (VK_ERROR_OUT_OF_HOST_MEMORY == local_res) {
