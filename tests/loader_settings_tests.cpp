@@ -2385,8 +2385,10 @@ TEST(SettingsFile, StderrLogFilters) {
                                          .set_name(explicit_layer_name)
                                          .set_path(env.get_shimmed_layer_manifest_path())
                                          .set_control("on"))
-            .add_layer_configuration(
-                LoaderSettingsLayerConfiguration{}.set_name("VK_LAYER_missing").set_path("/road/to/nowhere").set_control("on"))));
+            .add_layer_configuration(LoaderSettingsLayerConfiguration{}
+                                         .set_name("VK_LAYER_missing")
+                                         .set_path("/road/to/nowhere.json")
+                                         .set_control("on"))));
 
     std::string expected_output_verbose;
     expected_output_verbose += "[Vulkan Loader] DEBUG:          Layer Configurations count = 2\n";
@@ -2397,7 +2399,7 @@ TEST(SettingsFile, StderrLogFilters) {
     expected_output_verbose += "[Vulkan Loader] DEBUG:          Control: on\n";
     expected_output_verbose += "[Vulkan Loader] DEBUG:          ---- Layer Configuration [1] ----\n";
     expected_output_verbose += "[Vulkan Loader] DEBUG:          Name: VK_LAYER_missing\n";
-    expected_output_verbose += "[Vulkan Loader] DEBUG:          Path: /road/to/nowhere\n";
+    expected_output_verbose += "[Vulkan Loader] DEBUG:          Path: /road/to/nowhere.json\n";
     expected_output_verbose += "[Vulkan Loader] DEBUG:          Layer Type: Explicit\n";
     expected_output_verbose += "[Vulkan Loader] DEBUG:          Control: on\n";
     expected_output_verbose += "[Vulkan Loader] DEBUG:          ---------------------------------\n";
@@ -2409,7 +2411,7 @@ TEST(SettingsFile, StderrLogFilters) {
                                           " does not conform to naming standard (Policy #LLP_LAYER_3)\n";
 
     std::string expected_output_error =
-        "[Vulkan Loader] ERROR:          loader_get_json: Failed to open JSON file /road/to/nowhere\n";
+        "[Vulkan Loader] ERROR:          loader_get_json: Failed to open JSON file /road/to/nowhere.json\n";
 
     env.loader_settings.app_specific_settings.at(0).stderr_log = {"all"};
     env.update_loader_settings(env.loader_settings);
@@ -2663,8 +2665,10 @@ TEST(SettingsFile, NoStderr_log_but_VK_LOADER_DEBUG) {
                                          .set_name(explicit_layer_name)
                                          .set_path(env.get_shimmed_layer_manifest_path())
                                          .set_control("auto"))
-            .add_layer_configuration(
-                LoaderSettingsLayerConfiguration{}.set_name("VK_LAYER_missing").set_path("/road/to/nowhere").set_control("auto")));
+            .add_layer_configuration(LoaderSettingsLayerConfiguration{}
+                                         .set_name("VK_LAYER_missing")
+                                         .set_path("/road/to/nowhere.json")
+                                         .set_control("auto")));
     env.loader_settings.app_specific_settings.at(0).stderr_log = {};
     env.update_loader_settings(env.loader_settings);
 
@@ -2677,7 +2681,7 @@ TEST(SettingsFile, NoStderr_log_but_VK_LOADER_DEBUG) {
     expected_output_verbose += "[Vulkan Loader] DEBUG:          Control: auto\n";
     expected_output_verbose += "[Vulkan Loader] DEBUG:          ---- Layer Configuration [1] ----\n";
     expected_output_verbose += "[Vulkan Loader] DEBUG:          Name: VK_LAYER_missing\n";
-    expected_output_verbose += "[Vulkan Loader] DEBUG:          Path: /road/to/nowhere\n";
+    expected_output_verbose += "[Vulkan Loader] DEBUG:          Path: /road/to/nowhere.json\n";
     expected_output_verbose += "[Vulkan Loader] DEBUG:          Layer Type: Explicit\n";
     expected_output_verbose += "[Vulkan Loader] DEBUG:          Control: auto\n";
     expected_output_verbose += "[Vulkan Loader] DEBUG:          ---------------------------------\n";
@@ -2689,7 +2693,7 @@ TEST(SettingsFile, NoStderr_log_but_VK_LOADER_DEBUG) {
         "[Vulkan Loader] WARNING:        Layer name Regular_TestLayer1 does not conform to naming standard (Policy #LLP_LAYER_3)\n";
 
     std::string expected_output_error =
-        "[Vulkan Loader] ERROR:          loader_get_json: Failed to open JSON file /road/to/nowhere\n";
+        "[Vulkan Loader] ERROR:          loader_get_json: Failed to open JSON file /road/to/nowhere.json\n";
 
     env.platform_shim->clear_logs();
     {

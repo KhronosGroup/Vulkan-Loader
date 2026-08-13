@@ -246,6 +246,9 @@ loader_api_version loader_combine_version(uint32_t major, uint32_t minor, uint32
 // Helper macros for determining if a version is valid or not
 bool loader_check_version_meets_required(loader_api_version required, loader_api_version version);
 
+// Helper that returns true if the string passed in path ends in .json
+bool is_json(const char *path, size_t len);
+
 VkResult loader_filter_enumerated_physical_device(const struct loader_instance *inst,
                                                   const struct loader_envvar_id_filter *device_id_filter,
                                                   const struct loader_envvar_id_filter *vendor_id_filter,
