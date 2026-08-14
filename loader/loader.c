@@ -7217,7 +7217,7 @@ typedef struct physical_device_configuration_details {
 VkResult loader_apply_settings_device_configurations(struct loader_instance *inst, uint32_t *pPhysicalDeviceCount,
                                                      VkPhysicalDevice *pPhysicalDevices) {
     loader_log(inst, VULKAN_LOADER_INFO_BIT, 0,
-               "Reordering the output of vkEnumeratePhysicalDevices to match the loader settings device configurations list");
+               "Selecting and ordering VkPhysicalDevices to match the loader settings device configurations list");
 
     physical_device_configuration_details *pd_details =
         loader_stack_alloc(inst->phys_dev_count_term * sizeof(physical_device_configuration_details));
@@ -7734,6 +7734,10 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_EnumeratePhysicalDeviceGroups(
     VkResult res = VK_SUCCESS;
     struct loader_icd_term *icd_term;
     uint32_t total_count = 0;
+    // The number of groups actually written into new_phys_dev_groups.  This is
+    // less than total_count when groups are skipped, which happens when the
+    // settings file hides a device that a group contains.
+    uint32_t new_group_count = 0;
     uint32_t cur_icd_group_count = 0;
     VkPhysicalDeviceGroupProperties **new_phys_dev_groups = NULL;
     struct loader_physical_device_group_term *local_phys_dev_groups = NULL;
@@ -7988,11 +7992,61 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_EnumeratePhysicalDeviceGroups(
             }
         }
 
+        // Apply the settings file's device_configurations to the groups.  If a group
+        // contains an excluded VkPhysicalDevice, drop the whole group.
+        if (inst->settings.settings_active && inst->settings.device_configurations_active && NULL != inst->phys_devs_term) {
+            uint32_t visible_count = inst->phys_dev_count_term;
+            VkPhysicalDevice *visible_phys_devs = loader_stack_alloc(visible_count * sizeof(VkPhysicalDevice));
+            if (NULL == visible_phys_devs) {
+                res = VK_ERROR_OUT_OF_HOST_MEMORY;
+                goto out;
+            }
+
+            // Reuse the same matching the non-group path uses, so the two can't drift apart.
+            VkResult settings_res = loader_apply_settings_device_configurations(inst, &visible_count, visible_phys_devs);
+            if (VK_SUCCESS != settings_res) {
+                res = settings_res;
+                goto out;
+            }
+
+            for (uint32_t group = 0; group < total_count; group++) {
+                bool group_fully_visible = true;
+                for (uint32_t group_gpu = 0; group_gpu < local_phys_dev_groups[group].group_props.physicalDeviceCount;
+                     group_gpu++) {
+                    bool found = false;
+                    for (uint32_t vis = 0; vis < visible_count; vis++) {
+                        if (local_phys_dev_groups[group].group_props.physicalDevices[group_gpu] == visible_phys_devs[vis]) {
+                            found = true;
+                            break;
+                        }
+                    }
+                    if (!found) {
+                        group_fully_visible = false;
+                        break;
+                    }
+                }
+
+                if (!group_fully_visible) {
+                    // Drop the whole group rather than removing the hidden device from it.
+                    // The devices in a group are physically linked, so a group that has had
+                    // a member removed no longer describes the hardware it claims to.
+                    loader_log(inst, VULKAN_LOADER_INFO_BIT, 0,
+                               "terminator_EnumeratePhysicalDeviceGroups: Physical device group %d contains a VkPhysicalDevice "
+                               "which the settings file device configurations exclude, so the group was not reported.",
+                               group);
+                    local_phys_dev_groups[group].group_props.physicalDeviceCount = 0;
+                    memset(local_phys_dev_groups[group].group_props.physicalDevices, 0,
+                           sizeof(local_phys_dev_groups[group].group_props.physicalDevices));
+                }
+            }
+        }
+
         uint32_t idx = 0;
 
         // Copy or create everything to fill the new array of physical device groups
         for (uint32_t group = 0; group < total_count; group++) {
-            // Skip groups which have been included through sorting
+            // Skip groups which have been included through sorting, and groups the
+            // settings file excluded above.
             if (local_phys_dev_groups[group].group_props.physicalDeviceCount == 0) {
                 continue;
             }
@@ -8046,6 +8100,10 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_EnumeratePhysicalDeviceGroups(
 
             ++idx;
         }
+
+        // Only idx entries were written; the rest of new_phys_dev_groups is still NULL
+        // from the calloc above, so the count must reflect what was actually filled in.
+        new_group_count = idx;
     }
 
 out:
@@ -8096,7 +8154,7 @@ out:
             }
 
             // Swap in the new physical device group list
-            inst->phys_dev_group_count_term = total_count;
+            inst->phys_dev_group_count_term = new_group_count;
             inst->phys_dev_groups_term = new_phys_dev_groups;
         }
 

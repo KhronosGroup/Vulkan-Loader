@@ -3203,6 +3203,161 @@ TEST(SettingsFile, InvalidAdditionalDriversField) {
     EXPECT_TRUE(string_eq(active_layer_props.at(0).layerName, layer_name));
 }
 
+// Reproduces #1915: the settings file's device_configurations list restricts
+// what vkEnumeratePhysicalDevices reports, but vkEnumeratePhysicalDeviceGroups
+// ignores it entirely, so an application can still reach a hidden device.
+//
+// Singleton groups only -- one group per physical device.  There is no
+// ambiguity in that case: a device the settings file hides must not be
+// reachable through any group.
+TEST(SettingsFile, DeviceConfigurationAppliesToPhysicalDeviceGroups) {
+    FrameworkEnvironment env{};
+    std::vector<VulkanUUID> uuids{2, VulkanUUID{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15}};
+
+    // Mix up the uuid's so that they are all unique
+    int count = 1;
+    for (auto& uuid : uuids) {
+        std::rotate(uuid.begin(), uuid.begin() + count, uuid.end());
+        count++;
+    }
+
+    auto& icd = env.add_icd(TEST_ICD_PATH_VERSION_2).set_icd_api_version(VK_API_VERSION_1_1);
+    icd.add_physical_device(
+        PhysicalDevice().set_deviceName("visible").set_api_version(VK_API_VERSION_1_1).set_deviceUUID(uuids[0]));
+    icd.add_physical_device(PhysicalDevice().set_deviceName("hidden").set_api_version(VK_API_VERSION_1_1).set_deviceUUID(uuids[1]));
+
+    icd.physical_device_groups.emplace_back(0);
+    icd.physical_device_groups.emplace_back(1);
+
+    // The settings file lists only the first device, so the second is hidden.
+    env.loader_settings.set_file_format_version({1, 0, 0}).add_app_specific_setting(AppSpecificSettings{});
+    env.loader_settings.app_specific_settings.at(0).add_device_configuration(
+        LoaderSettingsDeviceConfiguration{}.set_deviceUUID(uuids[0]));
+    env.update_loader_settings(env.loader_settings);
+
+    InstWrapper inst{env.vulkan_functions};
+    inst.CheckCreate();
+
+    // The non-group path already honours the settings file.
+    auto pds = inst.GetPhysDevs();
+    ASSERT_EQ(pds.size(), 1U);
+
+    // The group path must agree.  The count query is an upper bound -- the
+    // non-group path estimates its count the same way -- so what matters is
+    // that the groups actually written out exclude the hidden device.
+    uint32_t group_count = 0;
+    ASSERT_EQ(VK_SUCCESS, inst->vkEnumeratePhysicalDeviceGroups(inst, &group_count, nullptr));
+    ASSERT_GE(group_count, 1U);
+
+    std::vector<VkPhysicalDeviceGroupProperties> groups{
+        group_count, VkPhysicalDeviceGroupProperties{VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_GROUP_PROPERTIES}};
+    ASSERT_EQ(VK_SUCCESS, inst->vkEnumeratePhysicalDeviceGroups(inst, &group_count, groups.data()));
+    ASSERT_EQ(group_count, 1U);
+
+    // ...and the one device reachable through it is the visible one.
+    ASSERT_EQ(groups[0].physicalDeviceCount, 1U);
+    VkPhysicalDeviceProperties props{};
+    inst->vkGetPhysicalDeviceProperties(groups[0].physicalDevices[0], &props);
+    ASSERT_TRUE(string_eq(props.deviceName, "visible"));
+}
+
+// A group holding both a visible and a hidden device is dropped whole rather
+// than having the hidden device removed from it.  The devices in a group are
+// physically linked, so a group missing a member misdescribes the hardware.
+TEST(SettingsFile, DeviceConfigurationDropsPartiallyHiddenPhysicalDeviceGroup) {
+    FrameworkEnvironment env{};
+    std::vector<VulkanUUID> uuids{2, VulkanUUID{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15}};
+
+    int count = 1;
+    for (auto& uuid : uuids) {
+        std::rotate(uuid.begin(), uuid.begin() + count, uuid.end());
+        count++;
+    }
+
+    auto& icd = env.add_icd(TEST_ICD_PATH_VERSION_2).set_icd_api_version(VK_API_VERSION_1_1);
+    icd.add_physical_device(
+        PhysicalDevice().set_deviceName("visible").set_api_version(VK_API_VERSION_1_1).set_deviceUUID(uuids[0]));
+    icd.add_physical_device(PhysicalDevice().set_deviceName("hidden").set_api_version(VK_API_VERSION_1_1).set_deviceUUID(uuids[1]));
+
+    // A single group containing both devices.
+    icd.physical_device_groups.push_back(PhysicalDeviceGroup({0, 1}));
+
+    env.loader_settings.set_file_format_version({1, 0, 0}).add_app_specific_setting(AppSpecificSettings{});
+    env.loader_settings.app_specific_settings.at(0).add_device_configuration(
+        LoaderSettingsDeviceConfiguration{}.set_deviceUUID(uuids[0]));
+    env.update_loader_settings(env.loader_settings);
+
+    InstWrapper inst{env.vulkan_functions};
+    inst.CheckCreate();
+
+    auto pds = inst.GetPhysDevs();
+    ASSERT_EQ(pds.size(), 1U);
+
+    uint32_t group_count = 0;
+    ASSERT_EQ(VK_SUCCESS, inst->vkEnumeratePhysicalDeviceGroups(inst, &group_count, nullptr));
+    std::vector<VkPhysicalDeviceGroupProperties> groups{
+        group_count, VkPhysicalDeviceGroupProperties{VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_GROUP_PROPERTIES}};
+    ASSERT_EQ(VK_SUCCESS, inst->vkEnumeratePhysicalDeviceGroups(inst, &group_count, groups.data()));
+    ASSERT_EQ(group_count, 0U);
+}
+
+// When no device matches the settings file, the group path fails the same way
+// the plain path does rather than quietly reporting every group.
+TEST(SettingsFile, DeviceConfigurationMatchingNothingFailsPhysicalDeviceGroups) {
+    FrameworkEnvironment env{};
+    std::vector<VulkanUUID> uuids{2, VulkanUUID{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15}};
+
+    int count = 1;
+    for (auto& uuid : uuids) {
+        std::rotate(uuid.begin(), uuid.begin() + count, uuid.end());
+        count++;
+    }
+
+    auto& icd = env.add_icd(TEST_ICD_PATH_VERSION_2).set_icd_api_version(VK_API_VERSION_1_1);
+    icd.add_physical_device(PhysicalDevice().set_deviceName("only").set_api_version(VK_API_VERSION_1_1).set_deviceUUID(uuids[0]));
+    icd.physical_device_groups.emplace_back(0);
+
+    // The settings file names a device that does not exist.
+    env.loader_settings.set_file_format_version({1, 0, 0}).add_app_specific_setting(AppSpecificSettings{});
+    env.loader_settings.app_specific_settings.at(0).add_device_configuration(
+        LoaderSettingsDeviceConfiguration{}.set_deviceUUID(uuids[1]));
+    env.update_loader_settings(env.loader_settings);
+
+    InstWrapper inst{env.vulkan_functions};
+    inst.CheckCreate();
+
+    inst.GetPhysDev(VK_ERROR_INITIALIZATION_FAILED);
+
+    uint32_t group_count = 0;
+    ASSERT_EQ(VK_SUCCESS, inst->vkEnumeratePhysicalDeviceGroups(inst, &group_count, nullptr));
+    std::vector<VkPhysicalDeviceGroupProperties> groups{
+        group_count, VkPhysicalDeviceGroupProperties{VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_GROUP_PROPERTIES}};
+    ASSERT_EQ(VK_ERROR_INITIALIZATION_FAILED, inst->vkEnumeratePhysicalDeviceGroups(inst, &group_count, groups.data()));
+}
+
+// Without a settings file the groups are reported exactly as the driver gives
+// them, so the filtering above must not disturb the normal path.
+TEST(SettingsFile, NoDeviceConfigurationLeavesPhysicalDeviceGroupsAlone) {
+    FrameworkEnvironment env{};
+
+    auto& icd = env.add_icd(TEST_ICD_PATH_VERSION_2).set_icd_api_version(VK_API_VERSION_1_1);
+    icd.add_physical_device(PhysicalDevice().set_deviceName("first").set_api_version(VK_API_VERSION_1_1));
+    icd.add_physical_device(PhysicalDevice().set_deviceName("second").set_api_version(VK_API_VERSION_1_1));
+
+    icd.physical_device_groups.emplace_back(0);
+    icd.physical_device_groups.emplace_back(1);
+
+    InstWrapper inst{env.vulkan_functions};
+    inst.CheckCreate();
+
+    uint32_t group_count = 0;
+    ASSERT_EQ(VK_SUCCESS, inst->vkEnumeratePhysicalDeviceGroups(inst, &group_count, nullptr));
+    std::vector<VkPhysicalDeviceGroupProperties> groups{
+        group_count, VkPhysicalDeviceGroupProperties{VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_GROUP_PROPERTIES}};
+    ASSERT_EQ(VK_SUCCESS, inst->vkEnumeratePhysicalDeviceGroups(inst, &group_count, groups.data()));
+    ASSERT_EQ(group_count, 2U);
+}
+
 TEST(SettingsFile, DriverConfigurationsInSpecifiedOrder) {
     FrameworkEnvironment env{};
     std::vector<VulkanUUID> uuids{10, VulkanUUID{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15}};
