@@ -2627,8 +2627,9 @@ bool verify_meta_layer_component_layers(const struct loader_instance *inst, size
 
 // Add any instance and device extensions from component layers to this layer
 // list, so that anyone querying extensions will only need to look at the meta-layer
-bool update_meta_layer_extensions_from_component_layers(const struct loader_instance *inst, struct loader_layer_properties *prop,
-                                                        struct loader_layer_list *instance_layers) {
+VkResult update_meta_layer_extensions_from_component_layers(const struct loader_instance *inst,
+                                                            struct loader_layer_properties *prop,
+                                                            struct loader_layer_list *instance_layers) {
     VkResult res = VK_SUCCESS;
     for (uint32_t comp_layer = 0; comp_layer < prop->component_layer_names.count; comp_layer++) {
         struct loader_layer_properties *comp_prop =
@@ -2656,8 +2657,8 @@ bool update_meta_layer_extensions_from_component_layers(const struct loader_inst
                            comp_prop->device_extension_list.list[ext].props.extensionName);
 
                 if (!has_vk_dev_ext_property(&comp_prop->device_extension_list.list[ext].props, &prop->device_extension_list)) {
-                    loader_add_to_dev_ext_list(inst, &prop->device_extension_list,
-                                               &comp_prop->device_extension_list.list[ext].props, NULL);
+                    res = loader_add_to_dev_ext_list(inst, &prop->device_extension_list,
+                                                     &comp_prop->device_extension_list.list[ext].props, NULL);
                     if (VK_ERROR_OUT_OF_HOST_MEMORY == res) {
                         return res;
                     }
