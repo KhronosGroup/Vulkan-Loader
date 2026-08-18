@@ -3,7 +3,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-name: format
+name: lint
 
 on:
     push:
@@ -33,3 +33,26 @@ jobs:
         done
 
         git diff --exit-code
+
+  clang-tidy:
+    name: clang-tidy
+    runs-on: ubuntu-26.04
+    timeout-minutes: 30
+
+    env:
+      CLANG_TIDY_VERSION: 22
+
+    steps:
+    - uses: actions/checkout@v7
+    - uses: actions/setup-python@v7
+      with:
+        python-version: '3.11'
+    - run: sudo apt update
+    - run: sudo apt install --yes --no-install-recommends libwayland-dev libxrandr-dev
+    - run: |
+        cmake -S. -B build \
+        -D CMAKE_BUILD_TYPE=Release \
+        -D UPDATE_DEPS=ON \
+        -D USE_CLANG_TIDY=ON \
+        -D CLANG_TIDY_EXE=$(command -v clang-tidy-${CLANG_TIDY_VERSION})
+    - run: cmake --build build

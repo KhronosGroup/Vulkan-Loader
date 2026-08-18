@@ -23,10 +23,10 @@ extern "C" {
 typedef ptrdiff_t handle_type; /* C99's intptr_t not sufficiently portable */
 
 struct DIR {
-    handle_type handle; /* -1 for failed rewind */
-    struct _finddata_t info;
-    struct dirent result; /* d_name null iff first time */
-    char *name;           /* null-terminated char string */
+    handle_type handle;       /* -1 for failed rewind */
+    struct _finddata_t info;  // NOLINT(bugprone-reserved-identifier) - matching the Windows CRT type name
+    struct dirent result;     /* d_name null iff first time */
+    char *name;               /* null-terminated char string */
 };
 
 DIR *opendir(const VkAllocationCallbacks *pAllocator, const char *name) {

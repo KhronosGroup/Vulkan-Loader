@@ -133,10 +133,14 @@ static VkResult loader_read_entire_file(const struct loader_instance *inst, cons
         goto out;
     }
     *out_len = stats.st_size + 1;
+    // out_buff was allocated with stats.st_size + 1 bytes above, and the fread check already verified the file's
+    // contents did not change size out from under us; this is the last valid byte.
+    // NOLINTNEXTLINE(clang-analyzer-security.ArrayBound)
     (*out_buff)[stats.st_size] = '\0';
 
 out:
     if (NULL != file) {
+        // NOLINTNEXTLINE(cert-err33-c) - file was only opened for reading, nothing to flush; res already reflects any read failure
         fclose(file);
     }
     return res;

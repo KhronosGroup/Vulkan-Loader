@@ -203,7 +203,7 @@ void DECORATE_PRINTF(4, 5)
 
 #if defined(DEBUG)
     int debug_flag_mask =
-        msg_type & (VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_WARN_BIT | VULKAN_LOADER_INFO_BIT | VULKAN_LOADER_DEBUG_BIT);
+        (int)(msg_type & (VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_WARN_BIT | VULKAN_LOADER_INFO_BIT | VULKAN_LOADER_DEBUG_BIT));
     assert((debug_flag_mask == 0 || debug_flag_mask == VULKAN_LOADER_ERROR_BIT || debug_flag_mask == VULKAN_LOADER_WARN_BIT ||
             debug_flag_mask == VULKAN_LOADER_INFO_BIT || debug_flag_mask == VULKAN_LOADER_DEBUG_BIT) &&
            "This log has more than one exclusive debug flags (error, warn, info, debug) set");
@@ -260,9 +260,11 @@ void DECORATE_PRINTF(4, 5)
     // Assert that we didn't write more than what is available in cmd_line_msg
     assert(cmd_line_size > num_used);
 
+    // NOLINTBEGIN(cert-err33-c) - this is the logger itself; no sane recovery from a failed stderr write
     fputs(cmd_line_msg, stderr);
     fputs(msg, stderr);
     fputc('\n', stderr);
+    // NOLINTEND(cert-err33-c)
 #if defined(WIN32)
     OutputDebugString(cmd_line_msg);
     OutputDebugString(msg);
@@ -277,6 +279,7 @@ void loader_log_asm_function_not_supported(const struct loader_instance *inst, V
 
 void loader_log_generate_uuid_string(const uint8_t uuid[16], char output[UUID_STR_LEN]) {
     assert(uuid && output);
+    // NOLINTNEXTLINE(cert-err33-c) - fixed format string and fixed-size output buffer sized to fit exactly; cannot fail or truncate
     snprintf(output, UUID_STR_LEN, "%02x%02x%02x%02x-%02x%02x-%02x%02x-%02x%02x-%02x%02x%02x%02x%02x%02x", uuid[0], uuid[1],
              uuid[2], uuid[3], uuid[4], uuid[5], uuid[6], uuid[7], uuid[8], uuid[9], uuid[10], uuid[11], uuid[12], uuid[13],
              uuid[14], uuid[15]);

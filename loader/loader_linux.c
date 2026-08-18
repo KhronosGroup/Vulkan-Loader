@@ -215,6 +215,7 @@ void linux_env_var_default_device(struct loader_instance *inst, uint32_t device_
         // The environment variable exists, so grab the vendor ID and device ID of the
         // selected default device
         unsigned vendor_id, device_id;
+        // NOLINTNEXTLINE(cert-err34-c) - return value is checked below via 'matched == 2'
         int32_t matched = sscanf(selection, "%x:%x", &vendor_id, &device_id);
         if (matched == 2) {
             for (int32_t i = 0; i < (int32_t)device_count; ++i) {

@@ -520,7 +520,7 @@ VkResult loader_add_environment_layers(struct loader_instance *inst, const char 
         }
 
         // We found a layer we're interested in, but has it been disabled...
-        bool adding = true;
+        bool adding;
         bool is_implicit = (0 == (source_prop->type_flags & VK_LAYER_TYPE_FLAG_EXPLICIT_LAYER));
         bool disabled_by_type =
             (is_implicit) ? (filters->disable_filter.disable_all_implicit) : (filters->disable_filter.disable_all_explicit);
@@ -530,11 +530,10 @@ VkResult loader_add_environment_layers(struct loader_instance *inst, const char 
             loader_log(inst, VULKAN_LOADER_WARN_BIT | VULKAN_LOADER_LAYER_BIT, 0,
                        "Layer \"%s\" ignored because it has been disabled by env var \'%s\'", source_prop->info.layerName,
                        VK_LAYERS_DISABLE_ENV_VAR);
-            adding = false;
         }
 
-        // If we are supposed to filter through all layers, we need to compare the layer name against the filter.
-        // This can override the disable above, so we want to do it second.
+        // Whether a layer is force-enabled only depends on the check below - the disable check above exists purely to log
+        // why a layer was skipped, since a layer is only ever added by this function via VK_LOADER_LAYERS_ENABLE.
         // Also make sure the layer isn't already in the output_list, skip adding it if it is.
         if (check_name_matches_filter_environment_var(source_prop->info.layerName, &filters->enable_filter) &&
             !loader_find_layer_name_in_list(source_prop->info.layerName, target_list)) {

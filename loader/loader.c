@@ -74,6 +74,7 @@
 #endif  // LOADER_ENABLE_LINUX_SORT
 
 // Generated file containing all the extension data
+// NOLINTNEXTLINE(bugprone-suspicious-include) - intentionally including a .c file to inline generated tables
 #include "vk_loader_extensions.c"
 
 struct loader_struct loader = {0};
@@ -701,13 +702,13 @@ uint32_t loader_parse_version_string(char *vers_str) {
 
     vers_tok = thread_safe_strtok(vers_str, ".\"\n\r", &context);
     if (NULL != vers_tok) {
-        major = (uint16_t)atoi(vers_tok);
+        major = (uint16_t)strtoul(vers_tok, NULL, 10);
         vers_tok = thread_safe_strtok(NULL, ".\"\n\r", &context);
         if (NULL != vers_tok) {
-            minor = (uint16_t)atoi(vers_tok);
+            minor = (uint16_t)strtoul(vers_tok, NULL, 10);
             vers_tok = thread_safe_strtok(NULL, ".\"\n\r", &context);
             if (NULL != vers_tok) {
-                patch = (uint16_t)atoi(vers_tok);
+                patch = (uint16_t)strtoul(vers_tok, NULL, 10);
                 vers_tok = thread_safe_strtok(NULL, ".\"\n\r", &context);
                 // check that we are using a 4 part version string
                 if (NULL != vers_tok) {
@@ -715,7 +716,7 @@ uint32_t loader_parse_version_string(char *vers_str) {
                     variant = major;
                     major = minor;
                     minor = patch;
-                    patch = (uint16_t)atoi(vers_tok);
+                    patch = (uint16_t)strtoul(vers_tok, NULL, 10);
                 }
             }
         }
@@ -1168,6 +1169,8 @@ VkResult loader_add_to_ext_list(const struct loader_instance *inst, struct loade
             ext_list->capacity *= 2;
         }
 
+        // every caller passes the address of an array element or on-stack struct, never NULL
+        // NOLINTNEXTLINE(clang-analyzer-core.NonNullParamChecker)
         memcpy(&ext_list->list[ext_list->count], cur_ext, sizeof(VkExtensionProperties));
         ext_list->count++;
     }
@@ -1213,6 +1216,8 @@ VkResult loader_add_to_dev_ext_list(const struct loader_instance *inst, struct l
         ext_list->capacity *= 2;
     }
 
+    // every caller passes the address of an array element or on-stack struct, never NULL
+    // NOLINTNEXTLINE(clang-analyzer-core.NonNullParamChecker)
     memcpy(&ext_list->list[idx].props, props, sizeof(*props));
     if (entrys) {
         ext_list->list[idx].entrypoints = *entrys;
@@ -1592,7 +1597,7 @@ VkResult loader_get_icd_loader_instance_extensions(const struct loader_instance 
 
     // Check if a user wants to disable the instance extension filtering behavior
     env_value = loader_getenv("VK_LOADER_DISABLE_INST_EXT_FILTER", inst);
-    if (NULL != env_value && atoi(env_value) != 0) {
+    if (NULL != env_value && strtol(env_value, NULL, 10) != 0) {
         filter_extensions = false;
     }
     loader_free_getenv(env_value, inst);
@@ -2358,6 +2363,7 @@ void loader_initialize(void) {
 
     char *loader_disable_dynamic_library_unloading_env_var = loader_getenv("VK_LOADER_DISABLE_DYNAMIC_LIBRARY_UNLOADING", NULL);
     if (loader_disable_dynamic_library_unloading_env_var &&
+        // NOLINTNEXTLINE(bugprone-not-null-terminated-result) - n=2 intentionally excludes "1x" values like "10"
         0 == strncmp(loader_disable_dynamic_library_unloading_env_var, "1", 2)) {
         loader_disable_dynamic_library_unloading = true;
         loader_log(NULL, VULKAN_LOADER_WARN_BIT, 0, "Vulkan Loader: library unloading is disabled");
@@ -2747,7 +2753,7 @@ void remove_all_non_valid_override_layers(struct loader_instance *inst, struct l
                 }
             } else {
                 if (global_layer_index == -1) {
-                    global_layer_index = i;
+                    global_layer_index = (int)i;
                 } else {
                     loader_log(
                         inst, VULKAN_LOADER_WARN_BIT | VULKAN_LOADER_LAYER_BIT, 0,
@@ -2876,7 +2882,7 @@ VkResult loader_read_layer_json(const struct loader_instance *inst, struct loade
         result = VK_ERROR_INITIALIZATION_FAILED;
         goto out;
     }
-    props.info.implementationVersion = atoi(implementation_version);
+    props.info.implementationVersion = (uint32_t)strtoul(implementation_version, NULL, 10);
 
     // Parse description
 
@@ -3058,7 +3064,7 @@ VkResult loader_read_layer_json(const struct loader_instance *inst, struct loade
             result = loader_parse_json_string(ext_item, "spec_version", &spec_version);
             if (result == VK_ERROR_OUT_OF_HOST_MEMORY) goto out;
             if (NULL != spec_version) {
-                ext_prop.specVersion = atoi(spec_version);
+                ext_prop.specVersion = (uint32_t)strtoul(spec_version, NULL, 10);
             }
             loader_instance_heap_free(inst, spec_version);
             bool ext_unsupported = wsi_unsupported_instance_extension(&ext_prop);
@@ -3093,7 +3099,7 @@ VkResult loader_read_layer_json(const struct loader_instance *inst, struct loade
             result = loader_parse_json_string(ext_item, "spec_version", &spec_version);
             if (result == VK_ERROR_OUT_OF_HOST_MEMORY) goto out;
             if (NULL != spec_version) {
-                ext_prop.specVersion = atoi(spec_version);
+                ext_prop.specVersion = (uint32_t)strtoul(spec_version, NULL, 10);
             }
             loader_instance_heap_free(inst, spec_version);
 
@@ -5020,7 +5026,7 @@ VkResult loader_create_instance_chain(const VkInstanceCreateInfo *pCreateInfo, c
         }
 
         // Create instance chain of enabled layers
-        for (int32_t i = inst->expanded_activated_layer_list.count - 1; i >= 0; i--) {
+        for (int32_t i = (int32_t)inst->expanded_activated_layer_list.count - 1; i >= 0; i--) {
             struct loader_layer_properties *layer_prop = inst->expanded_activated_layer_list.list[i];
             loader_platform_dl_handle lib_handle;
 
@@ -5419,7 +5425,7 @@ VkResult loader_create_device_chain(const VkPhysicalDevice pd, const VkDeviceCre
         loader_create_info.pNext = &chain_info;
 
         // Create instance chain of enabled layers
-        for (int32_t i = inst->expanded_activated_layer_list.count - 1; i >= 0; i--) {
+        for (int32_t i = (int32_t)inst->expanded_activated_layer_list.count - 1; i >= 0; i--) {
             struct loader_layer_properties *layer_prop = inst->expanded_activated_layer_list.list[i];
             loader_platform_dl_handle lib_handle = layer_prop->lib_handle;
 
@@ -5676,7 +5682,7 @@ VkResult loader_validate_instance_extensions(struct loader_instance *inst, const
 
         // Check if a user wants to disable the instance extension filtering behavior
         env_value = loader_getenv("VK_LOADER_DISABLE_INST_EXT_FILTER", inst);
-        if (NULL != env_value && atoi(env_value) != 0) {
+        if (NULL != env_value && strtol(env_value, NULL, 10) != 0) {
             check_if_known = false;
         }
         loader_free_getenv(env_value, inst);
@@ -5824,6 +5830,9 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateInstance(const VkInstanceCreateI
     // what the application requested, and thus will increase the instance version to a level that suites their needs.
     if (pCreateInfo->pApplicationInfo && pCreateInfo->pApplicationInfo->apiVersion) {
         loader_api_version altered_version = loader_make_version(pCreateInfo->pApplicationInfo->apiVersion);
+        // per LLP_LAYER_21 (docs/LoaderLayerInterface.md), a layer that clobbers pInstance before calling down is
+        // documented to crash the loader; this is not recoverable here.
+        // NOLINTNEXTLINE(clang-analyzer-core.NullDereference)
         if (altered_version.major != ptr_instance->app_api_version.major ||
             altered_version.minor != ptr_instance->app_api_version.minor) {
             ptr_instance->app_api_version = altered_version;
@@ -5858,12 +5867,14 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateInstance(const VkInstanceCreateI
     } else {
         for (uint32_t j = 0; j < pCreateInfo->enabledExtensionCount; j++) {
             if (!strcmp(pCreateInfo->ppEnabledExtensionNames[j], VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
+                // NOLINTNEXTLINE(clang-analyzer-core.NullDereference) - see LLP_LAYER_21 note above
                 ptr_instance->supports_get_dev_prop_2 = true;
                 break;
             }
         }
     }
 
+    // NOLINTNEXTLINE(clang-analyzer-core.NullDereference) - see LLP_LAYER_21 note above
     for (uint32_t i = 0; i < ptr_instance->icd_tramp_list.count; i++) {
         icd_term = loader_icd_add(ptr_instance, &ptr_instance->icd_tramp_list.scanned_list[i]);
         if (NULL == icd_term) {
@@ -6231,6 +6242,9 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateDevice(VkPhysicalDevice physical
                    dev, dev->loader_dispatch.core_dispatch.magic);
     }
 
+    // per LLP_LAYER_22 (docs/LoaderLayerInterface.md), a layer that clobbers pDevice before calling down is
+    // documented to crash the loader; this is not recoverable here.
+    // NOLINTNEXTLINE(clang-analyzer-core.NullDereference)
     dev->phys_dev_term = phys_dev_term;
 
     icd_exts.list = NULL;
@@ -6609,7 +6623,7 @@ VkResult setup_loader_tramp_phys_devs(struct loader_instance *inst, uint32_t phy
             for (uint32_t cur_idx = 0; cur_idx < old_count; ++cur_idx) {
                 if (old_to_new_index[cur_idx] == -1) {
                     new_phys_devs[new_idx] = inst->phys_devs_tramp[cur_idx];
-                    old_to_new_index[cur_idx] = new_idx;
+                    old_to_new_index[cur_idx] = (int32_t)new_idx;
                     found_count++;
                     break;
                 }
@@ -6677,7 +6691,7 @@ bool is_linux_sort_enabled(struct loader_instance *inst) {
     bool sort_items = inst->supports_get_dev_prop_2;
     char *env_value = loader_getenv("VK_LOADER_DISABLE_SELECT", inst);
     if (NULL != env_value) {
-        int32_t int_env_val = atoi(env_value);
+        int32_t int_env_val = (int32_t)strtol(env_value, NULL, 10);
         loader_free_getenv(env_value, inst);
         if (int_env_val != 0) {
             sort_items = false;
@@ -7806,6 +7820,9 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_EnumeratePhysicalDeviceGroups(
 
         // Create a temporary array (on the stack) to keep track of the
         // returned VkPhysicalDevice values.
+        // total_count may legitimately be 0 (no physical device groups); every subsequent use of local_phys_dev_groups
+        // is bounded by total_count, so a 0-byte alloca is never touched.
+        // NOLINTNEXTLINE(clang-analyzer-optin.portability.UnixAPI)
         local_phys_dev_groups = loader_stack_alloc(sizeof(struct loader_physical_device_group_term) * total_count);
         // Initialize the memory to something valid
         memset(local_phys_dev_groups, 0, sizeof(struct loader_physical_device_group_term) * total_count);
@@ -7925,6 +7942,12 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_EnumeratePhysicalDeviceGroups(
                                    "\'EnumeratePhysicalDeviceGroups\' to ICD %s  to get group information for temp data.",
                                    icd_term->scanned_icd->lib_name);
                         goto out;
+                    }
+                    // Same guard as the other two paths above: the ICD can report a larger completed count here than it did
+                    // during the counting pass. tmp_group_props and local_phys_dev_groups were both sized to the earlier
+                    // (clamped) count_this_time, so trusting a larger value here would overflow both stack allocations.
+                    if (count_this_time > total_count - cur_icd_group_count) {
+                        count_this_time = total_count - cur_icd_group_count;
                     }
                     for (uint32_t group = 0; group < count_this_time; ++group) {
                         uint32_t cur_index = group + cur_icd_group_count;
