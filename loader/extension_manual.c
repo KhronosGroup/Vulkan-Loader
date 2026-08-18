@@ -122,6 +122,10 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_GetPhysicalDeviceSurfaceCapabilities2E
 
         VkSurfaceCapabilitiesKHR surface_caps;
         res = icd_term->dispatch.GetPhysicalDeviceSurfaceCapabilitiesKHR(phys_dev_term->phys_dev, surface, &surface_caps);
+        if (res != VK_SUCCESS) {
+            // The driver did not populate surface_caps, so don't copy it out to the caller.
+            return res;
+        }
         pSurfaceCapabilities->minImageCount = surface_caps.minImageCount;
         pSurfaceCapabilities->maxImageCount = surface_caps.maxImageCount;
         pSurfaceCapabilities->currentExtent = surface_caps.currentExtent;
