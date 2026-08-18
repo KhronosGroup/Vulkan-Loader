@@ -1087,7 +1087,7 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vkGetPhysicalDeviceSurfaceCapabilitiesKHR(Vk
     if (nullptr != pSurfaceCapabilities) {
         *pSurfaceCapabilities = GetPhysDevice(physicalDevice).surface_capabilities;
     }
-    return VK_SUCCESS;
+    return GetPhysDevice(physicalDevice).surface_capabilities_result;
 }
 VKAPI_ATTR VkResult VKAPI_CALL test_vkGetPhysicalDeviceSurfaceFormatsKHR(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface,
                                                                          uint32_t* pSurfaceFormatCount,

@@ -113,6 +113,7 @@ struct PhysicalDevice {
     BUILDER_VECTOR(Extension, extensions, extension)
 
     BUILDER_VALUE(VkSurfaceCapabilitiesKHR, surface_capabilities)
+    BUILDER_VALUE_WITH_DEFAULT(VkResult, surface_capabilities_result, VK_SUCCESS)
     BUILDER_VECTOR(VkSurfaceFormatKHR, surface_formats, surface_format)
     BUILDER_VECTOR(VkPresentModeKHR, surface_present_modes, surface_present_mode)
     BUILDER_VALUE(VkSurfacePresentScalingCapabilitiesEXT, surface_present_scaling_capabilities)

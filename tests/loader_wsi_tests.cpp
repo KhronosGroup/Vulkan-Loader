@@ -823,6 +823,46 @@ TEST(WsiTests, GoogleSurfaceslessQuery) {
 #endif
 }
 
+// When the ICD does not expose vkGetPhysicalDeviceSurfaceCapabilities2EXT the loader emulates it using the
+// KHR entrypoint. If that driver call fails it may leave the output untouched (per spec), so the loader must
+// not copy the emulation scratch struct back to the caller - doing so returned uninitialised loader stack to
+// the application. Model this with a driver whose vkGetPhysicalDeviceSurfaceCapabilitiesKHR returns an error;
+// the caller's struct must be left as-is.
+TEST(WsiTests, GetPhysicalDeviceSurfaceCapabilities2EXTEmulationDriverError) {
+    FrameworkEnvironment env{};
+    VkSurfaceCapabilitiesKHR driver_caps{};
+    driver_caps.minImageCount = 0xBADC0DE;
+    driver_caps.maxImageCount = 0xBADC0DE;
+    env.add_icd(TEST_ICD_PATH_VERSION_2)
+        .setup_WSI()
+        .add_instance_extension(VK_EXT_DISPLAY_SURFACE_COUNTER_EXTENSION_NAME)
+        .add_physical_device(PhysicalDevice{}
+                                 .add_extension("VK_KHR_swapchain")
+                                 .set_surface_capabilities(driver_caps)
+                                 .set_surface_capabilities_result(VK_ERROR_SURFACE_LOST_KHR));
+
+    InstWrapper inst{env.vulkan_functions};
+    inst.create_info.setup_WSI().add_extension(VK_EXT_DISPLAY_SURFACE_COUNTER_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(inst.CheckCreate());
+
+    VkSurfaceKHR surface{};
+    ASSERT_EQ(VK_SUCCESS, create_surface(inst, surface));
+    WrappedHandle<VkSurfaceKHR, VkInstance, PFN_vkDestroySurfaceKHR> wrapped_surface{surface, inst.inst,
+                                                                                     env.vulkan_functions.vkDestroySurfaceKHR};
+
+    VkPhysicalDevice physical_device = inst.GetPhysDev();
+
+    PFN_vkGetPhysicalDeviceSurfaceCapabilities2EXT get_caps2ext = inst.load("vkGetPhysicalDeviceSurfaceCapabilities2EXT");
+    ASSERT_NE(get_caps2ext, nullptr);
+
+    VkSurfaceCapabilities2EXT caps2{};
+    caps2.sType = VK_STRUCTURE_TYPE_SURFACE_CAPABILITIES_2_EXT;
+
+    ASSERT_EQ(VK_ERROR_SURFACE_LOST_KHR, get_caps2ext(physical_device, surface, &caps2));
+    ASSERT_EQ(0u, caps2.minImageCount);
+    ASSERT_EQ(0u, caps2.maxImageCount);
+}
+
 TEST(WsiTests, ForgetEnableSurfaceExtensions) {
     FrameworkEnvironment env{};
     env.add_icd(TEST_ICD_PATH_VERSION_2).setup_WSI().add_physical_device(PhysicalDevice{}.add_extension("VK_KHR_swapchain"));
