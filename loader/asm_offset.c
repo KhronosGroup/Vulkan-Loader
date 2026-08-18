@@ -130,6 +130,8 @@ int main(int argc, char **argv) {
     };
 
     FILE *file = loader_fopen("gen_defines.asm", "w");
+    // NOLINTBEGIN(cert-err33-c) - this is a build-time code generator run by developers, not part of the loader's
+    // runtime attack surface; a failed write here is immediately visible as a broken build, not worth per-call checks.
     fprintf(file, "\n");
     if (assembler == MASM) {
         for (size_t i = 0; i < sizeof(values) / sizeof(values[0]); ++i) {
@@ -168,5 +170,6 @@ int main(int argc, char **argv) {
                     values[i].comment);
         }
     }
+    // NOLINTEND(cert-err33-c)
     return fclose(file);
 }

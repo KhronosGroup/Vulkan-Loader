@@ -26,6 +26,14 @@ if (CODE_COVERAGE)
     add_code_coverage_all_targets()
 endif()
 
+option(USE_CLANG_TIDY "Run clang-tidy on the loader sources as part of the build")
+if (USE_CLANG_TIDY)
+    if (CMAKE_VERSION VERSION_LESS "3.27")
+        message(FATAL_ERROR "USE_CLANG_TIDY requires CMake 3.27 or newer (for the SKIP_LINTING source property)")
+    endif()
+    find_program(CLANG_TIDY_EXE NAMES clang-tidy REQUIRED)
+    set(CLANG_TIDY_COMMAND "${CLANG_TIDY_EXE}")
+endif()
 
 # This variable enables downstream users to customize the target API
 # variant (e.g. Vulkan SC)

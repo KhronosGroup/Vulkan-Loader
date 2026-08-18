@@ -1,0 +1,23 @@
+---
+# SPDX-License-Identifier: Apache-2.0
+Checks: >
+  -*,
+  bugprone-*,
+  cert-*,
+  clang-analyzer-*,
+  performance-*,
+  portability-*,
+  -bugprone-assignment-in-if-condition,
+  -bugprone-branch-clone,
+  -bugprone-easily-swappable-parameters,
+  -bugprone-invalid-enum-default-initialization,
+  -bugprone-multi-level-implicit-pointer-conversion,
+  -bugprone-unchecked-string-to-number-conversion,
+  -clang-analyzer-optin.core.EnumCastOutOfRange,
+  -clang-analyzer-optin.performance.Padding,
+  -performance-no-int-to-ptr,
+  -portability-avoid-pragma-once
+WarningsAsErrors: '*'
+HeaderFilterRegex: '.*/loader/.*'
+ExcludeHeaderFilterRegex: '.*/loader/(generated/.*|cJSON\.h)$'
+FormatStyle: none

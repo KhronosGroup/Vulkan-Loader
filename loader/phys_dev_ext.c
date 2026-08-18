@@ -549,6 +549,7 @@ VKAPI_ATTR void VKAPI_CALL vkPhysDevExtTermin249(VkPhysicalDevice) ASM_NAME("vkP
 
 
 void *loader_get_phys_dev_ext_tramp(uint32_t index) {
+    // NOLINTNEXTLINE(bugprone-switch-missing-default-case) - falls through to the return NULL below
     switch (index) {
 #define TRAMP_CASE_HANDLE(num) case num: return vkPhysDevExtTramp##num
         TRAMP_CASE_HANDLE(0);
@@ -806,6 +807,7 @@ void *loader_get_phys_dev_ext_tramp(uint32_t index) {
 }
 
 void *loader_get_phys_dev_ext_termin(uint32_t index) {
+    // NOLINTNEXTLINE(bugprone-switch-missing-default-case) - falls through to the return NULL below
     switch (index) {
 #define TERM_CASE_HANDLE(num) case num: return vkPhysDevExtTermin##num
         TERM_CASE_HANDLE(0);

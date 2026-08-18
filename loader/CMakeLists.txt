@@ -529,6 +529,12 @@ target_link_libraries(vulkan PRIVATE loader_specific_options)
 target_link_libraries(vulkan PRIVATE Vulkan::Headers)
 add_library(Vulkan::Loader ALIAS vulkan)
 
+if (USE_CLANG_TIDY)
+    set_target_properties(vulkan PROPERTIES C_CLANG_TIDY "${CLANG_TIDY_COMMAND}")
+    # cJSON is vendored third-party code; don't hold it to this project's clang-tidy checks.
+    set_source_files_properties(cJSON.c PROPERTIES SKIP_LINTING ON)
+endif()
+
 if (UNKNOWN_FUNCTIONS_SUPPORTED)
     target_compile_definitions(vulkan PRIVATE UNKNOWN_FUNCTIONS_SUPPORTED)
     add_dependencies(vulkan loader_asm_gen_files)
