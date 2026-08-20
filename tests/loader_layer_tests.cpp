@@ -4191,6 +4191,9 @@ TEST(TestLayers, EnvironLayerEnableDisableExplicitLayer) {
     ASSERT_TRUE(env.debug_log.find_prefix_then_postfix("Insert instance layer", explicit_layer_name_3));
     ASSERT_TRUE(env.debug_log.find_prefix_then_postfix(explicit_layer_name_3, "forced enabled due to env var"));
     ASSERT_FALSE(env.debug_log.find_prefix_then_postfix(explicit_layer_name_3, "disabled because name matches filter of env var"));
+    // layer_3 also matches VK_LOADER_LAYERS_DISABLE ("*Second*"), but VK_LOADER_LAYERS_ENABLE overrides it - it should not
+    // also log that it was ignored as disabled.
+    ASSERT_FALSE(env.debug_log.find_prefix_then_postfix(explicit_layer_name_3, "ignored because it has been disabled"));
 
     // Disable all but enable 2
     // ------------------------------------------

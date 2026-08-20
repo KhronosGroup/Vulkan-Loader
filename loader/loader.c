@@ -5805,24 +5805,23 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateInstance(const VkInstanceCreateI
 
     struct loader_instance *ptr_instance = (struct loader_instance *)*pInstance;
     if (NULL == ptr_instance) {
-        loader_log(ptr_instance, VULKAN_LOADER_WARN_BIT, 0,
+        loader_log(NULL, VULKAN_LOADER_ERROR_BIT, 0,
                    "terminator_CreateInstance: Loader instance pointer null encountered.  Possibly set by active layer. (Policy "
                    "#LLP_LAYER_21)");
+        abort();
     } else if (LOADER_MAGIC_NUMBER != ptr_instance->magic) {
-        loader_log(ptr_instance, VULKAN_LOADER_WARN_BIT, 0,
+        loader_log(ptr_instance, VULKAN_LOADER_ERROR_BIT, 0,
                    "terminator_CreateInstance: Instance pointer (%p) has invalid MAGIC value 0x%08" PRIx64
                    ". Instance value possibly "
                    "corrupted by active layer (Policy #LLP_LAYER_21).  ",
                    ptr_instance, ptr_instance->magic);
+        abort();
     }
 
     // Save the application version if it has been modified - layers sometimes needs features in newer API versions than
     // what the application requested, and thus will increase the instance version to a level that suites their needs.
     if (pCreateInfo->pApplicationInfo && pCreateInfo->pApplicationInfo->apiVersion) {
         loader_api_version altered_version = loader_make_version(pCreateInfo->pApplicationInfo->apiVersion);
-        // per LLP_LAYER_21 (docs/LoaderLayerInterface.md), a layer that clobbers pInstance before calling down is
-        // documented to crash the loader; this is not recoverable here.
-        // NOLINTNEXTLINE(clang-analyzer-core.NullDereference)
         if (altered_version.major != ptr_instance->app_api_version.major ||
             altered_version.minor != ptr_instance->app_api_version.minor) {
             ptr_instance->app_api_version = altered_version;
@@ -5857,14 +5856,12 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateInstance(const VkInstanceCreateI
     } else {
         for (uint32_t j = 0; j < pCreateInfo->enabledExtensionCount; j++) {
             if (!strcmp(pCreateInfo->ppEnabledExtensionNames[j], VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
-                // NOLINTNEXTLINE(clang-analyzer-core.NullDereference) - see LLP_LAYER_21 note above
                 ptr_instance->supports_get_dev_prop_2 = true;
                 break;
             }
         }
     }
 
-    // NOLINTNEXTLINE(clang-analyzer-core.NullDereference) - see LLP_LAYER_21 note above
     for (uint32_t i = 0; i < ptr_instance->icd_tramp_list.count; i++) {
         icd_term = loader_icd_add(ptr_instance, &ptr_instance->icd_tramp_list.scanned_list[i]);
         if (NULL == icd_term) {
@@ -6220,21 +6217,20 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateDevice(VkPhysicalDevice physical
     VkDeviceGroupDeviceCreateInfo *caller_dgci = NULL;
 
     if (NULL == dev) {
-        loader_log(icd_term->this_instance, VULKAN_LOADER_WARN_BIT, 0,
+        loader_log(icd_term->this_instance, VULKAN_LOADER_ERROR_BIT, 0,
                    "terminator_CreateDevice: Loader device pointer null encountered.  Possibly set by active layer. (Policy "
                    "#LLP_LAYER_22)");
+        abort();
     } else if (DEVICE_DISP_TABLE_MAGIC_NUMBER != dev->loader_dispatch.core_dispatch.magic) {
-        loader_log(icd_term->this_instance, VULKAN_LOADER_WARN_BIT, 0,
+        loader_log(icd_term->this_instance, VULKAN_LOADER_ERROR_BIT, 0,
                    "terminator_CreateDevice: Device pointer (%p) has invalid MAGIC value 0x%08" PRIx64
                    ". The expected value is "
                    "0x10ADED040410ADED. Device value possibly "
                    "corrupted by active layer (Policy #LLP_LAYER_22).  ",
                    dev, dev->loader_dispatch.core_dispatch.magic);
+        abort();
     }
 
-    // per LLP_LAYER_22 (docs/LoaderLayerInterface.md), a layer that clobbers pDevice before calling down is
-    // documented to crash the loader; this is not recoverable here.
-    // NOLINTNEXTLINE(clang-analyzer-core.NullDereference)
     dev->phys_dev_term = phys_dev_term;
 
     icd_exts.list = NULL;

@@ -519,36 +519,32 @@ VkResult loader_add_environment_layers(struct loader_instance *inst, const char 
             continue;
         }
 
-        // We found a layer we're interested in, but has it been disabled...
-        bool adding;
+        // A layer matching the enable filter is force-enabled even if it also matches the disable filter - this mirrors
+        // VK_INSTANCE_LAYERS, which VK_LOADER_LAYERS_ENABLE is a generalization of, and which overrides disables.
+        // Also make sure the layer isn't already in the output_list, skip adding it if it is.
+        bool force_enabled = check_name_matches_filter_environment_var(source_prop->info.layerName, &filters->enable_filter) &&
+                             !loader_find_layer_name_in_list(source_prop->info.layerName, target_list);
+
         bool is_implicit = (0 == (source_prop->type_flags & VK_LAYER_TYPE_FLAG_EXPLICIT_LAYER));
         bool disabled_by_type =
             (is_implicit) ? (filters->disable_filter.disable_all_implicit) : (filters->disable_filter.disable_all_explicit);
-        if ((filters->disable_filter.disable_all || disabled_by_type ||
+        if (!force_enabled &&
+            (filters->disable_filter.disable_all || disabled_by_type ||
              check_name_matches_filter_environment_var(source_prop->info.layerName, &filters->disable_filter.additional_filters)) &&
             !check_name_matches_filter_environment_var(source_prop->info.layerName, &filters->allow_filter)) {
             loader_log(inst, VULKAN_LOADER_WARN_BIT | VULKAN_LOADER_LAYER_BIT, 0,
                        "Layer \"%s\" ignored because it has been disabled by env var \'%s\'", source_prop->info.layerName,
                        VK_LAYERS_DISABLE_ENV_VAR);
-        }
-
-        // Whether a layer is force-enabled only depends on the check below - the disable check above exists purely to log
-        // why a layer was skipped, since a layer is only ever added by this function via VK_LOADER_LAYERS_ENABLE.
-        // Also make sure the layer isn't already in the output_list, skip adding it if it is.
-        if (check_name_matches_filter_environment_var(source_prop->info.layerName, &filters->enable_filter) &&
-            !loader_find_layer_name_in_list(source_prop->info.layerName, target_list)) {
-            adding = true;
-            // Only way is_substring is true is if there are enable variables.  If that's the case, and we're past the
-            // above, we should indicate that it was forced on in this way.
-            loader_log(inst, VULKAN_LOADER_WARN_BIT | VULKAN_LOADER_LAYER_BIT, 0,
-                       "Layer \"%s\" forced enabled due to env var \'%s\'", source_prop->info.layerName, VK_LAYERS_ENABLE_ENV_VAR);
-        } else {
-            adding = false;
-        }
-
-        if (!adding) {
             continue;
         }
+
+        if (!force_enabled) {
+            continue;
+        }
+        // Only way is_substring is true is if there are enable variables.  If that's the case, and we're past the
+        // above, we should indicate that it was forced on in this way.
+        loader_log(inst, VULKAN_LOADER_WARN_BIT | VULKAN_LOADER_LAYER_BIT, 0, "Layer \"%s\" forced enabled due to env var \'%s\'",
+                   source_prop->info.layerName, VK_LAYERS_ENABLE_ENV_VAR);
 
         // If not a meta-layer, simply add it.
         if (0 == (source_prop->type_flags & VK_LAYER_TYPE_FLAG_META_LAYER)) {
