@@ -286,7 +286,6 @@ VKAPI_ATTR void VKAPI_CALL vkdev_ext248(VkDevice device) ASM_NAME("vkdev_ext248"
 VKAPI_ATTR void VKAPI_CALL vkdev_ext249(VkDevice device) ASM_NAME("vkdev_ext249");
 
 void *loader_get_dev_ext_trampoline(uint32_t index) {
-    // NOLINTNEXTLINE(bugprone-switch-missing-default-case) - falls through to the return NULL below
     switch (index) {
 #define CASE_HANDLE(num) case num: return vkdev_ext##num
         CASE_HANDLE(0);
@@ -539,7 +538,6 @@ void *loader_get_dev_ext_trampoline(uint32_t index) {
         CASE_HANDLE(247);
         CASE_HANDLE(248);
         CASE_HANDLE(249);
+        default: return NULL;
     }
-
-    return NULL;
 }
