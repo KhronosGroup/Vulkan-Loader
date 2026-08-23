@@ -162,7 +162,7 @@ VkResult windows_get_device_registry_entry(const struct loader_instance *inst, s
 
     if (ret != ERROR_SUCCESS) {
         if (ret == ERROR_FILE_NOT_FOUND) {
-            loader_log(inst, VULKAN_LOADER_INFO_BIT | VULKAN_LOADER_DRIVER_BIT, 0,
+            loader_log(inst, VULKAN_LOADER_DEBUG_BIT | VULKAN_LOADER_DRIVER_BIT, 0,
                        "windows_get_device_registry_entry: Device ID(%ld) Does not contain a value for \"%s\"", dev_id, value_name);
         } else {
             loader_log(inst, VULKAN_LOADER_INFO_BIT | VULKAN_LOADER_DRIVER_BIT, 0,
