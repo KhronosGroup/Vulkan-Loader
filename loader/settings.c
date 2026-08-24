@@ -92,13 +92,13 @@ loader_settings_layer_control parse_control_string(char* control_string) {
 
 const char* loader_settings_layer_control_to_string(loader_settings_layer_control control) {
     switch (control) {
-        case (LOADER_SETTINGS_LAYER_CONTROL_DEFAULT):
+        case LOADER_SETTINGS_LAYER_CONTROL_DEFAULT:
             return "auto";
-        case (LOADER_SETTINGS_LAYER_CONTROL_ON):
+        case LOADER_SETTINGS_LAYER_CONTROL_ON:
             return "on";
-        case (LOADER_SETTINGS_LAYER_CONTROL_OFF):
+        case LOADER_SETTINGS_LAYER_CONTROL_OFF:
             return "off";
-        case (LOADER_SETTINGS_LAYER_UNORDERED_LAYER_LOCATION):
+        case LOADER_SETTINGS_LAYER_UNORDERED_LAYER_LOCATION:
             return "unordered_layer_location";
         default:
             return "UNKNOWN_LAYER_CONTROl";
@@ -804,6 +804,7 @@ VkResult get_loader_settings(const struct loader_instance* inst, loader_settings
             res = VK_ERROR_OUT_OF_HOST_MEMORY;
             goto out;
         }
+        // NOLINTNEXTLINE(clang-analyzer-optin.core.EnumCastOutOfRange) - 0xFF is a valid bitwise-OR of all flags (the "all" filter)
         loader_settings->debug_level = parse_log_filters_from_strings(&stderr_log);
         free_string_list(inst, &stderr_log);
     }

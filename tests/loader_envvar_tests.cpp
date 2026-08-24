@@ -196,6 +196,32 @@ TEST(EnvVarICDOverrideSetup, TestOnlyDriverEnvVarInFolderWithElevatedPrivileges)
     EXPECT_TRUE(env.debug_log.find("vkCreateInstance: Found no drivers!"));
 }
 
+// Make sure that a loader_log() call combining a severity bit with VULKAN_LOADER_LAYER_BIT (e.g. the
+// "forced enabled due to env var" message emitted by VK_LOADER_LAYERS_ENABLE) maps to that severity
+// (WARNING) in the debug utils messenger callback, rather than being downgraded to the LAYER_BIT-only
+// fallback severity (INFO). Filtering the logger to WARNING only means the message will only show up
+// if the loader picked the correct (higher priority) branch.
+TEST(EnvVarICDOverrideSetup, LayersEnableLogsAtWarningSeverity) {
+    FrameworkEnvironment env{};
+    env.add_icd(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA).add_physical_device("physical_device_0");
+
+    const char* explicit_layer_name = "VK_LAYER_LUNARG_test_layer";
+    env.add_explicit_layer(ManifestOptions{}.set_json_name("test_layer.json"),
+                           ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                         .set_name(explicit_layer_name)
+                                                         .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                         .set_api_version(VK_MAKE_API_VERSION(0, 1, 0, 0))));
+
+    EnvVarWrapper layers_enable_env_var{"VK_LOADER_LAYERS_ENABLE", explicit_layer_name};
+
+    DebugUtilsLogger log{VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT};
+    InstWrapper inst{env.vulkan_functions};
+    FillDebugUtilsCreateDetails(inst.create_info, log);
+    inst.CheckCreate();
+
+    EXPECT_TRUE(log.find_prefix_then_postfix(explicit_layer_name, "forced enabled due to env var"));
+}
+
 #if defined(__linux__) || defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__GNU__) || defined(__QNX__)
 // Make sure the loader reports the correct message based on if LOADER_USE_UNSAFE_FILE_SEARCH is set or not
 TEST(EnvVarICDOverrideSetup, NonSecureEnvVarLookup) {

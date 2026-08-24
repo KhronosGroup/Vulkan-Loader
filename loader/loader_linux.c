@@ -61,7 +61,8 @@ int32_t device_type_compare(VkPhysicalDeviceType a, VkPhysicalDeviceType b) {
     uint32_t b_value = determine_priority_type_value(b);
     if (a_value > b_value) {
         return -1;
-    } else if (b_value > a_value) {
+    }
+    if (b_value > a_value) {
         return 1;
     }
     return 0;
@@ -73,6 +74,7 @@ int32_t device_type_compare(VkPhysicalDeviceType a, VkPhysicalDeviceType b) {
 //   2) Sort by type
 //   3) Sort by PCI bus ID
 //   4) Ties broken by device_ID XOR vendor_ID comparison
+// NOLINTNEXTLINE(bugprone-easily-swappable-parameters) - qsort comparator signature, order is fixed by the C standard library API
 int32_t compare_devices(const void *a, const void *b) {
     struct LinuxSortedDeviceInfo *left = (struct LinuxSortedDeviceInfo *)a;
     struct LinuxSortedDeviceInfo *right = (struct LinuxSortedDeviceInfo *)b;
@@ -80,7 +82,8 @@ int32_t compare_devices(const void *a, const void *b) {
     // Default device always gets priority
     if (left->default_device) {
         return -1;
-    } else if (right->default_device) {
+    }
+    if (right->default_device) {
         return 1;
     }
 
@@ -93,31 +96,37 @@ int32_t compare_devices(const void *a, const void *b) {
     // Sort by PCI info (prioritize devices that have info over those that don't)
     if (left->has_pci_bus_info && !right->has_pci_bus_info) {
         return -1;
-    } else if (!left->has_pci_bus_info && right->has_pci_bus_info) {
+    }
+    if (!left->has_pci_bus_info && right->has_pci_bus_info) {
         return 1;
-    } else if (left->has_pci_bus_info && right->has_pci_bus_info) {
+    }
+    if (left->has_pci_bus_info && right->has_pci_bus_info) {
         // Sort low to high PCI domain
         if (left->pci_domain < right->pci_domain) {
             return -1;
-        } else if (left->pci_domain > right->pci_domain) {
+        }
+        if (left->pci_domain > right->pci_domain) {
             return 1;
         }
         // Sort low to high PCI bus
         if (left->pci_bus < right->pci_bus) {
             return -1;
-        } else if (left->pci_bus > right->pci_bus) {
+        }
+        if (left->pci_bus > right->pci_bus) {
             return 1;
         }
         // Sort low to high PCI device
         if (left->pci_device < right->pci_device) {
             return -1;
-        } else if (left->pci_device > right->pci_device) {
+        }
+        if (left->pci_device > right->pci_device) {
             return 1;
         }
         // Sort low to high PCI function
         if (left->pci_function < right->pci_function) {
             return -1;
-        } else if (left->pci_function > right->pci_function) {
+        }
+        if (left->pci_function > right->pci_function) {
             return 1;
         }
     }
@@ -127,7 +136,8 @@ int32_t compare_devices(const void *a, const void *b) {
     uint32_t right_xord_dev_vend = right->device_id ^ right->vendor_id;
     if (left_xord_dev_vend < right_xord_dev_vend) {
         return -1;
-    } else if (right_xord_dev_vend < left_xord_dev_vend) {
+    }
+    if (right_xord_dev_vend < left_xord_dev_vend) {
         return 1;
     }
     return 0;
@@ -140,6 +150,7 @@ int32_t compare_devices(const void *a, const void *b) {
 //   2) Group with the best device type for device 0 wins
 //   3) Group with best PCI bus ID for device 0 wins
 //   4) Ties broken by group device 0 device_ID XOR vendor_ID comparison
+// NOLINTNEXTLINE(bugprone-easily-swappable-parameters) - qsort comparator signature, order is fixed by the C standard library API
 int32_t compare_device_groups(const void *a, const void *b) {
     struct loader_physical_device_group_term *grp_a = (struct loader_physical_device_group_term *)a;
     struct loader_physical_device_group_term *grp_b = (struct loader_physical_device_group_term *)b;
@@ -151,7 +162,8 @@ int32_t compare_device_groups(const void *a, const void *b) {
     // Default device always gets priority
     if (left->default_device) {
         return -1;
-    } else if (right->default_device) {
+    }
+    if (right->default_device) {
         return 1;
     }
 
@@ -164,31 +176,37 @@ int32_t compare_device_groups(const void *a, const void *b) {
     // Sort by PCI info (prioritize devices that have info over those that don't)
     if (left->has_pci_bus_info && !right->has_pci_bus_info) {
         return -1;
-    } else if (!left->has_pci_bus_info && right->has_pci_bus_info) {
+    }
+    if (!left->has_pci_bus_info && right->has_pci_bus_info) {
         return 1;
-    } else if (left->has_pci_bus_info && right->has_pci_bus_info) {
+    }
+    if (left->has_pci_bus_info && right->has_pci_bus_info) {
         // Sort low to high PCI domain
         if (left->pci_domain < right->pci_domain) {
             return -1;
-        } else if (left->pci_domain > right->pci_domain) {
+        }
+        if (left->pci_domain > right->pci_domain) {
             return 1;
         }
         // Sort low to high PCI bus
         if (left->pci_bus < right->pci_bus) {
             return -1;
-        } else if (left->pci_bus > right->pci_bus) {
+        }
+        if (left->pci_bus > right->pci_bus) {
             return 1;
         }
         // Sort low to high PCI device
         if (left->pci_device < right->pci_device) {
             return -1;
-        } else if (left->pci_device > right->pci_device) {
+        }
+        if (left->pci_device > right->pci_device) {
             return 1;
         }
         // Sort low to high PCI function
         if (left->pci_function < right->pci_function) {
             return -1;
-        } else if (left->pci_function > right->pci_function) {
+        }
+        if (left->pci_function > right->pci_function) {
             return 1;
         }
     }
@@ -198,7 +216,8 @@ int32_t compare_device_groups(const void *a, const void *b) {
     uint32_t right_xord_dev_vend = right->device_id ^ right->vendor_id;
     if (left_xord_dev_vend < right_xord_dev_vend) {
         return -1;
-    } else if (right_xord_dev_vend < left_xord_dev_vend) {
+    }
+    if (right_xord_dev_vend < left_xord_dev_vend) {
         return 1;
     }
     return 0;
@@ -214,8 +233,9 @@ void linux_env_var_default_device(struct loader_instance *inst, uint32_t device_
 
         // The environment variable exists, so grab the vendor ID and device ID of the
         // selected default device
-        unsigned vendor_id, device_id;
-        // NOLINTNEXTLINE(cert-err34-c) - return value is checked below via 'matched == 2'
+        unsigned vendor_id;
+        unsigned device_id;
+        // NOLINTNEXTLINE(cert-err34-c, bugprone-unchecked-string-to-number-conversion) - checked below via 'matched == 2'
         int32_t matched = sscanf(selection, "%x:%x", &vendor_id, &device_id);
         if (matched == 2) {
             for (int32_t i = 0; i < (int32_t)device_count; ++i) {

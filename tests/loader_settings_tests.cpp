@@ -116,6 +116,25 @@ TEST(SettingsFile, FileExist) {
     }
 }
 
+// Make sure a layer enabled through the settings file reports the correct "Enabled By" reason
+TEST(SettingsFile, EnabledByReportsSettingsFile) {
+    FrameworkEnvironment env{};
+    env.add_icd(TEST_ICD_PATH_VERSION_2).add_physical_device({});
+    env.loader_settings.add_app_specific_setting(AppSpecificSettings{}.add_stderr_log_filter("all"));
+    const char* regular_layer_name = add_layer_and_settings(env, "VK_LAYER_TestLayer_0", LayerType::exp, "on");
+    env.update_loader_settings(env.loader_settings);
+    {
+        auto layer_props = env.GetLayerProperties(1);
+        EXPECT_TRUE(string_eq(layer_props.at(0).layerName, regular_layer_name));
+
+        InstWrapper inst{env.vulkan_functions};
+        FillDebugUtilsCreateDetails(inst.create_info, env.debug_log);
+        inst.CheckCreate();
+
+        ASSERT_TRUE(env.debug_log.find("Enabled By: Loader Settings File (Vulkan Configurator)"));
+    }
+}
+
 // Make sure that if the settings file is in a user local path, that it isn't used when running with elevated privileges
 TEST(SettingsFile, SettingsInUnsecuredLocation) {
     FrameworkEnvironment env{};

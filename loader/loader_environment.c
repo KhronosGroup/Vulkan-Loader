@@ -45,6 +45,7 @@ char *loader_getenv(const char *name, const struct loader_instance *inst) {
     // No allocation of memory necessary for Linux, but we should at least touch
     // the inst pointer to get rid of compiler warnings.
     (void)inst;
+    // NOLINTNEXTLINE(concurrency-mt-unsafe) - there is no portable reentrant getenv; the loader never calls setenv concurrently
     return getenv(name);
 }
 
@@ -79,7 +80,7 @@ char *loader_secure_getenv(const char *name, const struct loader_instance *inst)
 #endif
 }
 
-void loader_free_getenv(char *val, const struct loader_instance *inst) {
+void loader_free_getenv(const char *val, const struct loader_instance *inst) {
     // No freeing of memory necessary for Linux, but we should at least touch
     // the val and inst pointers to get rid of compiler warnings.
     (void)val;
@@ -160,7 +161,7 @@ char *loader_secure_getenv(const char *name, const struct loader_instance *inst)
     return loader_getenv(name, inst);
 }
 
-void loader_free_getenv(char *val, const struct loader_instance *inst) { loader_instance_heap_free(inst, (void *)val); }
+void loader_free_getenv(const char *val, const struct loader_instance *inst) { loader_instance_heap_free(inst, (void *)val); }
 
 #else
 
@@ -173,7 +174,7 @@ char *loader_getenv(const char *name, const struct loader_instance *inst) {
     (void)name;
     return NULL;
 }
-void loader_free_getenv(char *val, const struct loader_instance *inst) {
+void loader_free_getenv(const char *val, const struct loader_instance *inst) {
     // stub func
     (void)val;
     (void)inst;
@@ -206,9 +207,8 @@ void determine_filter_type(const char *filter_string, enum loader_filter_string_
                 *new_start = filter_string;
                 *new_length = filter_length;
                 return;
-            } else {
-                star_begin = true;
             }
+            star_begin = true;
         }
         if ('*' == filter_string[filter_length - 1]) {
             // Not really valid, but just catch this case so if someone accidentally types "**" it will also mean everything
@@ -217,9 +217,8 @@ void determine_filter_type(const char *filter_string, enum loader_filter_string_
                 *new_start = filter_string;
                 *new_length = filter_length;
                 return;
-            } else {
-                star_end = true;
             }
+            star_end = true;
         }
         if (star_begin && star_end) {
             *filter_type = FILTER_STRING_SUBSTRING;
@@ -387,6 +386,7 @@ VkResult parse_layer_environment_var_filters(const struct loader_instance *inst,
 // Case-insensitive compare of `count` bytes of a name against a filter value. Filter values are already lowercased when
 // they get parsed (see parse_generic_filter_environment_var), so we only need to fold the name side as we go. The caller
 // guarantees both sides have at least `count` valid bytes.
+// NOLINTNEXTLINE(bugprone-easily-swappable-parameters) - distinct, well documented roles (raw name vs. pre-lowercased filter)
 static bool name_segment_matches_filter_value(const char *name_segment, const char *lowercase_filter_value, size_t count) {
     for (size_t iii = 0; iii < count; ++iii) {
         if ((char)tolower((unsigned char)name_segment[iii]) != lowercase_filter_value[iii]) {
@@ -527,7 +527,7 @@ VkResult loader_add_environment_layers(struct loader_instance *inst, const char 
 
         bool is_implicit = (0 == (source_prop->type_flags & VK_LAYER_TYPE_FLAG_EXPLICIT_LAYER));
         bool disabled_by_type =
-            (is_implicit) ? (filters->disable_filter.disable_all_implicit) : (filters->disable_filter.disable_all_explicit);
+            is_implicit ? filters->disable_filter.disable_all_implicit : filters->disable_filter.disable_all_explicit;
         if (!force_enabled &&
             (filters->disable_filter.disable_all || disabled_by_type ||
              check_name_matches_filter_environment_var(source_prop->info.layerName, &filters->disable_filter.additional_filters)) &&
