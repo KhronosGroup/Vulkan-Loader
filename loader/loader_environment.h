@@ -33,7 +33,7 @@
 // Common functionality for accessing environemnt variables and whether the process is running in priviledged mode
 
 char *loader_getenv(const char *name, const struct loader_instance *inst);
-void loader_free_getenv(char *val, const struct loader_instance *inst);
+void loader_free_getenv(const char *val, const struct loader_instance *inst);
 
 #if defined(WIN32) || COMMON_UNIX_PLATFORMS
 

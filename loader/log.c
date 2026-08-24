@@ -40,7 +40,8 @@
 uint32_t g_loader_debug = 0;
 
 void loader_init_global_debug_level(void) {
-    char *env, *orig;
+    char *env;
+    char *orig;
 
     if (g_loader_debug > 0) return;
 
@@ -88,6 +89,7 @@ void loader_init_global_debug_level(void) {
 
 void loader_set_global_debug_level(uint32_t new_loader_debug) { g_loader_debug = new_loader_debug; }
 
+// NOLINTNEXTLINE(bugprone-easily-swappable-parameters) - msg_type/cmd_line_size are convertible types, always passed in this order
 void generate_debug_flag_str(VkFlags msg_type, size_t cmd_line_size, char *cmd_line_msg) {
     cmd_line_msg[0] = '\0';
 
@@ -135,6 +137,7 @@ void generate_debug_flag_str(VkFlags msg_type, size_t cmd_line_size, char *cmd_l
 }
 
 void DECORATE_PRINTF(4, 5)
+    // NOLINTNEXTLINE(bugprone-easily-swappable-parameters) - msg_type/msg_code (unused) are convertible types; public API order
     loader_log(const struct loader_instance *inst, VkFlags msg_type, int32_t msg_code, const char *format, ...) {
     (void)msg_code;
     char msg[512] = {0};
@@ -148,11 +151,13 @@ void DECORATE_PRINTF(4, 5)
     va_end(ap);
 
     if (inst) {
+        // NOLINTNEXTLINE(clang-analyzer-optin.core.EnumCastOutOfRange) - external Vulkan enum, has no zero value we can add
         VkDebugUtilsMessageSeverityFlagBitsEXT severity = 0;
         VkDebugUtilsMessageTypeFlagsEXT type = 0;
         VkDebugUtilsMessengerCallbackDataEXT callback_data = {0};
         VkDebugUtilsObjectNameInfoEXT object_name = {0};
 
+        // NOLINTNEXTLINE(bugprone-branch-clone) - duplicated so combined bit calls (e.g. WARN_BIT|LAYER_BIT) match first branch
         if ((msg_type & VULKAN_LOADER_INFO_BIT) != 0) {
             severity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT;
         } else if ((msg_type & VULKAN_LOADER_WARN_BIT) != 0) {

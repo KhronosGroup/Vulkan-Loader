@@ -170,11 +170,11 @@ int main(int argc, char **argv) {
                     values[i].comment);
         }
     }
-    // NOLINTEND(cert-err33-c)
     if (ferror(file)) {
         fclose(file);
         fprintf(stderr, "Error: failed to write gen_defines.asm\n");
         return 1;
     }
+    // NOLINTEND(cert-err33-c)
     return fclose(file);
 }

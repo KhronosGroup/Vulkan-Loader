@@ -39,11 +39,11 @@ void loader_instance_heap_free(const struct loader_instance *instance, void *pMe
 void *loader_instance_heap_realloc(const struct loader_instance *instance, void *pMemory, size_t orig_size, size_t size,
                                    VkSystemAllocationScope allocation_scope);
 
-void *loader_device_heap_alloc(const struct loader_device *device, size_t size, VkSystemAllocationScope allocationScope);
-void *loader_device_heap_calloc(const struct loader_device *device, size_t size, VkSystemAllocationScope allocationScope);
+void *loader_device_heap_alloc(const struct loader_device *device, size_t size, VkSystemAllocationScope allocation_scope);
+void *loader_device_heap_calloc(const struct loader_device *device, size_t size, VkSystemAllocationScope allocation_scope);
 void loader_device_heap_free(const struct loader_device *device, void *pMemory);
 void *loader_device_heap_realloc(const struct loader_device *device, void *pMemory, size_t orig_size, size_t size,
-                                 VkSystemAllocationScope alloc_scope);
+                                 VkSystemAllocationScope allocation_scope);
 
 // Wrappers around various memory functions. The loader will use the VkAllocationCallbacks functions if pAllocator is not NULL,
 // otherwise use the system functions

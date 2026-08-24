@@ -113,39 +113,38 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_GetPhysicalDeviceSurfaceCapabilities2E
     if (NULL != icd_term->dispatch.GetPhysicalDeviceSurfaceCapabilities2EXT) {
         // Pass the call to the driver
         return icd_term->dispatch.GetPhysicalDeviceSurfaceCapabilities2EXT(phys_dev_term->phys_dev, surface, pSurfaceCapabilities);
-    } else {
-        // Emulate the call
-        loader_log(icd_term->this_instance, VULKAN_LOADER_INFO_BIT, 0,
-                   "vkGetPhysicalDeviceSurfaceCapabilities2EXT: Emulating call in ICD \"%s\" using "
-                   "vkGetPhysicalDeviceSurfaceCapabilitiesKHR",
-                   icd_term->scanned_icd->lib_name);
+    }
+    // Emulate the call
+    loader_log(icd_term->this_instance, VULKAN_LOADER_INFO_BIT, 0,
+               "vkGetPhysicalDeviceSurfaceCapabilities2EXT: Emulating call in ICD \"%s\" using "
+               "vkGetPhysicalDeviceSurfaceCapabilitiesKHR",
+               icd_term->scanned_icd->lib_name);
 
-        VkSurfaceCapabilitiesKHR surface_caps;
-        res = icd_term->dispatch.GetPhysicalDeviceSurfaceCapabilitiesKHR(phys_dev_term->phys_dev, surface, &surface_caps);
-        if (res != VK_SUCCESS) {
-            // The driver did not populate surface_caps, so don't copy it out to the caller.
-            return res;
-        }
-        pSurfaceCapabilities->minImageCount = surface_caps.minImageCount;
-        pSurfaceCapabilities->maxImageCount = surface_caps.maxImageCount;
-        pSurfaceCapabilities->currentExtent = surface_caps.currentExtent;
-        pSurfaceCapabilities->minImageExtent = surface_caps.minImageExtent;
-        pSurfaceCapabilities->maxImageExtent = surface_caps.maxImageExtent;
-        pSurfaceCapabilities->maxImageArrayLayers = surface_caps.maxImageArrayLayers;
-        pSurfaceCapabilities->supportedTransforms = surface_caps.supportedTransforms;
-        pSurfaceCapabilities->currentTransform = surface_caps.currentTransform;
-        pSurfaceCapabilities->supportedCompositeAlpha = surface_caps.supportedCompositeAlpha;
-        pSurfaceCapabilities->supportedUsageFlags = surface_caps.supportedUsageFlags;
-        pSurfaceCapabilities->supportedSurfaceCounters = 0;
-
-        if (pSurfaceCapabilities->pNext != NULL) {
-            loader_log(icd_term->this_instance, VULKAN_LOADER_WARN_BIT, 0,
-                       "vkGetPhysicalDeviceSurfaceCapabilities2EXT: Emulation found unrecognized structure type in "
-                       "pSurfaceCapabilities->pNext - this struct will be ignored");
-        }
-
+    VkSurfaceCapabilitiesKHR surface_caps;
+    res = icd_term->dispatch.GetPhysicalDeviceSurfaceCapabilitiesKHR(phys_dev_term->phys_dev, surface, &surface_caps);
+    if (res != VK_SUCCESS) {
+        // The driver did not populate surface_caps, so don't copy it out to the caller.
         return res;
     }
+    pSurfaceCapabilities->minImageCount = surface_caps.minImageCount;
+    pSurfaceCapabilities->maxImageCount = surface_caps.maxImageCount;
+    pSurfaceCapabilities->currentExtent = surface_caps.currentExtent;
+    pSurfaceCapabilities->minImageExtent = surface_caps.minImageExtent;
+    pSurfaceCapabilities->maxImageExtent = surface_caps.maxImageExtent;
+    pSurfaceCapabilities->maxImageArrayLayers = surface_caps.maxImageArrayLayers;
+    pSurfaceCapabilities->supportedTransforms = surface_caps.supportedTransforms;
+    pSurfaceCapabilities->currentTransform = surface_caps.currentTransform;
+    pSurfaceCapabilities->supportedCompositeAlpha = surface_caps.supportedCompositeAlpha;
+    pSurfaceCapabilities->supportedUsageFlags = surface_caps.supportedUsageFlags;
+    pSurfaceCapabilities->supportedSurfaceCounters = 0;
+
+    if (pSurfaceCapabilities->pNext != NULL) {
+        loader_log(icd_term->this_instance, VULKAN_LOADER_WARN_BIT, 0,
+                   "vkGetPhysicalDeviceSurfaceCapabilities2EXT: Emulation found unrecognized structure type in "
+                   "pSurfaceCapabilities->pNext - this struct will be ignored");
+    }
+
+    return res;
 }
 
 // ---- VK_EXT_direct_mode_display extension trampoline/terminators
@@ -199,14 +198,13 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_AcquireXlibDisplayEXT(VkPhysicalDevice
     if (icd_term->dispatch.AcquireXlibDisplayEXT != NULL) {
         // Pass the call to the driver
         return icd_term->dispatch.AcquireXlibDisplayEXT(phys_dev_term->phys_dev, dpy, display);
-    } else {
-        // Emulate the call
-        loader_log(icd_term->this_instance, VULKAN_LOADER_INFO_BIT, 0,
-                   "vkAcquireXLibDisplayEXT: Emulating call in ICD \"%s\" by returning error", icd_term->scanned_icd->lib_name);
-
-        // Fail for the unsupported command
-        return VK_ERROR_INITIALIZATION_FAILED;
     }
+    // Emulate the call
+    loader_log(icd_term->this_instance, VULKAN_LOADER_INFO_BIT, 0,
+               "vkAcquireXLibDisplayEXT: Emulating call in ICD \"%s\" by returning error", icd_term->scanned_icd->lib_name);
+
+    // Fail for the unsupported command
+    return VK_ERROR_INITIALIZATION_FAILED;
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL GetRandROutputDisplayEXT(VkPhysicalDevice physicalDevice, Display *dpy, RROutput rrOutput,
@@ -230,16 +228,15 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_GetRandROutputDisplayEXT(VkPhysicalDev
     if (icd_term->dispatch.GetRandROutputDisplayEXT != NULL) {
         // Pass the call to the driver
         return icd_term->dispatch.GetRandROutputDisplayEXT(phys_dev_term->phys_dev, dpy, rrOutput, pDisplay);
-    } else {
-        // Emulate the call
-        loader_log(icd_term->this_instance, VULKAN_LOADER_INFO_BIT, 0,
-                   "vkGetRandROutputDisplayEXT: Emulating call in ICD \"%s\" by returning null display",
-                   icd_term->scanned_icd->lib_name);
-
-        // Return a null handle to indicate this can't be done
-        *pDisplay = VK_NULL_HANDLE;
-        return VK_SUCCESS;
     }
+    // Emulate the call
+    loader_log(icd_term->this_instance, VULKAN_LOADER_INFO_BIT, 0,
+               "vkGetRandROutputDisplayEXT: Emulating call in ICD \"%s\" by returning null display",
+               icd_term->scanned_icd->lib_name);
+
+    // Return a null handle to indicate this can't be done
+    *pDisplay = VK_NULL_HANDLE;
+    return VK_SUCCESS;
 }
 
 #endif  // VK_USE_PLATFORM_XLIB_XRANDR_EXT

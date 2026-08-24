@@ -75,41 +75,38 @@ LOADER_EXPORT VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL vkGetInstanceProcAddr(VkI
         // Always can get a global entrypoint from vkGetInstanceProcAddr with a NULL instance handle
         if (instance == VK_NULL_HANDLE) {
             return addr;
-        } else {
-            // New behavior only returns a global entrypoint if the instance handle is NULL.
-            // Old behavior is to return a global entrypoint regardless of the value of the instance handle.
-            // Use new behavior if: The instance is valid and the minor version of the instance is greater than 1.2, which
-            // was when the new behavior was added. (eg, it is enforced in the next minor version of vulkan, which will be 1.3)
-
-            // First check if instance is valid - loader_get_instance() returns NULL if it isn't.
-            struct loader_instance *ptr_instance = loader_get_instance(instance);
-            if (ptr_instance != NULL &&
-                loader_check_version_meets_required(loader_combine_version(1, 3, 0), ptr_instance->app_api_version)) {
-                // New behavior
-                return NULL;
-            } else {
-                // Old behavior
-                return addr;
-            }
         }
-    } else {
-        // All other functions require a valid instance handle to get
-        if (instance == VK_NULL_HANDLE) {
+        // New behavior only returns a global entrypoint if the instance handle is NULL.
+        // Old behavior is to return a global entrypoint regardless of the value of the instance handle.
+        // Use new behavior if: The instance is valid and the minor version of the instance is greater than 1.2, which
+        // was when the new behavior was added. (eg, it is enforced in the next minor version of vulkan, which will be 1.3)
+
+        // First check if instance is valid - loader_get_instance() returns NULL if it isn't.
+        struct loader_instance *ptr_instance = loader_get_instance(instance);
+        if (ptr_instance != NULL &&
+            loader_check_version_meets_required(loader_combine_version(1, 3, 0), ptr_instance->app_api_version)) {
+            // New behavior
             return NULL;
         }
-        struct loader_instance *ptr_instance = loader_get_instance(instance);
-        // If we've gotten here and the pointer is NULL, it's invalid
-        if (ptr_instance == NULL) {
-            loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
-                       "vkGetInstanceProcAddr: Invalid instance [VUID-vkGetInstanceProcAddr-instance-parameter]");
-            abort(); /* Intentionally fail so user can correct issue. */
-        }
-        // Return trampoline code for non-global entrypoints including any extensions.
-        // Device extensions are returned if a layer or ICD supports the extension.
-        // Instance extensions are returned if the extension is enabled and the
-        // loader or someone else supports the extension
-        return trampoline_get_proc_addr(ptr_instance, pName);
+        // Old behavior
+        return addr;
     }
+    // All other functions require a valid instance handle to get
+    if (instance == VK_NULL_HANDLE) {
+        return NULL;
+    }
+    struct loader_instance *ptr_instance = loader_get_instance(instance);
+    // If we've gotten here and the pointer is NULL, it's invalid
+    if (ptr_instance == NULL) {
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkGetInstanceProcAddr: Invalid instance [VUID-vkGetInstanceProcAddr-instance-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    // Return trampoline code for non-global entrypoints including any extensions.
+    // Device extensions are returned if a layer or ICD supports the extension.
+    // Instance extensions are returned if the extension is enabled and the
+    // loader or someone else supports the extension
+    return trampoline_get_proc_addr(ptr_instance, pName);
 }
 
 // Get a device level or global level entry point address.
@@ -452,7 +449,7 @@ void loader_add_instance_only_debug_funcs(struct loader_instance *ptr_instance) 
                 break;
             }
             // Last item
-            else if (cur_node->pNext == NULL) {
+            if (cur_node->pNext == NULL) {
                 cur_node->pNext = ptr_instance->instance_only_dbg_function_head;
             }
             cur_node = cur_node->pNext;
@@ -857,7 +854,7 @@ LOADER_EXPORT VKAPI_ATTR void VKAPI_CALL vkDestroyInstance(VkInstance instance, 
         for (uint32_t i = 0; i < ptr_instance->phys_dev_count_tramp; i++) {
             loader_instance_heap_free(ptr_instance, ptr_instance->phys_devs_tramp[i]);
         }
-        loader_instance_heap_free(ptr_instance, ptr_instance->phys_devs_tramp);
+        loader_instance_heap_free(ptr_instance, (void *)ptr_instance->phys_devs_tramp);
     }
 
     // Destroy the debug callbacks created during instance creation
@@ -2774,9 +2771,8 @@ vkGetPhysicalDeviceImageFormatProperties2(VkPhysicalDevice physicalDevice, const
 
     if (inst != NULL && inst->enabled_extensions.khr_get_physical_device_properties2) {
         return disp->GetPhysicalDeviceImageFormatProperties2KHR(unwrapped_phys_dev, pImageFormatInfo, pImageFormatProperties);
-    } else {
-        return disp->GetPhysicalDeviceImageFormatProperties2(unwrapped_phys_dev, pImageFormatInfo, pImageFormatProperties);
     }
+    return disp->GetPhysicalDeviceImageFormatProperties2(unwrapped_phys_dev, pImageFormatInfo, pImageFormatProperties);
 }
 
 LOADER_EXPORT VKAPI_ATTR void VKAPI_CALL vkGetPhysicalDeviceQueueFamilyProperties2(

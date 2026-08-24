@@ -143,7 +143,7 @@ bool loader_check_layer_list_for_dev_ext_address(struct loader_instance *inst, c
     if (inst->expanded_activated_layer_list.count > 0) {
         const struct loader_layer_functions *const functions = &(inst->expanded_activated_layer_list.list[0]->functions);
         if (NULL != functions->get_instance_proc_addr) {
-            return NULL != functions->get_instance_proc_addr((VkInstance)inst->instance, funcName);
+            return NULL != functions->get_instance_proc_addr(inst->instance, funcName);
         }
     }
 
@@ -154,7 +154,7 @@ void loader_free_dev_ext_table(struct loader_instance *inst) {
     for (uint32_t i = 0; i < inst->dev_ext_disp_function_count; i++) {
         loader_instance_heap_free(inst, inst->dev_ext_disp_functions[i]);
     }
-    memset(inst->dev_ext_disp_functions, 0, sizeof(inst->dev_ext_disp_functions));
+    memset((void *)inst->dev_ext_disp_functions, 0, sizeof(inst->dev_ext_disp_functions));
 }
 
 /*
@@ -244,7 +244,7 @@ bool loader_check_layer_list_for_phys_dev_ext_address(struct loader_instance *in
         if (layer_prop_list->interface_version > 1) {
             const struct loader_layer_functions *const functions = &(layer_prop_list->functions);
             if (NULL != functions->get_physical_device_proc_addr) {
-                return NULL != functions->get_physical_device_proc_addr((VkInstance)inst->instance, funcName);
+                return NULL != functions->get_physical_device_proc_addr(inst->instance, funcName);
             }
         }
     }
@@ -255,7 +255,7 @@ void loader_free_phys_dev_ext_table(struct loader_instance *inst) {
     for (uint32_t i = 0; i < MAX_NUM_UNKNOWN_EXTS; i++) {
         loader_instance_heap_free(inst, inst->phys_dev_ext_disp_functions[i]);
     }
-    memset(inst->phys_dev_ext_disp_functions, 0, sizeof(inst->phys_dev_ext_disp_functions));
+    memset((void *)inst->phys_dev_ext_disp_functions, 0, sizeof(inst->phys_dev_ext_disp_functions));
 }
 
 // This function returns a generic trampoline or terminator function
@@ -364,9 +364,8 @@ void *loader_phys_dev_ext_gpa_impl(struct loader_instance *inst, const char *fun
 
     if (is_tramp) {
         return loader_get_phys_dev_ext_tramp(new_function_index);
-    } else {
-        return loader_get_phys_dev_ext_termin(new_function_index);
     }
+    return loader_get_phys_dev_ext_termin(new_function_index);
 }
 // Main interface functions, makes it clear whether it is getting a terminator or trampoline
 void *loader_phys_dev_ext_gpa_tramp(struct loader_instance *inst, const char *funcName) {

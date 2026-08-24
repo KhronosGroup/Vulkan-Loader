@@ -36,6 +36,7 @@
 struct loader_instance;
 
 enum vulkan_loader_debug_flags {
+    VULKAN_LOADER_NONE_BIT = 0x00,
     VULKAN_LOADER_INFO_BIT = 0x01,
     VULKAN_LOADER_WARN_BIT = 0x02,
     VULKAN_LOADER_PERF_BIT = 0x04,

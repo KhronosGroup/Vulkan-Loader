@@ -44,6 +44,12 @@ struct loader_struct_type_info {
     size_t size;
 };
 
+// VK_DEFINE_NON_DISPATCHABLE_HANDLE is a real pointer on 64-bit builds and a uint64_t on 32-bit builds;
+// round-tripping through uintptr_t is required to convert a loader-internal pointer into the handle type.
+static inline VkSurfaceKHR wrap_surface_handle(void *icd_surface) {
+    return (VkSurfaceKHR)(uintptr_t)icd_surface;  // NOLINT(performance-no-int-to-ptr)
+}
+
 // This function unwraps the application-provided surface handle into the ICD-specific surface handle
 // corresponding to the specified physical device. If the ICD-specific surface handle does not exist
 // yet, then this function also creates of the ICD-specific surface object. This enables lazy creation
@@ -52,6 +58,7 @@ struct loader_struct_type_info {
 // where the VkDisplayModeKHR handles the surfaces are created from are physical-device-specific
 // non-dispatchable handles and therefore they should not be passed down to a foreign ICD).
 VkResult wsi_unwrap_icd_surface(struct loader_icd_term *icd_term, VkSurfaceKHR *surface) {
+    // NOLINTNEXTLINE(performance-no-int-to-ptr) - VkSurfaceKHR handle decode requires round-tripping through uintptr_t
     VkIcdSurface *icd_surface = (VkIcdSurface *)(uintptr_t)(*surface);
 
 #if defined(VK_USE_PLATFORM_ANDROID_KHR)
@@ -309,13 +316,15 @@ VKAPI_ATTR void VKAPI_CALL terminator_DestroySurfaceKHR(VkInstance instance, VkS
                                                         const VkAllocationCallbacks *pAllocator) {
     struct loader_instance *loader_inst = loader_get_instance(instance);
 
-    VkIcdSurface *icd_surface = (VkIcdSurface *)(uintptr_t)(surface);
+    // NOLINTNEXTLINE(performance-no-int-to-ptr) - VkSurfaceKHR handle decode requires round-tripping through uintptr_t
+    VkIcdSurface *icd_surface = (VkIcdSurface *)(uintptr_t)surface;
     if (NULL != icd_surface) {
 #if defined(VK_USE_PLATFORM_ANDROID_KHR)
         if (icd_surface->base.platform == VK_ICD_WSI_PLATFORM_ANDROID) {
             // Android surfaces are not loader-created VkIcdSurface objects: they are a smaller VkIcdSurfaceAndroid with no
             // surface_index or create_info, so reading those fields would run past the allocation. Just free the handle,
             // matching the early-out in wsi_unwrap_icd_surface.
+            // NOLINTNEXTLINE(performance-no-int-to-ptr) - decoding the loader-internal pointer out of the handle
             loader_instance_heap_free(loader_inst, (void *)(uintptr_t)surface);
             return;
         }
@@ -323,6 +332,7 @@ VKAPI_ATTR void VKAPI_CALL terminator_DestroySurfaceKHR(VkInstance instance, VkS
 #if defined(VK_USE_PLATFORM_MACOS_MVK)
         if (icd_surface->base.platform == VK_ICD_WSI_PLATFORM_IOS) {
             // Same as Android: an iOS surface is a smaller VkIcdSurfaceIOS without a surface_index or create_info.
+            // NOLINTNEXTLINE(performance-no-int-to-ptr) - decoding the loader-internal pointer out of the handle
             loader_instance_heap_free(loader_inst, (void *)(uintptr_t)surface);
             return;
         }
@@ -333,12 +343,14 @@ VKAPI_ATTR void VKAPI_CALL terminator_DestroySurfaceKHR(VkInstance instance, VkS
                 NULL != icd_term->dispatch.DestroySurfaceKHR && icd_term->surface_list.list[icd_surface->surface_index]) {
                 icd_term->dispatch.DestroySurfaceKHR(icd_term->instance, icd_term->surface_list.list[icd_surface->surface_index],
                                                      pAllocator);
+                // NOLINTNEXTLINE(performance-no-int-to-ptr) - encoding the NULL non-dispatchable handle, not a real pointer
                 icd_term->surface_list.list[icd_surface->surface_index] = (VkSurfaceKHR)(uintptr_t)NULL;
 
             } else {
                 // The real_icd_surface for any ICD not supporting the
                 // proper interface version should be NULL.  If not, then
                 // we have a problem.
+                // NOLINTNEXTLINE(performance-no-int-to-ptr) - encoding the NULL non-dispatchable handle, not a real pointer
                 assert(!(icd_term->enabled_instance_extensions.khr_surface &&
                          icd_term->scanned_icd->interface_version >= ICD_VER_SUPPORTS_ICD_SURFACE_KHR) ||
                        (VkSurfaceKHR)(uintptr_t)NULL == icd_term->surface_list.list[icd_surface->surface_index]);
@@ -348,6 +360,7 @@ VKAPI_ATTR void VKAPI_CALL terminator_DestroySurfaceKHR(VkInstance instance, VkS
             loader_instance_heap_free(loader_inst, icd_surface->create_info);
         }
         loader_release_object_from_list(&loader_inst->surfaces_list, icd_surface->surface_index);
+        // NOLINTNEXTLINE(performance-no-int-to-ptr) - decoding the loader-internal pointer out of the handle
         loader_instance_heap_free(loader_inst, (void *)(uintptr_t)surface);
     }
 }
@@ -677,6 +690,7 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkQueuePresentKHR(VkQueue queue, co
     return disp->QueuePresentKHR(queue, pPresentInfo);
 }
 
+// NOLINTNEXTLINE(bugprone-easily-swappable-parameters) - base_size/platform_size are plain sizes with no safer distinguishing type
 VkResult allocate_icd_surface_struct(struct loader_instance *instance, size_t base_size, size_t platform_size,
                                      const VkAllocationCallbacks *pAllocator, VkIcdSurface **out_icd_surface) {
     uint32_t next_index = 0;
@@ -757,7 +771,7 @@ VkResult copy_surface_create_info(struct loader_instance *loader_inst, VkIcdSurf
         return VK_ERROR_OUT_OF_HOST_MEMORY;
     }
 
-    uint8_t *dst = (uint8_t *)icd_surface->create_info;
+    uint8_t *dst = icd_surface->create_info;
     VkBaseInStructure *prev_struct = NULL;
     pnext = create_info;
     while (NULL != pnext) {
@@ -865,7 +879,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateWin32SurfaceKHR(VkInstance insta
         goto out;
     }
 
-    *pSurface = (VkSurfaceKHR)(uintptr_t)icd_surface;
+    *pSurface = wrap_surface_handle(icd_surface);
 
 out:
     cleanup_surface_creation(loader_inst, result, icd_surface, pAllocator);
@@ -967,7 +981,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateWaylandSurfaceKHR(VkInstance ins
         goto out;
     }
 
-    *pSurface = (VkSurfaceKHR)(uintptr_t)icd_surface;
+    *pSurface = wrap_surface_handle(icd_surface);
 
 out:
     cleanup_surface_creation(loader_inst, result, icd_surface, pAllocator);
@@ -1073,7 +1087,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateXcbSurfaceKHR(VkInstance instanc
         goto out;
     }
 
-    *pSurface = (VkSurfaceKHR)(uintptr_t)icd_surface;
+    *pSurface = wrap_surface_handle(icd_surface);
 
 out:
     cleanup_surface_creation(loader_inst, result, icd_surface, pAllocator);
@@ -1182,7 +1196,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateXlibSurfaceKHR(VkInstance instan
         goto out;
     }
 
-    *pSurface = (VkSurfaceKHR)(uintptr_t)icd_surface;
+    *pSurface = wrap_surface_handle(icd_surface);
 
 out:
     cleanup_surface_creation(loader_inst, result, icd_surface, pAllocator);
@@ -1290,7 +1304,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateDirectFBSurfaceEXT(VkInstance in
         goto out;
     }
 
-    *pSurface = (VkSurfaceKHR)(uintptr_t)icd_surface;
+    *pSurface = wrap_surface_handle(icd_surface);
 
 out:
     cleanup_surface_creation(loader_inst, result, icd_surface, pAllocator);
@@ -1384,7 +1398,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateAndroidSurfaceKHR(VkInstance ins
     icd_surface->base.platform = VK_ICD_WSI_PLATFORM_ANDROID;
     icd_surface->window = pCreateInfo->window;
 
-    *pSurface = (VkSurfaceKHR)(uintptr_t)icd_surface;
+    *pSurface = wrap_surface_handle(icd_surface);
 
     return VK_SUCCESS;
 }
@@ -1441,7 +1455,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateHeadlessSurfaceEXT(VkInstance in
         goto out;
     }
 
-    *pSurface = (VkSurfaceKHR)(uintptr_t)icd_surface;
+    *pSurface = wrap_surface_handle(icd_surface);
 
 out:
     cleanup_surface_creation(loader_inst, result, icd_surface, pAllocator);
@@ -1530,7 +1544,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateMacOSSurfaceMVK(VkInstance insta
         goto out;
     }
 
-    *pSurface = (VkSurfaceKHR)(uintptr_t)icd_surface;
+    *pSurface = wrap_surface_handle(icd_surface);
 
 out:
     cleanup_surface_creation(loader_inst, result, icd_surface, pAllocator);
@@ -1582,7 +1596,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateIOSSurfaceMVK(VkInstance instanc
     icd_surface->base.platform = VK_ICD_WSI_PLATFORM_IOS;
     icd_surface->pView = pCreateInfo->pView;
 
-    *pSurface = (VkSurfaceKHR)(uintptr_t)icd_surface;
+    *pSurface = wrap_surface_handle(icd_surface);
 
     return VK_SUCCESS;
 }
@@ -1644,7 +1658,7 @@ terminator_CreateStreamDescriptorSurfaceGGP(VkInstance instance, const VkStreamD
         goto out;
     }
 
-    *pSurface = (VkSurfaceKHR)(uintptr_t)icd_surface;
+    *pSurface = wrap_surface_handle(icd_surface);
 
 out:
     cleanup_surface_creation(loader_inst, result, icd_surface, pAllocator);
@@ -1704,7 +1718,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateMetalSurfaceEXT(VkInstance insta
         goto out;
     }
 
-    *pSurface = (VkSurfaceKHR)(uintptr_t)icd_surface;
+    *pSurface = wrap_surface_handle(icd_surface);
 
 out:
     cleanup_surface_creation(loader_inst, result, icd_surface, pAllocator);
@@ -1768,7 +1782,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateScreenSurfaceQNX(VkInstance inst
         goto out;
     }
 
-    *pSurface = (VkSurfaceKHR)(uintptr_t)icd_surface;
+    *pSurface = wrap_surface_handle(icd_surface);
 
 out:
     cleanup_surface_creation(loader_inst, result, icd_surface, pAllocator);
@@ -1871,7 +1885,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateViSurfaceNN(VkInstance instance,
         goto out;
     }
 
-    *pSurface = (VkSurfaceKHR)(uintptr_t)icd_surface;
+    *pSurface = wrap_surface_handle(icd_surface);
 
 out:
     cleanup_surface_creation(loader_inst, result, icd_surface, pAllocator);
@@ -2188,7 +2202,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateDisplayPlaneSurfaceKHR(VkInstanc
         goto out;
     }
 
-    *pSurface = (VkSurfaceKHR)(uintptr_t)icd_surface;
+    *pSurface = wrap_surface_handle(icd_surface);
 
 out:
     cleanup_surface_creation(loader_inst, result, icd_surface, pAllocator);
@@ -2620,7 +2634,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateImagePipeSurfaceFUCHSIA(VkInstan
         goto out;
     }
 
-    *pSurface = (VkSurfaceKHR)(uintptr_t)icd_surface;
+    *pSurface = wrap_surface_handle(icd_surface);
 
 out:
     cleanup_surface_creation(loader_inst, result, icd_surface, pAllocator);
@@ -2745,31 +2759,30 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_GetPhysicalDeviceSurfaceCapabilities2K
         }
 
         return res;
-    } else {
-        // Emulate the call
-        loader_log(icd_term->this_instance, VULKAN_LOADER_INFO_BIT, 0,
-                   "vkGetPhysicalDeviceSurfaceCapabilities2KHR: Emulating call in ICD \"%s\" using "
-                   "vkGetPhysicalDeviceSurfaceCapabilitiesKHR",
-                   icd_term->scanned_icd->lib_name);
-
-        // Write to the VkSurfaceCapabilities2KHR struct
-
-        // If the icd doesn't support VK_KHR_surface, then there are no capabilities
-        if (NULL == icd_term->dispatch.GetPhysicalDeviceSurfaceCapabilitiesKHR) {
-            if (pSurfaceCapabilities) {
-                memset(&pSurfaceCapabilities->surfaceCapabilities, 0, sizeof(VkSurfaceCapabilitiesKHR));
-            }
-            return VK_SUCCESS;
-        }
-        VkResult res = icd_term->dispatch.GetPhysicalDeviceSurfaceCapabilitiesKHR(phys_dev_term->phys_dev, surface,
-                                                                                  &pSurfaceCapabilities->surfaceCapabilities);
-
-        if (!icd_term->enabled_instance_extensions.khr_surface_maintenance1 &&
-            !icd_term->enabled_instance_extensions.ext_surface_maintenance1) {
-            emulate_VK_KHR_surface_maintenance1(pSurfaceInfo, pSurfaceCapabilities);
-        }
-        return res;
     }
+    // Emulate the call
+    loader_log(icd_term->this_instance, VULKAN_LOADER_INFO_BIT, 0,
+               "vkGetPhysicalDeviceSurfaceCapabilities2KHR: Emulating call in ICD \"%s\" using "
+               "vkGetPhysicalDeviceSurfaceCapabilitiesKHR",
+               icd_term->scanned_icd->lib_name);
+
+    // Write to the VkSurfaceCapabilities2KHR struct
+
+    // If the icd doesn't support VK_KHR_surface, then there are no capabilities
+    if (NULL == icd_term->dispatch.GetPhysicalDeviceSurfaceCapabilitiesKHR) {
+        if (pSurfaceCapabilities) {
+            memset(&pSurfaceCapabilities->surfaceCapabilities, 0, sizeof(VkSurfaceCapabilitiesKHR));
+        }
+        return VK_SUCCESS;
+    }
+    VkResult res = icd_term->dispatch.GetPhysicalDeviceSurfaceCapabilitiesKHR(phys_dev_term->phys_dev, surface,
+                                                                              &pSurfaceCapabilities->surfaceCapabilities);
+
+    if (!icd_term->enabled_instance_extensions.khr_surface_maintenance1 &&
+        !icd_term->enabled_instance_extensions.ext_surface_maintenance1) {
+        emulate_VK_KHR_surface_maintenance1(pSurfaceInfo, pSurfaceCapabilities);
+    }
+    return res;
 }
 
 LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL
@@ -2816,53 +2829,50 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_GetPhysicalDeviceSurfaceFormats2KHR(Vk
 
         return icd_term->dispatch.GetPhysicalDeviceSurfaceFormats2KHR(phys_dev_term->phys_dev, &info_copy, pSurfaceFormatCount,
                                                                       pSurfaceFormats);
-    } else {
-        // Emulate the call
-        loader_log(icd_term->this_instance, VULKAN_LOADER_INFO_BIT, 0,
-                   "vkGetPhysicalDeviceSurfaceFormats2KHR: Emulating call in ICD \"%s\" using vkGetPhysicalDeviceSurfaceFormatsKHR",
-                   icd_term->scanned_icd->lib_name);
+    }
+    // Emulate the call
+    loader_log(icd_term->this_instance, VULKAN_LOADER_INFO_BIT, 0,
+               "vkGetPhysicalDeviceSurfaceFormats2KHR: Emulating call in ICD \"%s\" using vkGetPhysicalDeviceSurfaceFormatsKHR",
+               icd_term->scanned_icd->lib_name);
 
-        if (pSurfaceInfo->pNext != NULL) {
+    if (pSurfaceInfo->pNext != NULL) {
+        loader_log(icd_term->this_instance, VULKAN_LOADER_WARN_BIT, 0,
+                   "vkGetPhysicalDeviceSurfaceFormats2KHR: Emulation found unrecognized structure type in pSurfaceInfo->pNext "
+                   "- this struct will be ignored");
+    }
+
+    // If the icd doesn't support VK_KHR_surface, then there are no formats
+    if (NULL == icd_term->dispatch.GetPhysicalDeviceSurfaceFormatsKHR) {
+        if (pSurfaceFormatCount) {
+            *pSurfaceFormatCount = 0;
+        }
+        return VK_SUCCESS;
+    }
+
+    if (*pSurfaceFormatCount == 0 || pSurfaceFormats == NULL) {
+        // Write to pSurfaceFormatCount
+        return icd_term->dispatch.GetPhysicalDeviceSurfaceFormatsKHR(phys_dev_term->phys_dev, surface, pSurfaceFormatCount, NULL);
+    }
+    // Allocate a temporary array for the output of the old function
+    uint32_t allocated_count = *pSurfaceFormatCount;
+    VkSurfaceFormatKHR *formats = loader_stack_alloc(allocated_count * sizeof(VkSurfaceFormatKHR));
+    if (formats == NULL) {
+        return VK_ERROR_OUT_OF_HOST_MEMORY;
+    }
+
+    VkResult res =
+        icd_term->dispatch.GetPhysicalDeviceSurfaceFormatsKHR(phys_dev_term->phys_dev, surface, pSurfaceFormatCount, formats);
+    // The driver reports the written count back in pSurfaceFormatCount; never copy past the array we sized.
+    for (uint32_t i = 0; i < *pSurfaceFormatCount && i < allocated_count; ++i) {
+        pSurfaceFormats[i].surfaceFormat = formats[i];
+        if (pSurfaceFormats[i].pNext != NULL) {
             loader_log(icd_term->this_instance, VULKAN_LOADER_WARN_BIT, 0,
-                       "vkGetPhysicalDeviceSurfaceFormats2KHR: Emulation found unrecognized structure type in pSurfaceInfo->pNext "
-                       "- this struct will be ignored");
-        }
-
-        // If the icd doesn't support VK_KHR_surface, then there are no formats
-        if (NULL == icd_term->dispatch.GetPhysicalDeviceSurfaceFormatsKHR) {
-            if (pSurfaceFormatCount) {
-                *pSurfaceFormatCount = 0;
-            }
-            return VK_SUCCESS;
-        }
-
-        if (*pSurfaceFormatCount == 0 || pSurfaceFormats == NULL) {
-            // Write to pSurfaceFormatCount
-            return icd_term->dispatch.GetPhysicalDeviceSurfaceFormatsKHR(phys_dev_term->phys_dev, surface, pSurfaceFormatCount,
-                                                                         NULL);
-        } else {
-            // Allocate a temporary array for the output of the old function
-            uint32_t allocated_count = *pSurfaceFormatCount;
-            VkSurfaceFormatKHR *formats = loader_stack_alloc(allocated_count * sizeof(VkSurfaceFormatKHR));
-            if (formats == NULL) {
-                return VK_ERROR_OUT_OF_HOST_MEMORY;
-            }
-
-            VkResult res = icd_term->dispatch.GetPhysicalDeviceSurfaceFormatsKHR(phys_dev_term->phys_dev, surface,
-                                                                                 pSurfaceFormatCount, formats);
-            // The driver reports the written count back in pSurfaceFormatCount; never copy past the array we sized.
-            for (uint32_t i = 0; i < *pSurfaceFormatCount && i < allocated_count; ++i) {
-                pSurfaceFormats[i].surfaceFormat = formats[i];
-                if (pSurfaceFormats[i].pNext != NULL) {
-                    loader_log(icd_term->this_instance, VULKAN_LOADER_WARN_BIT, 0,
-                               "vkGetPhysicalDeviceSurfaceFormats2KHR: Emulation found unrecognized structure type in "
-                               "pSurfaceFormats[%d].pNext - this struct will be ignored",
-                               i);
-                }
-            }
-            return res;
+                       "vkGetPhysicalDeviceSurfaceFormats2KHR: Emulation found unrecognized structure type in "
+                       "pSurfaceFormats[%d].pNext - this struct will be ignored",
+                       i);
         }
     }
+    return res;
 }
 
 bool wsi_swapchain_instance_gpa(struct loader_instance *loader_inst, const char *name, void **addr) {
