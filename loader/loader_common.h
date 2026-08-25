@@ -327,35 +327,51 @@ struct loader_instance_dispatch_table {
 #define LOADER_MAGIC_NUMBER 0x10ADED010110ADEDUL
 
 // Per instance structure
+// NOLINTNEXTLINE(clang-analyzer-optin.performance.Padding): members are intentionally grouped by usage, not by size
 struct loader_instance {
     struct loader_instance_dispatch_table *disp;  // must be first entry in structure
     uint64_t magic;                               // Should be LOADER_MAGIC_NUMBER
 
+    // Store all the terminators for instance functions in case a layer queries one *after* vkCreateInstance
+    VkLayerInstanceDispatchTable terminator_dispatch;
+
+    // Vulkan API version the app is intending to use.
+    loader_api_version app_api_version;
+
     // We need to manually track physical devices over time.  If the user
     // re-queries the information, we don't want to delete old data or
     // create new data unless necessary.
+    uint32_t total_gpu_count;
+    uint32_t phys_dev_count_term;
     struct loader_physical_device_term **phys_devs_term;
+    uint32_t phys_dev_count_tramp;
     struct loader_physical_device_tramp **phys_devs_tramp;
 
     // We also need to manually track physical device groups, but we don't need
     // loader specific structures since we have that content in the physical
     // device stored internal to the public structures.
+    uint32_t phys_dev_group_count_term;
     struct VkPhysicalDeviceGroupProperties **phys_dev_groups_term;
 
     struct loader_instance *next;
 
+    uint32_t icd_terms_count;
     struct loader_icd_term *icd_terms;
+    struct loader_icd_tramp_list icd_tramp_list;
+
+    // Must store the strings inside loader_instance directly - since the asm code will offset into
+    // loader_instance to get the function name
+    uint32_t dev_ext_disp_function_count;
+    char *dev_ext_disp_functions[MAX_NUM_UNKNOWN_EXTS];
+    uint32_t phys_dev_ext_disp_function_count;
+    char *phys_dev_ext_disp_functions[MAX_NUM_UNKNOWN_EXTS];
+
     struct loader_msg_callback_map_entry *icd_msg_callback_map;
 
-    VkInstance instance;  // layers/ICD instance returned to trampoline
-
-    // Stores debug callbacks - used in the log.
-    VkLayerDbgFunctionNode *current_dbg_function_head;        // Current head
-    VkLayerDbgFunctionNode *instance_only_dbg_function_head;  // Only used for instance create/destroy
-
     struct loader_string_list enabled_layer_names;
-    struct loader_icd_tramp_list icd_tramp_list;
+
     struct loader_layer_list instance_layer_list;
+    bool override_layer_present;
 
     // List of activated layers.
     //  app_      is the version based on exactly what the application asked for.
@@ -365,47 +381,31 @@ struct loader_instance {
     struct loader_pointer_layer_list app_activated_layer_list;
     struct loader_pointer_layer_list expanded_activated_layer_list;
 
+    VkInstance instance;  // layers/ICD instance returned to trampoline
+
     struct loader_extension_list ext_list;  // icds and loaders extensions
+    struct loader_instance_extension_enable_list enabled_extensions;
 
     // Indicates which indices in the array are in-use and which are free to be reused
     struct loader_used_object_list surfaces_list;
     struct loader_used_object_list debug_utils_messengers_list;
     struct loader_used_object_list debug_report_callbacks_list;
 
+    // Stores debug callbacks - used in the log.
+    VkLayerDbgFunctionNode *current_dbg_function_head;        // Current head
+    VkLayerDbgFunctionNode *instance_only_dbg_function_head;  // Only used for instance create/destroy
+
     VkAllocationCallbacks alloc_callbacks;
-
-    loader_settings settings;
-
-    // Store all the terminators for instance functions in case a layer queries one *after* vkCreateInstance
-    VkLayerInstanceDispatchTable terminator_dispatch;
-
-    // Must store the strings inside loader_instance directly - since the asm code will offset into
-    // loader_instance to get the function name
-    char *dev_ext_disp_functions[MAX_NUM_UNKNOWN_EXTS];
-    char *phys_dev_ext_disp_functions[MAX_NUM_UNKNOWN_EXTS];
-
-    uint32_t total_gpu_count;
-    uint32_t phys_dev_count_term;
-    uint32_t phys_dev_count_tramp;
-    uint32_t phys_dev_group_count_term;
-    uint32_t icd_terms_count;
-    uint32_t dev_ext_disp_function_count;
-    uint32_t phys_dev_ext_disp_function_count;
-
-    // Vulkan API version the app is intending to use.
-    loader_api_version app_api_version;
-
-    bool override_layer_present;
 
     // Set to true after vkCreateInstance has returned - necessary for loader_gpa_instance_terminator()
     bool instance_finished_creation;
+
+    loader_settings settings;
 
     bool portability_enumeration_enabled;
 
     bool create_terminator_invalid_extension;
     bool supports_get_dev_prop_2;
-
-    struct loader_instance_extension_enable_list enabled_extensions;
 };
 
 // VkPhysicalDevice requires special treatment by loader.  Firstly, terminator
