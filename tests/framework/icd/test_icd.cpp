@@ -683,7 +683,12 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vkEnumerateDeviceExtensionProperties(VkPhysi
         assert(false && "Drivers don't contain layers???");
         return VK_SUCCESS;
     } else {  // instance extensions
-        return FillCountPtr(phys_dev.extensions, pPropertyCount, pProperties);
+        VkResult res = FillCountPtr(phys_dev.extensions, pPropertyCount, pProperties);
+        if (pProperties != nullptr && phys_dev.overreported_device_extension_count != 0) {
+            *pPropertyCount = phys_dev.overreported_device_extension_count;
+            return VK_SUCCESS;
+        }
+        return res;
     }
 }
 

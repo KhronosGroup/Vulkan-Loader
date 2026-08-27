@@ -600,6 +600,35 @@ TEST(EnumerateDeviceExtensionProperties, NoDriverExtensionsImplicitLayerPresentW
     exercise_EnumerateDeviceExtensionProperties(inst, physical_device, exts);
 }
 
+// A driver that returns VK_SUCCESS but reports more device extensions than it actually wrote must not
+// make the loader read past the caller's pProperties buffer while de-duplicating an implicit layer's
+// device extensions against the driver's list.
+TEST(EnumerateDeviceExtensionProperties, ImplicitLayerDriverOverreportsWrittenCount) {
+    FrameworkEnvironment env{};
+    auto& driver_phys_dev = env.add_icd(TEST_ICD_PATH_VERSION_2).add_and_get_physical_device({});
+    driver_phys_dev.overreported_device_extension_count = 64;
+
+    std::vector<ManifestLayer::LayerDescription::Extension> layer_exts{{"LayerDeviceExt", 1}};
+    env.add_implicit_layer({}, ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                             .set_name("implicit_layer_name")
+                                                             .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                             .set_disable_environment("DISABLE_ME")
+                                                             .add_device_extensions({layer_exts})));
+    env.get_test_layer().device_extensions = {Extension{"LayerDeviceExt", 1}};
+
+    InstWrapper inst{env.vulkan_functions};
+    inst.CheckCreate();
+
+    VkPhysicalDevice physical_device = inst.GetPhysDev();
+
+    // Hand the loader a single-element buffer. The driver claims 64 extensions were written, so the
+    // implicit-layer dedup loop would read 64 entries out of this 1-element allocation without a clamp.
+    std::array<VkExtensionProperties, 1> storage{};
+    uint32_t extension_count = static_cast<uint32_t>(storage.size());
+    ASSERT_EQ(VK_INCOMPLETE,
+              inst->vkEnumerateDeviceExtensionProperties(physical_device, nullptr, &extension_count, storage.data()));
+}
+
 TEST(EnumerateDeviceExtensionProperties, NoDriverExtensionsImplicitLayerPresentWithLotsOfExtensions) {
     FrameworkEnvironment env{};
     env.add_icd(TEST_ICD_PATH_VERSION_2).add_physical_device({});

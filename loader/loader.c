@@ -7455,6 +7455,11 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_EnumerateDeviceExtensionProperties(VkP
         if (res != VK_SUCCESS) {
             return res;
         }
+        // A driver returning VK_SUCCESS must not claim it wrote more entries than the storage it was given. Clamp so the
+        // de-duplication scan and the appends below stay inside the caller's pProperties buffer.
+        if (written_count > *pPropertyCount) {
+            written_count = *pPropertyCount;
+        }
 
         // Iterate over active layers, if they are an implicit layer, add their device extensions
         // After calling into the driver, written_count contains the amount of device extensions written. We can therefore write
