@@ -112,6 +112,11 @@ struct PhysicalDevice {
 
     BUILDER_VECTOR(Extension, extensions, extension)
 
+    // When non-zero, vkEnumerateDeviceExtensionProperties reports this many device extensions on the fill
+    // call (pProperties != nullptr) and returns VK_SUCCESS, ignoring the caller's buffer size. Models a
+    // driver that writes back a count larger than the storage it was handed.
+    BUILDER_VALUE_WITH_DEFAULT(uint32_t, overreported_device_extension_count, 0)
+
     BUILDER_VALUE(VkSurfaceCapabilitiesKHR, surface_capabilities)
     BUILDER_VALUE_WITH_DEFAULT(VkResult, surface_capabilities_result, VK_SUCCESS)
     BUILDER_VECTOR(VkSurfaceFormatKHR, surface_formats, surface_format)
