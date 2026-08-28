@@ -2060,7 +2060,7 @@ TEST(OverrideMetaLayer, RunningWithRegularPrivilegesFromSecureLocation) {
 }
 
 TEST(OverrideMetaLayer, RunningWithElevatedPrivilegesFromSecureLocation) {
-    FrameworkEnvironment env{FrameworkSettings{}.set_run_as_if_with_elevated_privleges(true)};
+    FrameworkEnvironment env{FrameworkSettings{}.set_run_as_if_with_elevated_privileges(true)};
     env.add_icd(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA).add_physical_device({});
 
     auto& override_layer_folder = env.get_folder(ManifestLocation::override_layer);
@@ -2133,7 +2133,7 @@ TEST(OverrideMetaLayer, RunningWithRegularPrivilegesFromUnsecureLocation) {
 }
 
 TEST(OverrideMetaLayer, RunningWithElevatedPrivilegesFromUnsecureLocation) {
-    FrameworkEnvironment env{FrameworkSettings{}.set_run_as_if_with_elevated_privleges(true)};
+    FrameworkEnvironment env{FrameworkSettings{}.set_run_as_if_with_elevated_privileges(true)};
     env.add_icd(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA).add_physical_device({});
 
     auto& override_layer_folder = env.get_folder(ManifestLocation::override_layer);
@@ -5581,7 +5581,7 @@ TEST(TestLayers, AllowFilterWithImplicitLayer) {
     }
 }
 
-TEST(TestLayers, AllowFilterWithConditionallyImlicitLayer) {
+TEST(TestLayers, AllowFilterWithConditionallyImplicitLayer) {
     FrameworkEnvironment env;
     env.add_icd(TEST_ICD_PATH_VERSION_2).add_physical_device({});
     const char* layer_name = "VK_LAYER_test_layer";
@@ -5662,7 +5662,7 @@ TEST(TestLayers, AllowFilterWithConditionallyImlicitLayer) {
 
     env.remove_loader_settings();
 
-    // Repeate the above tests but with the enable_environment variable set
+    // Repeat the above tests but with the enable_environment variable set
     EnvVarWrapper set_enable_env_var{enable_env_var, "1"};
 
     {
@@ -5735,7 +5735,7 @@ TEST(TestLayers, AllowFilterWithConditionallyImlicitLayer) {
     }
 }
 
-TEST(TestLayers, AllowFilterWithConditionallyImlicitLayerWithOverrideLayer) {
+TEST(TestLayers, AllowFilterWithConditionallyImplicitLayerWithOverrideLayer) {
     FrameworkEnvironment env;
     env.add_icd(TEST_ICD_PATH_VERSION_2).add_physical_device({});
     const char* layer_name = "VK_LAYER_test_layer";

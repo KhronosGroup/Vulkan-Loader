@@ -440,7 +440,7 @@ FRAMEWORK_EXPORT Boolean my_CFURLGetFileSystemRepresentation([[maybe_unused]] CF
 }
 #endif
 
-/* Shiming functions on apple is limited by the linker prefering to not use functions in the
+/* Shiming functions on apple is limited by the linker preferring to not use functions in the
  * executable in loaded dylibs. By adding an interposer, we redirect the linker to use our
  * version of the function over the real one, thus shimming the system function.
  */

@@ -278,7 +278,7 @@ TEST(Allocation, EnumeratePhysicalDevices) {
 }
 
 // Test making sure the allocation functions are called to allocate and cleanup everything from
-// vkCreateInstance, to vkCreateDevicce, and then through their destructors.  With special
+// vkCreateInstance, to vkCreateDevice, and then through their destructors.  With special
 // allocators used on both the instance and device.
 TEST(Allocation, InstanceAndDevice) {
     FrameworkEnvironment env{};
@@ -326,7 +326,7 @@ TEST(Allocation, InstanceAndDevice) {
     ASSERT_TRUE(tracker.empty());
 }
 // Test making sure the allocation functions are called to allocate and cleanup everything from
-// vkCreateInstance, to vkCreateDevicce, and then through their destructors.  With special
+// vkCreateInstance, to vkCreateDevice, and then through their destructors.  With special
 // allocators used on only the instance and not the device.
 TEST(Allocation, InstanceButNotDevice) {
     FrameworkEnvironment env{};
@@ -374,7 +374,7 @@ TEST(Allocation, InstanceButNotDevice) {
 }
 
 // Test making sure the allocation functions are called to allocate and cleanup everything from
-// vkCreateInstance, to vkCreateDevicce, and then through their destructors.  With special
+// vkCreateInstance, to vkCreateDevice, and then through their destructors.  With special
 // allocators used on only the device and not the instance.
 TEST(Allocation, DeviceButNotInstance) {
     FrameworkEnvironment env{};

@@ -196,9 +196,9 @@ struct TestLayer {
 
     BUILDER_VALUE(bool, check_if_EnumDevExtProps_is_same_as_queried_function)
 
-    // Clober the data pointed to by pInstance to overwrite the magic value
+    // Clobber the data pointed to by pInstance to overwrite the magic value
     BUILDER_VALUE(bool, clobber_pInstance)
-    // Clober the data pointed to by pDevice to overwrite the magic value
+    // Clobber the data pointed to by pDevice to overwrite the magic value
     BUILDER_VALUE(bool, clobber_pDevice)
 
     BUILDER_VALUE(bool, query_vkEnumerateInstanceLayerProperties)

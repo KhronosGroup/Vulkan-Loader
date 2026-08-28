@@ -70,7 +70,7 @@ TEST(WsiTests, CreateSurfaceWin32NoICDCreateSupport) {
     env.vulkan_functions.vkDestroySurfaceKHR(inst, surface, nullptr);
 }
 
-// When ICD does support the surface creation, the loader should  delegat handle it to the ICD
+// When ICD does support the surface creation, the loader should delegate handle it to the ICD
 TEST(WsiTests, CreateSurfaceWin32ICDSupport) {
     FrameworkEnvironment env{};
     env.add_icd(TEST_ICD_PATH_VERSION_2);
@@ -252,7 +252,7 @@ TEST(WsiTests, CreateSurfaceXCBNoICDCreateSupport) {
     env.vulkan_functions.vkDestroySurfaceKHR(inst, surface, nullptr);
 }
 
-// When ICD does support the surface creation, the loader should  delegat handle it to the ICD
+// When ICD does support the surface creation, the loader should delegate handle it to the ICD
 TEST(WsiTests, CreateSurfaceXCBICDSupport) {
     FrameworkEnvironment env{};
     env.add_icd(TEST_ICD_PATH_VERSION_2);
@@ -436,7 +436,7 @@ TEST(WsiTests, CreateSurfaceXLIBNoICDCreateSupport) {
     env.vulkan_functions.vkDestroySurfaceKHR(inst, surface, nullptr);
 }
 
-// When ICD does support the surface creation, the loader should  delegat handle it to the ICD
+// When ICD does support the surface creation, the loader should delegate handle it to the ICD
 TEST(WsiTests, CreateSurfaceXLIBICDSupport) {
     FrameworkEnvironment env{};
     env.add_icd(TEST_ICD_PATH_VERSION_2);
@@ -620,7 +620,7 @@ TEST(WsiTests, CreateSurfaceWaylandNoICDCreateSupport) {
     env.vulkan_functions.vkDestroySurfaceKHR(inst, surface, nullptr);
 }
 
-// When ICD does support the surface creation, the loader should  delegat handle it to the ICD
+// When ICD does support the surface creation, the loader should delegate handle it to the ICD
 TEST(WsiTests, CreateSurfaceWaylandICDSupport) {
     FrameworkEnvironment env{};
     env.add_icd(TEST_ICD_PATH_VERSION_2);
@@ -762,7 +762,7 @@ TEST(WsiTests, WaylandGetPhysicalDeviceSurfaceSupportKHR) {
 }
 #endif
 
-TEST(WsiTests, GoogleSurfaceslessQuery) {
+TEST(WsiTests, GoogleSurfacelessQuery) {
     std::vector<VkPresentModeKHR> present_modes{VK_PRESENT_MODE_FIFO_KHR, VK_PRESENT_MODE_IMMEDIATE_KHR,
                                                 VK_PRESENT_MODE_MAILBOX_KHR, VK_PRESENT_MODE_FIFO_RELAXED_KHR};
     VkSurfaceFormatKHR surface_format = {VK_FORMAT_R8G8B8A8_SRGB, VK_COLORSPACE_SRGB_NONLINEAR_KHR};
@@ -825,7 +825,7 @@ TEST(WsiTests, GoogleSurfaceslessQuery) {
 
 // When the ICD does not expose vkGetPhysicalDeviceSurfaceCapabilities2EXT the loader emulates it using the
 // KHR entrypoint. If that driver call fails it may leave the output untouched (per spec), so the loader must
-// not copy the emulation scratch struct back to the caller - doing so returned uninitialised loader stack to
+// not copy the emulation scratch struct back to the caller - doing so returned uninitialized loader stack to
 // the application. Model this with a driver whose vkGetPhysicalDeviceSurfaceCapabilitiesKHR returns an error;
 // the caller's struct must be left as-is.
 TEST(WsiTests, GetPhysicalDeviceSurfaceCapabilities2EXTEmulationDriverError) {

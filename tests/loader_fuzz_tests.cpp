@@ -162,12 +162,12 @@ void execute_setting_fuzzer(std::filesystem::path const& filename) {
 
 TEST(BadJsonInput, ClusterFuzzTestCase_5599244505186304) {
     // Doesn't crash with ASAN or UBSAN
-    // Doesn't reproducibly crash - instance_create_fuzzer: Abrt in loader_cJSON_Delete
+    // Doesn't reproducibly crash - instance_create_fuzzer: Abort in loader_cJSON_Delete
     execute_instance_create_fuzzer("clusterfuzz-testcase-instance_create_fuzzer-5599244505186304");
 }
 TEST(BadJsonInput, ClusterFuzzTestCase_5126563864051712) {
     // Doesn't crash with ASAN or UBSAN
-    // Doesn't reproducibly crash - instance_enumerate_fuzzer: Abrt in loader_cJSON_Delete
+    // Doesn't reproducibly crash - instance_enumerate_fuzzer: Abort in loader_cJSON_Delete
     execute_instance_enumerate_fuzzer("clusterfuzz-testcase-instance_enumerate_fuzzer-5126563864051712");
 }
 TEST(BadJsonInput, ClusterFuzzTestCase_6308459683315712) {
@@ -186,12 +186,12 @@ TEST(BadJsonInput, ClusterFuzzTestCase_6470575830925312) {
 }
 TEST(BadJsonInput, ClusterFuzzTestCase_5258042868105216) {
     // Doesn't crash with ASAN or UBSAN
-    // Doesn't reproducibly crash - json_load_fuzzer: Abrt in loader_cJSON_Delete
+    // Doesn't reproducibly crash - json_load_fuzzer: Abort in loader_cJSON_Delete
     execute_json_load_fuzzer("clusterfuzz-testcase-json_load_fuzzer-5258042868105216");
 }
 TEST(BadJsonInput, ClusterFuzzTestCase_5487817455960064) {
     // Doesn't crash with ASAN or UBSAN
-    // Doesn't reproducibly crash - json_load_fuzzer: Abrt in std::__Fuzzer::vector<std::__Fuzzer::pair<unsigned int, unsigned
+    // Doesn't reproducibly crash - json_load_fuzzer: Abort in std::__Fuzzer::vector<std::__Fuzzer::pair<unsigned int, unsigned
     // short>, std::__
     execute_json_load_fuzzer("clusterfuzz-testcase-json_load_fuzzer-5487817455960064");
 }
@@ -216,7 +216,7 @@ TEST(BadJsonInput, ClusterFuzzTestCase_4820577276723200) {
 TEST(BadJsonInput, ClusterFuzzTestCase_5177827962454016) {
     // Does crash with UBSAN and ASAN
     // free(): invalid next size (fast)
-    // instance_create_fuzzer: Abrt in instance_create_fuzzer
+    // instance_create_fuzzer: Abort in instance_create_fuzzer
     execute_instance_create_fuzzer("clusterfuzz-testcase-minimized-instance_create_fuzzer-5177827962454016");
 }
 TEST(BadJsonInput, ClusterFuzzTestCase_5198773675425792) {
@@ -298,13 +298,13 @@ TEST(BadJsonInput, ClusterFuzzTestCase_5347670374612992) {
 TEST(BadJsonInput, ClusterFuzzTestCase_5392928643547136) {
     // Does crash with UBSAN and ASAN
     // free(): corrupted unsorted chunks
-    // json_load_fuzzer: Abrt in std::__Fuzzer::basic_filebuf<char, std::__Fuzzer::char_traits<char>>::~basic_fil
+    // json_load_fuzzer: Abort in std::__Fuzzer::basic_filebuf<char, std::__Fuzzer::char_traits<char>>::~basic_fil
     execute_json_load_fuzzer("clusterfuzz-testcase-minimized-json_load_fuzzer-5392928643547136");
 }
 TEST(BadJsonInput, ClusterFuzzTestCase_5636386303049728) {
     // Does crash with UBSAN and ASAN
     // terminate called after throwing an instance of 'std::bad_alloc' what():  std::bad_alloc
-    // json_load_fuzzer: Abrt in json_load_fuzzer
+    // json_load_fuzzer: Abort in json_load_fuzzer
     execute_json_load_fuzzer("clusterfuzz-testcase-minimized-json_load_fuzzer-5636386303049728");
 }
 TEST(BadJsonInput, ClusterFuzzTestCase_6182254813249536) {
@@ -330,7 +330,7 @@ TEST(BadJsonInput, ClusterFuzzTestCase_6482033715838976) {
 }
 TEST(BadJsonInput, ClusterFuzzTestCase_4857714377818112) {
     // Does crash with UBSAN and ASAN
-    // settings_fuzzer: Abrt in settings_fuzzer
+    // settings_fuzzer: Abort in settings_fuzzer
     execute_setting_fuzzer("clusterfuzz-testcase-minimized-settings_fuzzer-4857714377818112");
 }
 TEST(BadJsonInput, ClusterFuzzTestCase_5123849246867456) {

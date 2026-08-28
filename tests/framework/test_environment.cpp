@@ -239,9 +239,9 @@ TestBinaryHandle<TestLayer, GetTestLayerFunc, GetNewTestLayerFunc>::TestBinaryHa
 FrameworkEnvironment::FrameworkEnvironment() noexcept : FrameworkEnvironment(FrameworkSettings{}) {}
 FrameworkEnvironment::FrameworkEnvironment(FrameworkSettings const& settings) noexcept
     : settings(settings), platform_shim(file_system_manager, settings.log_filter) {
-    // Setup default path redirections
+    // Setup default path redirection
 
-    platform_shim->set_elevated_privilege(settings.run_as_if_with_elevated_privleges);
+    platform_shim->set_elevated_privilege(settings.run_as_if_with_elevated_privileges);
 
 #if TESTING_COMMON_UNIX_PLATFORMS
     if (!settings.home_env_var.empty()) env_var_home.set_new_value(settings.home_env_var);
@@ -276,7 +276,7 @@ FrameworkEnvironment::FrameworkEnvironment(FrameworkSettings const& settings) no
     }
 
     // Determines which unsecure path should be used
-    if (!settings.run_as_if_with_elevated_privleges) {
+    if (!settings.run_as_if_with_elevated_privileges) {
         if (!settings.xdg_config_home_env_var.empty()) {
             auto env_var_list = split_env_var_as_list(settings.xdg_config_home_env_var);
             unsecure_manifest_base_location = env_var_list.at(0);

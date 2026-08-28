@@ -166,7 +166,7 @@ TEST(SettingsFile, SettingsInUnsecuredLocation) {
 }
 
 TEST(SettingsFile, SettingsInUnsecuredLocationRunningWithElevatedPrivileges) {
-    FrameworkEnvironment env{FrameworkSettings{}.set_run_as_if_with_elevated_privleges(true)};
+    FrameworkEnvironment env{FrameworkSettings{}.set_run_as_if_with_elevated_privileges(true)};
     env.add_icd(TEST_ICD_PATH_VERSION_2).add_physical_device({});
     const char* regular_layer_name = "VK_LAYER_TestLayer_0";
     env.add_explicit_layer(
@@ -192,7 +192,7 @@ TEST(SettingsFile, SettingsInUnsecuredLocationRunningWithElevatedPrivileges) {
 }
 
 TEST(SettingsFile, SettingsInSecuredLocation) {
-    FrameworkEnvironment env{FrameworkSettings{}.set_run_as_if_with_elevated_privleges(true)};
+    FrameworkEnvironment env{FrameworkSettings{}.set_run_as_if_with_elevated_privileges(true)};
     env.add_icd(TEST_ICD_PATH_VERSION_2).add_physical_device({});
     env.add_icd(TEST_ICD_PATH_VERSION_2);
     const char* regular_layer_name = "VK_LAYER_TestLayer_0";
@@ -292,7 +292,7 @@ TEST(SettingsFile, SupportsMultipleSettingsSimultaneously) {
     }
 }
 
-// Make sure layers found through the settings file are enableable by environment variables
+// Make sure layers found through the settings file can be enabled by environment variables
 TEST(SettingsFile, LayerAutoEnabledByEnvVars) {
     FrameworkEnvironment env{};
     env.loader_settings.set_file_format_version({1, 0, 0});
@@ -1825,7 +1825,7 @@ TEST(SettingsFile, MultipleKeysInRegistryInUnsecureLocation) {
 }
 
 TEST(SettingsFile, MultipleKeysInRegistryInSecureLocation) {
-    FrameworkEnvironment env{FrameworkSettings{}.set_run_as_if_with_elevated_privleges(true)};
+    FrameworkEnvironment env{FrameworkSettings{}.set_run_as_if_with_elevated_privileges(true)};
     env.add_icd(TEST_ICD_PATH_VERSION_2).add_physical_device({});
     env.platform_shim->add_manifest_to_registry(ManifestCategory::settings, "jank_path");
     env.platform_shim->add_manifest_to_registry(ManifestCategory::settings, "jank_path2");
@@ -3282,7 +3282,7 @@ TEST(SettingsFile, DeviceConfigurationAppliesToPhysicalDeviceGroups) {
 
 // A group holding both a visible and a hidden device is dropped whole rather
 // than having the hidden device removed from it.  The devices in a group are
-// physically linked, so a group missing a member misdescribes the hardware.
+// physically linked, so a group missing a member mis-describes the hardware.
 TEST(SettingsFile, DeviceConfigurationDropsPartiallyHiddenPhysicalDeviceGroup) {
     FrameworkEnvironment env{};
     std::vector<VulkanUUID> uuids{2, VulkanUUID{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15}};

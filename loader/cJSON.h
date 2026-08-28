@@ -188,7 +188,7 @@ CJSON_PUBLIC(cJSON *) loader_cJSON_GetArrayItem(const cJSON *array, int index);
 CJSON_PUBLIC(cJSON *) loader_cJSON_GetObjectItem(const cJSON *const object, const char *const string);
 CJSON_PUBLIC(cJSON *) loader_cJSON_GetObjectItemCaseSensitive(const cJSON *const object, const char *const string);
 CJSON_PUBLIC(cJSON_bool) loader_cJSON_HasObjectItem(const cJSON *object, const char *string);
-/* For analysing failed parses. This returns a pointer to the parse error. You'll probably need to look a few chars back to make
+/* For analyzing failed parses. This returns a pointer to the parse error. You'll probably need to look a few chars back to make
  * sense of it. Defined when loader_cJSON_Parse() returns 0. 0 when loader_cJSON_Parse() succeeds. */
 CJSON_PUBLIC(const char *) cJSON_GetErrorPtr(void);
 
