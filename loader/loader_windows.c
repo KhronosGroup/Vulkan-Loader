@@ -95,8 +95,8 @@ void windows_initialization(void) {
 #endif
 }
 
-BOOL WINAPI DllMain(HINSTANCE hinst, DWORD reason, LPVOID reserved) {
-    (void)hinst;
+BOOL WINAPI DllMain(HINSTANCE hinstance, DWORD reason, LPVOID reserved) {
+    (void)hinstance;
     switch (reason) {
         case DLL_PROCESS_ATTACH:
             // Only initialize necessary sync primitives
@@ -751,7 +751,7 @@ VkResult enumerate_adapter_physical_devices(struct loader_instance *inst, struct
     if (res != VK_SUCCESS) {
         loader_instance_heap_free(inst, next_icd_phys_devs->physical_devices);
         next_icd_phys_devs->physical_devices = NULL;
-        // Unless OOHM occurs, only return VK_SUCCESS
+        // Unless OUT_OF_HOST_MEMORY occurs, only return VK_SUCCESS
         if (res != VK_ERROR_OUT_OF_HOST_MEMORY) {
             res = VK_SUCCESS;
             loader_log(inst, VULKAN_LOADER_WARN_BIT, 0, "Failed to convert DXGI adapter into Vulkan physical device");

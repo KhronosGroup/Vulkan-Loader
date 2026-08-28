@@ -376,7 +376,7 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vkEnumeratePhysicalDeviceGroups(
         // NOTE: This is a fake struct to make sure the pNext chain is properly passed down to the ICD
         //       vkEnumeratePhysicalDeviceGroups.
         //       The two versions must match:
-        //           "FakePNext" test in loader_regresion_tests.cpp
+        //           "FakePNext" test in loader_regression_tests.cpp
         //           "test_vkEnumeratePhysicalDeviceGroups" in test_icd.cpp
         struct FakePnextSharedWithICD {
             VkStructureType sType;
@@ -684,8 +684,8 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vkEnumerateDeviceExtensionProperties(VkPhysi
         return VK_SUCCESS;
     } else {  // instance extensions
         VkResult res = FillCountPtr(phys_dev.extensions, pPropertyCount, pProperties);
-        if (pProperties != nullptr && phys_dev.overreported_device_extension_count != 0) {
-            *pPropertyCount = phys_dev.overreported_device_extension_count;
+        if (pProperties != nullptr && phys_dev.over_reported_device_extension_count != 0) {
+            *pPropertyCount = phys_dev.over_reported_device_extension_count;
             return VK_SUCCESS;
         }
         return res;
@@ -772,7 +772,7 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vkGetPhysicalDeviceToolProperties(VkPhysical
 }
 
 template <typename T>
-T to_nondispatch_handle(uint64_t handle) {
+T to_non_dispatch_handle(uint64_t handle) {
 #if defined(__LP64__) || defined(_WIN64) || (defined(__x86_64__) && !defined(__ILP32__)) || defined(_M_X64) || defined(__ia64) || \
     defined(_M_IA64) || defined(__aarch64__) || defined(__powerpc64__)
     return reinterpret_cast<T>(handle);
@@ -782,7 +782,7 @@ T to_nondispatch_handle(uint64_t handle) {
 }
 
 template <typename T>
-uint64_t from_nondispatch_handle(T handle) {
+uint64_t from_non_dispatch_handle(T handle) {
 #if defined(__LP64__) || defined(_WIN64) || (defined(__x86_64__) && !defined(__ILP32__)) || defined(_M_X64) || defined(__ia64) || \
     defined(_M_IA64) || defined(__aarch64__) || defined(__powerpc64__)
     return reinterpret_cast<uint64_t>(handle);
@@ -793,13 +793,13 @@ uint64_t from_nondispatch_handle(T handle) {
 
 //// WSI ////
 template <typename HandleType>
-void common_nondispatch_handle_creation(std::vector<uint64_t>& handles, HandleType* pHandle) {
+void common_non_dispatch_handle_creation(std::vector<uint64_t>& handles, HandleType* pHandle) {
     if (nullptr != pHandle) {
         if (handles.size() == 0)
             handles.push_back(800851234);
         else
             handles.push_back(handles.back() + 102030);
-        *pHandle = to_nondispatch_handle<HandleType>(handles.back());
+        *pHandle = to_non_dispatch_handle<HandleType>(handles.back());
     }
 }
 #if defined(VK_USE_PLATFORM_ANDROID_KHR)
@@ -808,7 +808,7 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateAndroidSurfaceKHR(VkInstance instanc
                                                               const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface) {
     std::lock_guard lg(icd.mutex);
     check_valid_instance(instance);
-    common_nondispatch_handle_creation(icd.created_instance_details.at(instance).surface_handles, pSurface);
+    common_non_dispatch_handle_creation(icd.created_instance_details.at(instance).surface_handles, pSurface);
     return VK_SUCCESS;
 }
 #endif
@@ -821,7 +821,7 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateWin32SurfaceKHR(VkInstance instance,
     std::lock_guard lg(icd.mutex);
     check_valid_instance(instance);
     if (IsInstanceExtensionSupported(VK_KHR_WIN32_SURFACE_EXTENSION_NAME)) {
-        common_nondispatch_handle_creation(icd.created_instance_details.at(instance).surface_handles, pSurface);
+        common_non_dispatch_handle_creation(icd.created_instance_details.at(instance).surface_handles, pSurface);
     }
     return VK_SUCCESS;
 }
@@ -837,7 +837,7 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateWaylandSurfaceKHR(VkInstance instanc
     std::lock_guard lg(icd.mutex);
     check_valid_instance(instance);
     if (IsInstanceExtensionSupported(VK_KHR_WAYLAND_SURFACE_EXTENSION_NAME)) {
-        common_nondispatch_handle_creation(icd.created_instance_details.at(instance).surface_handles, pSurface);
+        common_non_dispatch_handle_creation(icd.created_instance_details.at(instance).surface_handles, pSurface);
     }
     return VK_SUCCESS;
 }
@@ -855,7 +855,7 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateXcbSurfaceKHR(VkInstance instance,
     std::lock_guard lg(icd.mutex);
     check_valid_instance(instance);
     if (IsInstanceExtensionSupported(VK_KHR_XCB_SURFACE_EXTENSION_NAME)) {
-        common_nondispatch_handle_creation(icd.created_instance_details.at(instance).surface_handles, pSurface);
+        common_non_dispatch_handle_creation(icd.created_instance_details.at(instance).surface_handles, pSurface);
     }
     return VK_SUCCESS;
 }
@@ -874,7 +874,7 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateXlibSurfaceKHR(VkInstance instance,
     std::lock_guard lg(icd.mutex);
     check_valid_instance(instance);
     if (IsInstanceExtensionSupported(VK_KHR_XCB_SURFACE_EXTENSION_NAME)) {
-        common_nondispatch_handle_creation(icd.created_instance_details.at(instance).surface_handles, pSurface);
+        common_non_dispatch_handle_creation(icd.created_instance_details.at(instance).surface_handles, pSurface);
     }
     return VK_SUCCESS;
 }
@@ -891,7 +891,7 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateDirectFBSurfaceEXT(VkInstance instan
     check_allocator_handle(pAllocator);
     std::lock_guard lg(icd.mutex);
     check_valid_instance(instance);
-    common_nondispatch_handle_creation(icd.created_instance_details.at(instance).surface_handles, pSurface);
+    common_non_dispatch_handle_creation(icd.created_instance_details.at(instance).surface_handles, pSurface);
     return VK_SUCCESS;
 }
 
@@ -908,7 +908,7 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateMacOSSurfaceMVK(VkInstance instance,
     check_allocator_handle(pAllocator);
     std::lock_guard lg(icd.mutex);
     check_valid_instance(instance);
-    common_nondispatch_handle_creation(icd.created_instance_details.at(instance).surface_handles, pSurface);
+    common_non_dispatch_handle_creation(icd.created_instance_details.at(instance).surface_handles, pSurface);
     return VK_SUCCESS;
 }
 #endif  // VK_USE_PLATFORM_MACOS_MVK
@@ -920,7 +920,7 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateIOSSurfaceMVK(VkInstance instance,
     check_allocator_handle(pAllocator);
     std::lock_guard lg(icd.mutex);
     check_valid_instance(instance);
-    common_nondispatch_handle_creation(icd.created_instance_details.at(instance).surface_handles, pSurface);
+    common_non_dispatch_handle_creation(icd.created_instance_details.at(instance).surface_handles, pSurface);
     return VK_SUCCESS;
 }
 #endif  // VK_USE_PLATFORM_IOS_MVK
@@ -932,7 +932,7 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateStreamDescriptorSurfaceGGP(
     check_allocator_handle(pAllocator);
     std::lock_guard lg(icd.mutex);
     check_valid_instance(instance);
-    common_nondispatch_handle_creation(icd.created_instance_details.at(instance).surface_handles, pSurface);
+    common_non_dispatch_handle_creation(icd.created_instance_details.at(instance).surface_handles, pSurface);
     return VK_SUCCESS;
 }
 #endif  // VK_USE_PLATFORM_GGP
@@ -944,7 +944,7 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateMetalSurfaceEXT(VkInstance instance,
     check_allocator_handle(pAllocator);
     std::lock_guard lg(icd.mutex);
     check_valid_instance(instance);
-    common_nondispatch_handle_creation(icd.created_instance_details.at(instance).surface_handles, pSurface);
+    common_non_dispatch_handle_creation(icd.created_instance_details.at(instance).surface_handles, pSurface);
     return VK_SUCCESS;
 }
 #endif  // VK_USE_PLATFORM_METAL_EXT
@@ -956,7 +956,7 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateScreenSurfaceQNX(VkInstance instance
     check_allocator_handle(pAllocator);
     std::lock_guard lg(icd.mutex);
     check_valid_instance(instance);
-    common_nondispatch_handle_creation(icd.created_instance_details.at(instance).surface_handles, pSurface);
+    common_non_dispatch_handle_creation(icd.created_instance_details.at(instance).surface_handles, pSurface);
     return VK_SUCCESS;
 }
 
@@ -973,7 +973,7 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateHeadlessSurfaceEXT(VkInstance instan
     std::lock_guard lg(icd.mutex);
     check_valid_instance(instance);
     if (IsInstanceExtensionSupported(VK_EXT_HEADLESS_SURFACE_EXTENSION_NAME)) {
-        common_nondispatch_handle_creation(icd.created_instance_details.at(instance).surface_handles, pSurface);
+        common_non_dispatch_handle_creation(icd.created_instance_details.at(instance).surface_handles, pSurface);
     }
     return VK_SUCCESS;
 }
@@ -983,7 +983,7 @@ VKAPI_ATTR void VKAPI_CALL test_vkDestroySurfaceKHR(VkInstance instance, VkSurfa
     std::lock_guard lg(icd.mutex);
     check_valid_instance(instance);
     if (surface != VK_NULL_HANDLE) {
-        uint64_t surf_handle = from_nondispatch_handle(surface);
+        uint64_t surf_handle = from_non_dispatch_handle(surface);
         auto& surface_handles = icd.created_instance_details.at(instance).surface_handles;
         auto found_iter = std::find(surface_handles.begin(), surface_handles.end(), surf_handle);
         if (found_iter != surface_handles.end()) {
@@ -1001,14 +1001,14 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateSwapchainKHR(VkDevice device, const 
     std::lock_guard lg(icd.mutex);
     check_valid_device(device);
     // Validate that the surface came from this instance
-    uint64_t surface_integer_value = from_nondispatch_handle(pCreateInfo->surface);
+    uint64_t surface_integer_value = from_non_dispatch_handle(pCreateInfo->surface);
     auto& surface_handles =
         icd.created_instance_details.at(icd.created_device_details.at(device).instance_created_from).surface_handles;
     auto found_iter = std::find(surface_handles.begin(), surface_handles.end(), surface_integer_value);
     if (found_iter == surface_handles.end()) {
         return VK_ERROR_INITIALIZATION_FAILED;
     }
-    common_nondispatch_handle_creation(icd.created_device_details.at(device).swapchain_handles, pSwapchain);
+    common_non_dispatch_handle_creation(icd.created_device_details.at(device).swapchain_handles, pSwapchain);
     return VK_SUCCESS;
 }
 
@@ -1021,7 +1021,7 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vkGetSwapchainImagesKHR(VkDevice device, [[m
         if (pSwapchainImageCount) *pSwapchainImageCount = static_cast<uint32_t>(handles.size());
     } else if (pSwapchainImageCount) {
         for (uint32_t i = 0; i < *pSwapchainImageCount && i < handles.size(); i++) {
-            pSwapchainImages[i] = to_nondispatch_handle<VkImage>(handles.back());
+            pSwapchainImages[i] = to_non_dispatch_handle<VkImage>(handles.back());
         }
         if (*pSwapchainImageCount < handles.size()) return VK_INCOMPLETE;
     }
@@ -1034,7 +1034,7 @@ VKAPI_ATTR void VKAPI_CALL test_vkDestroySwapchainKHR(VkDevice device, VkSwapcha
     std::lock_guard lg(icd.mutex);
     check_valid_device(device);
     if (swapchain != VK_NULL_HANDLE) {
-        uint64_t fake_swapchain_handle = from_nondispatch_handle(swapchain);
+        uint64_t fake_swapchain_handle = from_non_dispatch_handle(swapchain);
         auto& swapchain_handles = icd.created_device_details.at(device).swapchain_handles;
         auto found_iter = swapchain_handles.erase(
             std::remove(swapchain_handles.begin(), swapchain_handles.end(), fake_swapchain_handle), swapchain_handles.end());
@@ -1219,7 +1219,7 @@ test_vkCreateDisplayPlaneSurfaceKHR(VkInstance instance, [[maybe_unused]] const 
     std::lock_guard lg(icd.mutex);
     check_valid_instance(instance);
     if (IsInstanceExtensionSupported(VK_KHR_DISPLAY_EXTENSION_NAME)) {
-        common_nondispatch_handle_creation(icd.created_instance_details.at(instance).surface_handles, pSurface);
+        common_non_dispatch_handle_creation(icd.created_instance_details.at(instance).surface_handles, pSurface);
     }
     return VK_SUCCESS;
 }
@@ -1302,7 +1302,7 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vkGetPhysicalDeviceSurfaceFormats2KHR(VkPhys
         test_vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, pSurfaceInfo->surface, pSurfaceFormatCount, nullptr);
         if (nullptr != pSurfaceFormats) {
             auto& phys_dev = GetPhysDevice(physicalDevice);
-            // Since the structures are different, we have to copy each item over seperately.  Since we have multiple, we
+            // Since the structures are different, we have to copy each item over separately.  Since we have multiple, we
             // have to manually copy the data here instead of calling the next function
             for (uint32_t cnt = 0; cnt < *pSurfaceFormatCount; ++cnt) {
                 memcpy(&pSurfaceFormats[cnt].surfaceFormat, &phys_dev.surface_formats[cnt], sizeof(VkSurfaceFormatKHR));
@@ -1321,14 +1321,14 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateSharedSwapchainsKHR(VkDevice device,
     check_allocator_handle(pAllocator);
     for (uint32_t i = 0; i < swapchainCount; i++) {
         // Validate that the surface was created from this instance
-        uint64_t surface_integer_value = from_nondispatch_handle(pCreateInfos[i].surface);
+        uint64_t surface_integer_value = from_non_dispatch_handle(pCreateInfos[i].surface);
         auto& surface_handles =
             icd.created_instance_details.at(icd.created_device_details.at(device).instance_created_from).surface_handles;
         auto found_iter = std::find(surface_handles.begin(), surface_handles.end(), surface_integer_value);
         if (found_iter == surface_handles.end()) {
             return VK_ERROR_INITIALIZATION_FAILED;
         }
-        common_nondispatch_handle_creation(icd.created_device_details.at(device).swapchain_handles, &pSwapchains[i]);
+        common_non_dispatch_handle_creation(icd.created_device_details.at(device).swapchain_handles, &pSwapchains[i]);
     }
     return VK_SUCCESS;
 }
@@ -1503,7 +1503,7 @@ VKAPI_ATTR void VKAPI_CALL test_vkGetPhysicalDeviceQueueFamilyProperties2(VkPhys
         test_vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, pQueueFamilyPropertyCount, nullptr);
         if (nullptr != pQueueFamilyProperties) {
             auto& phys_dev = GetPhysDevice(physicalDevice);
-            // Since the structures are different, we have to copy each item over seperately.  Since we have multiple, we
+            // Since the structures are different, we have to copy each item over separately.  Since we have multiple, we
             // have to manually copy the data here instead of calling the next function
             for (uint32_t queue = 0; queue < *pQueueFamilyPropertyCount; ++queue) {
                 memcpy(&pQueueFamilyProperties[queue].queueFamilyProperties, &phys_dev.queue_family_properties[queue].properties,
@@ -1523,7 +1523,7 @@ VKAPI_ATTR void VKAPI_CALL test_vkGetPhysicalDeviceSparseImageFormatProperties2(
                                                             pPropertyCount, nullptr);
         if (nullptr != pProperties) {
             auto& phys_dev = GetPhysDevice(physicalDevice);
-            // Since the structures are different, we have to copy each item over seperately.  Since we have multiple, we
+            // Since the structures are different, we have to copy each item over separately.  Since we have multiple, we
             // have to manually copy the data here instead of calling the next function
             for (uint32_t cnt = 0; cnt < *pPropertyCount; ++cnt) {
                 memcpy(&pProperties[cnt].properties, &phys_dev.sparse_image_format_properties[cnt],

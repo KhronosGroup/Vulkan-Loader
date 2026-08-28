@@ -464,7 +464,7 @@ void exercise_EnumerateDeviceExtensionProperties(InstWrapper& inst, VkPhysicalDe
         ASSERT_EQ(VK_SUCCESS, inst->vkEnumerateDeviceExtensionProperties(physical_device, nullptr, &extension_count, nullptr));
         ASSERT_EQ(extension_count, exts_to_expect.size());
 
-        // reset size to a not earthshatteringly large number of extensions
+        // reset size to a not earth shatteringly large number of extensions
         extension_count = static_cast<uint32_t>(exts_to_expect.size()) * 4;
         std::vector<VkExtensionProperties> enumerated_device_exts{extension_count};
 
@@ -520,8 +520,8 @@ TEST(EnumerateDeviceExtensionProperties, ImplicitLayerPresentWithExtensions) {
     std::vector<Extension> exts;
     std::vector<ManifestLayer::LayerDescription::Extension> layer_exts;
     for (uint32_t i = 0; i < 6; i++) {
-        exts.emplace_back(std::string("LayerExtNumba") + std::to_string(i), i + 10);
-        layer_exts.emplace_back(std::string("LayerExtNumba") + std::to_string(i), i + 10);
+        exts.emplace_back(std::string("LayerExtNumber") + std::to_string(i), i + 10);
+        layer_exts.emplace_back(std::string("LayerExtNumber") + std::to_string(i), i + 10);
     }
     env.add_implicit_layer({}, ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
                                                              .set_name("implicit_layer_name")
@@ -550,8 +550,8 @@ TEST(EnumerateDeviceExtensionProperties, ImplicitLayerPresentWithLotsOfExtension
     std::vector<Extension> exts;
     std::vector<ManifestLayer::LayerDescription::Extension> layer_exts;
     for (uint32_t i = 0; i < 26; i++) {
-        exts.emplace_back(std::string("LayerExtNumba") + std::to_string(i), i + 10);
-        layer_exts.emplace_back(std::string("LayerExtNumba") + std::to_string(i), i + 10);
+        exts.emplace_back(std::string("LayerExtNumber") + std::to_string(i), i + 10);
+        layer_exts.emplace_back(std::string("LayerExtNumber") + std::to_string(i), i + 10);
     }
     env.add_implicit_layer({}, ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
                                                              .set_name("implicit_layer_name")
@@ -582,8 +582,8 @@ TEST(EnumerateDeviceExtensionProperties, NoDriverExtensionsImplicitLayerPresentW
     std::vector<Extension> exts;
     std::vector<ManifestLayer::LayerDescription::Extension> layer_exts;
     for (uint32_t i = 0; i < 6; i++) {
-        exts.emplace_back(std::string("LayerExtNumba") + std::to_string(i), i + 10);
-        layer_exts.emplace_back(std::string("LayerExtNumba") + std::to_string(i), i + 10);
+        exts.emplace_back(std::string("LayerExtNumber") + std::to_string(i), i + 10);
+        layer_exts.emplace_back(std::string("LayerExtNumber") + std::to_string(i), i + 10);
     }
     env.add_implicit_layer({}, ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
                                                              .set_name("implicit_layer_name")
@@ -606,7 +606,7 @@ TEST(EnumerateDeviceExtensionProperties, NoDriverExtensionsImplicitLayerPresentW
 TEST(EnumerateDeviceExtensionProperties, ImplicitLayerDriverOverreportsWrittenCount) {
     FrameworkEnvironment env{};
     auto& driver_phys_dev = env.add_icd(TEST_ICD_PATH_VERSION_2).add_and_get_physical_device({});
-    driver_phys_dev.overreported_device_extension_count = 64;
+    driver_phys_dev.over_reported_device_extension_count = 64;
 
     std::vector<ManifestLayer::LayerDescription::Extension> layer_exts{{"LayerDeviceExt", 1}};
     env.add_implicit_layer({}, ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
@@ -622,7 +622,7 @@ TEST(EnumerateDeviceExtensionProperties, ImplicitLayerDriverOverreportsWrittenCo
     VkPhysicalDevice physical_device = inst.GetPhysDev();
 
     // Hand the loader a single-element buffer. The driver claims 64 extensions were written, so the
-    // implicit-layer dedup loop would read 64 entries out of this 1-element allocation without a clamp.
+    // implicit-layer deduplicate loop would read 64 entries out of this 1-element allocation without a clamp.
     std::array<VkExtensionProperties, 1> storage{};
     uint32_t extension_count = static_cast<uint32_t>(storage.size());
     ASSERT_EQ(VK_INCOMPLETE,
@@ -636,8 +636,8 @@ TEST(EnumerateDeviceExtensionProperties, NoDriverExtensionsImplicitLayerPresentW
     std::vector<Extension> exts;
     std::vector<ManifestLayer::LayerDescription::Extension> layer_exts;
     for (uint32_t i = 0; i < 6; i++) {
-        exts.emplace_back(std::string("LayerExtNumba") + std::to_string(i), i + 10);
-        layer_exts.emplace_back(std::string("LayerExtNumba") + std::to_string(i), i + 10);
+        exts.emplace_back(std::string("LayerExtNumber") + std::to_string(i), i + 10);
+        layer_exts.emplace_back(std::string("LayerExtNumber") + std::to_string(i), i + 10);
     }
     env.add_implicit_layer({}, ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
                                                              .set_name("implicit_layer_name")
@@ -661,8 +661,8 @@ TEST(EnumerateDeviceExtensionProperties, ImplicitLayerPresentWithDuplicateExtens
     std::vector<Extension> exts;
     std::vector<ManifestLayer::LayerDescription::Extension> layer_exts;
     for (uint32_t i = 0; i < 26; i++) {
-        exts.emplace_back(std::string("LayerExtNumba") + std::to_string(i), i + 10);
-        layer_exts.emplace_back(std::string("LayerExtNumba") + std::to_string(i), i + 10);
+        exts.emplace_back(std::string("LayerExtNumber") + std::to_string(i), i + 10);
+        layer_exts.emplace_back(std::string("LayerExtNumber") + std::to_string(i), i + 10);
     }
     env.add_implicit_layer({}, ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
                                                              .set_name("implicit_layer_name")
@@ -695,8 +695,8 @@ TEST(EnumerateDeviceExtensionProperties, ImplicitLayerPresentWithOnlyDuplicateEx
     std::vector<Extension> exts;
     std::vector<ManifestLayer::LayerDescription::Extension> layer_exts;
     for (uint32_t i = 0; i < 26; i++) {
-        exts.emplace_back(std::string("LayerExtNumba") + std::to_string(i), i + 10);
-        layer_exts.emplace_back(std::string("LayerExtNumba") + std::to_string(i), i + 10);
+        exts.emplace_back(std::string("LayerExtNumber") + std::to_string(i), i + 10);
+        layer_exts.emplace_back(std::string("LayerExtNumber") + std::to_string(i), i + 10);
     }
     env.add_implicit_layer({}, ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
                                                              .set_name("implicit_layer_name")

@@ -184,7 +184,7 @@ TEST_F(CreateDestroyInstanceReport, WarnInCreate) {
 // This should not be logged because we have only defined the debug report logging for vkCreateInstance
 // and vkDestroyInstance.
 TEST_F(SeparateReport, ErrorInEnumDevsNoCallback) {
-    // Look for the invaid count param message
+    // Look for the invalid count param message
     expected_message = "VUID-vkEnumeratePhysicalDevices-pPhysicalDeviceCount-parameter";
     expected_object_type = VK_DEBUG_REPORT_OBJECT_TYPE_INSTANCE_EXT;
     expected_flag = VK_DEBUG_REPORT_ERROR_BIT_EXT;
@@ -203,7 +203,7 @@ TEST_F(SeparateReport, ErrorInEnumDevsNoCallback) {
 // Test report created outside of vkCreateInstance with error in vkEnumeratePhysicalDevices.
 // This should be logged now.
 TEST_F(SeparateReport, ErrorInEnumDevs) {
-    // Look for the invaid count param message
+    // Look for the invalid count param message
     expected_message = "VUID-vkEnumeratePhysicalDevices-pPhysicalDeviceCount-parameter";
     expected_object_type = VK_DEBUG_REPORT_OBJECT_TYPE_INSTANCE_EXT;
     expected_flag = VK_DEBUG_REPORT_ERROR_BIT_EXT;

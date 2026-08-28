@@ -23,7 +23,7 @@
  * USE OR OTHER DEALINGS IN THE MATERIALS.
  *
  * Author: Charles Giessen <charles@lunarg.com>
- * Author: Mark Young <markylunarg.com>
+ * Author: Mark Young <marky@lunarg.com>
  */
 
 #include "manifest_builders.h"
@@ -126,9 +126,9 @@ TEST(EnvVarICDOverrideSetup, TestOnlyDriverEnvVar) {
     ASSERT_EQ(phys_dev_count, 5U);
 }
 
-// Test VK_DRIVER_FILES environment variable with elelvated privileges
+// Test VK_DRIVER_FILES environment variable with elevated privileges
 TEST(EnvVarICDOverrideSetup, TestOnlyDriverEnvVarRunningWithElevatedPrivileges) {
-    FrameworkEnvironment env{FrameworkSettings{}.set_run_as_if_with_elevated_privleges(true)};
+    FrameworkEnvironment env{FrameworkSettings{}.set_run_as_if_with_elevated_privileges(true)};
     env.add_icd(TEST_ICD_PATH_EXPORT_NONE, ManifestOptions{}.set_discovery_type(ManifestDiscoveryType::env_var));
     env.get_test_icd(0).add_physical_device("pd0");
 
@@ -179,7 +179,7 @@ TEST(EnvVarICDOverrideSetup, TestOnlyDriverEnvVarInFolder) {
 }
 // Test VK_DRIVER_FILES environment variable containing a path to a folder  with elevated privileges
 TEST(EnvVarICDOverrideSetup, TestOnlyDriverEnvVarInFolderWithElevatedPrivileges) {
-    FrameworkEnvironment env{FrameworkSettings{}.set_run_as_if_with_elevated_privleges(true)};
+    FrameworkEnvironment env{FrameworkSettings{}.set_run_as_if_with_elevated_privileges(true)};
     env.add_icd(TEST_ICD_PATH_EXPORT_NONE, ManifestOptions{}.set_discovery_type(ManifestDiscoveryType::env_var).set_is_dir(true));
     env.get_test_icd(0).add_physical_device("pd0");
 
@@ -298,9 +298,9 @@ TEST(EnvVarICDOverrideSetup, TestOnlyAddDriverEnvVar) {
     ASSERT_EQ(phys_dev_count, 1U);
 }
 
-// Test VK_ADD_DRIVER_FILES environment variable with elelvated privileges
+// Test VK_ADD_DRIVER_FILES environment variable with elevated privileges
 TEST(EnvVarICDOverrideSetup, TestOnlyAddDriverEnvVarRunningWithElevatedPrivileges) {
-    FrameworkEnvironment env{FrameworkSettings{}.set_run_as_if_with_elevated_privleges(true)};
+    FrameworkEnvironment env{FrameworkSettings{}.set_run_as_if_with_elevated_privileges(true)};
     env.add_icd(TEST_ICD_PATH_EXPORT_NONE, ManifestOptions{}.set_discovery_type(ManifestDiscoveryType::add_env_var));
     env.get_test_icd(0).add_and_get_physical_device("pd0");
 
@@ -365,7 +365,7 @@ TEST(EnvVarICDOverrideSetup, TestOnlyLayerEnvVar) {
 }
 // Test VK_LAYER_PATH environment variable with elevated privileges
 TEST(EnvVarICDOverrideSetup, TestOnlyLayerEnvVarRunningWithElevatedPrivileges) {
-    FrameworkEnvironment env{FrameworkSettings{}.set_run_as_if_with_elevated_privleges(true)};
+    FrameworkEnvironment env{FrameworkSettings{}.set_run_as_if_with_elevated_privileges(true)};
     env.add_icd(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA).add_physical_device("physical_device_0");
     env.file_system_manager.add_path_redirect("/tmp/carol", ManifestLocation::explicit_layer_env_var);
 
@@ -426,7 +426,7 @@ TEST(EnvVarICDOverrideSetup, TestOnlyAddLayerEnvVar) {
 
 // Test VK_ADD_LAYER_PATH environment variable with elevated privileges
 TEST(EnvVarICDOverrideSetup, TestOnlyAddLayerEnvVarRunningWithElevatedPrivileges) {
-    FrameworkEnvironment env{FrameworkSettings{}.set_run_as_if_with_elevated_privleges(true)};
+    FrameworkEnvironment env{FrameworkSettings{}.set_run_as_if_with_elevated_privileges(true)};
     env.add_icd(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA).add_physical_device("physical_device_0");
     env.file_system_manager.add_path_redirect("/tmp/carol", ManifestLocation::explicit_layer_add_env_var);
 
@@ -489,7 +489,7 @@ TEST(EnvVarICDOverrideSetup, TestOnlyImplicitLayerEnvVar) {
 
 // Test VK_IMPLICIT_LAYER_PATH environment variable run with elevated privileges
 TEST(EnvVarICDOverrideSetup, TestOnlyImplicitLayerEnvVarRunningWithElevatedPrivileges) {
-    FrameworkEnvironment env{FrameworkSettings{}.set_run_as_if_with_elevated_privleges(true)};
+    FrameworkEnvironment env{FrameworkSettings{}.set_run_as_if_with_elevated_privileges(true)};
     env.add_icd(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA).add_physical_device("physical_device_0");
     env.file_system_manager.add_path_redirect("/tmp/carol", ManifestLocation::implicit_layer_env_var);
 
@@ -556,7 +556,7 @@ TEST(EnvVarICDOverrideSetup, TestOnlyAddImplicitLayerEnvVar) {
 
 // Test VK_ADD_IMPLICIT_LAYER_PATH environment variable running with elevated privileges
 TEST(EnvVarICDOverrideSetup, TestOnlyAddImplicitLayerEnvVarWithElevatedPrivileges) {
-    FrameworkEnvironment env{FrameworkSettings{}.set_run_as_if_with_elevated_privleges(true)};
+    FrameworkEnvironment env{FrameworkSettings{}.set_run_as_if_with_elevated_privileges(true)};
     env.add_icd(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA).add_physical_device("physical_device_0");
     env.file_system_manager.add_path_redirect("/tmp/carol", ManifestLocation::implicit_layer_add_env_var);
 

@@ -115,7 +115,7 @@ struct PhysicalDevice {
     // When non-zero, vkEnumerateDeviceExtensionProperties reports this many device extensions on the fill
     // call (pProperties != nullptr) and returns VK_SUCCESS, ignoring the caller's buffer size. Models a
     // driver that writes back a count larger than the storage it was handed.
-    BUILDER_VALUE_WITH_DEFAULT(uint32_t, overreported_device_extension_count, 0)
+    BUILDER_VALUE_WITH_DEFAULT(uint32_t, over_reported_device_extension_count, 0)
 
     BUILDER_VALUE(VkSurfaceCapabilitiesKHR, surface_capabilities)
     BUILDER_VALUE_WITH_DEFAULT(VkResult, surface_capabilities_result, VK_SUCCESS)
@@ -299,7 +299,7 @@ struct TestICD {
     // When true, this ICD returns function pointers when TEST_ICD_INTERNAL_FUNCTION_NAME is queried.
     BUILDER_VALUE(bool, supports_internal_function)
 
-    // Must explicitely state support for the tooling info extension, that way we can control if vkGetInstanceProcAddr returns a
+    // Must explicitly state support for the tooling info extension, that way we can control if vkGetInstanceProcAddr returns a
     // function pointer for vkGetPhysicalDeviceToolPropertiesEXT or vkGetPhysicalDeviceToolProperties (core version)
     BUILDER_VALUE(bool, supports_tooling_info_ext);
     BUILDER_VALUE(bool, supports_tooling_info_core);

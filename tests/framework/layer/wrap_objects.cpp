@@ -82,7 +82,7 @@ struct wrapped_dev_obj {
     PFN_vkSetDeviceLoaderData pfn_dev_init;
     PFN_vkGetDeviceProcAddr pfn_get_dev_proc_addr;
     VkDevice obj;
-    bool maintanence_1_enabled;
+    bool maintenance_1_enabled;
     bool present_image_enabled;
     bool debug_utils_enabled;
     bool debug_report_enabled;
@@ -528,7 +528,7 @@ VKAPI_ATTR VkResult VKAPI_CALL wrap_vkCreateDevice(VkPhysicalDevice physicalDevi
     for (uint32_t ext = 0; ext < pCreateInfo->enabledExtensionCount; ++ext) {
         if (!strcmp(pCreateInfo->ppEnabledExtensionNames[ext], VK_KHR_MAINTENANCE1_EXTENSION_NAME)) {
 #if TEST_LAYER_EXPORT_MAINT_1
-            dev->maintanence_1_enabled = true;
+            dev->maintenance_1_enabled = true;
 #endif
         }
         if (!strcmp(pCreateInfo->ppEnabledExtensionNames[ext], VK_KHR_SHARED_PRESENTABLE_IMAGE_EXTENSION_NAME)) {
@@ -677,7 +677,7 @@ PFN_vkVoidFunction layer_intercept_device_proc(wrapped_dev_obj *dev, const char 
     if (!strcmp(name, "CreateDevice")) return (PFN_vkVoidFunction)wrap_vkCreateDevice;
     if (!strcmp(name, "DestroyDevice")) return (PFN_vkVoidFunction)wrap_vkDestroyDevice;
 
-    if (dev->maintanence_1_enabled && !strcmp(name, "TrimCommandPoolKHR")) return (PFN_vkVoidFunction)wrap_vkTrimCommandPoolKHR;
+    if (dev->maintenance_1_enabled && !strcmp(name, "TrimCommandPoolKHR")) return (PFN_vkVoidFunction)wrap_vkTrimCommandPoolKHR;
     if (dev->present_image_enabled && !strcmp(name, "GetSwapchainStatusKHR"))
         return (PFN_vkVoidFunction)wrap_vkGetSwapchainStatusKHR;
 

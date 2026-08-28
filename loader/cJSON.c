@@ -749,7 +749,7 @@ static cJSON_bool print_string_ptr(const unsigned char *const input, printbuffer
     }
     // The loader-specific escaping above emits one byte where the standard form emits two, so the written
     // length is shorter than output_length. Terminate at the actual end, otherwise the bytes between it and
-    // output_length (uninitialised when the caller buffer is not zeroed) get read back as part of the string.
+    // output_length (uninitialized when the caller buffer is not zeroed) get read back as part of the string.
     *output_pointer = '\0';
 
     return true;
