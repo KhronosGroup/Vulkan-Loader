@@ -953,7 +953,7 @@ LOADER_EXPORT VKAPI_ATTR void VKAPI_CALL vkGetPhysicalDeviceFeatures(VkPhysicalD
 }
 
 LOADER_EXPORT VKAPI_ATTR void VKAPI_CALL vkGetPhysicalDeviceFormatProperties(VkPhysicalDevice physicalDevice, VkFormat format,
-                                                                             VkFormatProperties *pFormatInfo) {
+                                                                             VkFormatProperties *pFormatProperties) {
     const VkLayerInstanceDispatchTable *disp;
     VkPhysicalDevice unwrapped_phys_dev = loader_unwrap_physical_device(physicalDevice);
     if (VK_NULL_HANDLE == unwrapped_phys_dev) {
@@ -963,7 +963,7 @@ LOADER_EXPORT VKAPI_ATTR void VKAPI_CALL vkGetPhysicalDeviceFormatProperties(VkP
         abort(); /* Intentionally fail so user can correct issue. */
     }
     disp = loader_get_instance_layer_dispatch(physicalDevice);
-    disp->GetPhysicalDeviceFormatProperties(unwrapped_phys_dev, format, pFormatInfo);
+    disp->GetPhysicalDeviceFormatProperties(unwrapped_phys_dev, format, pFormatProperties);
 }
 
 LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkGetPhysicalDeviceImageFormatProperties(
@@ -998,7 +998,7 @@ LOADER_EXPORT VKAPI_ATTR void VKAPI_CALL vkGetPhysicalDeviceProperties(VkPhysica
 
 LOADER_EXPORT VKAPI_ATTR void VKAPI_CALL vkGetPhysicalDeviceQueueFamilyProperties(VkPhysicalDevice physicalDevice,
                                                                                   uint32_t *pQueueFamilyPropertyCount,
-                                                                                  VkQueueFamilyProperties *pQueueProperties) {
+                                                                                  VkQueueFamilyProperties *pQueueFamilyProperties) {
     const VkLayerInstanceDispatchTable *disp;
     VkPhysicalDevice unwrapped_phys_dev = loader_unwrap_physical_device(physicalDevice);
     if (VK_NULL_HANDLE == unwrapped_phys_dev) {
@@ -1008,7 +1008,7 @@ LOADER_EXPORT VKAPI_ATTR void VKAPI_CALL vkGetPhysicalDeviceQueueFamilyPropertie
         abort(); /* Intentionally fail so user can correct issue. */
     }
     disp = loader_get_instance_layer_dispatch(physicalDevice);
-    disp->GetPhysicalDeviceQueueFamilyProperties(unwrapped_phys_dev, pQueueFamilyPropertyCount, pQueueProperties);
+    disp->GetPhysicalDeviceQueueFamilyProperties(unwrapped_phys_dev, pQueueFamilyPropertyCount, pQueueFamilyProperties);
 }
 
 LOADER_EXPORT VKAPI_ATTR void VKAPI_CALL vkGetPhysicalDeviceMemoryProperties(VkPhysicalDevice physicalDevice,
@@ -1130,7 +1130,7 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumerateDeviceLayerProperties(Vk
     return VK_SUCCESS;
 }
 
-LOADER_EXPORT VKAPI_ATTR void VKAPI_CALL vkGetDeviceQueue(VkDevice device, uint32_t queueNodeIndex, uint32_t queueIndex,
+LOADER_EXPORT VKAPI_ATTR void VKAPI_CALL vkGetDeviceQueue(VkDevice device, uint32_t queueFamilyIndex, uint32_t queueIndex,
                                                           VkQueue *pQueue) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(device);
     if (NULL == disp) {
@@ -1139,7 +1139,7 @@ LOADER_EXPORT VKAPI_ATTR void VKAPI_CALL vkGetDeviceQueue(VkDevice device, uint3
         abort(); /* Intentionally fail so user can correct issue. */
     }
 
-    disp->GetDeviceQueue(device, queueNodeIndex, queueIndex, pQueue);
+    disp->GetDeviceQueue(device, queueFamilyIndex, queueIndex, pQueue);
     if (pQueue != NULL && *pQueue != NULL) {
         loader_set_dispatch(*pQueue, disp);
     }
@@ -2472,7 +2472,7 @@ LOADER_EXPORT VKAPI_ATTR void VKAPI_CALL vkCmdResetEvent(VkCommandBuffer command
 }
 
 LOADER_EXPORT VKAPI_ATTR void VKAPI_CALL vkCmdWaitEvents(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent *pEvents,
-                                                         VkPipelineStageFlags sourceStageMask, VkPipelineStageFlags dstStageMask,
+                                                         VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask,
                                                          uint32_t memoryBarrierCount, const VkMemoryBarrier *pMemoryBarriers,
                                                          uint32_t bufferMemoryBarrierCount,
                                                          const VkBufferMemoryBarrier *pBufferMemoryBarriers,
@@ -2485,7 +2485,7 @@ LOADER_EXPORT VKAPI_ATTR void VKAPI_CALL vkCmdWaitEvents(VkCommandBuffer command
         abort(); /* Intentionally fail so user can correct issue. */
     }
 
-    disp->CmdWaitEvents(commandBuffer, eventCount, pEvents, sourceStageMask, dstStageMask, memoryBarrierCount, pMemoryBarriers,
+    disp->CmdWaitEvents(commandBuffer, eventCount, pEvents, srcStageMask, dstStageMask, memoryBarrierCount, pMemoryBarriers,
                         bufferMemoryBarrierCount, pBufferMemoryBarriers, imageMemoryBarrierCount, pImageMemoryBarriers);
 }
 
@@ -2507,7 +2507,7 @@ LOADER_EXPORT VKAPI_ATTR void VKAPI_CALL vkCmdPipelineBarrier(VkCommandBuffer co
                              bufferMemoryBarrierCount, pBufferMemoryBarriers, imageMemoryBarrierCount, pImageMemoryBarriers);
 }
 
-LOADER_EXPORT VKAPI_ATTR void VKAPI_CALL vkCmdBeginQuery(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t slot,
+LOADER_EXPORT VKAPI_ATTR void VKAPI_CALL vkCmdBeginQuery(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t query,
                                                          VkFlags flags) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
     if (NULL == disp) {
@@ -2516,10 +2516,10 @@ LOADER_EXPORT VKAPI_ATTR void VKAPI_CALL vkCmdBeginQuery(VkCommandBuffer command
         abort(); /* Intentionally fail so user can correct issue. */
     }
 
-    disp->CmdBeginQuery(commandBuffer, queryPool, slot, flags);
+    disp->CmdBeginQuery(commandBuffer, queryPool, query, flags);
 }
 
-LOADER_EXPORT VKAPI_ATTR void VKAPI_CALL vkCmdEndQuery(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t slot) {
+LOADER_EXPORT VKAPI_ATTR void VKAPI_CALL vkCmdEndQuery(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t query) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
     if (NULL == disp) {
         loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
@@ -2527,7 +2527,7 @@ LOADER_EXPORT VKAPI_ATTR void VKAPI_CALL vkCmdEndQuery(VkCommandBuffer commandBu
         abort(); /* Intentionally fail so user can correct issue. */
     }
 
-    disp->CmdEndQuery(commandBuffer, queryPool, slot);
+    disp->CmdEndQuery(commandBuffer, queryPool, query);
 }
 
 LOADER_EXPORT VKAPI_ATTR void VKAPI_CALL vkCmdResetQueryPool(VkCommandBuffer commandBuffer, VkQueryPool queryPool,
@@ -2543,7 +2543,7 @@ LOADER_EXPORT VKAPI_ATTR void VKAPI_CALL vkCmdResetQueryPool(VkCommandBuffer com
 }
 
 LOADER_EXPORT VKAPI_ATTR void VKAPI_CALL vkCmdWriteTimestamp(VkCommandBuffer commandBuffer, VkPipelineStageFlagBits pipelineStage,
-                                                             VkQueryPool queryPool, uint32_t slot) {
+                                                             VkQueryPool queryPool, uint32_t query) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
     if (NULL == disp) {
         loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
@@ -2551,7 +2551,7 @@ LOADER_EXPORT VKAPI_ATTR void VKAPI_CALL vkCmdWriteTimestamp(VkCommandBuffer com
         abort(); /* Intentionally fail so user can correct issue. */
     }
 
-    disp->CmdWriteTimestamp(commandBuffer, pipelineStage, queryPool, slot);
+    disp->CmdWriteTimestamp(commandBuffer, pipelineStage, queryPool, query);
 }
 
 LOADER_EXPORT VKAPI_ATTR void VKAPI_CALL vkCmdCopyQueryPoolResults(VkCommandBuffer commandBuffer, VkQueryPool queryPool,
@@ -2615,7 +2615,7 @@ LOADER_EXPORT VKAPI_ATTR void VKAPI_CALL vkCmdEndRenderPass(VkCommandBuffer comm
     disp->CmdEndRenderPass(commandBuffer);
 }
 
-LOADER_EXPORT VKAPI_ATTR void VKAPI_CALL vkCmdExecuteCommands(VkCommandBuffer commandBuffer, uint32_t commandBuffersCount,
+LOADER_EXPORT VKAPI_ATTR void VKAPI_CALL vkCmdExecuteCommands(VkCommandBuffer commandBuffer, uint32_t commandBufferCount,
                                                               const VkCommandBuffer *pCommandBuffers) {
     const VkLayerDispatchTable *disp = loader_get_dispatch(commandBuffer);
     if (NULL == disp) {
@@ -2624,7 +2624,7 @@ LOADER_EXPORT VKAPI_ATTR void VKAPI_CALL vkCmdExecuteCommands(VkCommandBuffer co
         abort(); /* Intentionally fail so user can correct issue. */
     }
 
-    disp->CmdExecuteCommands(commandBuffer, commandBuffersCount, pCommandBuffers);
+    disp->CmdExecuteCommands(commandBuffer, commandBufferCount, pCommandBuffers);
 }
 
 // ---- Vulkan core 1.1 trampolines
