@@ -4878,7 +4878,7 @@ VKAPI_ATTR VkResult VKAPI_CALL loader_layer_create_device(VkInstance instance, V
     } else {
         struct loader_physical_device_tramp *phys_dev = (struct loader_physical_device_tramp *)physicalDevice;
         internal_device = phys_dev->phys_dev;
-        inst = (struct loader_instance *)phys_dev->this_instance;
+        inst = phys_dev->this_instance;
     }
 
     // Get the physical device (ICD) extensions
