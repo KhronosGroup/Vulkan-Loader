@@ -577,24 +577,22 @@ void parse_id_filter_environment_var(const struct loader_instance *inst, const c
         goto out;
     }
     // Allocate a separate string since scan_for_next_comma modifies the original string
+    uint32_t num_commas = 0;
     parsing_string = loader_stack_alloc(env_var_len + 1);
     for (uint32_t iii = 0; iii < env_var_len; ++iii) {
+        if (env_var_value[iii] == ',') {
+            num_commas++;
+        }
         parsing_string[iii] = (char)tolower((unsigned char)env_var_value[iii]);
     }
     parsing_string[env_var_len] = '\0';
 
+    filter_struct->filters = (struct loader_envvar_id_filter_value *)loader_instance_heap_alloc(
+        inst, (num_commas + 1) * sizeof(struct loader_envvar_id_filter_value), VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
     filter_struct->count = 0;
     char *context = NULL;
     char *token = thread_safe_strtok(parsing_string, ",", &context);
     while (NULL != token) {
-        if (filter_struct->count >= MAX_ADDITIONAL_FILTERS) {
-            loader_log(inst, VULKAN_LOADER_WARN_BIT, 0,
-                       "parse_id_filter_environment_var: Exceeded maximum number of filters (%d) for env var '%s'. "
-                       "Remaining entries will be ignored.",
-                       MAX_ADDITIONAL_FILTERS, env_var_name);
-            break;
-        }
-
         struct loader_envvar_id_filter_value *filter_value = &filter_struct->filters[filter_struct->count];
 
         char *pEnd;
@@ -623,4 +621,10 @@ bool check_id_matches_filter_environment_var(const uint32_t id, const struct loa
         }
     }
     return false;
+}
+
+void free_id_filters(const struct loader_instance *inst, struct loader_envvar_id_filter *filter_struct) {
+    if (filter_struct != NULL && filter_struct->filters != NULL) {
+        loader_instance_heap_free(inst, filter_struct->filters);
+    }
 }

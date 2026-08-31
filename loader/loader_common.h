@@ -553,5 +553,5 @@ struct loader_envvar_id_filter_value {
 
 struct loader_envvar_id_filter {
     uint32_t count;
-    struct loader_envvar_id_filter_value filters[MAX_ADDITIONAL_FILTERS];
+    struct loader_envvar_id_filter_value *filters;
 };

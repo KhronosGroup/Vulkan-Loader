@@ -248,13 +248,13 @@ bool loader_check_version_meets_required(loader_api_version required, loader_api
 // Helper that returns true if the string passed in path ends in .json
 bool is_json(const char *path, size_t len);
 
-VkResult loader_filter_enumerated_physical_device(const struct loader_instance *inst,
-                                                  const struct loader_envvar_id_filter *device_id_filter,
-                                                  const struct loader_envvar_id_filter *vendor_id_filter,
-                                                  const struct loader_envvar_id_filter *driver_id_filter,
-                                                  const uint32_t in_PhysicalDeviceCount,
-                                                  const VkPhysicalDevice *in_pPhysicalDevices, uint32_t *out_pPhysicalDeviceCount,
-                                                  VkPhysicalDevice *out_pPhysicalDevices);
+VkResult loader_filter_enumerated_physical_devices(const struct loader_instance *inst,
+                                                   const struct loader_envvar_id_filter *device_id_filter,
+                                                   const struct loader_envvar_id_filter *vendor_id_filter,
+                                                   const struct loader_envvar_id_filter *driver_id_filter,
+                                                   const uint32_t in_PhysicalDeviceCount,
+                                                   const VkPhysicalDevice *in_pPhysicalDevices, uint32_t *out_pPhysicalDeviceCount,
+                                                   VkPhysicalDevice *out_pPhysicalDevices);
 
 VkResult loader_filter_enumerated_physical_device_groups(
     const struct loader_instance *inst, const struct loader_envvar_id_filter *device_id_filter,
