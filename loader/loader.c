@@ -8277,13 +8277,13 @@ VkResult get_device_driver_id(VkPhysicalDevice physicalDevice, VkDriverId *drive
     return VK_SUCCESS;
 }
 
-VkResult loader_filter_enumerated_physical_device(const struct loader_instance *inst,
-                                                  const struct loader_envvar_id_filter *device_id_filter,
-                                                  const struct loader_envvar_id_filter *vendor_id_filter,
-                                                  const struct loader_envvar_id_filter *driver_id_filter,
-                                                  const uint32_t in_PhysicalDeviceCount,
-                                                  const VkPhysicalDevice *in_pPhysicalDevices, uint32_t *out_pPhysicalDeviceCount,
-                                                  VkPhysicalDevice *out_pPhysicalDevices) {
+VkResult loader_filter_enumerated_physical_devices(const struct loader_instance *inst,
+                                                   const struct loader_envvar_id_filter *device_id_filter,
+                                                   const struct loader_envvar_id_filter *vendor_id_filter,
+                                                   const struct loader_envvar_id_filter *driver_id_filter,
+                                                   const uint32_t in_PhysicalDeviceCount,
+                                                   const VkPhysicalDevice *in_pPhysicalDevices, uint32_t *out_pPhysicalDeviceCount,
+                                                   VkPhysicalDevice *out_pPhysicalDevices) {
     uint32_t filtered_physical_device_count = 0;
     for (uint32_t i = 0; i < in_PhysicalDeviceCount; i++) {
         VkPhysicalDeviceProperties dev_props = {0};

@@ -874,6 +874,10 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumeratePhysicalDevices(VkInstan
     VkResult res = VK_SUCCESS;
     struct loader_instance *inst;
 
+    struct loader_envvar_id_filter device_id_filter = {0, NULL};
+    struct loader_envvar_id_filter vendor_id_filter = {0, NULL};
+    struct loader_envvar_id_filter driver_id_filter = {0, NULL};
+
     loader_platform_thread_lock_mutex(&loader_lock);
 
     inst = loader_get_instance(instance);
@@ -890,10 +894,6 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumeratePhysicalDevices(VkInstan
         res = VK_ERROR_INITIALIZATION_FAILED;
         goto out;
     }
-
-    struct loader_envvar_id_filter device_id_filter;
-    struct loader_envvar_id_filter vendor_id_filter;
-    struct loader_envvar_id_filter driver_id_filter;
 
     parse_id_filter_environment_var(inst, VK_DEVICE_ID_FILTER_ENV_VAR, &device_id_filter);
     parse_id_filter_environment_var(inst, VK_VENDOR_ID_FILTER_ENV_VAR, &vendor_id_filter);
@@ -915,9 +915,9 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumeratePhysicalDevices(VkInstan
             goto out;
         }
 
-        res = loader_filter_enumerated_physical_device(inst, &device_id_filter, &vendor_id_filter, &driver_id_filter,
-                                                       physical_device_count, physical_devices, pPhysicalDeviceCount,
-                                                       pPhysicalDevices);
+        res = loader_filter_enumerated_physical_devices(inst, &device_id_filter, &vendor_id_filter, &driver_id_filter,
+                                                        physical_device_count, physical_devices, pPhysicalDeviceCount,
+                                                        pPhysicalDevices);
     }
 
     if (NULL != pPhysicalDevices && (VK_SUCCESS == res || VK_INCOMPLETE == res)) {
@@ -932,6 +932,9 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumeratePhysicalDevices(VkInstan
     }
 
 out:
+    free_id_filters(inst, &device_id_filter);
+    free_id_filters(inst, &vendor_id_filter);
+    free_id_filters(inst, &driver_id_filter);
 
     loader_platform_thread_unlock_mutex(&loader_lock);
 
@@ -2634,6 +2637,10 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumeratePhysicalDeviceGroups(
     VkResult res = VK_SUCCESS;
     struct loader_instance *inst = NULL;
 
+    struct loader_envvar_id_filter device_id_filter = {0, NULL};
+    struct loader_envvar_id_filter vendor_id_filter = {0, NULL};
+    struct loader_envvar_id_filter driver_id_filter = {0, NULL};
+
     loader_platform_thread_lock_mutex(&loader_lock);
 
     inst = loader_get_instance(instance);
@@ -2650,10 +2657,6 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumeratePhysicalDeviceGroups(
         res = VK_ERROR_INITIALIZATION_FAILED;
         goto out;
     }
-
-    struct loader_envvar_id_filter device_id_filter;
-    struct loader_envvar_id_filter vendor_id_filter;
-    struct loader_envvar_id_filter driver_id_filter;
 
     parse_id_filter_environment_var(inst, VK_DEVICE_ID_FILTER_ENV_VAR, &device_id_filter);
     parse_id_filter_environment_var(inst, VK_VENDOR_ID_FILTER_ENV_VAR, &vendor_id_filter);
@@ -2694,6 +2697,9 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumeratePhysicalDeviceGroups(
     }
 
 out:
+    free_id_filters(inst, &device_id_filter);
+    free_id_filters(inst, &vendor_id_filter);
+    free_id_filters(inst, &driver_id_filter);
 
     loader_platform_thread_unlock_mutex(&loader_lock);
     return res;
