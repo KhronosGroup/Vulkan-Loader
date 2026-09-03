@@ -4803,31 +4803,37 @@ out:
 
 // Determine the layer interface version to use.
 bool loader_get_layer_interface_version(PFN_vkNegotiateLoaderLayerInterfaceVersion fp_negotiate_layer_version,
-                                        VkNegotiateLayerInterface *interface_struct) {
+                                        VkNegotiateLayerInterface *interface_struct, bool *should_skip) {
     memset(interface_struct, 0, sizeof(VkNegotiateLayerInterface));
     interface_struct->sType = LAYER_NEGOTIATE_INTERFACE_STRUCT;
     interface_struct->loaderLayerInterfaceVersion = 1;
     interface_struct->pNext = NULL;
 
-    if (fp_negotiate_layer_version != NULL) {
-        // Layer supports the negotiation API, so call it with the loader's
-        // latest version supported
-        interface_struct->loaderLayerInterfaceVersion = CURRENT_LOADER_LAYER_INTERFACE_VERSION;
-        VkResult result = fp_negotiate_layer_version(interface_struct);
+    // If the layer doesn't support the negotiation API, then negotiation failed.
+    if (fp_negotiate_layer_version == NULL) {
+        return false;
+    }
 
-        if (result != VK_SUCCESS) {
-            // Layer no longer supports the loader's latest interface version so
-            // fail loading the Layer
-            return false;
-        }
+    // Layer supports the negotiation API, so call it with the loader's
+    // latest version supported
+    interface_struct->loaderLayerInterfaceVersion = CURRENT_LOADER_LAYER_INTERFACE_VERSION;
+    VkResult result = fp_negotiate_layer_version(interface_struct);
+
+    if (result != VK_SUCCESS) {
+        // Layer no longer supports the loader's latest interface version so
+        // fail loading the Layer.
+        // Layer explicitly said it isn't compatible, so we should skip it.
+        *should_skip = true;
+        return false;
     }
 
     if (interface_struct->loaderLayerInterfaceVersion < MIN_SUPPORTED_LOADER_LAYER_INTERFACE_VERSION) {
         // Loader no longer supports the layer's latest interface version so
-        // fail loading the layer
+        // fail loading the layer.
+        // Layer's negotiated interface version is less than the version the loader supports, so we should skip it.
+        *should_skip = true;
         return false;
     }
-
     return true;
 }
 
@@ -5085,7 +5091,17 @@ VkResult loader_create_instance_chain(const VkInstanceCreateInfo *pCreateInfo, c
 
                     VkNegotiateLayerInterface interface_struct;
 
-                    if (loader_get_layer_interface_version(negotiate_interface, &interface_struct)) {
+                    bool should_skip = false;
+                    bool success = loader_get_layer_interface_version(negotiate_interface, &interface_struct, &should_skip);
+
+                    if (should_skip) {
+                        loader_log(inst, VULKAN_LOADER_INFO_BIT | VULKAN_LOADER_LAYER_BIT, 0,
+                                   "loader_create_instance_chain: Failed to negotiate a compatible interface version with layer "
+                                   "\"%s\", skipping",
+                                   layer_prop->lib_name);
+                        continue;
+                    }
+                    if (success) {
                         // Go ahead and set the properties version to the
                         // correct value.
                         layer_prop->interface_version = interface_struct.loaderLayerInterfaceVersion;
