@@ -2187,6 +2187,7 @@ VkResult loader_scanned_icd_add(const struct loader_instance *inst, struct loade
                    "loader_scanned_icd_add: ICD %s doesn't support interface version compatible with loader, skip this ICD.",
                    filename);
         res = VK_ERROR_INCOMPATIBLE_DRIVER;
+        *lib_status = LOADER_LAYER_LIB_ERROR_NEGOTIATE_INTERFACE_VERSION_FAILED;
         goto out;
     }
 
@@ -2205,6 +2206,7 @@ VkResult loader_scanned_icd_add(const struct loader_instance *inst, struct loade
                        "vk_icdGetInstanceProcAddr, skip this ICD.",
                        filename, interface_vers);
             res = VK_ERROR_INCOMPATIBLE_DRIVER;
+            *lib_status = LOADER_LAYER_LIB_ERROR_UNABLE_TO_FIND_VK_GET_INSTANCE_PROC_ADDR;
             goto out;
         }
         // Use deprecated interface from version 0
@@ -2215,6 +2217,7 @@ VkResult loader_scanned_icd_add(const struct loader_instance *inst, struct loade
                        "\'vk_icdGetInstanceProcAddr\' from ICD %s failed.",
                        filename);
             res = VK_ERROR_INCOMPATIBLE_DRIVER;
+            *lib_status = LOADER_LAYER_LIB_ERROR_UNABLE_TO_FIND_VK_GET_INSTANCE_PROC_ADDR;
             goto out;
         } else {
             loader_log(inst, VULKAN_LOADER_WARN_BIT, 0,
@@ -2252,6 +2255,7 @@ VkResult loader_scanned_icd_add(const struct loader_instance *inst, struct loade
                        "loader_scanned_icd_add: Could not get \'vkCreateInstance\' via \'vk_icdGetInstanceProcAddr\' for ICD %s",
                        filename);
             res = VK_ERROR_INCOMPATIBLE_DRIVER;
+            *lib_status = LOADER_LAYER_LIB_ERROR_UNABLE_TO_FIND_VK_GET_INSTANCE_PROC_ADDR;
             goto out;
         }
         fp_get_inst_ext_props =
@@ -4201,6 +4205,8 @@ VkResult loader_icd_scan(const struct loader_instance *inst, struct loader_icd_t
             switch (lib_status) {
                 case LOADER_LAYER_LIB_NOT_LOADED:
                 case LOADER_LAYER_LIB_ERROR_FAILED_TO_LOAD:
+                case LOADER_LAYER_LIB_ERROR_NEGOTIATE_INTERFACE_VERSION_FAILED:
+                case LOADER_LAYER_LIB_ERROR_UNABLE_TO_FIND_VK_GET_INSTANCE_PROC_ADDR:
                     loader_log(inst, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_DRIVER_BIT, 0,
                                "loader_icd_scan: Failed loading library associated with ICD JSON %s. Ignoring this JSON",
                                icd_details[i].full_library_path);
@@ -5095,10 +5101,7 @@ VkResult loader_create_instance_chain(const VkInstanceCreateInfo *pCreateInfo, c
                     bool success = loader_get_layer_interface_version(negotiate_interface, &interface_struct, &should_skip);
 
                     if (should_skip) {
-                        loader_log(inst, VULKAN_LOADER_INFO_BIT | VULKAN_LOADER_LAYER_BIT, 0,
-                                   "loader_create_instance_chain: Failed to negotiate a compatible interface version with layer "
-                                   "\"%s\", skipping",
-                                   layer_prop->lib_name);
+                        layer_prop->lib_status = LOADER_LAYER_LIB_ERROR_NEGOTIATE_INTERFACE_VERSION_FAILED;
                         continue;
                     }
                     if (success) {
@@ -5135,6 +5138,7 @@ VkResult loader_create_instance_chain(const VkInstanceCreateInfo *pCreateInfo, c
                                 loader_log(inst, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_LAYER_BIT, 0,
                                            "loader_create_instance_chain: Failed to find \'vkGetInstanceProcAddr\' in layer \"%s\"",
                                            layer_prop->lib_name);
+                                layer_prop->lib_status = LOADER_LAYER_LIB_ERROR_UNABLE_TO_FIND_VK_GET_INSTANCE_PROC_ADDR;
                                 continue;
                             }
                         } else {
@@ -5145,6 +5149,7 @@ VkResult loader_create_instance_chain(const VkInstanceCreateInfo *pCreateInfo, c
                                 loader_log(inst, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_LAYER_BIT, 0,
                                            "loader_create_instance_chain: Failed to find \'%s\' in layer \"%s\"",
                                            layer_prop->functions.str_gipa, layer_prop->lib_name);
+                                layer_prop->lib_status = LOADER_LAYER_LIB_ERROR_UNABLE_TO_FIND_VK_GET_INSTANCE_PROC_ADDR;
                                 continue;
                             }
                         }
@@ -5233,6 +5238,15 @@ VkResult loader_create_instance_chain(const VkInstanceCreateInfo *pCreateInfo, c
                 case LOADER_LAYER_LIB_ERROR_FAILED_TO_LOAD:
                     loader_log(inst, log_flag, 0, "Requested layer \"%s\" failed to load%c", exp_layer_prop->info.layerName,
                                ending);
+                    break;
+                case LOADER_LAYER_LIB_ERROR_NEGOTIATE_INTERFACE_VERSION_FAILED:
+                    loader_log(inst, log_flag, 0,
+                               "Requested layer \"%s\" failed to negotiate a compatible interface version with layer%c",
+                               exp_layer_prop->info.layerName, ending);
+                    break;
+                case LOADER_LAYER_LIB_ERROR_UNABLE_TO_FIND_VK_GET_INSTANCE_PROC_ADDR:
+                    loader_log(inst, log_flag, 0, "Requested layer \"%s\" is missing vkGetInstanceProcAddr %c",
+                               exp_layer_prop->info.layerName, ending);
                     break;
                 case LOADER_LAYER_LIB_SUCCESS_LOADED:
                 case LOADER_LAYER_LIB_ERROR_OUT_OF_MEMORY:
