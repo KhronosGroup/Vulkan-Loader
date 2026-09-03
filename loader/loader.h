@@ -161,8 +161,7 @@ bool loader_implicit_layer_is_enabled(const struct loader_instance *inst, const 
                                       const struct loader_layer_properties *prop);
 VkResult loader_add_meta_layer(const struct loader_instance *inst, const struct loader_envvar_all_filters *filters,
                                struct loader_layer_properties *prop, struct loader_pointer_layer_list *target_list,
-                               struct loader_pointer_layer_list *expanded_target_list, const struct loader_layer_list *source_list,
-                               bool *out_found_all_component_layers);
+                               const struct loader_layer_list *source_list, bool *out_found_all_component_layers);
 VkResult loader_add_to_ext_list(const struct loader_instance *inst, struct loader_extension_list *ext_list,
                                 uint32_t prop_list_count, const VkExtensionProperties *props);
 VkResult loader_add_device_extensions(const struct loader_instance *inst,

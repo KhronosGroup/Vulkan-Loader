@@ -456,9 +456,7 @@ bool check_name_matches_filter_environment_var(const char *name, const struct lo
 // search_list then add it to layer_list.  But only add it to layer_list if type_flags matches.
 VkResult loader_add_environment_layers(struct loader_instance *inst, const char *enabled_layers_env,
                                        const struct loader_envvar_all_filters *filters,
-                                       struct loader_pointer_layer_list *target_list,
-                                       struct loader_pointer_layer_list *expanded_target_list,
-                                       const struct loader_layer_list *source_list) {
+                                       struct loader_pointer_layer_list *target_list, const struct loader_layer_list *source_list) {
     VkResult res = VK_SUCCESS;
     const enum layer_type_flags type_flags = VK_LAYER_TYPE_FLAG_EXPLICIT_LAYER;
 
@@ -489,11 +487,8 @@ VkResult loader_add_environment_layers(struct loader_instance *inst, const char 
                                     source_prop->enabled_by_what = ENABLED_BY_WHAT_VK_INSTANCE_LAYERS;
                                     res = loader_add_layer_properties_to_list(inst, target_list, source_prop);
                                     if (res == VK_ERROR_OUT_OF_HOST_MEMORY) goto out;
-                                    res = loader_add_layer_properties_to_list(inst, expanded_target_list, source_prop);
-                                    if (res == VK_ERROR_OUT_OF_HOST_MEMORY) goto out;
                                 } else {
-                                    res = loader_add_meta_layer(inst, filters, source_prop, target_list, expanded_target_list,
-                                                                source_list, NULL);
+                                    res = loader_add_meta_layer(inst, filters, source_prop, target_list, source_list, NULL);
                                     if (res == VK_ERROR_OUT_OF_HOST_MEMORY) goto out;
                                 }
                                 break;
@@ -551,10 +546,8 @@ VkResult loader_add_environment_layers(struct loader_instance *inst, const char 
             source_prop->enabled_by_what = ENABLED_BY_WHAT_VK_LOADER_LAYERS_ENABLE;
             res = loader_add_layer_properties_to_list(inst, target_list, source_prop);
             if (res == VK_ERROR_OUT_OF_HOST_MEMORY) goto out;
-            res = loader_add_layer_properties_to_list(inst, expanded_target_list, source_prop);
-            if (res == VK_ERROR_OUT_OF_HOST_MEMORY) goto out;
         } else {
-            res = loader_add_meta_layer(inst, filters, source_prop, target_list, expanded_target_list, source_list, NULL);
+            res = loader_add_meta_layer(inst, filters, source_prop, target_list, source_list, NULL);
             if (res == VK_ERROR_OUT_OF_HOST_MEMORY) goto out;
         }
     }

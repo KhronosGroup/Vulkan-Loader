@@ -1166,8 +1166,7 @@ out:
 VkResult enable_correct_layers_from_settings(const struct loader_instance* inst, const struct loader_envvar_all_filters* filters,
                                              uint32_t app_enabled_name_count, const char* const* app_enabled_names,
                                              const struct loader_layer_list* instance_layers,
-                                             struct loader_pointer_layer_list* target_layer_list,
-                                             struct loader_pointer_layer_list* activated_layer_list) {
+                                             struct loader_pointer_layer_list* target_layer_list) {
     VkResult res = VK_SUCCESS;
     char* vk_instance_layers_env = loader_getenv(ENABLED_LAYERS_ENV, inst);
     size_t vk_instance_layers_env_len = 0;
@@ -1259,14 +1258,10 @@ VkResult enable_correct_layers_from_settings(const struct loader_instance* inst,
         if (enable_layer) {
             // Check if the layer is a meta layer reuse the existing function to add the meta layer
             if (props->type_flags & VK_LAYER_TYPE_FLAG_META_LAYER) {
-                res = loader_add_meta_layer(inst, filters, props, target_layer_list, activated_layer_list, instance_layers, NULL);
+                res = loader_add_meta_layer(inst, filters, props, target_layer_list, instance_layers, NULL);
                 if (res == VK_ERROR_OUT_OF_HOST_MEMORY) goto out;
             } else {
                 res = loader_add_layer_properties_to_list(inst, target_layer_list, props);
-                if (res != VK_SUCCESS) {
-                    goto out;
-                }
-                res = loader_add_layer_properties_to_list(inst, activated_layer_list, props);
                 if (res != VK_SUCCESS) {
                     goto out;
                 }
