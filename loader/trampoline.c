@@ -770,7 +770,6 @@ out:
             destroy_debug_callbacks_chain(ptr_instance, pAllocator);
 
             loader_destroy_pointer_layer_list(ptr_instance, &ptr_instance->expanded_activated_layer_list);
-            loader_destroy_pointer_layer_list(ptr_instance, &ptr_instance->app_activated_layer_list);
 
             loader_delete_layer_list_and_properties(ptr_instance, &ptr_instance->instance_layer_list);
             loader_destroy_generic_list(ptr_instance, (struct loader_generic_list *)&ptr_instance->ext_list);
@@ -844,7 +843,6 @@ LOADER_EXPORT VKAPI_ATTR void VKAPI_CALL vkDestroyInstance(VkInstance instance, 
     loader_destroy_generic_list(ptr_instance, (struct loader_generic_list *)&ptr_instance->debug_report_callbacks_list);
 
     loader_destroy_pointer_layer_list(ptr_instance, &ptr_instance->expanded_activated_layer_list);
-    loader_destroy_pointer_layer_list(ptr_instance, &ptr_instance->app_activated_layer_list);
 
     loader_delete_layer_list_and_properties(ptr_instance, &ptr_instance->instance_layer_list);
 
@@ -1113,9 +1111,9 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumerateDeviceLayerProperties(Vk
 
     // Only count layers that successfully loaded, or had nothing to load (like meta layers)
     uint32_t count = 0;
-    for (uint32_t i = 0; i < inst->app_activated_layer_list.count; i++) {
-        if (inst->app_activated_layer_list.list[i]->lib_status == LOADER_LAYER_LIB_NOT_LOADED ||
-            inst->app_activated_layer_list.list[i]->lib_status == LOADER_LAYER_LIB_SUCCESS_LOADED) {
+    for (uint32_t i = 0; i < inst->expanded_activated_layer_list.count; i++) {
+        if (inst->expanded_activated_layer_list.list[i]->lib_status == LOADER_LAYER_LIB_NOT_LOADED ||
+            inst->expanded_activated_layer_list.list[i]->lib_status == LOADER_LAYER_LIB_SUCCESS_LOADED) {
             count++;
         }
     }
@@ -1128,10 +1126,11 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumerateDeviceLayerProperties(Vk
 
     copy_size = (*pPropertyCount < count) ? *pPropertyCount : count;
     uint32_t propertiesIter = 0;
-    for (uint32_t i = 0; i < inst->app_activated_layer_list.count; i++) {
-        if (propertiesIter < copy_size && (inst->app_activated_layer_list.list[i]->lib_status == LOADER_LAYER_LIB_NOT_LOADED ||
-                                           inst->app_activated_layer_list.list[i]->lib_status == LOADER_LAYER_LIB_SUCCESS_LOADED)) {
-            memcpy(&pProperties[propertiesIter], &(inst->app_activated_layer_list.list[i]->info), sizeof(VkLayerProperties));
+    for (uint32_t i = 0; i < inst->expanded_activated_layer_list.count; i++) {
+        if (propertiesIter < copy_size &&
+            (inst->expanded_activated_layer_list.list[i]->lib_status == LOADER_LAYER_LIB_NOT_LOADED ||
+             inst->expanded_activated_layer_list.list[i]->lib_status == LOADER_LAYER_LIB_SUCCESS_LOADED)) {
+            memcpy(&pProperties[propertiesIter], &(inst->expanded_activated_layer_list.list[i]->info), sizeof(VkLayerProperties));
             propertiesIter++;
         }
     }

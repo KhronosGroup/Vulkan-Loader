@@ -238,7 +238,7 @@ struct loader_layer_list {
 };
 
 // Stores a list of pointers to loader_layer_properties
-// Used for app_activated_layer_list and expanded_activated_layer_list
+// Used for expanded_activated_layer_list
 struct loader_pointer_layer_list {
     size_t capacity;
     uint32_t count;
@@ -375,12 +375,9 @@ struct loader_instance {
     struct loader_layer_list instance_layer_list;
     bool override_layer_present;
 
-    // List of activated layers.
-    //  app_      is the version based on exactly what the application asked for.
-    //            This is what must be returned to the application on Enumerate calls.
-    //  expanded_ is the version based on expanding meta-layers into their
-    //            individual component layers.  This is what is used internally.
-    struct loader_pointer_layer_list app_activated_layer_list;
+    // List of activated layers, including the layers enabled from expanding meta-layers into their individual component
+    // layers. This active list of layers can include layers that failed to actually be enabled, such as not being able to load the
+    // binary, failing version negotiation, and not being able to query vkGetInstanceProcAddr
     struct loader_pointer_layer_list expanded_activated_layer_list;
 
     VkInstance instance;  // layers/ICD instance returned to trampoline

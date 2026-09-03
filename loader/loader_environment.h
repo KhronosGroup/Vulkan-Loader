@@ -51,9 +51,7 @@ VkResult parse_layer_environment_var_filters(const struct loader_instance *inst,
 bool check_name_matches_filter_environment_var(const char *name, const struct loader_envvar_filter *filter_struct);
 VkResult loader_add_environment_layers(struct loader_instance *inst, const char *enabled_layers_env,
                                        const struct loader_envvar_all_filters *filters,
-                                       struct loader_pointer_layer_list *target_list,
-                                       struct loader_pointer_layer_list *expanded_target_list,
-                                       const struct loader_layer_list *source_list);
+                                       struct loader_pointer_layer_list *target_list, const struct loader_layer_list *source_list);
 
 void parse_id_filter_environment_var(const struct loader_instance *inst, const char *env_var_name,
                                      struct loader_envvar_id_filter *filter_struct);
