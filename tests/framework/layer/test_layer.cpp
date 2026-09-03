@@ -1062,6 +1062,10 @@ FRAMEWORK_EXPORT VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL vk_layerGetPhysicalDev
 
 EXPORT_NEGOTIATE_FUNCTION VKAPI_ATTR VkResult VKAPI_CALL
 vkNegotiateLoaderLayerInterfaceVersion(VkNegotiateLayerInterface* pVersionStruct) {
+    if (layer.fail_negotiateLoaderLayerInterfaceVersion) {
+        return VK_ERROR_INITIALIZATION_FAILED;
+    }
+
     if (pVersionStruct) {
         if (pVersionStruct->loaderLayerInterfaceVersion < layer.min_implementation_version) {
             return VK_ERROR_INITIALIZATION_FAILED;

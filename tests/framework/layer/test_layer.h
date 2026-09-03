@@ -112,6 +112,8 @@ struct TestLayer {
     // Some layers may try to change the API version during instance creation - we should allow testing of such behavior
     BUILDER_VALUE_WITH_DEFAULT(uint32_t, alter_api_version, VK_API_VERSION_1_0)
 
+    BUILDER_VALUE(bool, fail_negotiateLoaderLayerInterfaceVersion)
+
     BUILDER_VECTOR(std::string, alternative_function_names, alternative_function_name)
 
     BUILDER_VECTOR(Extension, instance_extensions, instance_extension)

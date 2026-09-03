@@ -4809,25 +4809,25 @@ bool loader_get_layer_interface_version(PFN_vkNegotiateLoaderLayerInterfaceVersi
     interface_struct->loaderLayerInterfaceVersion = 1;
     interface_struct->pNext = NULL;
 
-    if (fp_negotiate_layer_version != NULL) {
-        // Layer supports the negotiation API, so call it with the loader's
-        // latest version supported
-        interface_struct->loaderLayerInterfaceVersion = CURRENT_LOADER_LAYER_INTERFACE_VERSION;
-        VkResult result = fp_negotiate_layer_version(interface_struct);
-
-        if (result != VK_SUCCESS) {
-            // Layer no longer supports the loader's latest interface version so
-            // fail loading the Layer
-            return false;
-        }
-    }
-
-    if (interface_struct->loaderLayerInterfaceVersion < MIN_SUPPORTED_LOADER_LAYER_INTERFACE_VERSION) {
-        // Loader no longer supports the layer's latest interface version so
-        // fail loading the layer
+    // If the layer doesn't support the negotiation API, then negotiation failed.
+    if (fp_negotiate_layer_version == NULL) {
         return false;
     }
 
+    // Layer supports the negotiation API, so call it with the loader's
+    // latest version supported
+    interface_struct->loaderLayerInterfaceVersion = CURRENT_LOADER_LAYER_INTERFACE_VERSION;
+    VkResult result = fp_negotiate_layer_version(interface_struct);
+
+    if (result != VK_SUCCESS) {
+        // Layer no longer supports the loader's latest interface version so fail loading the Layer.
+        return false;
+    }
+
+    if (interface_struct->loaderLayerInterfaceVersion < MIN_SUPPORTED_LOADER_LAYER_INTERFACE_VERSION) {
+        // Loader no longer supports the layer's latest interface version so fail loading the layer.
+        return false;
+    }
     return true;
 }
 
@@ -5076,33 +5076,36 @@ VkResult loader_create_instance_chain(const VkInstanceCreateInfo *pCreateInfo, c
                         lib_handle, layer_prop->functions.str_negotiate_interface);
                 }
 
-                // If we can negotiate an interface version, then we can also
-                // get everything we need from the one function call, so try
-                // that first, and see if we can get all the function pointers
-                // necessary from that one call.
+                // If we can negotiate an interface version, then we can get everything we need from the one function call.
                 if (NULL != negotiate_interface) {
                     layer_prop->functions.negotiate_layer_interface = negotiate_interface;
 
-                    VkNegotiateLayerInterface interface_struct;
+                    VkNegotiateLayerInterface interface_struct = {0};
+                    bool compatible = loader_get_layer_interface_version(negotiate_interface, &interface_struct);
+                    // When a layer supports vkNegotiateLoaderLayerInterfaceVersion but fails when the loader calls it, skip the
+                    // layer as it isn't compatible.
+                    if (!compatible) {
+                        loader_log(inst, VULKAN_LOADER_INFO_BIT | VULKAN_LOADER_LAYER_BIT, 0,
+                                   "loader_create_instance_chain: Failed to negotiate a compatible interface version with layer "
+                                   "\"%s\", skipping",
+                                   layer_prop->lib_name);
+                        continue;
+                    }
 
-                    if (loader_get_layer_interface_version(negotiate_interface, &interface_struct)) {
-                        // Go ahead and set the properties version to the
-                        // correct value.
-                        layer_prop->interface_version = interface_struct.loaderLayerInterfaceVersion;
+                    // Go ahead and set the properties version to the correct value.
+                    layer_prop->interface_version = interface_struct.loaderLayerInterfaceVersion;
 
-                        // If the interface is 2 or newer, we have access to the
-                        // new GetPhysicalDeviceProcAddr function, so grab it,
-                        // and the other necessary functions, from the
-                        // structure.
-                        if (interface_struct.loaderLayerInterfaceVersion > 1) {
-                            cur_gipa = interface_struct.pfnGetInstanceProcAddr;
-                            cur_gdpa = interface_struct.pfnGetDeviceProcAddr;
-                            cur_gpdpa = interface_struct.pfnGetPhysicalDeviceProcAddr;
-                            if (cur_gipa != NULL) {
-                                // We've set the functions, so make sure we
-                                // don't do the unnecessary calls later.
-                                functions_in_interface = true;
-                            }
+                    // If the interface is 2 or newer, we have access to the
+                    // new GetPhysicalDeviceProcAddr function, so grab it,
+                    // and the other necessary functions, from the structure.
+                    if (interface_struct.loaderLayerInterfaceVersion > 1) {
+                        cur_gipa = interface_struct.pfnGetInstanceProcAddr;
+                        cur_gdpa = interface_struct.pfnGetDeviceProcAddr;
+                        cur_gpdpa = interface_struct.pfnGetPhysicalDeviceProcAddr;
+                        if (cur_gipa != NULL) {
+                            // We've set the functions, so make sure we
+                            // don't do the unnecessary calls later.
+                            functions_in_interface = true;
                         }
                     }
                 }
