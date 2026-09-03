@@ -4865,9 +4865,11 @@ void setup_logical_device_enabled_layer_extensions(const struct loader_instance 
             // also check if any layers support it.
             for (uint32_t j = 0; j < inst->app_activated_layer_list.count; j++) {
                 struct loader_layer_properties *layer = inst->app_activated_layer_list.list[j];
-                for (uint32_t k = 0; k < layer->device_extension_list.count; k++) {
-                    if (!strcmp(layer->device_extension_list.list[k].props.extensionName, VK_EXT_DEBUG_MARKER_EXTENSION_NAME)) {
-                        dev->layer_extensions.ext_debug_marker_enabled = true;
+                if (layer->lib_status == LOADER_LAYER_LIB_SUCCESS_LOADED) {
+                    for (uint32_t k = 0; k < layer->device_extension_list.count; k++) {
+                        if (!strcmp(layer->device_extension_list.list[k].props.extensionName, VK_EXT_DEBUG_MARKER_EXTENSION_NAME)) {
+                            dev->layer_extensions.ext_debug_marker_enabled = true;
+                        }
                     }
                 }
             }
@@ -5487,9 +5489,9 @@ VkResult loader_create_device_chain(VkPhysicalDevice pd, const VkDeviceCreateInf
                 continue;
             }
 
-            // Skip the layer if the handle is NULL - this is likely because the library failed to load but wasn't removed from
-            // the list.
-            if (!lib_handle) {
+            // Skip the layer if the handle is NULL or if the lib_status isn't set to success - this is likely because the library
+            // failed to load but wasn't removed from the list.
+            if (!lib_handle || layer_prop->lib_status != LOADER_LAYER_LIB_SUCCESS_LOADED) {
                 continue;
             }
 
