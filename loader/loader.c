@@ -5064,24 +5064,27 @@ VkResult loader_create_instance_chain(const VkInstanceCreateInfo *pCreateInfo, c
                     VkNegotiateLayerInterface interface_struct;
 
                     if (loader_get_layer_interface_version(negotiate_interface, &interface_struct)) {
-                        // Go ahead and set the properties version to the
-                        // correct value.
                         layer_prop->interface_version = interface_struct.loaderLayerInterfaceVersion;
 
-                        // If the interface is 2 or newer, we have access to the
-                        // new GetPhysicalDeviceProcAddr function, so grab it,
-                        // and the other necessary functions, from the
-                        // structure.
                         if (interface_struct.loaderLayerInterfaceVersion > 1) {
                             cur_gipa = interface_struct.pfnGetInstanceProcAddr;
                             cur_gdpa = interface_struct.pfnGetDeviceProcAddr;
                             cur_gpdpa = interface_struct.pfnGetPhysicalDeviceProcAddr;
                             if (cur_gipa != NULL) {
-                                // We've set the functions, so make sure we
-                                // don't do the unnecessary calls later.
                                 functions_in_interface = true;
                             }
                         }
+                    } else {
+                        // The layer explicitly failed interface negotiation (e.g. returned
+                        // VK_ERROR_INITIALIZATION_FAILED from vkNegotiateLoaderLayerInterfaceVersion).
+                        // Treat this the same as a layer whose library failed to load: skip it
+                        // entirely instead of silently falling back to the legacy
+                        // vkGetInstanceProcAddr path, which would incorrectly activate a layer
+                        // that told us it cannot be used.
+                        loader_log(inst, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_LAYER_BIT, 0,
+                                   "loader_create_instance_chain: Layer \"%s\" failed interface negotiation, skipping",
+                                   layer_prop->info.layerName);
+                        continue;
                     }
                 }
 
