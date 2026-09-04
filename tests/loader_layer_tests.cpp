@@ -5830,3 +5830,21 @@ TEST(TestLayers, AllowFilterWithConditionallyImplicitLayerWithOverrideLayer) {
         ASSERT_NO_FATAL_FAILURE(inst.GetActiveLayers(inst.GetPhysDev(), 0));
     }
 }
+
+TEST(TestLayers, LayerFailsNegotiateLoaderLayerInterfaceVersion) {
+    FrameworkEnvironment env;
+    env.add_icd(TEST_ICD_PATH_VERSION_2).add_physical_device({});
+
+    env.add_implicit_layer({}, ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                             .set_name("VK_LAYER_test_layer")
+                                                             .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                             .set_disable_environment("DISABLE_ME")));
+    env.get_test_layer().set_fail_negotiateLoaderLayerInterfaceVersion(true);
+
+    env.GetLayerProperties(1);
+
+    InstWrapper inst{env.vulkan_functions};
+    inst.CheckCreate();
+
+    inst.GetActiveLayers(inst.GetPhysDev(), 0);
+}

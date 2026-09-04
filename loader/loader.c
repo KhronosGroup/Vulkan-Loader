@@ -2187,6 +2187,7 @@ VkResult loader_scanned_icd_add(const struct loader_instance *inst, struct loade
                    "loader_scanned_icd_add: ICD %s doesn't support interface version compatible with loader, skip this ICD.",
                    filename);
         res = VK_ERROR_INCOMPATIBLE_DRIVER;
+        *lib_status = LOADER_LAYER_LIB_ERROR_NEGOTIATE_INTERFACE_VERSION_FAILED;
         goto out;
     }
 
@@ -2205,6 +2206,7 @@ VkResult loader_scanned_icd_add(const struct loader_instance *inst, struct loade
                        "vk_icdGetInstanceProcAddr, skip this ICD.",
                        filename, interface_vers);
             res = VK_ERROR_INCOMPATIBLE_DRIVER;
+            *lib_status = LOADER_LAYER_LIB_ERROR_UNABLE_TO_FIND_VK_GET_INSTANCE_PROC_ADDR;
             goto out;
         }
         // Use deprecated interface from version 0
@@ -2215,6 +2217,7 @@ VkResult loader_scanned_icd_add(const struct loader_instance *inst, struct loade
                        "\'vk_icdGetInstanceProcAddr\' from ICD %s failed.",
                        filename);
             res = VK_ERROR_INCOMPATIBLE_DRIVER;
+            *lib_status = LOADER_LAYER_LIB_ERROR_UNABLE_TO_FIND_VK_GET_INSTANCE_PROC_ADDR;
             goto out;
         } else {
             loader_log(inst, VULKAN_LOADER_WARN_BIT, 0,
@@ -2252,6 +2255,7 @@ VkResult loader_scanned_icd_add(const struct loader_instance *inst, struct loade
                        "loader_scanned_icd_add: Could not get \'vkCreateInstance\' via \'vk_icdGetInstanceProcAddr\' for ICD %s",
                        filename);
             res = VK_ERROR_INCOMPATIBLE_DRIVER;
+            *lib_status = LOADER_LAYER_LIB_ERROR_UNABLE_TO_FIND_VK_GET_INSTANCE_PROC_ADDR;
             goto out;
         }
         fp_get_inst_ext_props =
@@ -4201,6 +4205,8 @@ VkResult loader_icd_scan(const struct loader_instance *inst, struct loader_icd_t
             switch (lib_status) {
                 case LOADER_LAYER_LIB_NOT_LOADED:
                 case LOADER_LAYER_LIB_ERROR_FAILED_TO_LOAD:
+                case LOADER_LAYER_LIB_ERROR_NEGOTIATE_INTERFACE_VERSION_FAILED:
+                case LOADER_LAYER_LIB_ERROR_UNABLE_TO_FIND_VK_GET_INSTANCE_PROC_ADDR:
                     loader_log(inst, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_DRIVER_BIT, 0,
                                "loader_icd_scan: Failed loading library associated with ICD JSON %s. Ignoring this JSON",
                                icd_details[i].full_library_path);
@@ -4803,31 +4809,37 @@ out:
 
 // Determine the layer interface version to use.
 bool loader_get_layer_interface_version(PFN_vkNegotiateLoaderLayerInterfaceVersion fp_negotiate_layer_version,
-                                        VkNegotiateLayerInterface *interface_struct) {
+                                        VkNegotiateLayerInterface *interface_struct, bool *should_skip) {
     memset(interface_struct, 0, sizeof(VkNegotiateLayerInterface));
     interface_struct->sType = LAYER_NEGOTIATE_INTERFACE_STRUCT;
     interface_struct->loaderLayerInterfaceVersion = 1;
     interface_struct->pNext = NULL;
 
-    if (fp_negotiate_layer_version != NULL) {
-        // Layer supports the negotiation API, so call it with the loader's
-        // latest version supported
-        interface_struct->loaderLayerInterfaceVersion = CURRENT_LOADER_LAYER_INTERFACE_VERSION;
-        VkResult result = fp_negotiate_layer_version(interface_struct);
+    // If the layer doesn't support the negotiation API, then negotiation failed.
+    if (fp_negotiate_layer_version == NULL) {
+        return false;
+    }
 
-        if (result != VK_SUCCESS) {
-            // Layer no longer supports the loader's latest interface version so
-            // fail loading the Layer
-            return false;
-        }
+    // Layer supports the negotiation API, so call it with the loader's
+    // latest version supported
+    interface_struct->loaderLayerInterfaceVersion = CURRENT_LOADER_LAYER_INTERFACE_VERSION;
+    VkResult result = fp_negotiate_layer_version(interface_struct);
+
+    if (result != VK_SUCCESS) {
+        // Layer no longer supports the loader's latest interface version so
+        // fail loading the Layer.
+        // Layer explicitly said it isn't compatible, so we should skip it.
+        *should_skip = true;
+        return false;
     }
 
     if (interface_struct->loaderLayerInterfaceVersion < MIN_SUPPORTED_LOADER_LAYER_INTERFACE_VERSION) {
         // Loader no longer supports the layer's latest interface version so
-        // fail loading the layer
+        // fail loading the layer.
+        // Layer's negotiated interface version is less than the version the loader supports, so we should skip it.
+        *should_skip = true;
         return false;
     }
-
     return true;
 }
 
@@ -4853,9 +4865,11 @@ void setup_logical_device_enabled_layer_extensions(const struct loader_instance 
             // also check if any layers support it.
             for (uint32_t j = 0; j < inst->app_activated_layer_list.count; j++) {
                 struct loader_layer_properties *layer = inst->app_activated_layer_list.list[j];
-                for (uint32_t k = 0; k < layer->device_extension_list.count; k++) {
-                    if (!strcmp(layer->device_extension_list.list[k].props.extensionName, VK_EXT_DEBUG_MARKER_EXTENSION_NAME)) {
-                        dev->layer_extensions.ext_debug_marker_enabled = true;
+                if (layer->lib_status == LOADER_LAYER_LIB_SUCCESS_LOADED) {
+                    for (uint32_t k = 0; k < layer->device_extension_list.count; k++) {
+                        if (!strcmp(layer->device_extension_list.list[k].props.extensionName, VK_EXT_DEBUG_MARKER_EXTENSION_NAME)) {
+                            dev->layer_extensions.ext_debug_marker_enabled = true;
+                        }
                     }
                 }
             }
@@ -5085,7 +5099,14 @@ VkResult loader_create_instance_chain(const VkInstanceCreateInfo *pCreateInfo, c
 
                     VkNegotiateLayerInterface interface_struct;
 
-                    if (loader_get_layer_interface_version(negotiate_interface, &interface_struct)) {
+                    bool should_skip = false;
+                    bool success = loader_get_layer_interface_version(negotiate_interface, &interface_struct, &should_skip);
+
+                    if (should_skip) {
+                        layer_prop->lib_status = LOADER_LAYER_LIB_ERROR_NEGOTIATE_INTERFACE_VERSION_FAILED;
+                        continue;
+                    }
+                    if (success) {
                         // Go ahead and set the properties version to the
                         // correct value.
                         layer_prop->interface_version = interface_struct.loaderLayerInterfaceVersion;
@@ -5119,6 +5140,7 @@ VkResult loader_create_instance_chain(const VkInstanceCreateInfo *pCreateInfo, c
                                 loader_log(inst, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_LAYER_BIT, 0,
                                            "loader_create_instance_chain: Failed to find \'vkGetInstanceProcAddr\' in layer \"%s\"",
                                            layer_prop->lib_name);
+                                layer_prop->lib_status = LOADER_LAYER_LIB_ERROR_UNABLE_TO_FIND_VK_GET_INSTANCE_PROC_ADDR;
                                 continue;
                             }
                         } else {
@@ -5129,6 +5151,7 @@ VkResult loader_create_instance_chain(const VkInstanceCreateInfo *pCreateInfo, c
                                 loader_log(inst, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_LAYER_BIT, 0,
                                            "loader_create_instance_chain: Failed to find \'%s\' in layer \"%s\"",
                                            layer_prop->functions.str_gipa, layer_prop->lib_name);
+                                layer_prop->lib_status = LOADER_LAYER_LIB_ERROR_UNABLE_TO_FIND_VK_GET_INSTANCE_PROC_ADDR;
                                 continue;
                             }
                         }
@@ -5217,6 +5240,15 @@ VkResult loader_create_instance_chain(const VkInstanceCreateInfo *pCreateInfo, c
                 case LOADER_LAYER_LIB_ERROR_FAILED_TO_LOAD:
                     loader_log(inst, log_flag, 0, "Requested layer \"%s\" failed to load%c", exp_layer_prop->info.layerName,
                                ending);
+                    break;
+                case LOADER_LAYER_LIB_ERROR_NEGOTIATE_INTERFACE_VERSION_FAILED:
+                    loader_log(inst, log_flag, 0,
+                               "Requested layer \"%s\" failed to negotiate a compatible interface version with layer%c",
+                               exp_layer_prop->info.layerName, ending);
+                    break;
+                case LOADER_LAYER_LIB_ERROR_UNABLE_TO_FIND_VK_GET_INSTANCE_PROC_ADDR:
+                    loader_log(inst, log_flag, 0, "Requested layer \"%s\" is missing vkGetInstanceProcAddr %c",
+                               exp_layer_prop->info.layerName, ending);
                     break;
                 case LOADER_LAYER_LIB_SUCCESS_LOADED:
                 case LOADER_LAYER_LIB_ERROR_OUT_OF_MEMORY:
@@ -5457,9 +5489,9 @@ VkResult loader_create_device_chain(VkPhysicalDevice pd, const VkDeviceCreateInf
                 continue;
             }
 
-            // Skip the layer if the handle is NULL - this is likely because the library failed to load but wasn't removed from
-            // the list.
-            if (!lib_handle) {
+            // Skip the layer if the handle is NULL or if the lib_status isn't set to success - this is likely because the library
+            // failed to load but wasn't removed from the list.
+            if (!lib_handle || layer_prop->lib_status != LOADER_LAYER_LIB_SUCCESS_LOADED) {
                 continue;
             }
 
