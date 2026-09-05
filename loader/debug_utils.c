@@ -79,6 +79,9 @@ VkBool32 util_SubmitDebugUtilsMessageEXT(const struct loader_instance *inst, VkD
     VkBool32 bail = false;
 
     if (NULL != pCallbackData) {
+        // The messenger/report chain is guarded by loader_lock everywhere it is modified (see the create/destroy
+        // terminators). loader_lock is recursive, so taking it here is safe even when a caller already holds it.
+        loader_platform_thread_lock_mutex(&loader_lock);
         VkLayerDbgFunctionNode *pTrav = inst->current_dbg_function_head;
         VkDebugReportObjectTypeEXT object_type = VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT;
         VkDebugReportFlagsEXT object_flags = 0;
@@ -103,6 +106,7 @@ VkBool32 util_SubmitDebugUtilsMessageEXT(const struct loader_instance *inst, VkD
             }
             pTrav = pTrav->pNext;
         }
+        loader_platform_thread_unlock_mutex(&loader_lock);
     }
 
     return bail;
