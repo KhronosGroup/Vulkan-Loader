@@ -2138,6 +2138,13 @@ VkResult loader_scanned_icd_add(const struct loader_instance *inst, struct loade
     uint32_t interface_vers;
     VkResult res = VK_SUCCESS;
 
+    // loader_icd_scan reads *lib_status whenever this returns VK_ERROR_INCOMPATIBLE_DRIVER, but several of the failure
+    // paths below (NULL filename, missing vkCreateInstance / vkEnumerateInstanceExtensionProperties) don't set it. Seed a
+    // default so the caller never switches on an indeterminate value; the more specific paths still override it.
+    if (NULL != lib_status) {
+        *lib_status = LOADER_LAYER_LIB_ERROR_FAILED_TO_LOAD;
+    }
+
     // This shouldn't happen, but the check is necessary because dlopen returns a handle to the main program when
     // filename is NULL
     if (filename == NULL) {
