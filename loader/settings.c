@@ -1163,10 +1163,8 @@ out:
     return res;
 }
 
-VkResult enable_correct_layers_from_settings(const struct loader_instance* inst, const struct loader_envvar_all_filters* filters,
-                                             uint32_t app_enabled_name_count, const char* const* app_enabled_names,
-                                             const struct loader_layer_list* instance_layers,
-                                             struct loader_pointer_layer_list* target_layer_list) {
+VkResult enable_correct_layers_from_settings(struct loader_instance* inst, const struct loader_envvar_all_filters* filters,
+                                             uint32_t app_enabled_name_count, const char* const* app_enabled_names) {
     VkResult res = VK_SUCCESS;
     char* vk_instance_layers_env = loader_getenv(ENABLED_LAYERS_ENV, inst);
     size_t vk_instance_layers_env_len = 0;
@@ -1179,9 +1177,9 @@ VkResult enable_correct_layers_from_settings(const struct loader_instance* inst,
         loader_log(inst, VULKAN_LOADER_WARN_BIT | VULKAN_LOADER_LAYER_BIT, 0, "env var \'%s\' defined and adding layers: %s",
                    ENABLED_LAYERS_ENV, vk_instance_layers_env);
     }
-    for (uint32_t i = 0; i < instance_layers->count; i++) {
+    for (uint32_t i = 0; i < inst->instance_layer_list.count; i++) {
         bool enable_layer = false;
-        struct loader_layer_properties* props = &instance_layers->list[i];
+        struct loader_layer_properties* props = &inst->instance_layer_list.list[i];
 
         // Skip the sentinel unordered layer location
         if (props->settings_control_value == LOADER_SETTINGS_LAYER_UNORDERED_LAYER_LOCATION) {
@@ -1258,10 +1256,10 @@ VkResult enable_correct_layers_from_settings(const struct loader_instance* inst,
         if (enable_layer) {
             // Check if the layer is a meta layer reuse the existing function to add the meta layer
             if (props->type_flags & VK_LAYER_TYPE_FLAG_META_LAYER) {
-                res = loader_add_meta_layer(inst, filters, props, target_layer_list, instance_layers, NULL);
+                res = loader_add_meta_layer(inst, filters, props, NULL);
                 if (res == VK_ERROR_OUT_OF_HOST_MEMORY) goto out;
             } else {
-                res = loader_add_layer_properties_to_list(inst, target_layer_list, props);
+                res = loader_add_layer_properties_to_list(inst, props);
                 if (res != VK_SUCCESS) {
                     goto out;
                 }

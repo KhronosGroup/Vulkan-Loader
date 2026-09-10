@@ -455,8 +455,7 @@ bool check_name_matches_filter_environment_var(const char *name, const struct lo
 // Get the layer name(s) from the env_name environment variable. If layer is found in
 // search_list then add it to layer_list.  But only add it to layer_list if type_flags matches.
 VkResult loader_add_environment_layers(struct loader_instance *inst, const char *enabled_layers_env,
-                                       const struct loader_envvar_all_filters *filters,
-                                       struct loader_pointer_layer_list *target_list, const struct loader_layer_list *source_list) {
+                                       const struct loader_envvar_all_filters *filters) {
     VkResult res = VK_SUCCESS;
     const enum layer_type_flags type_flags = VK_LAYER_TYPE_FLAG_EXPLICIT_LAYER;
 
@@ -476,19 +475,20 @@ VkResult loader_add_environment_layers(struct loader_instance *inst, const char 
 
                 if (strlen(name) > 0) {
                     bool found = false;
-                    for (uint32_t i = 0; i < source_list->count; i++) {
-                        struct loader_layer_properties *source_prop = &source_list->list[i];
+                    for (uint32_t i = 0; i < inst->instance_layer_list.count; i++) {
+                        struct loader_layer_properties *source_prop = &inst->instance_layer_list.list[i];
 
                         if (0 == strcmp(name, source_prop->info.layerName)) {
                             found = true;
                             // Only add it if it doesn't already appear in the layer list
-                            if (!loader_find_layer_name_in_list(source_prop->info.layerName, target_list)) {
+                            if (!loader_find_layer_name_in_list(source_prop->info.layerName,
+                                                                &inst->expanded_activated_layer_list)) {
                                 if (0 == (source_prop->type_flags & VK_LAYER_TYPE_FLAG_META_LAYER)) {
                                     source_prop->enabled_by_what = ENABLED_BY_WHAT_VK_INSTANCE_LAYERS;
-                                    res = loader_add_layer_properties_to_list(inst, target_list, source_prop);
+                                    res = loader_add_layer_properties_to_list(inst, source_prop);
                                     if (res == VK_ERROR_OUT_OF_HOST_MEMORY) goto out;
                                 } else {
-                                    res = loader_add_meta_layer(inst, filters, source_prop, target_list, source_list, NULL);
+                                    res = loader_add_meta_layer(inst, filters, source_prop, NULL);
                                     if (res == VK_ERROR_OUT_OF_HOST_MEMORY) goto out;
                                 }
                                 break;
@@ -506,8 +506,8 @@ VkResult loader_add_environment_layers(struct loader_instance *inst, const char 
     }
 
     // Loop through all the layers and check the enable/disable filters
-    for (uint32_t i = 0; i < source_list->count; i++) {
-        struct loader_layer_properties *source_prop = &source_list->list[i];
+    for (uint32_t i = 0; i < inst->instance_layer_list.count; i++) {
+        struct loader_layer_properties *source_prop = &inst->instance_layer_list.list[i];
 
         // If it doesn't match the type, or the name isn't what we're looking for, just continue
         if ((source_prop->type_flags & type_flags) != type_flags) {
@@ -518,7 +518,7 @@ VkResult loader_add_environment_layers(struct loader_instance *inst, const char 
         // VK_INSTANCE_LAYERS, which VK_LOADER_LAYERS_ENABLE is a generalization of, and which overrides disables.
         // Also make sure the layer isn't already in the output_list, skip adding it if it is.
         bool force_enabled = check_name_matches_filter_environment_var(source_prop->info.layerName, &filters->enable_filter) &&
-                             !loader_find_layer_name_in_list(source_prop->info.layerName, target_list);
+                             !loader_find_layer_name_in_list(source_prop->info.layerName, &inst->expanded_activated_layer_list);
 
         bool is_implicit = (0 == (source_prop->type_flags & VK_LAYER_TYPE_FLAG_EXPLICIT_LAYER));
         bool disabled_by_type =
@@ -544,10 +544,10 @@ VkResult loader_add_environment_layers(struct loader_instance *inst, const char 
         // If not a meta-layer, simply add it.
         if (0 == (source_prop->type_flags & VK_LAYER_TYPE_FLAG_META_LAYER)) {
             source_prop->enabled_by_what = ENABLED_BY_WHAT_VK_LOADER_LAYERS_ENABLE;
-            res = loader_add_layer_properties_to_list(inst, target_list, source_prop);
+            res = loader_add_layer_properties_to_list(inst, source_prop);
             if (res == VK_ERROR_OUT_OF_HOST_MEMORY) goto out;
         } else {
-            res = loader_add_meta_layer(inst, filters, source_prop, target_list, source_list, NULL);
+            res = loader_add_meta_layer(inst, filters, source_prop, NULL);
             if (res == VK_ERROR_OUT_OF_HOST_MEMORY) goto out;
         }
     }

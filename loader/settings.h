@@ -129,10 +129,8 @@ VkResult combine_settings_layers_with_regular_layers(const struct loader_instanc
 
 // Fill out activated_layer_list with the layers that should be activated, based on environment variables, VkInstanceCreateInfo, and
 // the settings
-VkResult enable_correct_layers_from_settings(const struct loader_instance* inst, const struct loader_envvar_all_filters* filters,
-                                             uint32_t app_enabled_name_count, const char* const* app_enabled_names,
-                                             const struct loader_layer_list* instance_layers,
-                                             struct loader_pointer_layer_list* target_layer_list);
+VkResult enable_correct_layers_from_settings(struct loader_instance* inst, const struct loader_envvar_all_filters* filters,
+                                             uint32_t app_enabled_name_count, const char* const* app_enabled_names);
 
 // Add any drivers that the loader settings file contains to the out_files list. If the additional_drivers_use_exclusively field is
 // true, clear the out_files list before adding any additional drivers
