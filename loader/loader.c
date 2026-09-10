@@ -5650,8 +5650,7 @@ VkResult loader_validate_instance_extensions(struct loader_instance *inst, const
                                              const struct loader_layer_list *instance_layers,
                                              const struct loader_envvar_all_filters *layer_filters,
                                              const VkInstanceCreateInfo *pCreateInfo) {
-    VkExtensionProperties *extension_prop;
-    char *env_value;
+    char *env_value = loader_getenv("VK_LOADER_DISABLE_INST_EXT_FILTER", inst);
     char *enabled_layers_env = NULL;
     bool check_if_known = true;
     VkResult res = VK_SUCCESS;
@@ -5705,11 +5704,9 @@ VkResult loader_validate_instance_extensions(struct loader_instance *inst, const
         }
 
         // Check if a user wants to disable the instance extension filtering behavior
-        env_value = loader_getenv("VK_LOADER_DISABLE_INST_EXT_FILTER", inst);
         if (NULL != env_value && strtol(env_value, NULL, 10) != 0) {
             check_if_known = false;
         }
-        loader_free_getenv(env_value, inst);
 
         if (check_if_known) {
             // See if the extension is in the list of supported extensions
@@ -5731,13 +5728,11 @@ VkResult loader_validate_instance_extensions(struct loader_instance *inst, const
             }
         }
 
-        extension_prop = get_extension_property(pCreateInfo->ppEnabledExtensionNames[i], icd_exts);
+        VkExtensionProperties *extension_prop = get_extension_property(pCreateInfo->ppEnabledExtensionNames[i], icd_exts);
 
         if (extension_prop) {
             continue;
         }
-
-        extension_prop = NULL;
 
         // Not in global list, search layer extension lists
         for (uint32_t j = 0; NULL == extension_prop && j < expanded_layers.count; ++j) {
@@ -5772,7 +5767,7 @@ out:
     if (enabled_layers_env != NULL) {
         loader_free_getenv(enabled_layers_env, inst);
     }
-
+    loader_free_getenv(env_value, inst);
     return res;
 }
 
