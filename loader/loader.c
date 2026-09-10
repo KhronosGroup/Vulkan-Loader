@@ -1502,52 +1502,52 @@ VkResult loader_add_meta_layer(const struct loader_instance *inst, const struct 
     for (uint32_t comp_layer = 0; comp_layer < prop->component_layer_names.count; comp_layer++) {
         struct loader_layer_properties *search_prop =
             loader_find_layer_property(prop->component_layer_names.list[comp_layer], source_list);
-        if (search_prop != NULL) {
-            loader_api_version search_prop_version = loader_make_version(prop->info.specVersion);
-            if (!loader_check_version_meets_required(meta_layer_api_version, search_prop_version)) {
-                loader_log(inst, VULKAN_LOADER_WARN_BIT | VULKAN_LOADER_LAYER_BIT, 0,
-                           "Meta-layer \"%s\" API version %u.%u, component layer \"%s\" version %u.%u, may have "
-                           "incompatibilities (Policy #LLP_LAYER_8)!",
-                           prop->info.layerName, meta_layer_api_version.major, meta_layer_api_version.minor,
-                           search_prop->info.layerName, search_prop_version.major, search_prop_version.minor);
-            }
-
-            if (!loader_layer_is_available(inst, filters, search_prop)) {
-                loader_log(inst, VULKAN_LOADER_WARN_BIT | VULKAN_LOADER_LAYER_BIT, 0,
-                           "Meta Layer \"%s\" component layer \"%s\" disabled.", prop->info.layerName, search_prop->info.layerName);
-                continue;
-            }
-
-            // If the component layer is itself an implicit layer, we need to do the implicit layer enable
-            // checks
-            if (0 == (search_prop->type_flags & VK_LAYER_TYPE_FLAG_EXPLICIT_LAYER)) {
-                search_prop->enabled_by_what = ENABLED_BY_WHAT_META_LAYER;
-                result = loader_add_implicit_layer(inst, search_prop, filters, target_list, expanded_target_list, source_list);
-                if (result == VK_ERROR_OUT_OF_HOST_MEMORY) return result;
-            } else {
-                if (0 != (search_prop->type_flags & VK_LAYER_TYPE_FLAG_META_LAYER)) {
-                    bool found_layers_in_component_meta_layer = true;
-                    search_prop->enabled_by_what = ENABLED_BY_WHAT_META_LAYER;
-                    result = loader_add_meta_layer(inst, filters, search_prop, target_list, expanded_target_list, source_list,
-                                                   &found_layers_in_component_meta_layer);
-                    if (result == VK_ERROR_OUT_OF_HOST_MEMORY) return result;
-                    if (!found_layers_in_component_meta_layer) found_all_component_layers = false;
-                } else if (!loader_find_layer_name_in_list(&search_prop->info.layerName[0], target_list)) {
-                    // Make sure the layer isn't already in the output_list, skip adding it if it is.
-                    search_prop->enabled_by_what = ENABLED_BY_WHAT_META_LAYER;
-                    result = loader_add_layer_properties_to_list(inst, target_list, search_prop);
-                    if (result == VK_ERROR_OUT_OF_HOST_MEMORY) return result;
-                    if (NULL != expanded_target_list) {
-                        result = loader_add_layer_properties_to_list(inst, expanded_target_list, search_prop);
-                        if (result == VK_ERROR_OUT_OF_HOST_MEMORY) return result;
-                    }
-                }
-            }
-        } else {
+        if (NULL == search_prop) {
             loader_log(inst, VULKAN_LOADER_WARN_BIT | VULKAN_LOADER_LAYER_BIT, 0,
                        "Failed to find layer name \"%s\" component layer \"%s\" to activate (Policy #LLP_LAYER_7)",
                        prop->component_layer_names.list[comp_layer], prop->component_layer_names.list[comp_layer]);
             found_all_component_layers = false;
+            continue;
+        }
+        loader_api_version search_prop_version = loader_make_version(prop->info.specVersion);
+        if (!loader_check_version_meets_required(meta_layer_api_version, search_prop_version)) {
+            loader_log(inst, VULKAN_LOADER_WARN_BIT | VULKAN_LOADER_LAYER_BIT, 0,
+                       "Meta-layer \"%s\" API version %u.%u, component layer \"%s\" version %u.%u, may have "
+                       "incompatibilities (Policy #LLP_LAYER_8)!",
+                       prop->info.layerName, meta_layer_api_version.major, meta_layer_api_version.minor,
+                       search_prop->info.layerName, search_prop_version.major, search_prop_version.minor);
+        }
+
+        if (!loader_layer_is_available(inst, filters, search_prop)) {
+            loader_log(inst, VULKAN_LOADER_WARN_BIT | VULKAN_LOADER_LAYER_BIT, 0,
+                       "Meta Layer \"%s\" component layer \"%s\" disabled.", prop->info.layerName, search_prop->info.layerName);
+            continue;
+        }
+
+        // If the component layer is itself an implicit layer, we need to do the implicit layer enable
+        // checks
+        if (0 == (search_prop->type_flags & VK_LAYER_TYPE_FLAG_EXPLICIT_LAYER)) {
+            search_prop->enabled_by_what = ENABLED_BY_WHAT_META_LAYER;
+            result = loader_add_implicit_layer(inst, search_prop, filters, target_list, source_list);
+            if (result == VK_ERROR_OUT_OF_HOST_MEMORY) return result;
+        } else {
+            if (0 != (search_prop->type_flags & VK_LAYER_TYPE_FLAG_META_LAYER)) {
+                bool found_layers_in_component_meta_layer = true;
+                search_prop->enabled_by_what = ENABLED_BY_WHAT_META_LAYER;
+                result = loader_add_meta_layer(inst, filters, search_prop, target_list, source_list,
+                                               &found_layers_in_component_meta_layer);
+                if (result == VK_ERROR_OUT_OF_HOST_MEMORY) return result;
+                if (!found_layers_in_component_meta_layer) found_all_component_layers = false;
+            } else if (!loader_find_layer_name_in_list(&search_prop->info.layerName[0], target_list)) {
+                // Make sure the layer isn't already in the output_list, skip adding it if it is.
+                search_prop->enabled_by_what = ENABLED_BY_WHAT_META_LAYER;
+                result = loader_add_layer_properties_to_list(inst, target_list, search_prop);
+                if (result == VK_ERROR_OUT_OF_HOST_MEMORY) return result;
+                if (NULL != expanded_target_list) {
+                    result = loader_add_layer_properties_to_list(inst, expanded_target_list, search_prop);
+                    if (result == VK_ERROR_OUT_OF_HOST_MEMORY) return result;
+                }
+            }
         }
     }
 
