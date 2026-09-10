@@ -4218,11 +4218,10 @@ VkResult loader_icd_scan(const struct loader_instance *inst, struct loader_icd_t
                                "loader_icd_scan: Failed loading library associated with ICD JSON %s. Ignoring this JSON",
                                icd_details[i].full_library_path);
                     break;
-                case LOADER_LAYER_LIB_ERROR_WRONG_BIT_TYPE: {
+                case LOADER_LAYER_LIB_ERROR_WRONG_BIT_TYPE:
                     loader_log(inst, VULKAN_LOADER_DRIVER_BIT, 0, "Requested ICD %s was wrong bit-type. Ignoring this JSON",
                                icd_details[i].full_library_path);
                     break;
-                }
                 case LOADER_LAYER_LIB_SUCCESS_LOADED:
                 case LOADER_LAYER_LIB_ERROR_OUT_OF_MEMORY:
                     // Shouldn't be able to reach this but if it is, best to report a debug
