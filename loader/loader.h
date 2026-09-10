@@ -89,7 +89,7 @@ VkResult loader_validate_layers(const struct loader_instance *inst, const uint32
 
 VkResult loader_validate_instance_extensions(struct loader_instance *inst, const struct loader_extension_list *icd_exts,
                                              const struct loader_layer_list *instance_layer,
-                                             const struct loader_envvar_all_filters *layer_filters,
+                                             const struct loader_pointer_layer_list *expanded_layers,
                                              const VkInstanceCreateInfo *pCreateInfo);
 
 #if defined(_WIN32)

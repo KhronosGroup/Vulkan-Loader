@@ -699,11 +699,6 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkCreateInstance(const VkInstanceCr
     if (res != VK_SUCCESS) {
         goto out;
     }
-    res = loader_validate_instance_extensions(ptr_instance, &ptr_instance->ext_list, &ptr_instance->instance_layer_list,
-                                              &layer_filters, &ici);
-    if (res != VK_SUCCESS) {
-        goto out;
-    }
 
     ptr_instance->disp = loader_instance_heap_alloc(ptr_instance, sizeof(struct loader_instance_dispatch_table),
                                                     VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
@@ -720,6 +715,12 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkCreateInstance(const VkInstanceCr
 
     // Activate any layers on instance chain
     res = loader_enable_instance_layers(ptr_instance, &ici, &ptr_instance->instance_layer_list, &layer_filters);
+    if (res != VK_SUCCESS) {
+        goto out;
+    }
+
+    res = loader_validate_instance_extensions(ptr_instance, &ptr_instance->ext_list, &ptr_instance->instance_layer_list,
+                                              &ptr_instance->expanded_activated_layer_list, &ici);
     if (res != VK_SUCCESS) {
         goto out;
     }

@@ -5648,51 +5648,20 @@ VkResult loader_validate_layers(const struct loader_instance *inst, const uint32
 
 VkResult loader_validate_instance_extensions(struct loader_instance *inst, const struct loader_extension_list *icd_exts,
                                              const struct loader_layer_list *instance_layers,
-                                             const struct loader_envvar_all_filters *layer_filters,
+                                             const struct loader_pointer_layer_list *expanded_layers,
                                              const VkInstanceCreateInfo *pCreateInfo) {
     char *env_value = loader_getenv("VK_LOADER_DISABLE_INST_EXT_FILTER", inst);
-    char *enabled_layers_env = NULL;
     bool check_if_known = true;
     VkResult res = VK_SUCCESS;
-
-    struct loader_pointer_layer_list expanded_layers = {0};
 
     if (pCreateInfo->enabledExtensionCount > 0 && pCreateInfo->ppEnabledExtensionNames == NULL) {
         loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0,
                    "loader_validate_instance_extensions: Instance ppEnabledExtensionNames is NULL but enabledExtensionCount is "
                    "greater than zero");
-        return VK_ERROR_EXTENSION_NOT_PRESENT;
-    }
-    if (!loader_init_pointer_layer_list(inst, &expanded_layers)) {
-        res = VK_ERROR_OUT_OF_HOST_MEMORY;
+        res = VK_ERROR_EXTENSION_NOT_PRESENT;
         goto out;
     }
 
-    if (inst->settings.settings_active && inst->settings.layer_configurations_active) {
-        res = enable_correct_layers_from_settings(inst, layer_filters, pCreateInfo->enabledLayerCount,
-                                                  pCreateInfo->ppEnabledLayerNames, instance_layers, &expanded_layers);
-        if (res != VK_SUCCESS) {
-            goto out;
-        }
-    } else {
-        enabled_layers_env = loader_getenv(ENABLED_LAYERS_ENV, inst);
-
-        // Build the lists of active layers (including meta layers) and expanded layers (with meta layers resolved to their
-        // components)
-        res = loader_add_implicit_layers(inst, enabled_layers_env, layer_filters, &expanded_layers, instance_layers);
-        if (res != VK_SUCCESS) {
-            goto out;
-        }
-        res = loader_add_environment_layers(inst, enabled_layers_env, layer_filters, &expanded_layers, instance_layers);
-        if (res != VK_SUCCESS) {
-            goto out;
-        }
-        res = loader_add_layer_names_to_list(inst, layer_filters, &expanded_layers, pCreateInfo->enabledLayerCount,
-                                             pCreateInfo->ppEnabledLayerNames, instance_layers);
-        if (VK_SUCCESS != res) {
-            goto out;
-        }
-    }
     for (uint32_t i = 0; i < pCreateInfo->enabledExtensionCount; i++) {
         VkStringErrorFlags result = vk_string_validate(MaxLoaderStringLength, pCreateInfo->ppEnabledExtensionNames[i]);
         if (result != VK_STRING_ERROR_NONE) {
@@ -5735,16 +5704,16 @@ VkResult loader_validate_instance_extensions(struct loader_instance *inst, const
         }
 
         // Not in global list, search layer extension lists
-        for (uint32_t j = 0; NULL == extension_prop && j < expanded_layers.count; ++j) {
+        for (uint32_t j = 0; NULL == extension_prop && j < expanded_layers->count; ++j) {
             extension_prop =
-                get_extension_property(pCreateInfo->ppEnabledExtensionNames[i], &expanded_layers.list[j]->instance_extension_list);
+                get_extension_property(pCreateInfo->ppEnabledExtensionNames[i], &expanded_layers->list[j]->instance_extension_list);
             if (extension_prop) {
                 // Found the extension in one of the layers enabled by the app.
                 break;
             }
 
             struct loader_layer_properties *layer_prop =
-                loader_find_layer_property(expanded_layers.list[j]->info.layerName, instance_layers);
+                loader_find_layer_property(expanded_layers->list[j]->info.layerName, instance_layers);
             if (NULL == layer_prop) {
                 // Should NOT get here, loader_validate_layers should have already filtered this case out.
                 continue;
@@ -5763,10 +5732,6 @@ VkResult loader_validate_instance_extensions(struct loader_instance *inst, const
     }
 
 out:
-    loader_destroy_pointer_layer_list(inst, &expanded_layers);
-    if (enabled_layers_env != NULL) {
-        loader_free_getenv(enabled_layers_env, inst);
-    }
     loader_free_getenv(env_value, inst);
     return res;
 }
