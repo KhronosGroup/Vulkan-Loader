@@ -154,14 +154,12 @@ VkResult loader_append_layer_property(const struct loader_instance *inst, struct
 VkResult loader_add_layer_properties(const struct loader_instance *inst, struct loader_layer_list *layer_instance_list, cJSON *json,
                                      bool is_implicit, char *filename);
 bool loader_find_layer_name_in_list(const char *name, const struct loader_pointer_layer_list *layer_list);
-VkResult loader_add_layer_properties_to_list(const struct loader_instance *inst, struct loader_pointer_layer_list *list,
-                                             struct loader_layer_properties *props);
+VkResult loader_add_layer_properties_to_list(struct loader_instance *inst, struct loader_layer_properties *props);
 void loader_free_layer_properties(const struct loader_instance *inst, struct loader_layer_properties *layer_properties);
 bool loader_implicit_layer_is_enabled(const struct loader_instance *inst, const struct loader_envvar_all_filters *filters,
                                       const struct loader_layer_properties *prop);
-VkResult loader_add_meta_layer(const struct loader_instance *inst, const struct loader_envvar_all_filters *filters,
-                               struct loader_layer_properties *prop, struct loader_pointer_layer_list *target_list,
-                               const struct loader_layer_list *source_list, bool *out_found_all_component_layers);
+VkResult loader_add_meta_layer(struct loader_instance *inst, const struct loader_envvar_all_filters *filters,
+                               struct loader_layer_properties *prop, bool *out_found_all_component_layers);
 VkResult loader_add_to_ext_list(const struct loader_instance *inst, struct loader_extension_list *ext_list,
                                 uint32_t prop_list_count, const VkExtensionProperties *props);
 VkResult loader_add_device_extensions(const struct loader_instance *inst,
@@ -199,7 +197,6 @@ void loader_remove_logical_device(struct loader_icd_term *icd_term, struct loade
 void loader_destroy_logical_device(struct loader_device *dev, const VkAllocationCallbacks *pAllocator);
 
 VkResult loader_enable_instance_layers(struct loader_instance *inst, const VkInstanceCreateInfo *pCreateInfo,
-                                       const struct loader_layer_list *instance_layers,
                                        const struct loader_envvar_all_filters *layer_filters);
 
 VkResult loader_create_instance_chain(const VkInstanceCreateInfo *pCreateInfo, const VkAllocationCallbacks *pAllocator,

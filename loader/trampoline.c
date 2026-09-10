@@ -714,7 +714,7 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkCreateInstance(const VkInstanceCr
     loader.instances = ptr_instance;
 
     // Activate any layers on instance chain
-    res = loader_enable_instance_layers(ptr_instance, &ici, &ptr_instance->instance_layer_list, &layer_filters);
+    res = loader_enable_instance_layers(ptr_instance, &ici, &layer_filters);
     if (res != VK_SUCCESS) {
         goto out;
     }
