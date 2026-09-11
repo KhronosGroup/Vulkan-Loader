@@ -177,6 +177,31 @@ TEST(EnvVarICDOverrideSetup, TestOnlyDriverEnvVarInFolder) {
     ASSERT_EQ(inst2->vkEnumeratePhysicalDevices(inst2.inst, &phys_dev_count, phys_devs_array.data()), VK_SUCCESS);
     ASSERT_EQ(phys_dev_count, 5U);
 }
+// REPRO for issue #1874: one ICD added by folder, two more added by file name in that same
+// folder. The loader scans the folder (finding all three) and then also processes the two
+// explicit file paths, so those two ICDs are loaded twice and their devices reported twice.
+TEST(EnvVarICDOverrideSetup, DirAndFileOverlapDoesNotDuplicate) {
+    FrameworkEnvironment env{};
+    // added by directory
+    env.add_icd(TEST_ICD_PATH_EXPORT_NONE, ManifestOptions{}.set_discovery_type(ManifestDiscoveryType::env_var).set_is_dir(true))
+        .add_physical_device("pd0");
+    // added by file name, into the very same folder
+    for (uint32_t add = 0; add < 2; ++add) {
+        env.add_icd(TEST_ICD_PATH_EXPORT_NONE,
+                    ManifestOptions{}.set_discovery_type(ManifestDiscoveryType::env_var).set_is_dir(false))
+            .add_physical_device("pd" + std::to_string(add) + "0")
+            .add_physical_device("pd" + std::to_string(add) + "1");
+    }
+
+    InstWrapper inst{env.vulkan_functions};
+    inst.create_info.set_api_version(VK_API_VERSION_1_1);
+    inst.CheckCreate();
+
+    uint32_t phys_dev_count = 0;
+    ASSERT_EQ(inst->vkEnumeratePhysicalDevices(inst.inst, &phys_dev_count, nullptr), VK_SUCCESS);
+    EXPECT_EQ(phys_dev_count, 5U);
+}
+
 // Test VK_DRIVER_FILES environment variable containing a path to a folder  with elevated privileges
 TEST(EnvVarICDOverrideSetup, TestOnlyDriverEnvVarInFolderWithElevatedPrivileges) {
     FrameworkEnvironment env{FrameworkSettings{}.set_run_as_if_with_elevated_privileges(true)};

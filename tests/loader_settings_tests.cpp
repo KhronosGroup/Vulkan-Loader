@@ -3095,6 +3095,20 @@ TEST(SettingsFile, AdditionalDrivers) {
     ASSERT_TRUE(string_eq(props1.deviceName, regular_driver_name));
     ASSERT_TRUE(string_eq(props2.deviceName, settings_driver_name));
 }
+// settings file provided driver that the regular search also finds
+TEST(SettingsFile, AdditionalDriverAlreadyFound) {
+    FrameworkEnvironment env{};
+    env.add_icd(TEST_ICD_PATH_VERSION_2, ManifestOptions{}.set_discovery_type(ManifestDiscoveryType::env_var))
+        .add_physical_device({});
+
+    env.loader_settings.set_file_format_version({1, 0, 0}).add_app_specific_setting(
+        AppSpecificSettings{}.add_driver_configuration(LoaderSettingsDriverConfiguration{}.set_path(env.get_icd_manifest_path(0))));
+    env.update_loader_settings(env.loader_settings);
+
+    InstWrapper inst{env.vulkan_functions};
+    inst.CheckCreate();
+    ASSERT_EQ(inst.GetPhysDevs().size(), 1U);
+}
 // settings file provided drivers replacing system found drivers
 TEST(SettingsFile, ExclusiveAdditionalDrivers) {
     FrameworkEnvironment env{};
