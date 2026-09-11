@@ -137,6 +137,9 @@ VkResult copy_str_to_string_list_if_unique(const struct loader_instance *inst, s
 VkResult copy_str_to_start_of_string_list(const struct loader_instance *inst, struct loader_string_list *string_list,
                                           const char *str, size_t str_len);
 
+// Remove the first string equal to str from string_list and free it, if there is one
+void remove_str_from_string_list(const struct loader_instance *inst, struct loader_string_list *string_list, const char *str);
+
 // Free any string inside of loader_string_list and then free the list itself
 void free_string_list(const struct loader_instance *inst, struct loader_string_list *string_list);
 

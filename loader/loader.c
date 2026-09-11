@@ -407,6 +407,19 @@ VkResult copy_str_to_start_of_string_list(const struct loader_instance *inst, st
     return prepend_str_to_string_list(inst, string_list, new_str);
 }
 
+void remove_str_from_string_list(const struct loader_instance *inst, struct loader_string_list *string_list, const char *str) {
+    assert(string_list && str);
+    for (uint32_t i = 0; i < string_list->count; i++) {
+        if (strcmp(string_list->list[i], str) == 0) {
+            loader_instance_heap_free(inst, string_list->list[i]);
+            memmove((void *)(string_list->list + i), (const void *)(string_list->list + i + 1),
+                    sizeof(char *) * (string_list->count - i - 1));
+            string_list->count--;
+            return;
+        }
+    }
+}
+
 void free_string_list(const struct loader_instance *inst, struct loader_string_list *string_list) {
     assert(string_list);
     if (string_list->list) {
@@ -3384,7 +3397,8 @@ VkResult add_if_manifest_file(const struct loader_instance *inst, const char *fi
         return VK_INCOMPLETE;
     }
 
-    return copy_str_to_string_list(inst, out_files, file_name, name_len);
+    // A directory search path and a file inside it can reach the same manifest.
+    return copy_str_to_string_list_if_unique(inst, out_files, file_name, name_len);
 }
 
 // If the file found is a manifest file name, add it to the start of the out_files manifest list.
@@ -3399,6 +3413,8 @@ VkResult prepend_if_manifest_file(const struct loader_instance *inst, const char
         return VK_INCOMPLETE;
     }
 
+    // Move an existing entry to the front instead of loading it twice.
+    remove_str_from_string_list(inst, out_files, file_name);
     return copy_str_to_start_of_string_list(inst, out_files, file_name, name_len);
 }
 
