@@ -3384,7 +3384,11 @@ VkResult add_if_manifest_file(const struct loader_instance *inst, const char *fi
         return VK_INCOMPLETE;
     }
 
-    return copy_str_to_string_list(inst, out_files, file_name, name_len);
+    // Skip a manifest that is already in the list. The same file is reached twice whenever a search path names a
+    // directory and another names a file inside it, which duplicate elimination on the search paths cannot catch
+    // because those two strings differ. Both call sites resolve to a full path before getting here, so comparing
+    // the resolved name is enough to spot it.
+    return copy_str_to_string_list_if_unique(inst, out_files, file_name, name_len);
 }
 
 // If the file found is a manifest file name, add it to the start of the out_files manifest list.
