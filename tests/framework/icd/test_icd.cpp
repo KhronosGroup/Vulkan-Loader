@@ -110,7 +110,7 @@ bool IsInstanceExtensionEnabled(VkPhysicalDevice physical_device, const char* ex
         extension_name);
 }
 
-bool IsPhysicalDeviceExtensionAvailable(VkInstance instance, const char* extension_name) {
+bool IsPhysicalDeviceExtensionAvailable(const char* extension_name) {
     for (auto const& phys_dev : icd.physical_devices) {
         if (search_extension_list(phys_dev.extensions, extension_name)) {
             return true;
@@ -310,6 +310,29 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateInstance(const VkInstanceCreateInfo*
     *pInstance = new_instance_details.instance.handle;
 
     new_instance_details.passed_in_instance_create_flags = pCreateInfo->flags;
+
+    new_instance_details.ext_enabled_VK_KHR_surface =
+        search_extension_list(new_instance_details.enabled_instance_extensions, "VK_KHR_surface");
+    new_instance_details.ext_enabled_VK_KHR_get_surface_capabilities2 =
+        search_extension_list(new_instance_details.enabled_instance_extensions, "VK_KHR_get_surface_capabilities2");
+    new_instance_details.ext_enabled_VK_KHR_display =
+        search_extension_list(new_instance_details.enabled_instance_extensions, "VK_KHR_display");
+    new_instance_details.ext_enabled_VK_EXT_acquire_drm_display =
+        search_extension_list(new_instance_details.enabled_instance_extensions, "VK_EXT_acquire_drm_display");
+    new_instance_details.ext_enabled_VK_EXT_debug_utils =
+        search_extension_list(new_instance_details.enabled_instance_extensions, "VK_EXT_debug_utils");
+    new_instance_details.ext_enabled_VK_EXT_debug_report =
+        search_extension_list(new_instance_details.enabled_instance_extensions, "VK_EXT_debug_report");
+    new_instance_details.ext_enabled_VK_KHR_get_physical_device_properties2 =
+        search_extension_list(new_instance_details.enabled_instance_extensions, "VK_KHR_get_physical_device_properties2");
+    new_instance_details.ext_enabled_VK_KHR_external_memory_capabilities =
+        search_extension_list(new_instance_details.enabled_instance_extensions, "VK_KHR_external_memory_capabilities");
+    new_instance_details.ext_enabled_VK_KHR_external_semaphore_capabilities =
+        search_extension_list(new_instance_details.enabled_instance_extensions, "VK_KHR_external_semaphore_capabilities");
+    new_instance_details.ext_enabled_VK_KHR_external_fence_capabilities =
+        search_extension_list(new_instance_details.enabled_instance_extensions, "VK_KHR_external_fence_capabilities");
+    new_instance_details.ext_enabled_VK_KHR_device_group_creation =
+        search_extension_list(new_instance_details.enabled_instance_extensions, "VK_KHR_device_group_creation");
 
     icd.created_instance_details.emplace(new_instance_details.instance.handle, std::move(new_instance_details));
 
@@ -720,6 +743,20 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateDevice(VkPhysicalDevice physicalDevi
         new_device_details.queue_handles.emplace_back();
         icd.created_queues.insert(new_device_details.queue_handles.back().handle);
     }
+
+    // Store whether common extensions are enabled to speedup get device proc addr
+    new_device_details.ext_enabled_VK_EXT_debug_utils =
+        IsInstanceExtensionEnabled(new_device_details.instance_created_from, "VK_EXT_debug_utils");
+
+    new_device_details.ext_enabled_VK_EXT_debug_marker =
+        search_extension_list(new_device_details.enabled_device_extensions, "VK_EXT_debug_marker");
+    new_device_details.ext_enabled_VK_KHR_device_group =
+        search_extension_list(new_device_details.enabled_device_extensions, "VK_KHR_device_group");
+    new_device_details.ext_enabled_VK_KHR_display_swapchain =
+        search_extension_list(new_device_details.enabled_device_extensions, "VK_KHR_display_swapchain");
+    new_device_details.ext_enabled_VK_KHR_swapchain =
+        search_extension_list(new_device_details.enabled_device_extensions, "VK_KHR_swapchain");
+
     *pDevice = new_device_details.device.handle;
     icd.created_device_details.emplace(*pDevice, std::move(new_device_details));
 
@@ -1692,7 +1729,7 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vk_icdNegotiateLoaderICDInterfaceVersion(uin
 
 //// trampolines
 
-PFN_vkVoidFunction get_instance_func_ver_1_1([[maybe_unused]] VkInstance instance, const char* pName) {
+PFN_vkVoidFunction get_instance_func_ver_1_1(const char* pName) {
     if (icd.icd_api_version >= VK_API_VERSION_1_1) {
         if (string_eq(pName, "test_vkEnumerateInstanceVersion")) {
             return icd.can_query_vkEnumerateInstanceVersion ? to_vkVoidFunction(test_vkEnumerateInstanceVersion) : nullptr;
@@ -1704,8 +1741,8 @@ PFN_vkVoidFunction get_instance_func_ver_1_1([[maybe_unused]] VkInstance instanc
     return nullptr;
 }
 
-PFN_vkVoidFunction get_physical_device_func_wsi(VkInstance instance, const char* pName) {
-    if (IsInstanceExtensionEnabled(instance, "VK_KHR_surface")) {
+PFN_vkVoidFunction get_physical_device_func_wsi(CreatedInstanceDetails const& instance_details, const char* pName) {
+    if (instance_details.ext_enabled_VK_KHR_surface) {
         if (string_eq(pName, "vkGetPhysicalDeviceSurfaceSupportKHR"))
             return to_vkVoidFunction(test_vkGetPhysicalDeviceSurfaceSupportKHR);
         if (string_eq(pName, "vkGetPhysicalDeviceSurfaceCapabilitiesKHR"))
@@ -1716,18 +1753,18 @@ PFN_vkVoidFunction get_physical_device_func_wsi(VkInstance instance, const char*
             return to_vkVoidFunction(test_vkGetPhysicalDeviceSurfacePresentModesKHR);
     }
 #if defined(WIN32)
-    if (IsPhysicalDeviceExtensionAvailable(instance, "VK_EXT_full_screen_exclusive")) {
+    if (IsPhysicalDeviceExtensionAvailable("VK_EXT_full_screen_exclusive")) {
         if (string_eq(pName, "vkGetPhysicalDeviceSurfacePresentModes2EXT"))
             return to_vkVoidFunction(test_vkGetPhysicalDeviceSurfacePresentModes2EXT);
     }
 #endif
-    if (IsInstanceExtensionEnabled(instance, "VK_KHR_get_surface_capabilities2")) {
+    if (instance_details.ext_enabled_VK_KHR_get_surface_capabilities2) {
         if (string_eq(pName, "vkGetPhysicalDeviceSurfaceCapabilities2KHR"))
             return to_vkVoidFunction(test_vkGetPhysicalDeviceSurfaceCapabilities2KHR);
         if (string_eq(pName, "vkGetPhysicalDeviceSurfaceFormats2KHR"))
             return to_vkVoidFunction(test_vkGetPhysicalDeviceSurfaceFormats2KHR);
     }
-    if (IsInstanceExtensionEnabled(instance, "VK_KHR_display")) {
+    if (instance_details.ext_enabled_VK_KHR_display) {
         if (string_eq(pName, "vkGetPhysicalDeviceDisplayPropertiesKHR"))
             return to_vkVoidFunction(test_vkGetPhysicalDeviceDisplayPropertiesKHR);
         if (string_eq(pName, "vkGetPhysicalDeviceDisplayPlanePropertiesKHR"))
@@ -1739,14 +1776,14 @@ PFN_vkVoidFunction get_physical_device_func_wsi(VkInstance instance, const char*
         if (string_eq(pName, "vkGetDisplayPlaneCapabilitiesKHR")) return to_vkVoidFunction(test_vkGetDisplayPlaneCapabilitiesKHR);
         if (string_eq(pName, "vkCreateDisplayPlaneSurfaceKHR")) return to_vkVoidFunction(test_vkCreateDisplayPlaneSurfaceKHR);
     }
-    if (IsInstanceExtensionEnabled(instance, "VK_EXT_acquire_drm_display")) {
+    if (instance_details.ext_enabled_VK_EXT_acquire_drm_display) {
         if (string_eq(pName, "vkAcquireDrmDisplayEXT")) return to_vkVoidFunction(test_vkAcquireDrmDisplayEXT);
         if (string_eq(pName, "vkGetDrmDisplayEXT")) return to_vkVoidFunction(test_vkGetDrmDisplayEXT);
     }
     return nullptr;
 }
 
-PFN_vkVoidFunction get_instance_func_wsi(VkInstance instance, const char* pName) {
+PFN_vkVoidFunction get_instance_func_wsi(CreatedInstanceDetails const& instance_details, const char* pName) {
     if (icd.min_icd_interface_version >= 3 && icd.enable_icd_wsi == true) {
 #if defined(VK_USE_PLATFORM_ANDROID_KHR)
         if (string_eq(pName, "vkCreateAndroidSurfaceKHR")) {
@@ -1836,7 +1873,7 @@ PFN_vkVoidFunction get_instance_func_wsi(VkInstance instance, const char* pName)
             return to_vkVoidFunction(test_vkDestroySurfaceKHR);
         }
     }
-    if (IsInstanceExtensionEnabled(instance, VK_EXT_DEBUG_UTILS_EXTENSION_NAME)) {
+    if (instance_details.ext_enabled_VK_EXT_debug_utils) {
         if (string_eq(pName, "vkCreateDebugUtilsMessengerEXT")) {
             return to_vkVoidFunction(test_vkCreateDebugUtilsMessengerEXT);
         }
@@ -1844,7 +1881,7 @@ PFN_vkVoidFunction get_instance_func_wsi(VkInstance instance, const char* pName)
             return to_vkVoidFunction(test_vkDestroyDebugUtilsMessengerEXT);
         }
     }
-    if (IsInstanceExtensionEnabled(instance, VK_EXT_DEBUG_MARKER_EXTENSION_NAME)) {
+    if (instance_details.ext_enabled_VK_EXT_debug_report) {
         if (string_eq(pName, "vkCreateDebugReportCallbackEXT")) {
             return to_vkVoidFunction(test_vkCreateDebugReportCallbackEXT);
         }
@@ -1853,11 +1890,12 @@ PFN_vkVoidFunction get_instance_func_wsi(VkInstance instance, const char* pName)
         }
     }
 
-    PFN_vkVoidFunction ret_phys_dev_wsi = get_physical_device_func_wsi(instance, pName);
+    PFN_vkVoidFunction ret_phys_dev_wsi = get_physical_device_func_wsi(instance_details, pName);
     if (ret_phys_dev_wsi != nullptr) return ret_phys_dev_wsi;
     return nullptr;
 }
-VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL get_physical_device_func(VkInstance instance, const char* pName) {
+PFN_vkVoidFunction get_physical_device_func_impl(VkInstance instance, CreatedInstanceDetails const& instance_details,
+                                                 const char* pName) {
     std::lock_guard lg(icd.mutex);
     if (string_eq(pName, "vkEnumerateDeviceLayerProperties")) return to_vkVoidFunction(test_vkEnumerateDeviceLayerProperties);
     if (string_eq(pName, "vkEnumerateDeviceExtensionProperties"))
@@ -1880,7 +1918,7 @@ VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL get_physical_device_func(VkInstance ins
     if (string_eq(pName, "vkGetPhysicalDeviceImageFormatProperties"))
         return icd.can_query_GetPhysicalDeviceFuncs ? to_vkVoidFunction(test_vkGetPhysicalDeviceImageFormatProperties) : nullptr;
 
-    if (IsInstanceExtensionEnabled(instance, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
+    if (instance_details.ext_enabled_VK_KHR_get_physical_device_properties2) {
         if (string_eq(pName, "vkGetPhysicalDeviceFeatures2KHR")) return to_vkVoidFunction(test_vkGetPhysicalDeviceFeatures2);
         if (string_eq(pName, "vkGetPhysicalDeviceProperties2KHR")) return to_vkVoidFunction(test_vkGetPhysicalDeviceProperties2);
         if (string_eq(pName, "vkGetPhysicalDeviceFormatProperties2KHR"))
@@ -1898,22 +1936,22 @@ VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL get_physical_device_func(VkInstance ins
             return to_vkVoidFunction(test_vkGetPhysicalDeviceImageFormatProperties2);
         }
     }
-    if (IsInstanceExtensionEnabled(instance, VK_KHR_EXTERNAL_MEMORY_CAPABILITIES_EXTENSION_NAME)) {
+    if (instance_details.ext_enabled_VK_KHR_external_memory_capabilities) {
         if (string_eq(pName, "vkGetPhysicalDeviceExternalBufferPropertiesKHR"))
             return to_vkVoidFunction(test_vkGetPhysicalDeviceExternalBufferProperties);
     }
-    if (IsInstanceExtensionEnabled(instance, VK_KHR_EXTERNAL_SEMAPHORE_CAPABILITIES_EXTENSION_NAME)) {
+    if (instance_details.ext_enabled_VK_KHR_external_semaphore_capabilities) {
         if (string_eq(pName, "vkGetPhysicalDeviceExternalSemaphorePropertiesKHR"))
             return to_vkVoidFunction(test_vkGetPhysicalDeviceExternalSemaphoreProperties);
     }
-    if (IsInstanceExtensionEnabled(instance, VK_KHR_EXTERNAL_FENCE_CAPABILITIES_EXTENSION_NAME)) {
+    if (instance_details.ext_enabled_VK_KHR_external_fence_capabilities) {
         if (string_eq(pName, "vkGetPhysicalDeviceExternalFencePropertiesKHR"))
             return to_vkVoidFunction(test_vkGetPhysicalDeviceExternalFenceProperties);
     }
 
     // The following physical device extensions only need 1 device to support them for the ICD to export
     // them
-    if (IsPhysicalDeviceExtensionAvailable(instance, VK_KHR_PERFORMANCE_QUERY_EXTENSION_NAME)) {
+    if (IsPhysicalDeviceExtensionAvailable(VK_KHR_PERFORMANCE_QUERY_EXTENSION_NAME)) {
         if (string_eq(pName, "vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR"))
             return to_vkVoidFunction(test_vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR);
         if (string_eq(pName, "vkGetPhysicalDeviceQueueFamilyPerformanceQueryPassesKHR"))
@@ -1921,12 +1959,12 @@ VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL get_physical_device_func(VkInstance ins
         if (string_eq(pName, "vkAcquireProfilingLockKHR")) return to_vkVoidFunction(test_vkAcquireProfilingLockKHR);
         if (string_eq(pName, "vkReleaseProfilingLockKHR")) return to_vkVoidFunction(test_vkReleaseProfilingLockKHR);
     }
-    if (IsPhysicalDeviceExtensionAvailable(instance, VK_EXT_SAMPLE_LOCATIONS_EXTENSION_NAME)) {
+    if (IsPhysicalDeviceExtensionAvailable(VK_EXT_SAMPLE_LOCATIONS_EXTENSION_NAME)) {
         if (string_eq(pName, "vkCmdSetSampleLocationsEXT")) return to_vkVoidFunction(test_vkCmdSetSampleLocationsEXT);
         if (string_eq(pName, "vkGetPhysicalDeviceMultisamplePropertiesEXT"))
             return to_vkVoidFunction(test_vkGetPhysicalDeviceMultisamplePropertiesEXT);
     }
-    if (IsPhysicalDeviceExtensionAvailable(instance, VK_EXT_CALIBRATED_TIMESTAMPS_EXTENSION_NAME)) {
+    if (IsPhysicalDeviceExtensionAvailable(VK_EXT_CALIBRATED_TIMESTAMPS_EXTENSION_NAME)) {
         if (string_eq(pName, "vkGetPhysicalDeviceCalibrateableTimeDomainsEXT"))
             return to_vkVoidFunction(test_vkGetPhysicalDeviceCalibrateableTimeDomainsEXT);
         if (string_eq(pName, "vkGetCalibratedTimestampsEXT")) return to_vkVoidFunction(test_vkGetCalibratedTimestampsEXT);
@@ -1981,21 +2019,27 @@ VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL get_physical_device_func(VkInstance ins
     return nullptr;
 }
 
+VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL get_physical_device_func(VkInstance instance, const char* pName) {
+    return get_physical_device_func_impl(instance, icd.created_instance_details.at(instance), pName);
+}
+
 PFN_vkVoidFunction get_instance_func(VkInstance instance, const char* pName) {
     if (string_eq(pName, "vkDestroyInstance")) return to_vkVoidFunction(test_vkDestroyInstance);
     if (string_eq(pName, "vkEnumeratePhysicalDevices")) return to_vkVoidFunction(test_vkEnumeratePhysicalDevices);
 
-    if (IsInstanceExtensionEnabled(instance, VK_KHR_DEVICE_GROUP_CREATION_EXTENSION_NAME)) {
+    auto& instance_details = icd.created_instance_details.at(instance);
+
+    if (instance_details.ext_enabled_VK_KHR_device_group_creation) {
         if (string_eq(pName, "vkEnumeratePhysicalDeviceGroupsKHR")) return to_vkVoidFunction(test_vkEnumeratePhysicalDeviceGroups);
     }
 
-    PFN_vkVoidFunction ret_phys_dev = get_physical_device_func(instance, pName);
+    PFN_vkVoidFunction ret_phys_dev = get_physical_device_func_impl(instance, instance_details, pName);
     if (ret_phys_dev != nullptr) return ret_phys_dev;
 
-    PFN_vkVoidFunction ret_1_1 = get_instance_func_ver_1_1(instance, pName);
+    PFN_vkVoidFunction ret_1_1 = get_instance_func_ver_1_1(pName);
     if (ret_1_1 != nullptr) return ret_1_1;
 
-    PFN_vkVoidFunction ret_wsi = get_instance_func_wsi(instance, pName);
+    PFN_vkVoidFunction ret_wsi = get_instance_func_wsi(instance_details, pName);
     if (ret_wsi != nullptr) return ret_wsi;
 
     for (auto& func : icd.custom_instance_functions) {
@@ -2007,19 +2051,21 @@ PFN_vkVoidFunction get_instance_func(VkInstance instance, const char* pName) {
     return nullptr;
 }
 
-bool should_check(std::vector<Extension>* exts, VkDevice device, const char* ext_name) {
-    if (exts == nullptr || device == VK_NULL_HANDLE) return true;  // always look if device is NULL
-    return search_extension_list(*exts, ext_name);
+bool should_check(std::vector<Extension>& exts, VkDevice device, const char* ext_name) {
+    if (device == VK_NULL_HANDLE) return true;  // always look if device is NULL
+    return search_extension_list(exts, ext_name);
 }
 
 // Implementation of the mock driver's vkGetDeviceProcAddr
 // This function is called by vkGetInstanceProcAddr with device == NULL
 PFN_vkVoidFunction get_device_func(VkDevice device, const char* pName) {
-    std::vector<Extension>* enabled_extensions = nullptr;
     std::lock_guard lg(icd.mutex);
+
+    auto device_details = icd.created_device_details.find(device);
+    bool found_device = device_details != icd.created_device_details.end();
+
     if (device != nullptr) {
-        if (icd.created_device_details.count(device) == 0) return NULL;
-        enabled_extensions = &icd.created_device_details.at(device).enabled_device_extensions;
+        if (!found_device) return NULL;
     }
 
     if (string_eq(pName, "vkCreateCommandPool")) return to_vkVoidFunction(test_vkCreateCommandPool);
@@ -2027,7 +2073,7 @@ PFN_vkVoidFunction get_device_func(VkDevice device, const char* pName) {
     if (string_eq(pName, "vkDestroyCommandPool")) return to_vkVoidFunction(test_vkDestroyCommandPool);
     if (string_eq(pName, "vkGetDeviceQueue")) return to_vkVoidFunction(test_vkGetDeviceQueue);
     if (string_eq(pName, "vkDestroyDevice")) return to_vkVoidFunction(test_vkDestroyDevice);
-    if (should_check(enabled_extensions, device, "VK_KHR_swapchain")) {
+    if (found_device && device_details->second.ext_enabled_VK_KHR_swapchain) {
         if (string_eq(pName, "vkCreateSwapchainKHR")) return to_vkVoidFunction(test_vkCreateSwapchainKHR);
         if (string_eq(pName, "vkGetSwapchainImagesKHR")) return to_vkVoidFunction(test_vkGetSwapchainImagesKHR);
         if (string_eq(pName, "vkDestroySwapchainKHR")) return to_vkVoidFunction(test_vkDestroySwapchainKHR);
@@ -2035,22 +2081,21 @@ PFN_vkVoidFunction get_device_func(VkDevice device, const char* pName) {
         if (icd.icd_api_version >= VK_API_VERSION_1_1 && string_eq(pName, "vkGetDeviceGroupSurfacePresentModesKHR"))
             return to_vkVoidFunction(test_vkGetDeviceGroupSurfacePresentModesKHR);
     }
-    if (should_check(enabled_extensions, device, "VK_KHR_display_swapchain")) {
+    if (found_device && device_details->second.ext_enabled_VK_KHR_display_swapchain) {
         if (string_eq(pName, "vkCreateSharedSwapchainsKHR")) return to_vkVoidFunction(test_vkCreateSharedSwapchainsKHR);
     }
-    if (should_check(enabled_extensions, device, "VK_KHR_device_group")) {
+    if (found_device && device_details->second.ext_enabled_VK_KHR_device_group) {
         if (string_eq(pName, "vkGetDeviceGroupSurfacePresentModesKHR"))
             return to_vkVoidFunction(test_vkGetDeviceGroupSurfacePresentModesKHR);
     }
-    if (should_check(enabled_extensions, device, "VK_EXT_debug_marker")) {
+    if (found_device && device_details->second.ext_enabled_VK_EXT_debug_marker) {
         if (string_eq(pName, "vkDebugMarkerSetObjectTagEXT")) return to_vkVoidFunction(test_vkDebugMarkerSetObjectTagEXT);
         if (string_eq(pName, "vkDebugMarkerSetObjectNameEXT")) return to_vkVoidFunction(test_vkDebugMarkerSetObjectNameEXT);
         if (string_eq(pName, "vkCmdDebugMarkerBeginEXT")) return to_vkVoidFunction(test_vkCmdDebugMarkerBeginEXT);
         if (string_eq(pName, "vkCmdDebugMarkerEndEXT")) return to_vkVoidFunction(test_vkCmdDebugMarkerEndEXT);
         if (string_eq(pName, "vkCmdDebugMarkerInsertEXT")) return to_vkVoidFunction(test_vkCmdDebugMarkerInsertEXT);
     }
-    if (device == nullptr ||
-        IsInstanceExtensionEnabled(icd.created_device_details.at(device).instance_created_from, "VK_EXT_debug_utils")) {
+    if (device == nullptr || (found_device && device_details->second.ext_enabled_VK_EXT_debug_utils)) {
         if (string_eq(pName, "vkSetDebugUtilsObjectNameEXT")) return to_vkVoidFunction(test_vkSetDebugUtilsObjectNameEXT);
         if (string_eq(pName, "vkSetDebugUtilsObjectTagEXT")) return to_vkVoidFunction(test_vkSetDebugUtilsObjectTagEXT);
         if (string_eq(pName, "vkQueueBeginDebugUtilsLabelEXT")) return to_vkVoidFunction(test_vkQueueBeginDebugUtilsLabelEXT);
@@ -2060,12 +2105,12 @@ PFN_vkVoidFunction get_device_func(VkDevice device, const char* pName) {
         if (string_eq(pName, "vkCmdEndDebugUtilsLabelEXT")) return to_vkVoidFunction(test_vkCmdEndDebugUtilsLabelEXT);
         if (string_eq(pName, "vkCmdInsertDebugUtilsLabelEXT")) return to_vkVoidFunction(test_vkCmdInsertDebugUtilsLabelEXT);
     }
-    if (icd.created_device_details.count(device) > 0) {
+    if (found_device) {
         // look for device functions setup from a test
 
         for (const auto& function :
              icd.physical_devices
-                 .at(icd.created_physical_device_details.at(icd.created_device_details.at(device).physical_device_created_from)
+                 .at(icd.created_physical_device_details.at(device_details->second.physical_device_created_from)
                          .index_physical_device)
                  .known_device_functions) {
             if (function.name == pName) {

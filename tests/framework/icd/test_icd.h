@@ -186,6 +186,13 @@ struct CreatedDeviceDetails {
     std::vector<DispatchableHandle<VkCommandBuffer>> allocated_command_buffers;
 
     std::vector<uint64_t> swapchain_handles;
+
+    // Speedup function loading by storing whether some extensions were enabled during device creation
+    bool ext_enabled_VK_EXT_debug_marker{};
+    bool ext_enabled_VK_EXT_debug_utils{};
+    bool ext_enabled_VK_KHR_device_group{};
+    bool ext_enabled_VK_KHR_display_swapchain{};
+    bool ext_enabled_VK_KHR_swapchain{};
 };
 
 struct CreatedPhysicalDeviceDetails {
@@ -206,6 +213,19 @@ struct CreatedInstanceDetails {
 
     // Store the handles here in order for EnumeratePhysicalDevices
     std::vector<VkPhysicalDevice> physical_devices;
+
+    // Speedup function loading by storing whether some extensions were enabled during device creation
+    bool ext_enabled_VK_KHR_surface{};
+    bool ext_enabled_VK_KHR_get_surface_capabilities2{};
+    bool ext_enabled_VK_KHR_display{};
+    bool ext_enabled_VK_EXT_acquire_drm_display{};
+    bool ext_enabled_VK_EXT_debug_utils{};
+    bool ext_enabled_VK_EXT_debug_report{};
+    bool ext_enabled_VK_KHR_get_physical_device_properties2{};
+    bool ext_enabled_VK_KHR_external_memory_capabilities{};
+    bool ext_enabled_VK_KHR_external_semaphore_capabilities{};
+    bool ext_enabled_VK_KHR_external_fence_capabilities{};
+    bool ext_enabled_VK_KHR_device_group_creation{};
 };
 struct TestICD {
     std::recursive_mutex mutex;
