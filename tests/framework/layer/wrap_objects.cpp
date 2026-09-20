@@ -415,6 +415,13 @@ VKAPI_ATTR void VKAPI_CALL vkGetPhysicalDeviceProperties(VkPhysicalDevice physic
     phys_dev->inst->layer_disp.GetPhysicalDeviceProperties(vk_phys_dev, pProperties);
 }
 
+VKAPI_ATTR void VKAPI_CALL wrap_vkGetPhysicalDeviceProperties2(VkPhysicalDevice physicalDevice,
+                                                               VkPhysicalDeviceProperties2 *pProperties) {
+    wrapped_phys_dev_obj *phys_dev;
+    auto vk_phys_dev = unwrap_phys_dev(physicalDevice, &phys_dev);
+    phys_dev->inst->layer_disp.GetPhysicalDeviceProperties2(vk_phys_dev, pProperties);
+}
+
 VKAPI_ATTR void VKAPI_CALL wrap_vkGetPhysicalDeviceQueueFamilyProperties(VkPhysicalDevice physicalDevice,
                                                                          uint32_t *pQueueFamilyPropertyCount,
                                                                          VkQueueFamilyProperties *pQueueFamilyProperties) {
@@ -727,6 +734,7 @@ PFN_vkVoidFunction layer_intercept_instance_proc(wrapped_inst_obj *inst, const c
     if (!strcmp(name, "DestroyDebugUtilsMessengerEXT")) return (PFN_vkVoidFunction)wrap_vkDestroyDebugUtilsMessengerEXT;
 
     if (!strcmp(name, "GetPhysicalDeviceProperties")) return (PFN_vkVoidFunction)vkGetPhysicalDeviceProperties;
+    if (!strcmp(name, "GetPhysicalDeviceProperties2")) return (PFN_vkVoidFunction)wrap_vkGetPhysicalDeviceProperties2;
     if (!strcmp(name, "GetPhysicalDeviceQueueFamilyProperties"))
         return (PFN_vkVoidFunction)wrap_vkGetPhysicalDeviceQueueFamilyProperties;
 

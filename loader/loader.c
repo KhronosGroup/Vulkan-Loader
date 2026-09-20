@@ -8214,7 +8214,7 @@ out:
     return res;
 }
 
-VkResult get_device_driver_id(VkPhysicalDevice physicalDevice, VkDriverId *driverId) {
+VkResult get_device_driver_id(const struct loader_instance *inst, VkPhysicalDevice physicalDevice, VkDriverId *driverId) {
     // NOLINTNEXTLINE(bugprone-invalid-enum-default-initialization) - VkDriverId is an external enum with no zero value
     VkPhysicalDeviceDriverProperties physical_device_driver_props = {0};
     physical_device_driver_props.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DRIVER_PROPERTIES;
@@ -8223,19 +8223,16 @@ VkResult get_device_driver_id(VkPhysicalDevice physicalDevice, VkDriverId *drive
     props2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
     props2.pNext = &physical_device_driver_props;
 
-    struct loader_physical_device_term *phys_dev_term = (struct loader_physical_device_term *)physicalDevice;
-    struct loader_icd_term *icd_term = phys_dev_term->this_icd_term;
-    const struct loader_instance *inst = icd_term->this_instance;
-
     assert(inst != NULL);
 
-    // Get the function pointer to use to call into the ICD. This could be the core or KHR version
+    // physicalDevice was enumerated from the top of the layer chain, so a layer may have wrapped it and it must not be treated as a
+    // loader_physical_device_term. Query it through the layer chain instead. This could be the core or KHR version
     PFN_vkGetPhysicalDeviceProperties2 fpGetPhysicalDeviceProperties2 = NULL;
     if (loader_check_version_meets_required(LOADER_VERSION_1_1_0, inst->app_api_version)) {
-        fpGetPhysicalDeviceProperties2 = icd_term->dispatch.GetPhysicalDeviceProperties2;
+        fpGetPhysicalDeviceProperties2 = inst->disp->layer_inst_disp.GetPhysicalDeviceProperties2;
     }
     if (fpGetPhysicalDeviceProperties2 == NULL && inst->enabled_extensions.khr_get_physical_device_properties2) {
-        fpGetPhysicalDeviceProperties2 = icd_term->dispatch.GetPhysicalDeviceProperties2KHR;
+        fpGetPhysicalDeviceProperties2 = inst->disp->layer_inst_disp.GetPhysicalDeviceProperties2KHR;
     }
 
     if (fpGetPhysicalDeviceProperties2 == NULL) {
@@ -8244,7 +8241,7 @@ VkResult get_device_driver_id(VkPhysicalDevice physicalDevice, VkDriverId *drive
         return VK_ERROR_UNKNOWN;
     }
 
-    fpGetPhysicalDeviceProperties2(phys_dev_term->phys_dev, &props2);
+    fpGetPhysicalDeviceProperties2(physicalDevice, &props2);
 
     *driverId = physical_device_driver_props.driverID;
     return VK_SUCCESS;
@@ -8272,7 +8269,7 @@ VkResult loader_filter_enumerated_physical_devices(const struct loader_instance 
 
         if (0 != driver_id_filter->count) {
             VkDriverId driver_id;
-            VkResult res = get_device_driver_id(in_pPhysicalDevices[i], &driver_id);
+            VkResult res = get_device_driver_id(inst, in_pPhysicalDevices[i], &driver_id);
 
             if ((res != VK_SUCCESS) || !check_id_matches_filter_environment_var(driver_id, driver_id_filter)) {
                 continue;
@@ -8318,7 +8315,7 @@ VkResult loader_filter_enumerated_physical_device_groups(
 
             if (0 != driver_id_filter->count) {
                 VkDriverId driver_id;
-                VkResult res = get_device_driver_id(device_group->physicalDevices[j], &driver_id);
+                VkResult res = get_device_driver_id(inst, device_group->physicalDevices[j], &driver_id);
 
                 if ((res != VK_SUCCESS) || !check_id_matches_filter_environment_var(driver_id, driver_id_filter)) {
                     skip_group = true;
