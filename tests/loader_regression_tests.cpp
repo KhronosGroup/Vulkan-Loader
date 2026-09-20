@@ -1470,6 +1470,53 @@ TEST(EnumeratePhysicalDevices, DeviceFilteringByDriverId) {
     }
 }
 
+// Layers are allowed to wrap VkPhysicalDevice handles, so the handles being filtered are not necessarily the loader's own.
+TEST(EnumeratePhysicalDevices, DeviceFilteringByDriverIdWithWrappingLayer) {
+    FrameworkEnvironment env{};
+    auto& driver = env.add_icd(TEST_ICD_PATH_VERSION_2, {}, ManifestICD{}.set_api_version(VK_API_VERSION_1_1))
+                       .set_min_icd_interface_version(5)
+                       .set_icd_api_version(VK_API_VERSION_1_1)
+                       .add_instance_extension({VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME});
+
+    auto& physical_device = driver.add_and_get_physical_device("physical_device_0");
+    physical_device.extensions.push_back({VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME, 0});
+    physical_device.driver_properties.driverID = VkDriverId(100);
+
+    const char* wrap_objects_name = "WrapObjectsLayer";
+    env.add_explicit_layer(
+        {}, ManifestLayer{}.add_layer(
+                ManifestLayer::LayerDescription{}.set_name(wrap_objects_name).set_lib_path(TEST_LAYER_WRAP_OBJECTS)));
+
+    InstWrapper inst{env.vulkan_functions};
+    inst.create_info.set_api_version(VK_API_VERSION_1_1);
+    inst.create_info.add_layer(wrap_objects_name);
+    inst.CheckCreate();
+
+    // driver id matches the filter
+    {
+        env.env_var_vk_loader_driver_id_filter.set_new_value("100");
+
+        uint32_t returned_physical_count = 1;
+        VkPhysicalDevice physical_device_handle = VK_NULL_HANDLE;
+        ASSERT_EQ(VK_SUCCESS, inst->vkEnumeratePhysicalDevices(inst, &returned_physical_count, &physical_device_handle));
+        ASSERT_EQ(1U, returned_physical_count);
+
+        env.env_var_vk_loader_driver_id_filter.remove_value();
+    }
+
+    // driver id does not match the filter
+    {
+        env.env_var_vk_loader_driver_id_filter.set_new_value("50");
+
+        uint32_t returned_physical_count = 1;
+        VkPhysicalDevice physical_device_handle = VK_NULL_HANDLE;
+        ASSERT_EQ(VK_SUCCESS, inst->vkEnumeratePhysicalDevices(inst, &returned_physical_count, &physical_device_handle));
+        ASSERT_EQ(0U, returned_physical_count);
+
+        env.env_var_vk_loader_driver_id_filter.remove_value();
+    }
+}
+
 TEST(CreateDevice, ExtensionNotPresent) {
     FrameworkEnvironment env{};
     env.add_icd(TEST_ICD_PATH_VERSION_2).add_physical_device("physical_device_0");
