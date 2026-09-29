@@ -27,6 +27,8 @@
 
 #include "framework/test_environment.h"
 
+#include <cstdlib>
+#include <cstring>
 #include <fstream>
 #include <vector>
 
@@ -388,4 +390,29 @@ TEST(JsonStringPrint, PrintPreallocatedTerminatesAtRealEnd) {
 
     loader_cJSON_Delete(json);
     std::filesystem::remove(json_path);
+}
+
+// extensionName is a fixed VK_MAX_EXTENSION_NAME_SIZE array which the loader copies verbatim from a driver's
+// VkExtensionProperties. A non-conformant ICD can fill all VK_MAX_EXTENSION_NAME_SIZE bytes with no null
+// terminator; comparing two such names with an unbounded strcmp reads past the end of the array (and, at the
+// end of a list, past the allocation). compare_vk_extension_properties must bound the compare to the field.
+TEST(ExtensionNameCompare, UnterminatedNameDoesNotReadPastField) {
+    // Allocate each VkExtensionProperties in its own exact-sized block so an over-read runs into the ASAN redzone.
+    VkExtensionProperties* a = static_cast<VkExtensionProperties*>(malloc(sizeof(VkExtensionProperties)));
+    VkExtensionProperties* b = static_cast<VkExtensionProperties*>(malloc(sizeof(VkExtensionProperties)));
+    ASSERT_NE(a, nullptr);
+    ASSERT_NE(b, nullptr);
+    // Fill every byte (extensionName and specVersion) with a non-null value: no terminator anywhere in the object.
+    memset(a, 'A', sizeof(VkExtensionProperties));
+    memset(b, 'A', sizeof(VkExtensionProperties));
+
+    // Equal within the field: must report a match without reading past VK_MAX_EXTENSION_NAME_SIZE.
+    EXPECT_TRUE(compare_vk_extension_properties(a, b));
+
+    // Differ inside the field: must report no match, again without over-reading.
+    b->extensionName[VK_MAX_EXTENSION_NAME_SIZE - 1] = 'B';
+    EXPECT_FALSE(compare_vk_extension_properties(a, b));
+
+    free(a);
+    free(b);
 }
