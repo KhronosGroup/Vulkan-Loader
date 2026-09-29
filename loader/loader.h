@@ -82,7 +82,7 @@ extern struct loader_struct loader;
 extern loader_platform_thread_mutex loader_lock;
 extern loader_platform_thread_mutex loader_preload_icd_lock;
 
-bool compare_vk_extension_properties(const VkExtensionProperties *op1, const VkExtensionProperties *op2);
+TEST_FUNCTION_EXPORT bool compare_vk_extension_properties(const VkExtensionProperties *op1, const VkExtensionProperties *op2);
 
 VkResult loader_validate_layers(const struct loader_instance *inst, const uint32_t layer_count,
                                 const char *const *ppEnabledLayerNames, const struct loader_layer_list *list);

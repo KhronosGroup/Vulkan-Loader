@@ -743,8 +743,8 @@ uint32_t loader_parse_version_string(char *vers_str) {
     return VK_MAKE_API_VERSION(variant, major, minor, patch);
 }
 
-bool compare_vk_extension_properties(const VkExtensionProperties *op1, const VkExtensionProperties *op2) {
-    return strcmp(op1->extensionName, op2->extensionName) == 0 ? true : false;
+TEST_FUNCTION_EXPORT bool compare_vk_extension_properties(const VkExtensionProperties *op1, const VkExtensionProperties *op2) {
+    return strncmp(op1->extensionName, op2->extensionName, VK_MAX_EXTENSION_NAME_SIZE) == 0 ? true : false;
 }
 
 // Search the given ext_array for an extension matching the given vk_ext_prop
