@@ -497,13 +497,13 @@ VkResult get_unix_settings_path(const struct loader_instance* inst, char** setti
 
     VkResult res = check_if_settings_path_exists(
         inst, xdg_config_home, "/" VULKAN_DIR "/loader_settings.d/" VK_LOADER_SETTINGS_FILENAME, settings_file_path);
-    if (res == VK_SUCCESS) {
+    if (res == VK_SUCCESS || res == VK_ERROR_OUT_OF_HOST_MEMORY) {
         return res;
     }
 
     res = check_if_settings_path_exists(inst, xdg_data_home, "/" VULKAN_DIR "/loader_settings.d/" VK_LOADER_SETTINGS_FILENAME,
                                         settings_file_path);
-    if (res == VK_SUCCESS) {
+    if (res == VK_SUCCESS || res == VK_ERROR_OUT_OF_HOST_MEMORY) {
         return res;
     }
 
@@ -513,14 +513,14 @@ VkResult get_unix_settings_path(const struct loader_instance* inst, char** setti
         if (NULL == xdg_config_home || '\0' == xdg_config_home[0]) {
             res = check_if_settings_path_exists(
                 inst, home, "/.config/" VULKAN_DIR "/loader_settings.d/" VK_LOADER_SETTINGS_FILENAME, settings_file_path);
-            if (res == VK_SUCCESS) {
+            if (res == VK_SUCCESS || res == VK_ERROR_OUT_OF_HOST_MEMORY) {
                 return res;
             }
         }
         if (NULL == xdg_data_home || '\0' == xdg_data_home[0]) {
             res = check_if_settings_path_exists(
                 inst, home, "/.local/share/" VULKAN_DIR "/loader_settings.d/" VK_LOADER_SETTINGS_FILENAME, settings_file_path);
-            if (res == VK_SUCCESS) {
+            if (res == VK_SUCCESS || res == VK_ERROR_OUT_OF_HOST_MEMORY) {
                 return res;
             }
         }
@@ -528,26 +528,26 @@ VkResult get_unix_settings_path(const struct loader_instance* inst, char** setti
 
     res = check_if_settings_path_exists(inst, xdg_config_dirs, "/" VULKAN_DIR "/loader_settings.d/" VK_LOADER_SETTINGS_FILENAME,
                                         settings_file_path);
-    if (res == VK_SUCCESS) {
+    if (res == VK_SUCCESS || res == VK_ERROR_OUT_OF_HOST_MEMORY) {
         return res;
     }
 
     res = check_if_settings_path_exists(inst, SYSCONFDIR, "/" VULKAN_DIR "/loader_settings.d/" VK_LOADER_SETTINGS_FILENAME,
                                         settings_file_path);
-    if (res == VK_SUCCESS) {
+    if (res == VK_SUCCESS || res == VK_ERROR_OUT_OF_HOST_MEMORY) {
         return res;
     }
 #if defined(EXTRASYSCONFDIR)
 
     res = check_if_settings_path_exists(inst, EXTRASYSCONFDIR, "/" VULKAN_DIR "/loader_settings.d/" VK_LOADER_SETTINGS_FILENAME,
                                         settings_file_path);
-    if (res == VK_SUCCESS) {
+    if (res == VK_SUCCESS || res == VK_ERROR_OUT_OF_HOST_MEMORY) {
         return res;
     }
 #endif
     res = check_if_settings_path_exists(inst, xdg_data_dirs, "/" VULKAN_DIR "/loader_settings.d/" VK_LOADER_SETTINGS_FILENAME,
                                         settings_file_path);
-    if (res == VK_SUCCESS) {
+    if (res == VK_SUCCESS || res == VK_ERROR_OUT_OF_HOST_MEMORY) {
         return res;
     }
 

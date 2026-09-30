@@ -3321,6 +3321,9 @@ VkResult loader_add_layer_properties(const struct loader_instance *inst, struct 
         } else {
             do {
                 result = loader_read_layer_json(inst, layer_instance_list, layer_node, json_version, is_implicit, filename);
+                if (result == VK_ERROR_OUT_OF_HOST_MEMORY) {
+                    goto out;
+                }
                 layer_node = layer_node->next;
             } while (layer_node != NULL);
         }
