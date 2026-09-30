@@ -59,8 +59,8 @@ class MemoryTracker {
     std::unordered_map<void*, AllocationDetails> allocations;
 
     void* allocate(size_t size, size_t alignment, VkSystemAllocationScope alloc_scope) {
-        if ((settings.should_fail_on_allocation && allocation_count == settings.fail_after_allocations) ||
-            (settings.should_fail_after_set_number_of_calls && call_count == settings.fail_after_calls)) {
+        if ((settings.should_fail_on_allocation && allocation_count >= settings.fail_after_allocations) ||
+            (settings.should_fail_after_set_number_of_calls && call_count >= settings.fail_after_calls)) {
             return nullptr;
         }
         call_count++;
@@ -97,7 +97,7 @@ class MemoryTracker {
             }
             growing_reallocations_to_skip--;
         }
-        if (size >= original_size && settings.should_fail_after_set_number_of_calls && call_count == settings.fail_after_calls)
+        if (size >= original_size && settings.should_fail_after_set_number_of_calls && call_count >= settings.fail_after_calls)
             return nullptr;
         call_count++;
         if (size == 0) {
