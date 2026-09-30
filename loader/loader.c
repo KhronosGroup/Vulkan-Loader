@@ -4386,7 +4386,7 @@ VkResult loader_scan_for_layers(struct loader_instance *inst, struct loader_laye
     // actually present in the available layer list
     res = verify_all_meta_layers(inst, filters, &regular_instance_layers, &override_layer_valid);
     if (VK_ERROR_OUT_OF_HOST_MEMORY == res) {
-        return res;
+        goto out;
     }
 
     if (override_layer_valid) {
