@@ -914,6 +914,21 @@ TEST(Allocation, CreateInstanceDeviceIntentionalAllocFail) {
     ddl_list.driverCount = 1;
     ddl_list.pDrivers = &ddl_info;
 
+    const char* regular_layer_name = "VK_LAYER_TestLayer";
+    env.add_explicit_layer({}, ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                             .set_name(regular_layer_name)
+                                                             .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                             .set_api_version(VK_MAKE_API_VERSION(0, 1, 1, 0))
+                                                             .add_device_extension({"NeverGonnaLetYouDown"})));
+
+    const char* override_layer_name = "VK_LAYER_LUNARG_override";
+    env.add_implicit_layer({}, ManifestLayer{}
+                                   .set_file_format_version(ManifestVersion{1, 1, 2})
+                                   .add_layer(ManifestLayer::LayerDescription{}
+                                                  .set_name(override_layer_name)
+                                                  .set_disable_environment("DISABLE_ENV")
+                                                  .add_component_layer(regular_layer_name)));
+
     const char* layer_name = "VK_LAYER_ImplicitAllocFail";
     env.add_implicit_layer({}, ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
                                                              .set_name(layer_name)
@@ -979,6 +994,20 @@ TEST(Allocation, CreateInstanceDeviceIntentionalAllocFail) {
             ASSERT_EQ(family.queueFlags, static_cast<VkQueueFlags>(VK_QUEUE_GRAPHICS_BIT));
             ASSERT_EQ(family.queueCount, family_count);
             ASSERT_EQ(family.timestampValidBits, 0U);
+
+            uint32_t extension_count = 0;
+            result = env.vulkan_functions.vkEnumerateDeviceExtensionProperties(physical_devices.at(1), nullptr, &extension_count,
+                                                                               nullptr);
+            if (result == VK_ERROR_OUT_OF_HOST_MEMORY) {
+                break;
+            }
+
+            std::vector<VkExtensionProperties> queried_extensions{extension_count};
+            result = env.vulkan_functions.vkEnumerateDeviceExtensionProperties(physical_devices.at(1), nullptr, &extension_count,
+                                                                               queried_extensions.data());
+            if (result == VK_ERROR_OUT_OF_HOST_MEMORY) {
+                break;
+            }
 
             DeviceCreateInfo dev_create_info;
             dev_create_info.add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
