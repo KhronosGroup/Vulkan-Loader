@@ -27,40 +27,15 @@ import re
 import os
 from base_generator import BaseGenerator
 from vulkan_object import Version
+from generators.common_code import AVOID_EXT_NAMES, AVOID_CMD_NAMES, WSI_EXT_NAMES
 
-WSI_EXT_NAMES = ['VK_KHR_surface',
-                 'VK_KHR_display',
-                 'VK_KHR_xlib_surface',
-                 'VK_KHR_xcb_surface',
-                 'VK_KHR_wayland_surface',
-                 'VK_EXT_directfb_surface',
-                 'VK_KHR_win32_surface',
-                 'VK_KHR_android_surface',
-                 'VK_GGP_stream_descriptor_surface',
-                 'VK_MVK_macos_surface',
-                 'VK_MVK_ios_surface',
-                 'VK_EXT_headless_surface',
-                 'VK_EXT_metal_surface',
-                 'VK_FUCHSIA_imagepipe_surface',
-                 'VK_KHR_swapchain',
-                 'VK_KHR_display_swapchain',
-                 'VK_KHR_get_display_properties2',
-                 'VK_KHR_get_surface_capabilities2',
-                 'VK_QNX_screen_surface',
-                 'VK_NN_vi_surface']
 
 ADD_INST_CMDS = ['vkCreateInstance',
                  'vkEnumerateInstanceExtensionProperties',
                  'vkEnumerateInstanceLayerProperties',
                  'vkEnumerateInstanceVersion']
 
-AVOID_EXT_NAMES = ['VK_EXT_debug_report']
-
 NULL_CHECK_EXT_NAMES= ['VK_EXT_debug_utils']
-
-AVOID_CMD_NAMES = ['vkCreateDebugUtilsMessengerEXT',
-                   'vkDestroyDebugUtilsMessengerEXT',
-                   'vkSubmitDebugUtilsMessageEXT']
 
 DEVICE_CMDS_NEED_TERM = ['vkGetDeviceProcAddr',
                          'vkCreateSwapchainKHR',

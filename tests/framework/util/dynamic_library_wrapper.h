@@ -54,6 +54,8 @@ struct LibraryWrapper {
     LibraryWrapper& operator=(LibraryWrapper&& wrapper) noexcept;
     FromVoidStarFunc get_symbol(const char* symbol_name) const;
 
+    void* get_symbol_no_cast(const char* symbol_name) const;
+
     std::filesystem::path const& get_path() const { return lib_path; }
     explicit operator bool() const noexcept { return lib_handle != nullptr; }
 
