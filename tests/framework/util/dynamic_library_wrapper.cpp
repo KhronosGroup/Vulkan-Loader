@@ -133,7 +133,7 @@ void LibraryWrapper::close_library() noexcept {
     }
 }
 
-FromVoidStarFunc LibraryWrapper::get_symbol(const char* symbol_name) const {
+void* LibraryWrapper::get_symbol_no_cast(const char* symbol_name) const {
     if (symbol_name == nullptr) {
         std::cerr << "LibraryWrapper::get_symbol called with a null symbol_name!\n";
         abort();
@@ -161,5 +161,9 @@ FromVoidStarFunc LibraryWrapper::get_symbol(const char* symbol_name) const {
 #else
 #error "Unhandled platform in dynamic_library_wrapper.cpp!"
 #endif
-    return FromVoidStarFunc(symbol);
+    return symbol;
+}
+
+FromVoidStarFunc LibraryWrapper::get_symbol(const char* symbol_name) const {
+    return FromVoidStarFunc(get_symbol_no_cast(symbol_name));
 }

@@ -67,6 +67,7 @@ def RunGenerators(api: str, registry: str, directory: str, styleFile: str, targe
     from generators.helper_file_generator import HelperFileGenerator
     from generators.loader_extension_generator import LoaderExtensionGenerator
     from generators.vk_result_to_string_generator import VkResultToStringGenerator
+    from generators.get_proc_addr_validator_generator import GetProcAddrValidatorGenerator
 
     # These set fields that are needed by both OutputGenerator and BaseGenerator,
     # but are uniform and don't need to be set at a per-generated file level
@@ -77,6 +78,7 @@ def RunGenerators(api: str, registry: str, directory: str, styleFile: str, targe
     generated_directory = 'loader/generated'
     dispatch_table_helper_filename = 'vk_dispatch_table_helper.h'
     result_to_string_filename = 'vk_result_to_string_helper.h'
+    get_proc_addr_validator_filename = 'get_proc_addr_validator.h'
 
     generators.update({
         'vk_layer_dispatch_table.h': {
@@ -106,6 +108,11 @@ def RunGenerators(api: str, registry: str, directory: str, styleFile: str, targe
         },
         f'{result_to_string_filename}': {
             'generator' : VkResultToStringGenerator,
+            'genCombined': False,
+            'directory' : 'tests/framework/generated',
+        },
+        f'{get_proc_addr_validator_filename}': {
+            'generator' : GetProcAddrValidatorGenerator,
             'genCombined': False,
             'directory' : 'tests/framework/generated',
         }
