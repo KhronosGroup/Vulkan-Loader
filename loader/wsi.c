@@ -337,6 +337,10 @@ VKAPI_ATTR void VKAPI_CALL terminator_DestroySurfaceKHR(VkInstance instance, VkS
             return;
         }
 #endif  // VK_USE_PLATFORM_MACOS_MVK
+        // Every surface creation terminator holds loader_lock while it reserves a slot in loader_inst->surfaces_list and
+        // grows each driver's surface_list, either of which can reallocate the list. vkDestroySurfaceKHR only requires
+        // the surface itself to be externally synchronized, so take the same lock before touching that shared state.
+        loader_platform_thread_lock_mutex(&loader_lock);
         for (struct loader_icd_term *icd_term = loader_inst->icd_terms; icd_term != NULL; icd_term = icd_term->next) {
             if (icd_term->enabled_instance_extensions.khr_surface &&
                 icd_term->scanned_icd->interface_version >= ICD_VER_SUPPORTS_ICD_SURFACE_KHR &&
@@ -360,6 +364,7 @@ VKAPI_ATTR void VKAPI_CALL terminator_DestroySurfaceKHR(VkInstance instance, VkS
             loader_instance_heap_free(loader_inst, icd_surface->create_info);
         }
         loader_release_object_from_list(&loader_inst->surfaces_list, icd_surface->surface_index);
+        loader_platform_thread_unlock_mutex(&loader_lock);
         // NOLINTNEXTLINE(performance-no-int-to-ptr) - decoding the loader-internal pointer out of the handle
         loader_instance_heap_free(loader_inst, (void *)(uintptr_t)surface);
     }

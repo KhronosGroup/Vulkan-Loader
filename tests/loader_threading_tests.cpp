@@ -172,3 +172,30 @@ TEST(Threading, SetDebugUtilsNameCreateDestroyLoop) {
         set_debug_name_threads[i].join();
     }
 }
+
+void create_destroy_surface_loop(FrameworkEnvironment* env, uint32_t num_loops, InstWrapper* inst) {
+    for (uint32_t i = 0; i < num_loops; i++) {
+        VkSurfaceKHR surface{};
+        ASSERT_EQ(VK_SUCCESS, create_surface(*inst, surface));
+        env->vulkan_functions.vkDestroySurfaceKHR(inst->inst, surface, nullptr);
+    }
+}
+
+TEST(Threading, SurfaceCreateDestroyLoop) {
+    const auto processor_count = std::thread::hardware_concurrency();
+    uint32_t num_loops = 100;
+    FrameworkEnvironment env{FrameworkSettings{}.set_log_filter("")};
+    env.add_icd(TEST_ICD_PATH_VERSION_2).setup_WSI().add_physical_device({});
+
+    InstWrapper inst{env.vulkan_functions};
+    inst.create_info.setup_WSI();
+    inst.CheckCreate();
+
+    std::vector<std::thread> surface_threads;
+    for (uint32_t i = 0; i < processor_count; i++) {
+        surface_threads.emplace_back(create_destroy_surface_loop, &env, num_loops, &inst);
+    }
+    for (uint32_t i = 0; i < processor_count; i++) {
+        surface_threads[i].join();
+    }
+}
