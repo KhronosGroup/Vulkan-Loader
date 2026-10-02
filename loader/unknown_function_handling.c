@@ -63,6 +63,7 @@ void loader_free_phys_dev_ext_table(struct loader_instance *inst) { (void)inst; 
 #else
 
 #include "allocation.h"
+#include "loader.h"
 #include "log.h"
 
 // Forward declarations
@@ -210,12 +211,22 @@ void *loader_dev_ext_gpa_impl(struct loader_instance *inst, const char *funcName
     return out_function;
 }
 
+// Main interface functions. Both hold loader_lock while registering a function: the implementation appends to the
+// instance's unknown function name table and walks the driver and logical device lists, all of which
+// vkCreateDevice/vkDestroyDevice/vkEnumeratePhysicalDevices mutate under that lock, while vkGetInstanceProcAddr takes
+// no lock of its own. loader_lock is recursive, so callers which already hold it are unaffected.
 void *loader_dev_ext_gpa_tramp(struct loader_instance *inst, const char *funcName) {
-    return loader_dev_ext_gpa_impl(inst, funcName, true);
+    loader_platform_thread_lock_mutex(&loader_lock);
+    void *addr = loader_dev_ext_gpa_impl(inst, funcName, true);
+    loader_platform_thread_unlock_mutex(&loader_lock);
+    return addr;
 }
 
 void *loader_dev_ext_gpa_term(struct loader_instance *inst, const char *funcName) {
-    return loader_dev_ext_gpa_impl(inst, funcName, false);
+    loader_platform_thread_lock_mutex(&loader_lock);
+    void *addr = loader_dev_ext_gpa_impl(inst, funcName, false);
+    loader_platform_thread_unlock_mutex(&loader_lock);
+    return addr;
 }
 
 // Physical Device function handling
@@ -367,12 +378,19 @@ void *loader_phys_dev_ext_gpa_impl(struct loader_instance *inst, const char *fun
     }
     return loader_get_phys_dev_ext_termin(new_function_index);
 }
-// Main interface functions, makes it clear whether it is getting a terminator or trampoline
+// Main interface functions, makes it clear whether it is getting a terminator or trampoline. Both hold loader_lock for
+// the same reason as the device variants above.
 void *loader_phys_dev_ext_gpa_tramp(struct loader_instance *inst, const char *funcName) {
-    return loader_phys_dev_ext_gpa_impl(inst, funcName, true);
+    loader_platform_thread_lock_mutex(&loader_lock);
+    void *addr = loader_phys_dev_ext_gpa_impl(inst, funcName, true);
+    loader_platform_thread_unlock_mutex(&loader_lock);
+    return addr;
 }
 void *loader_phys_dev_ext_gpa_term(struct loader_instance *inst, const char *funcName) {
-    return loader_phys_dev_ext_gpa_impl(inst, funcName, false);
+    loader_platform_thread_lock_mutex(&loader_lock);
+    void *addr = loader_phys_dev_ext_gpa_impl(inst, funcName, false);
+    loader_platform_thread_unlock_mutex(&loader_lock);
+    return addr;
 }
 
 #endif

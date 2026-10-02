@@ -199,3 +199,87 @@ TEST(Threading, SurfaceCreateDestroyLoop) {
         surface_threads[i].join();
     }
 }
+
+// The driver reports these through vk_icdGetPhysicalDeviceProcAddr, so vkGetInstanceProcAddr has to append each one to
+// the loader's instance wide unknown function tables before it can hand back a trampoline.
+VKAPI_ATTR uint32_t VKAPI_CALL test_unknown_phys_dev_function(VkPhysicalDevice, uint32_t foo) { return foo; }
+
+void get_unknown_function_loop(InstWrapper* inst, std::vector<std::string> const* func_names) {
+    for (auto const& name : *func_names) {
+        PFN_vkVoidFunction func = inst->load(name.c_str());
+        ASSERT_NE(func, nullptr);
+    }
+}
+
+TEST(Threading, GetUnknownPhysicalDeviceFunctionLoop) {
+    // Capped so that thread_count * funcs_per_thread stays under MAX_NUM_UNKNOWN_EXTS on a machine with many cores
+    uint32_t thread_count = std::thread::hardware_concurrency();
+    if (thread_count < 2) thread_count = 2;
+    if (thread_count > 8) thread_count = 8;
+    const uint32_t funcs_per_thread = 16;
+
+    FrameworkEnvironment env{FrameworkSettings{}.set_log_filter("")};
+    auto& phys_dev = env.add_icd(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA).add_and_get_physical_device({});
+
+    // Each thread queries its own set of names, so every query appends a new entry rather than finding an existing one
+    std::vector<std::vector<std::string>> func_names{thread_count};
+    for (uint32_t i = 0; i < thread_count; i++) {
+        for (uint32_t j = 0; j < funcs_per_thread; j++) {
+            func_names[i].push_back("vkNotRealFuncTEST_" + std::to_string(i) + "_" + std::to_string(j));
+            phys_dev.custom_physical_device_functions.push_back(
+                VulkanFunction{func_names[i].back(), to_vkVoidFunction(test_unknown_phys_dev_function)});
+        }
+    }
+
+    InstWrapper inst{env.vulkan_functions};
+    inst.CheckCreate();
+
+    std::vector<std::thread> function_query_threads;
+    for (uint32_t i = 0; i < thread_count; i++) {
+        function_query_threads.emplace_back(get_unknown_function_loop, &inst, &func_names[i]);
+    }
+    for (uint32_t i = 0; i < thread_count; i++) {
+        function_query_threads[i].join();
+    }
+}
+
+// Reported through the driver's vkGetInstanceProcAddr, which puts them on the unknown device function path. Registering
+// one walks every driver's logical device list, which vkCreateDevice and vkDestroyDevice are editing in the other threads.
+VKAPI_ATTR uint32_t VKAPI_CALL test_unknown_device_function(VkDevice, uint32_t foo) { return foo; }
+
+void create_destroy_device_only_loop(InstWrapper* inst, uint32_t num_loops) {
+    for (uint32_t i = 0; i < num_loops; i++) {
+        DeviceWrapper dev{*inst};
+        dev.CheckCreate(inst->GetPhysDev());
+    }
+}
+
+TEST(Threading, GetUnknownDeviceFunctionWhileCreatingDevices) {
+    const uint32_t thread_count = 4;
+    const uint32_t funcs_per_thread = 16;
+    const uint32_t num_loops_create_destroy_device = 50;
+
+    FrameworkEnvironment env{FrameworkSettings{}.set_log_filter("")};
+    auto& phys_dev = env.add_icd(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA).add_and_get_physical_device({});
+
+    std::vector<std::vector<std::string>> func_names{thread_count};
+    for (uint32_t i = 0; i < thread_count; i++) {
+        for (uint32_t j = 0; j < funcs_per_thread; j++) {
+            func_names[i].push_back("vkNotRealDeviceFuncTEST_" + std::to_string(i) + "_" + std::to_string(j));
+            phys_dev.known_device_functions.push_back(
+                VulkanFunction{func_names[i].back(), to_vkVoidFunction(test_unknown_device_function)});
+        }
+    }
+
+    InstWrapper inst{env.vulkan_functions};
+    inst.CheckCreate();
+
+    std::vector<std::thread> threads;
+    for (uint32_t i = 0; i < thread_count; i++) {
+        threads.emplace_back(get_unknown_function_loop, &inst, &func_names[i]);
+        threads.emplace_back(create_destroy_device_only_loop, &inst, num_loops_create_destroy_device);
+    }
+    for (auto& thread : threads) {
+        thread.join();
+    }
+}
