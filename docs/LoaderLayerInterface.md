@@ -55,8 +55,9 @@
   - [Creating New Dispatchable Objects](#creating-new-dispatchable-objects)
   - [Versioning and Activation Interactions](#versioning-and-activation-interactions)
 - [Layer Manifest File Format](#layer-manifest-file-format)
+  - [JSON Schema for Layer Manifest Files](#json-schema-for-layer-manifest-files)
   - [Layer Manifest File Version History](#layer-manifest-file-version-history)
-  - [Layer Manifest File Version 1.2.1](#layer-manifest-file-version-121)
+    - [Layer Manifest File Version 1.2.1](#layer-manifest-file-version-121)
     - [Layer Manifest File Version 1.2.0](#layer-manifest-file-version-120)
     - [Layer Manifest File Version 1.1.2](#layer-manifest-file-version-112)
     - [Layer Manifest File Version 1.1.1](#layer-manifest-file-version-111)
@@ -1703,12 +1704,31 @@ Here's an example of a meta-layer manifest file:
 }
 ```
 
+### JSON Schema for Layer Manifest Files
+
+The Layer Manifest file can be validated against the provided JSON Schema files.
+This offers a quick way to check that the manifest file matches the format the
+loader expects.
+
+While the schema files are located in the repo, it is best to reference the web
+URL `https://schema.khronos.org/vulkan/layer_manifest_X_Y_Z.json`
+where `X`, `Y`, and `Z` correspond to the file_format_version used by the manifest.
+
+For example, a manifest of version 1.2.1 should use the following:
+
+```json
+{
+    "$schema":"https://schema.khronos.org/vulkan/layer_manifest_1_2_1.json",
+    "file_format_version" : "1.2.1",
+    ...
+```
 
 <table style="width:100%">
   <tr>
     <th>JSON Node</th>
     <th>Description and Notes</th>
     <th>Restrictions</th>
+    <th>JSON Type</th>
     <th>Parent</th>
     <th>Introspection Query</th>
   </tr>
@@ -1722,6 +1742,7 @@ Here's an example of a meta-layer manifest file:
         For example: 1.0.33.
     </td>
     <td>None</td>
+    <td>string</td>
     <td>"layer"/"layers"</td>
     <td><small>vkEnumerateInstanceLayerProperties</small></td>
   </tr>
@@ -1730,6 +1751,7 @@ Here's an example of a meta-layer manifest file:
     <td>List of paths to executables that the meta-layer applies to.
     </td>
     <td><b>Meta-layers Only</b></td>
+    <td>array of strings</td>
     <td>"layer"/"layers"</td>
     <td><small>N/A</small></td>
   </tr>
@@ -1739,6 +1761,7 @@ Here's an example of a meta-layer manifest file:
         requested by the application.
     </td>
     <td><b>Meta-layers Only</b></td>
+    <td>array of strings</td>
     <td>"layer"/"layers"</td>
     <td><small>N/A</small></td>
   </tr>
@@ -1754,6 +1777,7 @@ Here's an example of a meta-layer manifest file:
         <b>This field must not be present if "library_path" is defined</b>.
     </td>
     <td><b>Meta-layers Only</b></td>
+    <td>array of strings</td>
     <td>"layer"/"layers"</td>
     <td><small>N/A</small></td>
   </tr>
@@ -1761,6 +1785,7 @@ Here's an example of a meta-layer manifest file:
     <td>"description"</td>
     <td>A high-level description of the layer and its intended use.</td>
     <td>None</td>
+    <td>string</td>
     <td>"layer"/"layers"</td>
     <td><small>vkEnumerateInstanceLayerProperties</small></td>
   </tr>
@@ -1780,6 +1805,7 @@ Here's an example of a meta-layer manifest file:
         by the supported extension.
     </td>
     <td>None</td>
+    <td>array</td>
     <td>"layer"/"layers"</td>
     <td><small>vkEnumerateDeviceExtensionProperties</small></td>
   </tr>
@@ -1796,6 +1822,7 @@ Here's an example of a meta-layer manifest file:
         set, the implicit layer is disabled.
     </td>
     <td><b>Implicit Layers Only</b></td>
+    <td>object</td>
     <td>"layer"/"layers"</td>
     <td><small>N/A</small></td>
   </tr>
@@ -1812,6 +1839,7 @@ Here's an example of a meta-layer manifest file:
         implicit layer(s).
     </td>
     <td><b>Implicit Layers Only</b></td>
+    <td>object</td>
     <td>"layer"/"layers"</td>
     <td><small>N/A</small></td>
   </tr>
@@ -1821,6 +1849,7 @@ Here's an example of a meta-layer manifest file:
         Supported versions are: 1.0.0, 1.0.1, 1.1.0, 1.1.1, 1.1.2 and 1.2.0.
     </td>
     <td>None</td>
+    <td>string</td>
     <td>None</td>
     <td><small>N/A</small></td>
   </tr>
@@ -1833,6 +1862,7 @@ Here's an example of a meta-layer manifest file:
         name for `vkNegotiateLoaderLayerInterfaceVersion`.
     </td>
     <td>None</td>
+    <td>object</td>
     <td>"layer"/"layers"</td>
     <td><small>vkGet*ProcAddr</small></td>
   </tr>
@@ -1843,6 +1873,7 @@ Here's an example of a meta-layer manifest file:
         the loader and/or application can identify it properly.
     </td>
     <td>None</td>
+    <td>string</td>
     <td>"layer"/"layers"</td>
     <td><small>vkEnumerateInstanceLayerProperties</small></td>
   </tr>
@@ -1858,6 +1889,7 @@ Here's an example of a meta-layer manifest file:
         "specVersion" respectively.
     </td>
     <td>None</td>
+    <td>array</td>
     <td>"layer"/"layers"</td>
     <td><small>vkEnumerateInstanceExtensionProperties</small></td>
   </tr>
@@ -1866,6 +1898,7 @@ Here's an example of a meta-layer manifest file:
     <td>The identifier used to group a single layer's information together.
     </td>
     <td>None</td>
+    <td>object</td>
     <td>None</td>
     <td><small>vkEnumerateInstanceLayerProperties</small></td>
   </tr>
@@ -1875,6 +1908,7 @@ Here's an example of a meta-layer manifest file:
         This requires a minimum Manifest file format version of 1.0.1.
     </td>
     <td>None</td>
+    <td>object</td>
     <td>None</td>
     <td><small>vkEnumerateInstanceLayerProperties</small></td>
   </tr>
@@ -1894,6 +1928,7 @@ Here's an example of a meta-layer manifest file:
         <b>This field must not be present if "component_layers" is defined</b>.
     </td>
     <td><b>Not Valid For Meta-layers</b></td>
+    <td>string</td>
     <td>"layer"/"layers"</td>
     <td><small>N/A</small></td>
   </tr>
@@ -1903,6 +1938,9 @@ Here's an example of a meta-layer manifest file:
         Allows the loader to quickly determine if the architecture of the layer
         matches that of the running application. <br />
         The only valid values are "32" and "64".</td>
+    <td><b>Not Valid For Meta-layers</b></td>
+    <td>string</td>
+        <td>"layer"/"layers"</td>
     <td><small>N/A</small></td>
   </tr>
   <tr>
@@ -1910,6 +1948,7 @@ Here's an example of a meta-layer manifest file:
     <td>"name"</td>
     <td>The string used to uniquely identify this layer to applications.</td>
     <td>None</td>
+    <td>string</td>
     <td>"layer"/"layers"</td>
     <td><small>vkEnumerateInstanceLayerProperties</small></td>
   </tr>
@@ -1919,6 +1958,7 @@ Here's an example of a meta-layer manifest file:
         layers.
     </td>
     <td><b>Meta-layers Only</b></td>
+    <td>array of strings</td>
     <td>"layer"/"layers"</td>
     <td><small>N/A</small></td>
   </tr>
@@ -1935,6 +1975,7 @@ Here's an example of a meta-layer manifest file:
         more information.
     </td>
     <td><b>Implicit Layers Only</b></td>
+    <td>object</td>
     <td>"layer"/"layers"</td>
     <td><small>vkEnumerateInstance*Properties</small></td>
   </tr>
@@ -1952,6 +1993,7 @@ Here's an example of a meta-layer manifest file:
         not found.
     </td>
     <td>None</td>
+    <td>string</td>
     <td>"layer"/"layers"</td>
     <td><small>vkEnumerate*LayerProperties</small></td>
   </tr>
@@ -1959,10 +2001,10 @@ Here's an example of a meta-layer manifest file:
 
 ### Layer Manifest File Version History
 
-The current highest supported Layer Manifest file format supported is 1.2.0.
+The current highest supported Layer Manifest file format supported is 1.2.1.
 Information about each version is detailed in the following sub-sections:
 
-### Layer Manifest File Version 1.2.1
+#### Layer Manifest File Version 1.2.1
 
 Added the "library\_arch" field to the layer manifest to allow the loader to
 quickly determine if the layer matches the architecture of the current running
