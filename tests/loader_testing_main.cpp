@@ -29,6 +29,8 @@
 
 #include "util/test_defines.h"
 
+#include <exception>
+
 // Makes any failed assertion throw, allowing for graceful cleanup of resources instead of hard aborts
 class ThrowListener : public testing::EmptyTestEventListener {
     void OnTestPartResult(const testing::TestPartResult& result) override {
