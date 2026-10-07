@@ -70,7 +70,7 @@ VkResult wsi_unwrap_icd_surface(struct loader_icd_term *icd_term, VkSurfaceKHR *
         return VK_SUCCESS;
     }
 #endif  // VK_USE_PLATFORM_ANDROID_KHR
-#if defined(VK_USE_PLATFORM_MACOS_MVK)
+#if defined(VK_USE_PLATFORM_IOS_MVK)
     if (icd_surface->base.platform == VK_ICD_WSI_PLATFORM_IOS) {
         // iOS does not use ICD-created surfaces (matching legacy behavior)
         // NOTE: This may be incorrect and in fact the legacy code could result in out-of-bounds
@@ -78,7 +78,7 @@ VkResult wsi_unwrap_icd_surface(struct loader_icd_term *icd_term, VkSurfaceKHR *
         // behavior (while also eliminating the chance for out-of-bounds accesses).
         return VK_SUCCESS;
     }
-#endif  // VK_USE_PLATFORM_MACOS_MVK
+#endif  // VK_USE_PLATFORM_IOS_MVK
 
     if (NULL == icd_term->surface_list.list ||
         icd_term->surface_list.capacity <= icd_surface->surface_index * sizeof(VkSurfaceKHR)) {
@@ -329,14 +329,14 @@ VKAPI_ATTR void VKAPI_CALL terminator_DestroySurfaceKHR(VkInstance instance, VkS
             return;
         }
 #endif  // VK_USE_PLATFORM_ANDROID_KHR
-#if defined(VK_USE_PLATFORM_MACOS_MVK)
+#if defined(VK_USE_PLATFORM_IOS_MVK)
         if (icd_surface->base.platform == VK_ICD_WSI_PLATFORM_IOS) {
             // Same as Android: an iOS surface is a smaller VkIcdSurfaceIOS without a surface_index or create_info.
             // NOLINTNEXTLINE(performance-no-int-to-ptr) - decoding the loader-internal pointer out of the handle
             loader_instance_heap_free(loader_inst, (void *)(uintptr_t)surface);
             return;
         }
-#endif  // VK_USE_PLATFORM_MACOS_MVK
+#endif  // VK_USE_PLATFORM_IOS_MVK
         // Every surface creation terminator holds loader_lock while it reserves a slot in loader_inst->surfaces_list and
         // grows each driver's surface_list, either of which can reallocate the list. vkDestroySurfaceKHR only requires
         // the surface itself to be externally synchronized, so take the same lock before touching that shared state.
