@@ -202,17 +202,13 @@ jobs:
 
     linux-arm:
         needs: codegen
-        runs-on: ubuntu-24.04-arm
+        runs-on: ubuntu-26.04-arm
         timeout-minutes: 30
         steps:
             - uses: actions/checkout@v7
             - uses: actions/setup-python@v7
               with:
                 python-version: '3.11'
-            - name: Test CMake min
-              uses: lukka/get-cmake@latest
-              with:
-                  cmakeVersion: 3.22.1
             - run: sudo apt update
             - run: sudo apt install --yes --no-install-recommends libwayland-dev libxrandr-dev
             - name: ccache
@@ -228,6 +224,10 @@ jobs:
                   -D BUILD_WERROR=ON \
                   -D CMAKE_C_COMPILER_LAUNCHER=ccache \
                   -D CMAKE_CXX_COMPILER_LAUNCHER=ccache
+              env:
+                # Enables BTI, PAC, & GCS with GCC 15+
+                CMAKE_C_FLAGS: -mbranch-protection=standard
+                CMAKE_CXX_FLAGS: -mbranch-protection=standard
             - run: cmake --build build
             - run: ctest --parallel --output-on-failure --test-dir build/
             - run: cmake --install build --prefix /tmp

@@ -51,6 +51,19 @@
   #define GNU_PROPERTY_AARCH64_POINTER_AUTH 0
 #endif
 
+/*
+ * Guarded Control Stack (FEAT_GCS). The trampolines tail-call via 'br', which does not touch the
+ * GCS, and contain no 'ret'. The only 'bl' (the error-logging call in PhysDevExtTermin) is a
+ * normal balanced call/return. The code is therefore GCS-compatible and only needs to be marked.
+ * Without this bit, the linker ANDs GCS out of libvulkan's GNU_PROPERTY_AARCH64_FEATURE_1_AND.
+ */
+#if defined(__ARM_FEATURE_GCS_DEFAULT) && __ARM_FEATURE_GCS_DEFAULT == 1
+  #define GNU_PROPERTY_AARCH64_GCS 4 /* bit 2 GNU Notes is for GCS support */
+#else
+  #define GNU_PROPERTY_AARCH64_GCS 0
+#endif
+
+
 .if AARCH_64
 
 .macro PhysDevExtTramp num
@@ -182,17 +195,17 @@ vkdev_ext\num:
 
 #if defined(__ELF__)
 .section .note.GNU-stack,"",%progbits
-/* Add the PAC and BTI support to GNU Notes section for ELF object files */
-#if GNU_PROPERTY_AARCH64_BTI != 0 || GNU_PROPERTY_AARCH64_POINTER_AUTH != 0
+/* Add the PAC, BTI, and/or GCS support to GNU Notes section for ELF object files */
+#if GNU_PROPERTY_AARCH64_BTI != 0 || GNU_PROPERTY_AARCH64_POINTER_AUTH != 0 || GNU_PROPERTY_AARCH64_GCS != 0
     .pushsection .note.gnu.property, "a"; /* Start a new allocatable section */
-    .balign 8; /* align it on a byte boundry */
+    .balign 8; /* align it on a byte boundary */
     .long 4; /* size of "GNU\0" */
     .long 0x10; /* size of descriptor */
     .long 0x5; /* NT_GNU_PROPERTY_TYPE_0 */
     .asciz "GNU";
     .long 0xc0000000; /* GNU_PROPERTY_AARCH64_FEATURE_1_AND */
     .long 4; /* Four bytes of data */
-    .long (GNU_PROPERTY_AARCH64_BTI|GNU_PROPERTY_AARCH64_POINTER_AUTH); /* BTI or PAC is enabled */
+    .long (GNU_PROPERTY_AARCH64_BTI|GNU_PROPERTY_AARCH64_POINTER_AUTH|GNU_PROPERTY_AARCH64_GCS) /* BTI, PAC, and/or GCS is enabled */
     .long 0; /* padding for 8 byte alignment */
     .popsection; /* end the section */
 #endif
