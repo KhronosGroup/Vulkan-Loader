@@ -28,7 +28,7 @@
 
 /*
  * References:
- *  - https://developer.arm.com/documentation/101028/0012/5--Feature-test-macros
+ *  - https://arm-software.github.io/acle/main/acle.html
  *  - https://github.com/ARM-software/abi-aa/blob/main/aaelf64/aaelf64.rst
  */
 #if defined(__ARM_FEATURE_BTI_DEFAULT) && __ARM_FEATURE_BTI_DEFAULT == 1
