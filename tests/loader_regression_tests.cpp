@@ -2504,6 +2504,25 @@ TEST(EnumeratePhysicalDeviceGroups, CallThriceAddGroupInBetween) {
     }
 }
 
+// A driver which fails the physical device count query must be skipped, not retried forever.
+TEST(EnumeratePhysicalDeviceGroups, DriverWhichFailsCountQueryIsSkipped) {
+    FrameworkEnvironment env{};
+    // A 1.0 driver does not expose vkEnumeratePhysicalDeviceGroups, so the loader counts its groups with
+    // vkEnumeratePhysicalDevices instead.
+    auto& driver = env.add_icd(TEST_ICD_PATH_VERSION_2).set_min_icd_interface_version(5);
+    driver.add_and_get_physical_device("physical_device_0");
+
+    InstWrapper inst{env.vulkan_functions};
+    inst.create_info.set_api_version(VK_API_VERSION_1_1);
+    inst.CheckCreate();
+
+    driver.set_enum_physical_devices_return_code(VK_ERROR_INITIALIZATION_FAILED);
+
+    uint32_t returned_group_count = 0;
+    ASSERT_EQ(VK_ERROR_INITIALIZATION_FAILED, inst->vkEnumeratePhysicalDeviceGroups(inst, &returned_group_count, nullptr));
+    ASSERT_EQ(0U, returned_group_count);
+}
+
 // Start with 7 devices in 4 different groups, and then remove a group,
 // querying vkEnumeratePhysicalDeviceGroups before and after the remove.
 TEST(EnumeratePhysicalDeviceGroups, CallTwiceRemoveGroupInBetween) {
