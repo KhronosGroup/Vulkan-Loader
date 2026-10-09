@@ -7297,12 +7297,12 @@ VkResult loader_apply_settings_device_configurations(struct loader_instance *ins
                 }
                 if (pd_details[j].pd_supports_driver_properties) {
                     loader_log(inst, VULKAN_LOADER_DEBUG_BIT, 0,
-                               "pPhysicalDevices array index %d is set to \"%s\" (%s, version %d) ", written_output_index,
+                               "pPhysicalDevices array index %d is set to \"%s\" (%s, version %u) ", written_output_index,
                                pd_details[j].properties.deviceName, pd_details[j].driver_properties.driverName,
                                pd_details[j].properties.driverVersion);
                 } else {
                     loader_log(inst, VULKAN_LOADER_DEBUG_BIT, 0,
-                               "pPhysicalDevices array index %d is set to \"%s\" (driver version %d) ", written_output_index,
+                               "pPhysicalDevices array index %d is set to \"%s\" (driver version %u) ", written_output_index,
                                pd_details[j].properties.deviceName, pd_details[j].properties.driverVersion);
                 }
                 pPhysicalDevices[written_output_index++] = (VkPhysicalDevice)inst->phys_devs_term[j];
@@ -7323,7 +7323,7 @@ VkResult loader_apply_settings_device_configurations(struct loader_instance *ins
                     inst, VULKAN_LOADER_WARN_BIT, 0,
                     "loader_apply_settings_device_configurations: settings file contained device_configuration which does not "
                     "appear in the enumerated VkPhysicalDevices. Missing VkPhysicalDevice with deviceName: \"%s\", "
-                    "deviceUUID: %s, driverName: %s, driverUUID: %s, driverVersion: %d",
+                    "deviceUUID: %s, driverName: %s, driverUUID: %s, driverVersion: %u",
                     inst->settings.device_configurations[i].deviceName, device_uuid_str,
                     inst->settings.device_configurations[i].driverName, driver_uuid_str,
                     inst->settings.device_configurations[i].driverVersion);
@@ -7332,7 +7332,7 @@ VkResult loader_apply_settings_device_configurations(struct loader_instance *ins
                     inst, VULKAN_LOADER_WARN_BIT, 0,
                     "loader_apply_settings_device_configurations: settings file contained device_configuration which does not "
                     "appear in the enumerated VkPhysicalDevices. Missing VkPhysicalDevice with deviceName: \"%s\", "
-                    "deviceUUID: %s, driverUUID: %s, driverVersion: %d",
+                    "deviceUUID: %s, driverUUID: %s, driverVersion: %u",
                     inst->settings.device_configurations[i].deviceName, device_uuid_str, driver_uuid_str,
                     inst->settings.device_configurations[i].driverVersion);
             } else {
@@ -7340,7 +7340,7 @@ VkResult loader_apply_settings_device_configurations(struct loader_instance *ins
                     inst, VULKAN_LOADER_WARN_BIT, 0,
                     "loader_apply_settings_device_configurations: settings file contained device_configuration which does not "
                     "appear in the enumerated VkPhysicalDevices. Missing VkPhysicalDevice with deviceUUID: "
-                    "%s, driverUUID: %s, driverVersion: %d",
+                    "%s, driverUUID: %s, driverVersion: %u",
                     device_uuid_str, driver_uuid_str, inst->settings.device_configurations[i].driverVersion);
             }
         }

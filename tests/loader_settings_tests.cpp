@@ -3598,6 +3598,39 @@ TEST(SettingsFile, DeviceConfigurationSkipsMalformedEntry) {
     ASSERT_EQ(props.driverVersion, 42U);
 }
 
+// driverVersion is a uint32_t and real drivers report values above INT32_MAX (NVIDIA packs the major version into the
+// top bits), so the settings file parser must not go through cJSON's saturating int field.
+TEST(SettingsFile, DeviceConfigurationDriverVersionAboveInt32Max) {
+    FrameworkEnvironment env{};
+    VulkanUUID device_uuid = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15};
+    VulkanUUID driver_uuid = {16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31};
+
+    auto& icd = env.add_icd(TEST_ICD_PATH_VERSION_2).set_icd_api_version(VK_API_VERSION_1_1);
+    auto& phys_dev = icd.add_and_get_physical_device(PhysicalDevice()
+                                                         .set_api_version(VK_API_VERSION_1_2)
+                                                         .set_deviceUUID(device_uuid)
+                                                         .set_driverUUID(driver_uuid)
+                                                         .set_deviceName("configured_device"));
+    phys_dev.properties.driverVersion = 2307751936U;  // NVIDIA 550.54.0: (550 << 22) | (54 << 14) | 0
+
+    env.loader_settings.set_file_format_version({1, 0, 0}).add_app_specific_setting(AppSpecificSettings{});
+    env.loader_settings.app_specific_settings.at(0).add_device_configuration(
+        LoaderSettingsDeviceConfiguration{}
+            .set_deviceUUID(device_uuid)
+            .set_driverUUID(driver_uuid)
+            .set_driverVersion(phys_dev.properties.driverVersion));
+    env.update_loader_settings(env.loader_settings);
+
+    InstWrapper inst{env.vulkan_functions};
+    inst.create_info.set_api_version(VK_API_VERSION_1_2);
+    inst.CheckCreate();
+    auto pd = inst.GetPhysDev();
+
+    VkPhysicalDeviceProperties props{};
+    inst->vkGetPhysicalDeviceProperties(pd, &props);
+    ASSERT_EQ(props.driverVersion, phys_dev.properties.driverVersion);
+}
+
 // Three drivers, second on has the matching UUID in the settings file.
 TEST(SettingsFile, DriverConfigurationIgnoresDriverEnvVars) {
     FrameworkEnvironment env{};

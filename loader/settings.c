@@ -347,10 +347,12 @@ VkResult parse_device_configuration(const struct loader_instance* inst, cJSON* d
     }
 
     cJSON* driverVersion_json = loader_cJSON_GetObjectItem(device_configuration_json, "driverVersion");
-    if (NULL == driverVersion_json || driverVersion_json->type != cJSON_Number) {
+    // Read the number through valuedouble - valueint saturates at INT_MAX, which real driverVersion values exceed
+    if (NULL == driverVersion_json || driverVersion_json->type != cJSON_Number || driverVersion_json->valuedouble < 0 ||
+        driverVersion_json->valuedouble > (double)UINT32_MAX) {
         return VK_ERROR_INITIALIZATION_FAILED;
     }
-    device_configuration->driverVersion = driverVersion_json->valueint;
+    device_configuration->driverVersion = (uint32_t)driverVersion_json->valuedouble;
 
     VkResult deviceNameRes = loader_parse_json_string_to_existing_str(
         device_configuration_json, "deviceName", VK_MAX_PHYSICAL_DEVICE_NAME_SIZE, device_configuration->deviceName);
@@ -663,7 +665,7 @@ void log_settings(const struct loader_instance* inst, loader_settings* settings)
             loader_log_generate_uuid_string(settings->device_configurations[i].driverUUID, driver_uuid_str);
             loader_log(inst, VULKAN_LOADER_DEBUG_BIT, 0, "deviceUUID: %s", device_uuid_str);
             loader_log(inst, VULKAN_LOADER_DEBUG_BIT, 0, "driverUUID: %s", driver_uuid_str);
-            loader_log(inst, VULKAN_LOADER_DEBUG_BIT, 0, "driverVersion: %d", settings->device_configurations[i].driverVersion);
+            loader_log(inst, VULKAN_LOADER_DEBUG_BIT, 0, "driverVersion: %u", settings->device_configurations[i].driverVersion);
             if ('\0' != settings->device_configurations[i].deviceName[0]) {
                 loader_log(inst, VULKAN_LOADER_DEBUG_BIT, 0, "deviceName: %s", settings->device_configurations[i].deviceName);
             }
