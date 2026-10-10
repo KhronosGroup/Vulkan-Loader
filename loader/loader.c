@@ -2542,12 +2542,9 @@ void loader_get_fullpath(const char *file, const char *in_dirs, size_t out_size,
         // for (dir = dirs_copy; *dir && (next_dir = loader_get_next_path(dir)); dir = next_dir) {
         char *dir = dirs_copy;
         char *next_dir = loader_get_next_path(dir);
-        while (*dir && next_dir) {
+        while (*dir && next_dir && out_fullpath) {
             int path_concat_ret = snprintf(out_fullpath, out_size, "%s%c%s", dir, DIRECTORY_SYMBOL, file);
-            if (path_concat_ret < 0) {
-                continue;
-            }
-            if (loader_platform_file_exists(out_fullpath)) {
+            if (path_concat_ret >= 0 && loader_platform_file_exists(out_fullpath)) {
                 return;
             }
             dir = next_dir;
@@ -7785,6 +7782,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_EnumeratePhysicalDeviceGroups(
                            "terminator_EnumeratePhysicalDeviceGroups:  Failed during dispatch call of \'EnumeratePhysicalDevices\' "
                            "to ICD %s to get plain phys dev count.",
                            icd_term->scanned_icd->lib_name);
+                icd_term = icd_term->next;
                 continue;
             }
         } else {
@@ -7795,6 +7793,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_EnumeratePhysicalDeviceGroups(
                            "terminator_EnumeratePhysicalDeviceGroups:  Failed during dispatch call of "
                            "\'EnumeratePhysicalDeviceGroups\' to ICD %s to get count.",
                            icd_term->scanned_icd->lib_name);
+                icd_term = icd_term->next;
                 continue;
             }
         }
