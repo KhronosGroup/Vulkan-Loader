@@ -130,6 +130,39 @@ TEST(Threading, DeviceCreateDestroyLoop) {
     }
 }
 
+TEST(Threading, LayersDeviceCreateDestroyLoop) {
+    const auto processor_count = std::thread::hardware_concurrency();
+
+    FrameworkEnvironment env{FrameworkSettings{}.set_log_filter("")};
+    auto& driver = env.add_icd(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA);
+
+    env.add_implicit_layer({}, ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                             .set_name("implicit_layer_name")
+                                                             .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                             .set_disable_environment("DISABLE_ME")));
+    env.get_test_layer(0).set_call_create_and_destroy_device_in_GetQueue(true);
+
+    uint32_t num_loops_create_destroy_device = 100;
+    uint32_t num_loops_try_get_device_proc_addr = 5;
+
+    driver.add_and_get_physical_device("physical_device_0").known_device_functions = {
+        {"vkCmdBindPipeline", to_vkVoidFunction(test_vkCmdBindPipeline)},
+        {"vkCmdBindDescriptorSets", to_vkVoidFunction(test_vkCmdBindDescriptorSets)},
+        {"vkCmdBindVertexBuffers", to_vkVoidFunction(test_vkCmdBindVertexBuffers)},
+        {"vkCmdBindIndexBuffer", to_vkVoidFunction(test_vkCmdBindIndexBuffer)},
+        {"vkCmdDraw", to_vkVoidFunction(test_vkCmdDraw)}};
+
+    std::vector<std::thread> device_creation_threads;
+
+    for (uint32_t i = 0; i < processor_count; i++) {
+        device_creation_threads.emplace_back(create_destroy_device_loop, &env, num_loops_create_destroy_device,
+                                             num_loops_try_get_device_proc_addr);
+    }
+    for (uint32_t i = 0; i < processor_count; i++) {
+        device_creation_threads[i].join();
+    }
+}
+
 void set_debug_utils_name_loop(FrameworkEnvironment* env, uint32_t num_loops, InstWrapper* inst,
                                std::vector<VkPhysicalDevice>* phys_devs) {
     auto load_function = [&inst](const char* func_name) { return inst->load(func_name); };

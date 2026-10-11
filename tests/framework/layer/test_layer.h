@@ -27,6 +27,7 @@
 
 #pragma once
 
+#include <algorithm>
 #include <functional>
 #include <filesystem>
 
@@ -194,6 +195,7 @@ struct TestLayer {
 
     // Makes the layer try to create a device using the loader provided function in the layer chain
     BUILDER_VALUE(bool, call_create_device_while_create_device_is_called)
+    BUILDER_VALUE(bool, call_create_and_destroy_device_in_GetQueue)
     BUILDER_VALUE(uint32_t, physical_device_index_to_use_during_create_device)
 
     BUILDER_VALUE(bool, check_if_EnumDevExtProps_is_same_as_queried_function)
@@ -209,7 +211,6 @@ struct TestLayer {
 
     PFN_vkGetInstanceProcAddr next_vkGetInstanceProcAddr = VK_NULL_HANDLE;
     PFN_GetPhysicalDeviceProcAddr next_GetPhysicalDeviceProcAddr = VK_NULL_HANDLE;
-    PFN_vkGetDeviceProcAddr next_vkGetDeviceProcAddr = VK_NULL_HANDLE;
 
     VkInstance instance_handle = VK_NULL_HANDLE;
     VkLayerInstanceDispatchTable instance_dispatch_table{};
@@ -218,8 +219,13 @@ struct TestLayer {
         VkDevice device_handle = VK_NULL_HANDLE;
         VkLayerDispatchTable dispatch_table{};
         std::vector<Extension> enabled_extensions;
+        PFN_vkGetDeviceProcAddr next_vkGetDeviceProcAddr;
     };
     std::vector<Device> created_devices;
+    auto get_created_device(VkDevice device) {
+        return std::find_if(std::begin(created_devices), std::end(created_devices),
+                            [device](const TestLayer::Device& dev) { return device == dev.device_handle; });
+    }
 
     // Stores the callback that allows layers to create devices on their own
     PFN_vkLayerCreateDevice callback_vkCreateDevice{};
