@@ -4874,6 +4874,8 @@ VKAPI_ATTR VkResult VKAPI_CALL loader_layer_create_device(VkInstance instance, V
     struct loader_device *dev = NULL;
     struct loader_instance *inst = NULL;
 
+    loader_platform_thread_lock_mutex(&loader_lock);
+
     if (instance != VK_NULL_HANDLE) {
         inst = loader_get_instance(instance);
         internal_device = physicalDevice;
@@ -4974,6 +4976,8 @@ out:
     if (NULL != icd_exts.list) {
         loader_destroy_generic_list(inst, (struct loader_generic_list *)&icd_exts);
     }
+
+    loader_platform_thread_unlock_mutex(&loader_lock);
     return res;
 }
 
@@ -4985,6 +4989,8 @@ VKAPI_ATTR void VKAPI_CALL loader_layer_destroy_device(VkDevice device, const Vk
         return;
     }
 
+    loader_platform_thread_lock_mutex(&loader_lock);
+
     struct loader_icd_term *icd_term = loader_get_icd_and_device(device, &dev);
 
     destroyFunction(device, pAllocator);
@@ -4993,6 +4999,8 @@ VKAPI_ATTR void VKAPI_CALL loader_layer_destroy_device(VkDevice device, const Vk
         dev->icd_device = NULL;
         loader_remove_logical_device(icd_term, dev, pAllocator);
     }
+
+    loader_platform_thread_unlock_mutex(&loader_lock);
 }
 
 // Given the list of layers to activate in the loader_instance
