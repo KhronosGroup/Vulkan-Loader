@@ -256,7 +256,7 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateInstance(const VkInstanceCreateInfo*
         return VK_ERROR_INITIALIZATION_FAILED;
     }
 
-    if (layer.call_create_device_while_create_device_is_called) {
+    if (layer.call_create_device_while_create_device_is_called || layer.call_create_and_destroy_device_in_GetQueue) {
         auto* createDeviceCallback = get_chain_info(pCreateInfo, VK_LOADER_LAYER_CREATE_DEVICE_CALLBACK);
         layer.callback_vkCreateDevice = createDeviceCallback->u.layerDevice.pfnLayerCreateDevice;
         layer.callback_vkDestroyDevice = createDeviceCallback->u.layerDevice.pfnLayerDestroyDevice;
@@ -381,7 +381,7 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateInstance(const VkInstanceCreateInfo*
             reinterpret_cast<PFN_vkCreateDevice>(fpGetInstanceProcAddr(nullptr, "vkCreateDevice"));
     }
 
-    if (layer.call_create_device_while_create_device_is_called) {
+    if (layer.call_create_device_while_create_device_is_called || layer.call_create_and_destroy_device_in_GetQueue) {
         uint32_t phys_dev_count = 0;
         result = layer.instance_dispatch_table.EnumeratePhysicalDevices(layer.instance_handle, &phys_dev_count, nullptr);
         if (result != VK_SUCCESS) {
@@ -433,8 +433,6 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateDevice(VkPhysicalDevice physicalDevi
         return VK_ERROR_INITIALIZATION_FAILED;
     }
 
-    layer.next_vkGetDeviceProcAddr = fpGetDeviceProcAddr;
-
     if (layer.check_if_EnumDevExtProps_is_same_as_queried_function) {
         auto chain_info_EnumDeviceExtProps = reinterpret_cast<PFN_vkEnumerateDeviceExtensionProperties>(
             fpGetInstanceProcAddr(layer.instance_handle, "vkEnumerateDeviceExtensionProperties"));
@@ -455,6 +453,7 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateDevice(VkPhysicalDevice physicalDevi
     }
     TestLayer::Device device{};
     device.device_handle = *pDevice;
+    device.next_vkGetDeviceProcAddr = fpGetDeviceProcAddr;
 
     // initialize layer's dispatch table
     layer_init_device_dispatch_table(device.device_handle, &device.dispatch_table, fpGetDeviceProcAddr);
@@ -464,7 +463,7 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateDevice(VkPhysicalDevice physicalDevi
     }
 
     for (auto& func : layer.custom_device_interception_functions) {
-        auto next_func = layer.next_vkGetDeviceProcAddr(*pDevice, func.name.c_str());
+        auto next_func = fpGetDeviceProcAddr(*pDevice, func.name.c_str());
         layer.custom_dispatch_functions.at(func.name.c_str()) = next_func;
     }
 
@@ -485,7 +484,7 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateDevice(VkPhysicalDevice physicalDevi
     }
 
     if (layer.call_create_device_while_create_device_is_called) {
-        PFN_vkGetDeviceProcAddr next_gdpa = layer.next_vkGetDeviceProcAddr;
+        PFN_vkGetDeviceProcAddr next_gdpa = fpGetDeviceProcAddr;
         result = layer.callback_vkCreateDevice(
             instance_to_use, layer.queried_physical_devices.at(layer.physical_device_index_to_use_during_create_device),
             pCreateInfo, pAllocator, &layer.second_device_created_during_create_device.device_handle, get_instance_func,
@@ -684,6 +683,30 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vkEnumeratePhysicalDeviceGroups(
 
 // device functions
 
+VKAPI_ATTR void VKAPI_CALL test_vkGetDeviceQueue(VkDevice device, uint32_t queueFamilyIndex, uint32_t queueIndex, VkQueue* pQueue) {
+    auto it = layer.get_created_device(device);
+
+    if (layer.call_create_and_destroy_device_in_GetQueue) {
+        TestLayer::Device local_device{};
+        VkDeviceCreateInfo pCreateInfo{};
+
+        pCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+        PFN_vkGetDeviceProcAddr next_gdpa = it->next_vkGetDeviceProcAddr;
+        VkResult result = layer.callback_vkCreateDevice(
+            layer.instance_handle, layer.queried_physical_devices.at(layer.physical_device_index_to_use_during_create_device),
+            &pCreateInfo, nullptr, &local_device.device_handle, get_instance_func, &next_gdpa);
+        if (result != VK_SUCCESS) {
+            return;
+        }
+        // initialize the other device's dispatch table
+        layer_init_device_dispatch_table(local_device.device_handle, &local_device.dispatch_table, next_gdpa);
+
+        layer.callback_vkDestroyDevice(local_device.device_handle, nullptr, local_device.dispatch_table.DestroyDevice);
+    }
+
+    it->dispatch_table.GetDeviceQueue(device, queueFamilyIndex, queueIndex, pQueue);
+}
+
 VKAPI_ATTR void VKAPI_CALL test_vkDestroyDevice(VkDevice device, const VkAllocationCallbacks* pAllocator) {
     for (uint32_t i = 0; i < layer.spurious_device_memory_allocations.size();) {
         auto& allocation = layer.spurious_device_memory_allocations[i];
@@ -830,9 +853,10 @@ FRAMEWORK_EXPORT VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL vk_layerGetPhysicalDev
 
 // trampolines
 VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL get_device_func(VkDevice device, const char* pName);
-VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL get_device_func_impl([[maybe_unused]] VkDevice device, const char* pName) {
+VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL get_device_func_impl(VkDevice device, const char* pName) {
     if (string_eq(pName, "vkGetDeviceProcAddr")) return to_vkVoidFunction(get_device_func);
     if (string_eq(pName, "vkDestroyDevice")) return to_vkVoidFunction(test_vkDestroyDevice);
+    if (string_eq(pName, "vkGetDeviceQueue")) return to_vkVoidFunction(test_vkGetDeviceQueue);
 
     if (IsDeviceExtensionAvailable(device, VK_EXT_DEBUG_MARKER_EXTENSION_NAME)) {
         if (string_eq(pName, "vkDebugMarkerSetObjectTagEXT")) return to_vkVoidFunction(test_vkDebugMarkerSetObjectTagEXT);
@@ -867,11 +891,11 @@ VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL get_device_func_impl([[maybe_unused]] V
     return nullptr;
 }
 
-VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL get_device_func([[maybe_unused]] VkDevice device, const char* pName) {
+VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL get_device_func(VkDevice device, const char* pName) {
     PFN_vkVoidFunction ret_dev = get_device_func_impl(device, pName);
     if (ret_dev != nullptr) return ret_dev;
-
-    return layer.next_vkGetDeviceProcAddr(device, pName);
+    auto it = layer.get_created_device(device);
+    return it != layer.created_devices.end() ? it->next_vkGetDeviceProcAddr(device, pName) : nullptr;
 }
 
 VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL get_physical_device_func([[maybe_unused]] VkInstance instance, const char* pName) {
