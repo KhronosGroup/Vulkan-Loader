@@ -772,6 +772,10 @@ layers) in the following fashion:
  * Sort based on device type (Discrete, Integrated, Virtual, all others)
  * Sort internal to the types based on PCI information (Domain, Bus, Device, and
    Function).
+ * When the same device (same Vendor Id and Device Id) is reported by more than
+   one driver, drivers layered on top of D3D12 (as reported by
+   `VK_MSFT_layered_driver`, such as Dozen) are listed after the other drivers.
+   This matches the ordering used on Windows.
 
 This allows for a consistent physical device order from run to run on the same
 system, unless the actual underlying hardware changes.

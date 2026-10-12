@@ -68,12 +68,111 @@ int32_t device_type_compare(VkPhysicalDeviceType a, VkPhysicalDeviceType b) {
     return 0;
 }
 
+// Fill in the information used to sort a physical device. PCI bus information is read from VK_EXT_pci_bus_info and the
+// underlying API of drivers layered on top of another API, such as Dozen which implements Vulkan on top of D3D12, is read from
+// VK_MSFT_layered_driver.
+static VkResult linux_get_device_sort_info(struct loader_icd_term *icd_term, bool app_is_vulkan_1_1,
+                                           struct LinuxSortedDeviceInfo *info) {
+    VkPhysicalDeviceProperties dev_props = {0};
+    icd_term->dispatch.GetPhysicalDeviceProperties(info->physical_device, &dev_props);
+    info->device_type = dev_props.deviceType;
+    strncpy(info->device_name, dev_props.deviceName, VK_MAX_PHYSICAL_DEVICE_NAME_SIZE - 1);
+    info->device_name[VK_MAX_PHYSICAL_DEVICE_NAME_SIZE - 1] = '\0';
+    info->vendor_id = dev_props.vendorID;
+    info->device_id = dev_props.deviceID;
+    info->has_pci_bus_info = false;
+    info->layered_driver_underlying_api = VK_LAYERED_DRIVER_UNDERLYING_API_NONE_MSFT;
+
+    bool has_layered_driver_info = false;
+    uint32_t ext_count = 0;
+    icd_term->dispatch.EnumerateDeviceExtensionProperties(info->physical_device, NULL, &ext_count, NULL);
+    if (ext_count > 0) {
+        VkExtensionProperties *ext_props = (VkExtensionProperties *)loader_stack_alloc(sizeof(VkExtensionProperties) * ext_count);
+        if (NULL == ext_props) {
+            return VK_ERROR_OUT_OF_HOST_MEMORY;
+        }
+        uint32_t allocated_count = ext_count;
+        icd_term->dispatch.EnumerateDeviceExtensionProperties(info->physical_device, NULL, &ext_count, ext_props);
+        // The count returned by the second call sizes the array, but never read past what we actually allocated.
+        for (uint32_t ext = 0; ext < ext_count && ext < allocated_count; ++ext) {
+            if (!strncmp(ext_props[ext].extensionName, VK_EXT_PCI_BUS_INFO_EXTENSION_NAME, VK_MAX_EXTENSION_NAME_SIZE)) {
+                info->has_pci_bus_info = true;
+            } else if (!strncmp(ext_props[ext].extensionName, VK_MSFT_LAYERED_DRIVER_EXTENSION_NAME, VK_MAX_EXTENSION_NAME_SIZE)) {
+                has_layered_driver_info = true;
+            }
+        }
+    }
+
+    if (!info->has_pci_bus_info && !has_layered_driver_info) {
+        return VK_SUCCESS;
+    }
+
+    bool device_is_1_1_capable =
+        loader_check_version_meets_required(LOADER_VERSION_1_1_0, loader_make_version(dev_props.apiVersion));
+    PFN_vkGetPhysicalDeviceProperties2 GetPhysDevProps2 = NULL;
+    if (app_is_vulkan_1_1 && device_is_1_1_capable) {
+        GetPhysDevProps2 = icd_term->dispatch.GetPhysicalDeviceProperties2;
+    } else {
+        GetPhysDevProps2 = (PFN_vkGetPhysicalDeviceProperties2)icd_term->dispatch.GetPhysicalDeviceProperties2KHR;
+    }
+    if (NULL == GetPhysDevProps2) {
+        info->has_pci_bus_info = false;
+        return VK_SUCCESS;
+    }
+
+    VkPhysicalDevicePCIBusInfoPropertiesEXT pci_props =
+        (VkPhysicalDevicePCIBusInfoPropertiesEXT){.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PCI_BUS_INFO_PROPERTIES_EXT};
+    VkPhysicalDeviceLayeredDriverPropertiesMSFT layered_driver_props =
+        (VkPhysicalDeviceLayeredDriverPropertiesMSFT){.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_LAYERED_DRIVER_PROPERTIES_MSFT};
+    VkPhysicalDeviceProperties2 dev_props2 = (VkPhysicalDeviceProperties2){.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2};
+    // Only chain the structures of extensions supported by the device
+    if (info->has_pci_bus_info) {
+        pci_props.pNext = dev_props2.pNext;
+        dev_props2.pNext = &pci_props;
+    }
+    if (has_layered_driver_info) {
+        layered_driver_props.pNext = dev_props2.pNext;
+        dev_props2.pNext = &layered_driver_props;
+    }
+    GetPhysDevProps2(info->physical_device, &dev_props2);
+    if (info->has_pci_bus_info) {
+        info->pci_domain = pci_props.pciDomain;
+        info->pci_bus = pci_props.pciBus;
+        info->pci_device = pci_props.pciDevice;
+        info->pci_function = pci_props.pciFunction;
+    }
+    if (has_layered_driver_info) {
+        info->layered_driver_underlying_api = layered_driver_props.underlyingAPI;
+    }
+    return VK_SUCCESS;
+}
+
+// Whenever the same device is reported by more than one driver and one of them is layered on top of D3D12 (such as Dozen), the
+// layered driver is sorted after the other one. This matches the ordering used on Windows.
+// This behaves similar to a qsort compare.
+// NOLINTNEXTLINE(bugprone-easily-swappable-parameters) - comparator signature, the order of the arguments is the sort order
+static int32_t layered_driver_compare(const struct LinuxSortedDeviceInfo *left, const struct LinuxSortedDeviceInfo *right) {
+    if (left->vendor_id != right->vendor_id || left->device_id != right->device_id) {
+        return 0;
+    }
+    bool left_layered = left->layered_driver_underlying_api == VK_LAYERED_DRIVER_UNDERLYING_API_D3D12_MSFT;
+    bool right_layered = right->layered_driver_underlying_api == VK_LAYERED_DRIVER_UNDERLYING_API_D3D12_MSFT;
+    if (!left_layered && right_layered) {
+        return -1;
+    }
+    if (left_layered && !right_layered) {
+        return 1;
+    }
+    return 0;
+}
+
 // Used to compare two devices and determine which one should have priority.  The criteria is
 // simple:
 //   1) Default device ALWAYS wins
 //   2) Sort by type
 //   3) Sort by PCI bus ID
 //   4) Ties broken by device_ID XOR vendor_ID comparison
+//   5) For the same vendor_ID and device_ID, drivers layered on top of D3D12 come last
 // NOLINTNEXTLINE(bugprone-easily-swappable-parameters) - qsort comparator signature, order is fixed by the C standard library API
 int32_t compare_devices(const void *a, const void *b) {
     struct LinuxSortedDeviceInfo *left = (struct LinuxSortedDeviceInfo *)a;
@@ -140,7 +239,7 @@ int32_t compare_devices(const void *a, const void *b) {
     if (right_xord_dev_vend < left_xord_dev_vend) {
         return 1;
     }
-    return 0;
+    return layered_driver_compare(left, right);
 }
 
 // Used to compare two device groups and determine which one should have priority.
@@ -150,6 +249,7 @@ int32_t compare_devices(const void *a, const void *b) {
 //   2) Group with the best device type for device 0 wins
 //   3) Group with best PCI bus ID for device 0 wins
 //   4) Ties broken by group device 0 device_ID XOR vendor_ID comparison
+//   5) For the same device 0 vendor_ID and device_ID, groups from drivers layered on top of D3D12 come last
 // NOLINTNEXTLINE(bugprone-easily-swappable-parameters) - qsort comparator signature, order is fixed by the C standard library API
 int32_t compare_device_groups(const void *a, const void *b) {
     struct loader_physical_device_group_term *grp_a = (struct loader_physical_device_group_term *)a;
@@ -220,7 +320,7 @@ int32_t compare_device_groups(const void *a, const void *b) {
     if (right_xord_dev_vend < left_xord_dev_vend) {
         return 1;
     }
-    return 0;
+    return layered_driver_compare(left, right);
 }
 
 // Search for the default device using the loader environment variable.
@@ -275,66 +375,12 @@ VkResult linux_read_sorted_physical_devices(struct loader_instance *inst, uint32
     for (uint32_t icd_idx = 0; icd_idx < icd_count; ++icd_idx) {
         for (uint32_t phys_dev = 0; phys_dev < icd_devices[icd_idx].device_count; ++phys_dev) {
             struct loader_icd_term *icd_term = icd_devices[icd_idx].icd_term;
-            VkPhysicalDeviceProperties dev_props = {};
 
             sorted_device_info[index].physical_device = icd_devices[icd_idx].physical_devices[phys_dev];
             sorted_device_info[index].icd_term = icd_term;
-            sorted_device_info[index].has_pci_bus_info = false;
-
-            icd_term->dispatch.GetPhysicalDeviceProperties(sorted_device_info[index].physical_device, &dev_props);
-            sorted_device_info[index].device_type = dev_props.deviceType;
-            strncpy(sorted_device_info[index].device_name, dev_props.deviceName, VK_MAX_PHYSICAL_DEVICE_NAME_SIZE - 1);
-            sorted_device_info[index].device_name[VK_MAX_PHYSICAL_DEVICE_NAME_SIZE - 1] = '\0';
-            sorted_device_info[index].vendor_id = dev_props.vendorID;
-            sorted_device_info[index].device_id = dev_props.deviceID;
-
-            bool device_is_1_1_capable =
-                loader_check_version_meets_required(LOADER_VERSION_1_1_0, loader_make_version(dev_props.apiVersion));
-            if (!sorted_device_info[index].has_pci_bus_info) {
-                uint32_t ext_count = 0;
-                icd_term->dispatch.EnumerateDeviceExtensionProperties(sorted_device_info[index].physical_device, NULL, &ext_count,
-                                                                      NULL);
-                if (ext_count > 0) {
-                    VkExtensionProperties *ext_props =
-                        (VkExtensionProperties *)loader_stack_alloc(sizeof(VkExtensionProperties) * ext_count);
-                    if (NULL == ext_props) {
-                        res = VK_ERROR_OUT_OF_HOST_MEMORY;
-                        goto out;
-                    }
-                    uint32_t allocated_count = ext_count;
-                    icd_term->dispatch.EnumerateDeviceExtensionProperties(sorted_device_info[index].physical_device, NULL,
-                                                                          &ext_count, ext_props);
-                    // The count returned by the second call sizes the array, but never read past what we actually allocated.
-                    for (uint32_t ext = 0; ext < ext_count && ext < allocated_count; ++ext) {
-                        if (!strcmp(ext_props[ext].extensionName, VK_EXT_PCI_BUS_INFO_EXTENSION_NAME)) {
-                            sorted_device_info[index].has_pci_bus_info = true;
-                            break;
-                        }
-                    }
-                }
-            }
-
-            if (sorted_device_info[index].has_pci_bus_info) {
-                VkPhysicalDevicePCIBusInfoPropertiesEXT pci_props = (VkPhysicalDevicePCIBusInfoPropertiesEXT){
-                    .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PCI_BUS_INFO_PROPERTIES_EXT};
-                VkPhysicalDeviceProperties2 dev_props2 =
-                    (VkPhysicalDeviceProperties2){.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2, .pNext = &pci_props};
-
-                PFN_vkGetPhysicalDeviceProperties2 GetPhysDevProps2 = NULL;
-                if (app_is_vulkan_1_1 && device_is_1_1_capable) {
-                    GetPhysDevProps2 = icd_term->dispatch.GetPhysicalDeviceProperties2;
-                } else {
-                    GetPhysDevProps2 = (PFN_vkGetPhysicalDeviceProperties2)icd_term->dispatch.GetPhysicalDeviceProperties2KHR;
-                }
-                if (NULL != GetPhysDevProps2) {
-                    GetPhysDevProps2(sorted_device_info[index].physical_device, &dev_props2);
-                    sorted_device_info[index].pci_domain = pci_props.pciDomain;
-                    sorted_device_info[index].pci_bus = pci_props.pciBus;
-                    sorted_device_info[index].pci_device = pci_props.pciDevice;
-                    sorted_device_info[index].pci_function = pci_props.pciFunction;
-                } else {
-                    sorted_device_info[index].has_pci_bus_info = false;
-                }
+            res = linux_get_device_sort_info(icd_term, app_is_vulkan_1_1, &sorted_device_info[index]);
+            if (VK_SUCCESS != res) {
+                goto out;
             }
             loader_log(inst, VULKAN_LOADER_INFO_BIT | VULKAN_LOADER_DRIVER_BIT, 0, "           [%u] %s", index,
                        sorted_device_info[index].device_name);
@@ -379,67 +425,11 @@ VkResult linux_sort_physical_device_groups(struct loader_instance *inst, uint32_
 
         struct loader_icd_term *icd_term = sorted_group_term[group].this_icd_term;
         for (uint32_t gpu = 0; gpu < sorted_group_term[group].group_props.physicalDeviceCount; ++gpu) {
-            VkPhysicalDeviceProperties dev_props = {};
-
             sorted_group_term[group].internal_device_info[gpu].physical_device =
                 sorted_group_term[group].group_props.physicalDevices[gpu];
-            sorted_group_term[group].internal_device_info[gpu].has_pci_bus_info = false;
-
-            icd_term->dispatch.GetPhysicalDeviceProperties(sorted_group_term[group].internal_device_info[gpu].physical_device,
-                                                           &dev_props);
-            sorted_group_term[group].internal_device_info[gpu].device_type = dev_props.deviceType;
-            strncpy(sorted_group_term[group].internal_device_info[gpu].device_name, dev_props.deviceName,
-                    VK_MAX_PHYSICAL_DEVICE_NAME_SIZE - 1);
-            sorted_group_term[group].internal_device_info[gpu].device_name[VK_MAX_PHYSICAL_DEVICE_NAME_SIZE - 1] = '\0';
-            sorted_group_term[group].internal_device_info[gpu].vendor_id = dev_props.vendorID;
-            sorted_group_term[group].internal_device_info[gpu].device_id = dev_props.deviceID;
-
-            bool device_is_1_1_capable =
-                loader_check_version_meets_required(LOADER_VERSION_1_1_0, loader_make_version(dev_props.apiVersion));
-            if (!sorted_group_term[group].internal_device_info[gpu].has_pci_bus_info) {
-                uint32_t ext_count;
-                icd_term->dispatch.EnumerateDeviceExtensionProperties(
-                    sorted_group_term[group].internal_device_info[gpu].physical_device, NULL, &ext_count, NULL);
-                if (ext_count > 0) {
-                    VkExtensionProperties *ext_props =
-                        (VkExtensionProperties *)loader_stack_alloc(sizeof(VkExtensionProperties) * ext_count);
-                    if (NULL == ext_props) {
-                        return VK_ERROR_OUT_OF_HOST_MEMORY;
-                    }
-                    uint32_t allocated_count = ext_count;
-                    icd_term->dispatch.EnumerateDeviceExtensionProperties(
-                        sorted_group_term[group].internal_device_info[gpu].physical_device, NULL, &ext_count, ext_props);
-                    // The count returned by the second call sizes the array, but never read past what we actually allocated.
-                    for (uint32_t ext = 0; ext < ext_count && ext < allocated_count; ++ext) {
-                        if (!strcmp(ext_props[ext].extensionName, VK_EXT_PCI_BUS_INFO_EXTENSION_NAME)) {
-                            sorted_group_term[group].internal_device_info[gpu].has_pci_bus_info = true;
-                            break;
-                        }
-                    }
-                }
-            }
-
-            if (sorted_group_term[group].internal_device_info[gpu].has_pci_bus_info) {
-                VkPhysicalDevicePCIBusInfoPropertiesEXT pci_props = (VkPhysicalDevicePCIBusInfoPropertiesEXT){
-                    .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PCI_BUS_INFO_PROPERTIES_EXT};
-                VkPhysicalDeviceProperties2 dev_props2 =
-                    (VkPhysicalDeviceProperties2){.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2, .pNext = &pci_props};
-
-                PFN_vkGetPhysicalDeviceProperties2 GetPhysDevProps2 = NULL;
-                if (app_is_vulkan_1_1 && device_is_1_1_capable) {
-                    GetPhysDevProps2 = icd_term->dispatch.GetPhysicalDeviceProperties2;
-                } else {
-                    GetPhysDevProps2 = (PFN_vkGetPhysicalDeviceProperties2)icd_term->dispatch.GetPhysicalDeviceProperties2KHR;
-                }
-                if (NULL != GetPhysDevProps2) {
-                    GetPhysDevProps2(sorted_group_term[group].internal_device_info[gpu].physical_device, &dev_props2);
-                    sorted_group_term[group].internal_device_info[gpu].pci_domain = pci_props.pciDomain;
-                    sorted_group_term[group].internal_device_info[gpu].pci_bus = pci_props.pciBus;
-                    sorted_group_term[group].internal_device_info[gpu].pci_device = pci_props.pciDevice;
-                    sorted_group_term[group].internal_device_info[gpu].pci_function = pci_props.pciFunction;
-                } else {
-                    sorted_group_term[group].internal_device_info[gpu].has_pci_bus_info = false;
-                }
+            res = linux_get_device_sort_info(icd_term, app_is_vulkan_1_1, &sorted_group_term[group].internal_device_info[gpu]);
+            if (VK_SUCCESS != res) {
+                return res;
             }
             loader_log(inst, VULKAN_LOADER_INFO_BIT | VULKAN_LOADER_DRIVER_BIT, 0, "               [%u] %s", gpu,
                        sorted_group_term[group].internal_device_info[gpu].device_name);

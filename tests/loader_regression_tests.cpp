@@ -4118,6 +4118,78 @@ TEST(SortedPhysicalDevices, DeviceGroupsSortedDisabled) {
     }
 }
 
+// Adds one driver per entry, each reporting a single discrete physical device without PCI bus information.
+static void add_layered_sort_test_drivers(FrameworkEnvironment& env, std::vector<std::tuple<const char*, uint32_t, bool>> devices) {
+    for (auto const& [name, device_id, is_layered] : devices) {
+        env.add_icd(TEST_ICD_PATH_VERSION_2, {}, ManifestICD{}.set_api_version(VK_API_VERSION_1_1));
+        auto& driver = env.get_test_icd(env.icds.size() - 1);
+        driver.set_icd_api_version(VK_API_VERSION_1_1);
+        driver.add_instance_extension({VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME});
+        auto& physical_device = driver.add_and_get_physical_device({name});
+        FillInRandomDeviceProps(physical_device.properties, VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU, VK_API_VERSION_1_1, 0x1234,
+                                device_id);
+        if (is_layered) {
+            physical_device.extensions.push_back({VK_MSFT_LAYERED_DRIVER_EXTENSION_NAME, 0});
+            physical_device.layered_driver_underlying_api = VK_LAYERED_DRIVER_UNDERLYING_API_D3D12_MSFT;
+        }
+    }
+}
+
+static void check_layered_sort_order(FrameworkEnvironment& env, uint32_t api_version, std::vector<const char*> expected_names) {
+    InstWrapper inst{env.vulkan_functions};
+    inst.create_info.set_api_version(api_version);
+    inst.CheckCreate();
+
+    auto physical_devices = inst.GetPhysDevs(static_cast<uint32_t>(expected_names.size()));
+    for (size_t i = 0; i < expected_names.size(); i++) {
+        VkPhysicalDeviceProperties props{};
+        inst->vkGetPhysicalDeviceProperties(physical_devices[i], &props);
+        EXPECT_TRUE(string_eq(props.deviceName, expected_names[i])) << "device " << i << " is " << props.deviceName;
+    }
+
+    if (api_version < VK_API_VERSION_1_1) {
+        return;
+    }
+    uint32_t group_count = static_cast<uint32_t>(expected_names.size());
+    std::vector<VkPhysicalDeviceGroupProperties> groups(group_count);
+    for (auto& group : groups) {
+        group.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_GROUP_PROPERTIES;
+    }
+    ASSERT_EQ(VK_SUCCESS, inst->vkEnumeratePhysicalDeviceGroups(inst, &group_count, groups.data()));
+    ASSERT_EQ(group_count, expected_names.size());
+    for (size_t i = 0; i < expected_names.size(); i++) {
+        ASSERT_EQ(groups[i].physicalDeviceCount, 1U);
+        VkPhysicalDeviceProperties props{};
+        inst->vkGetPhysicalDeviceProperties(groups[i].physicalDevices[0], &props);
+        EXPECT_TRUE(string_eq(props.deviceName, expected_names[i])) << "group " << i << " is " << props.deviceName;
+    }
+}
+
+// When the same device is reported by a driver layered on top of D3D12 (such as Dozen) and by another driver, the layered driver
+// must come last regardless of the order in which the drivers are found, as on Windows.
+TEST(SortedPhysicalDevices, LayeredDriverSortedAfterOtherDriverForSameDevice) {
+    for (uint32_t api_version : {VK_API_VERSION_1_0, VK_API_VERSION_1_1}) {
+        {
+            FrameworkEnvironment env{};
+            add_layered_sort_test_drivers(env, {{"layered", 0x5678, true}, {"native", 0x5678, false}});
+            check_layered_sort_order(env, api_version, {"native", "layered"});
+        }
+        {
+            FrameworkEnvironment env{};
+            add_layered_sort_test_drivers(env, {{"native", 0x5678, false}, {"layered", 0x5678, true}});
+            check_layered_sort_order(env, api_version, {"native", "layered"});
+        }
+    }
+}
+
+// Drivers layered on top of D3D12 are only moved after other drivers reporting the same device, other devices keep their order.
+TEST(SortedPhysicalDevices, LayeredDriverOrderUnchangedForDifferentDevices) {
+    FrameworkEnvironment env{};
+    // 0x1234 ^ 0x0001 < 0x1234 ^ 0x0002, so the layered device sorts first by the device ID tie-break.
+    add_layered_sort_test_drivers(env, {{"native", 0x0002, false}, {"layered", 0x0001, true}});
+    check_layered_sort_order(env, VK_API_VERSION_1_1, {"layered", "native"});
+}
+
 #endif  // __linux__ || __FreeBSD__ || __OpenBSD__ || __GNU__
 
 const char* portability_driver_warning =

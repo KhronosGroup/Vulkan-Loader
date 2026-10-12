@@ -462,6 +462,9 @@ struct LinuxSortedDeviceInfo {
     uint32_t pci_bus;
     uint32_t pci_device;
     uint32_t pci_function;
+
+    // Underlying API of drivers layered on top of another API (VK_MSFT_layered_driver)
+    VkLayeredDriverUnderlyingApiMSFT layered_driver_underlying_api;
 };
 #endif  // LOADER_ENABLE_LINUX_SORT
 
