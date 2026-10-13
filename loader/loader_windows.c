@@ -56,7 +56,7 @@
 #include <appmodel.h>
 #endif
 
-#if !defined(NDEBUG)
+#if !defined(NDEBUG) && !defined(_DLL)
 #include <crtdbg.h>
 #endif
 
@@ -88,7 +88,10 @@ void windows_initialization(void) {
     fpCreateDXGIFactory1 =
         dxgi_module == NULL ? NULL : (PFN_CreateDXGIFactory1)(void *)GetProcAddress(dxgi_module, "CreateDXGIFactory1");
 
-#if !defined(NDEBUG)
+#if !defined(NDEBUG) && !defined(_DLL)
+    // When linking statically to the MSVC C runtime, we want to silence these warnings to prevent popups when compiled in debug
+    // mode. However, we do not want to configure these options if we linked dynamically to the MSVC C runtime, as it applies to
+    // everything using the same MSVC C runtime DLL.
     _set_error_mode(_OUT_TO_STDERR);
     _CrtSetReportMode(_CRT_ERROR, _CRTDBG_MODE_FILE);
     _CrtSetReportFile(_CRT_ERROR, _CRTDBG_FILE_STDERR);
