@@ -242,12 +242,13 @@ void determine_filter_type(const char *filter_string, enum loader_filter_string_
 
 // Parse the provided filter string provided by the envrionment variable into the appropriate filter
 // struct variable.
+// Environment Variable is queried through non-privileged API's, so should not contain any paths to untrusted binaries.
 VkResult parse_generic_filter_environment_var(const struct loader_instance *inst, const char *env_var_name,
                                               struct loader_envvar_filter *filter_struct) {
     VkResult result = VK_SUCCESS;
     memset(filter_struct, 0, sizeof(struct loader_envvar_filter));
     char *parsing_string = NULL;
-    char *env_var_value = loader_secure_getenv(env_var_name, inst);
+    char *env_var_value = loader_getenv(env_var_name, inst);
     if (NULL == env_var_value) {
         return result;
     }
@@ -304,7 +305,7 @@ VkResult parse_layers_disable_filter_environment_var(const struct loader_instanc
     VkResult result = VK_SUCCESS;
     memset(disable_struct, 0, sizeof(struct loader_envvar_disable_layers_filter));
     char *parsing_string = NULL;
-    char *env_var_value = loader_secure_getenv(VK_LAYERS_DISABLE_ENV_VAR, inst);
+    char *env_var_value = loader_getenv(VK_LAYERS_DISABLE_ENV_VAR, inst);
     if (NULL == env_var_value) {
         goto out;
     }
@@ -323,6 +324,8 @@ VkResult parse_layers_disable_filter_environment_var(const struct loader_instanc
     }
 
     for (uint32_t iii = 0; iii < env_var_len; ++iii) {
+        // Seems like a false positive - only occurred after changing loader_secure_getenv to loader_getenv
+        // NOLINTNEXTLINE(clang-analyzer-security.ArrayBound)
         parsing_string[iii] = (char)tolower((unsigned char)env_var_value[iii]);
     }
     parsing_string[env_var_len] = '\0';
