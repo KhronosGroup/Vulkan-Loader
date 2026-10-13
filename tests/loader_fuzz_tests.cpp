@@ -416,3 +416,51 @@ TEST(ExtensionNameCompare, UnterminatedNameDoesNotReadPastField) {
     free(a);
     free(b);
 }
+
+#if COMMON_UNIX_PLATFORMS
+// get_unix_settings_path hands colon separated path lists (XDG_CONFIG_DIRS, XDG_DATA_DIRS and their fallbacks) to
+// check_if_settings_path_exists. The segment walk kept the separator at the front of every segment after the first,
+// so the candidate path became ":<dir><suffix>" and a settings file in any segment but the first was never found.
+TEST(SettingsPathDiscovery, FindsFileInLaterPathListSegments) {
+    std::filesystem::path tmp_dir = std::filesystem::temp_directory_path() / "loader_settings_path_segments_test";
+    std::filesystem::create_directories(tmp_dir);
+    std::filesystem::path settings_file = tmp_dir / "vk_loader_settings.json";
+    {
+        std::ofstream f(settings_file, std::ios::trunc);
+        f << "{}";
+    }
+    const std::string suffix = "/vk_loader_settings.json";
+    const std::string missing_dir = "/loader_test_dir_which_does_not_exist";
+
+    // File in the first segment of a multi segment list - worked before and must keep working.
+    char* found_path = NULL;
+    std::string base = tmp_dir.string() + ":" + missing_dir;
+    EXPECT_EQ(VK_SUCCESS, check_if_settings_path_exists(NULL, base.c_str(), suffix.c_str(), &found_path));
+    ASSERT_NE(found_path, nullptr);
+    EXPECT_STREQ(found_path, settings_file.string().c_str());
+    free(found_path);
+
+    // File in the second segment: previously the loader looked for ":<tmp_dir>/vk_loader_settings.json" and failed.
+    found_path = NULL;
+    base = missing_dir + ":" + tmp_dir.string();
+    EXPECT_EQ(VK_SUCCESS, check_if_settings_path_exists(NULL, base.c_str(), suffix.c_str(), &found_path));
+    ASSERT_NE(found_path, nullptr);
+    EXPECT_STREQ(found_path, settings_file.string().c_str());
+    free(found_path);
+
+    // Consecutive and trailing separators around the segment holding the file.
+    found_path = NULL;
+    base = missing_dir + "::" + tmp_dir.string() + ":";
+    EXPECT_EQ(VK_SUCCESS, check_if_settings_path_exists(NULL, base.c_str(), suffix.c_str(), &found_path));
+    ASSERT_NE(found_path, nullptr);
+    EXPECT_STREQ(found_path, settings_file.string().c_str());
+    free(found_path);
+
+    // Nothing but separators - no segment to check.
+    found_path = NULL;
+    EXPECT_EQ(VK_ERROR_INITIALIZATION_FAILED, check_if_settings_path_exists(NULL, "::", suffix.c_str(), &found_path));
+    EXPECT_EQ(found_path, nullptr);
+
+    std::filesystem::remove_all(tmp_dir);
+}
+#endif

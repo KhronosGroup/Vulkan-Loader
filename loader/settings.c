@@ -435,8 +435,8 @@ out:
 // Given a base and suffix path, determine if a file at that location exists, and if it is return success.
 // Since base may contain multiple paths separated by PATH_SEPARATOR, we must extract each segment and check segment + suffix
 // individually
-VkResult check_if_settings_path_exists(const struct loader_instance* inst, const char* base, const char* suffix,
-                                       char** settings_file_path) {
+TEST_FUNCTION_EXPORT VkResult check_if_settings_path_exists(const struct loader_instance* inst, const char* base,
+                                                            const char* suffix, char** settings_file_path) {
     if (NULL == base || NULL == suffix) {
         return VK_ERROR_INITIALIZATION_FAILED;
     }
@@ -446,17 +446,20 @@ VkResult check_if_settings_path_exists(const struct loader_instance* inst, const
 
     uint32_t start = 0;
     uint32_t stop = 0;
-    while (base[start] != '\0' && start < base_len && stop < base_len) {
-        start = stop;
-        stop = start + 1;
-        while (base[stop] != PATH_SEPARATOR && base[stop] != '\0' && stop < base_len) {
+    while (start < base_len) {
+        // Skip any path separators preceding this segment so they don't end up in the constructed path
+        while (start < base_len && base[start] == PATH_SEPARATOR) {
+            start++;
+        }
+        stop = start;
+        while (stop < base_len && base[stop] != PATH_SEPARATOR) {
             stop++;
         }
 
         size_t segment_len = (stop - start);
-        if (segment_len <= 1) {
-            // segment is *just* a PATH_SEPARATOR, skip it
-            continue;
+        if (segment_len == 0) {
+            // only path separators remained - no more segments
+            break;
         }
         size_t path_len = segment_len + suffix_len + 1;
         *settings_file_path = loader_instance_heap_calloc(inst, path_len, VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
@@ -471,6 +474,7 @@ VkResult check_if_settings_path_exists(const struct loader_instance* inst, const
         }
         loader_instance_heap_free(inst, *settings_file_path);
         *settings_file_path = NULL;
+        start = stop;
     }
 
     return VK_ERROR_INITIALIZATION_FAILED;
