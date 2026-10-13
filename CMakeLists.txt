@@ -45,7 +45,16 @@ set(CMAKE_C_STANDARD 99)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 set(CMAKE_C_EXTENSIONS OFF)
 set(CMAKE_C_VISIBILITY_PRESET "hidden")
-set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+
+if (WIN32)
+    option(DYNAMIC_LINK_MSVC_RUNTIME_LIBRARY "Forces linking to the dynamic MSVC CRT library")
+
+    if (DYNAMIC_LINK_MSVC_RUNTIME_LIBRARY)
+        set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL")
+    else()
+        set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+    endif()
+endif()
 
 # By default, loader & tests are built without sanitizers
 # Use these options to force a specific sanitizer on the loader and test executables
