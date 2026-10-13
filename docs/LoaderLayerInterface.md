@@ -1710,6 +1710,7 @@ Here's an example of a meta-layer manifest file:
     <th>Description and Notes</th>
     <th>Restrictions</th>
     <th>Parent</th>
+    <th>Required</th>
     <th>Introspection Query</th>
   </tr>
   <tr>
@@ -1723,6 +1724,7 @@ Here's an example of a meta-layer manifest file:
     </td>
     <td>None</td>
     <td>"layer"/"layers"</td>
+    <td><b>Yes</b></td>
     <td><small>vkEnumerateInstanceLayerProperties</small></td>
   </tr>
   <tr>
@@ -1731,6 +1733,7 @@ Here's an example of a meta-layer manifest file:
     </td>
     <td><b>Meta-layers Only</b></td>
     <td>"layer"/"layers"</td>
+    <td>No</td>
     <td><small>N/A</small></td>
   </tr>
   <tr>
@@ -1740,6 +1743,7 @@ Here's an example of a meta-layer manifest file:
     </td>
     <td><b>Meta-layers Only</b></td>
     <td>"layer"/"layers"</td>
+    <td>No</td>
     <td><small>N/A</small></td>
   </tr>
   <tr>
@@ -1755,6 +1759,7 @@ Here's an example of a meta-layer manifest file:
     </td>
     <td><b>Meta-layers Only</b></td>
     <td>"layer"/"layers"</td>
+    <td>No</td>
     <td><small>N/A</small></td>
   </tr>
   <tr>
@@ -1762,6 +1767,7 @@ Here's an example of a meta-layer manifest file:
     <td>A high-level description of the layer and its intended use.</td>
     <td>None</td>
     <td>"layer"/"layers"</td>
+    <td><b>Yes</b></td>
     <td><small>vkEnumerateInstanceLayerProperties</small></td>
   </tr>
   <tr>
@@ -1781,6 +1787,7 @@ Here's an example of a meta-layer manifest file:
     </td>
     <td>None</td>
     <td>"layer"/"layers"</td>
+    <td>No</td>
     <td><small>vkEnumerateDeviceExtensionProperties</small></td>
   </tr>
   <tr>
@@ -1797,6 +1804,7 @@ Here's an example of a meta-layer manifest file:
     </td>
     <td><b>Implicit Layers Only</b></td>
     <td>"layer"/"layers"</td>
+    <td><b>Yes for implicit layers</b></td>
     <td><small>N/A</small></td>
   </tr>
   <tr>
@@ -1813,6 +1821,7 @@ Here's an example of a meta-layer manifest file:
     </td>
     <td><b>Implicit Layers Only</b></td>
     <td>"layer"/"layers"</td>
+    <td>No</td>
     <td><small>N/A</small></td>
   </tr>
   <tr>
@@ -1822,6 +1831,7 @@ Here's an example of a meta-layer manifest file:
     </td>
     <td>None</td>
     <td>None</td>
+    <td><b>Yes</b></td>
     <td><small>N/A</small></td>
   </tr>
   <tr>
@@ -1834,6 +1844,7 @@ Here's an example of a meta-layer manifest file:
     </td>
     <td>None</td>
     <td>"layer"/"layers"</td>
+    <td>No</td>
     <td><small>vkGet*ProcAddr</small></td>
   </tr>
   <tr>
@@ -1844,6 +1855,7 @@ Here's an example of a meta-layer manifest file:
     </td>
     <td>None</td>
     <td>"layer"/"layers"</td>
+    <td><b>Yes</b></td>
     <td><small>vkEnumerateInstanceLayerProperties</small></td>
   </tr>
   <tr>
@@ -1859,6 +1871,7 @@ Here's an example of a meta-layer manifest file:
     </td>
     <td>None</td>
     <td>"layer"/"layers"</td>
+    <td>No</td>
     <td><small>vkEnumerateInstanceExtensionProperties</small></td>
   </tr>
   <tr>
@@ -1867,6 +1880,7 @@ Here's an example of a meta-layer manifest file:
     </td>
     <td>None</td>
     <td>None</td>
+    <td>No</td>
     <td><small>vkEnumerateInstanceLayerProperties</small></td>
   </tr>
   <tr>
@@ -1876,6 +1890,7 @@ Here's an example of a meta-layer manifest file:
     </td>
     <td>None</td>
     <td>None</td>
+    <td>No</td>
     <td><small>vkEnumerateInstanceLayerProperties</small></td>
   </tr>
   <tr>
@@ -1895,6 +1910,7 @@ Here's an example of a meta-layer manifest file:
     </td>
     <td><b>Not Valid For Meta-layers</b></td>
     <td>"layer"/"layers"</td>
+    <td><b>Yes for Non-Meta layers</b></td>
     <td><small>N/A</small></td>
   </tr>
   <td>"library_arch"</td>
@@ -1903,6 +1919,9 @@ Here's an example of a meta-layer manifest file:
         Allows the loader to quickly determine if the architecture of the layer
         matches that of the running application. <br />
         The only valid values are "32" and "64".</td>
+    <td>None</td>
+    <td>"layer"/"layers"</td>
+    <td>No</td>
     <td><small>N/A</small></td>
   </tr>
   <tr>
@@ -1911,6 +1930,7 @@ Here's an example of a meta-layer manifest file:
     <td>The string used to uniquely identify this layer to applications.</td>
     <td>None</td>
     <td>"layer"/"layers"</td>
+    <td><b>Yes</b></td>
     <td><small>vkEnumerateInstanceLayerProperties</small></td>
   </tr>
   <tr>
@@ -1920,6 +1940,7 @@ Here's an example of a meta-layer manifest file:
     </td>
     <td><b>Meta-layers Only</b></td>
     <td>"layer"/"layers"</td>
+    <td>No</td>
     <td><small>N/A</small></td>
   </tr>
   <tr>
@@ -1936,6 +1957,7 @@ Here's an example of a meta-layer manifest file:
     </td>
     <td><b>Implicit Layers Only</b></td>
     <td>"layer"/"layers"</td>
+    <td>No</td>
     <td><small>vkEnumerateInstance*Properties</small></td>
   </tr>
   <tr>
@@ -1953,6 +1975,7 @@ Here's an example of a meta-layer manifest file:
     </td>
     <td>None</td>
     <td>"layer"/"layers"</td>
+    <td>No</td>
     <td><small>vkEnumerate*LayerProperties</small></td>
   </tr>
 </table>

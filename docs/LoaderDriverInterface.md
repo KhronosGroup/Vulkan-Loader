@@ -746,7 +746,7 @@ Here is an example driver JSON Manifest file:
   </tr>
   <tr>
     <td>"library_arch"</td>
-    <td>Optional field which specifies the architecture of the binary associated
+    <td><b>OPTIONAL:</b> Field which specifies the architecture of the binary associated
         with "library_path". <br />
         Allows the loader to quickly determine if the architecture of the driver
         matches that of the running application. <br />
@@ -766,7 +766,7 @@ Here is an example driver JSON Manifest file:
   </tr>
   <tr>
     <td>"is_portability_driver" </td>
-    <td>Defines whether the driver contains any VkPhysicalDevices which
+    <td><b>OPTIONAL:</b> Defines whether the driver contains any VkPhysicalDevices which
         implement the VK_KHR_portability_subset extension.<br/>
     </td>
   </tr>
