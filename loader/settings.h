@@ -94,6 +94,13 @@ typedef struct loader_settings {
     char* settings_file_path;
 } loader_settings;
 
+#if COMMON_UNIX_PLATFORMS
+// Check each PATH_SEPARATOR separated segment of base for the file at segment + suffix, returning the first path that exists in
+// settings_file_path
+TEST_FUNCTION_EXPORT VkResult check_if_settings_path_exists(const struct loader_instance* inst, const char* base,
+                                                            const char* suffix, char** settings_file_path);
+#endif
+
 // Call this function to get the current settings that the loader should use.
 // It will open up the current loader settings file and return a loader_settings in out_loader_settings if it.
 // It should be called on every call to the global functions excluding vkGetInstanceProcAddr
