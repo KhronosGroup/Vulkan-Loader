@@ -446,13 +446,13 @@ TEST_FUNCTION_EXPORT VkResult check_if_settings_path_exists(const struct loader_
 
     uint32_t start = 0;
     uint32_t stop = 0;
-    while (start < base_len) {
+    while (base[start] != '\0' && start < base_len) {
         // Skip any path separators preceding this segment so they don't end up in the constructed path
-        while (start < base_len && base[start] == PATH_SEPARATOR) {
+        while (base[start] != '\0' && start < base_len && base[start] == PATH_SEPARATOR) {
             start++;
         }
         stop = start;
-        while (stop < base_len && base[stop] != PATH_SEPARATOR) {
+        while (base[stop] != '\0' && stop < base_len && base[stop] != PATH_SEPARATOR) {
             stop++;
         }
 
