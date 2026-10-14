@@ -296,6 +296,63 @@ TEST(Threading, SurfaceCreateDestroyLoop) {
     }
 }
 
+// Surface queries unwrap the loader surface by reading the driver's surface_list - the same list that surface creation
+// grows (and reallocates) under loader_lock once more surfaces are alive than its current capacity. The query commands
+// don't require external synchronization of the surface, so this runs them against one surface while other threads
+// create and destroy batches of surfaces. Run under the thread sanitizer this catches an unsynchronised access to the
+// surface list if the unwrap is not done under loader_lock.
+void query_surface_support_loop(VulkanFunctions* vulkan_functions, VkPhysicalDevice phys_dev, VkSurfaceKHR surface,
+                                uint32_t num_loops) {
+    for (uint32_t i = 0; i < num_loops; i++) {
+        VkBool32 supported = VK_FALSE;
+        ASSERT_EQ(VK_SUCCESS, vulkan_functions->vkGetPhysicalDeviceSurfaceSupportKHR(phys_dev, 0, surface, &supported));
+    }
+}
+
+void create_destroy_surface_batch_loop(FrameworkEnvironment* env, InstWrapper* inst, uint32_t num_loops, uint32_t batch_size) {
+    for (uint32_t i = 0; i < num_loops; i++) {
+        std::vector<VkSurfaceKHR> surfaces(batch_size, VK_NULL_HANDLE);
+        for (auto& surface : surfaces) {
+            ASSERT_EQ(VK_SUCCESS, create_surface(*inst, surface));
+        }
+        for (auto& surface : surfaces) {
+            env->vulkan_functions.vkDestroySurfaceKHR(inst->inst, surface, nullptr);
+        }
+    }
+}
+
+TEST(Threading, SurfaceQueryWhileCreateDestroySurfaceLoop) {
+    const uint32_t thread_pairs = std::max(std::thread::hardware_concurrency() / 2, 1u);
+    const uint32_t num_query_loops = 1000;
+    const uint32_t num_create_destroy_loops = 10;
+    // Enough surfaces alive at once to grow the driver's surface_list past its initial capacity of 32 entries
+    const uint32_t batch_size = 70;
+
+    FrameworkEnvironment env{FrameworkSettings{}.set_log_filter("")};
+    auto& driver = env.add_icd(TEST_ICD_PATH_VERSION_2);
+    driver.setup_WSI();
+    driver.add_and_get_physical_device("physical_device_0")
+        .add_queue_family_properties({{VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}}, true});
+
+    InstWrapper inst{env.vulkan_functions};
+    inst.create_info.setup_WSI();
+    inst.CheckCreate();
+    VkPhysicalDevice phys_dev = inst.GetPhysDev();
+
+    VkSurfaceKHR query_surface{VK_NULL_HANDLE};
+    ASSERT_EQ(VK_SUCCESS, create_surface(inst, query_surface));
+
+    std::vector<std::thread> threads;
+    for (uint32_t i = 0; i < thread_pairs; i++) {
+        threads.emplace_back(query_surface_support_loop, &env.vulkan_functions, phys_dev, query_surface, num_query_loops);
+        threads.emplace_back(create_destroy_surface_batch_loop, &env, &inst, num_create_destroy_loops, batch_size);
+    }
+    for (auto& thread : threads) {
+        thread.join();
+    }
+    env.vulkan_functions.vkDestroySurfaceKHR(inst.inst, query_surface, nullptr);
+}
+
 // The driver reports these through vk_icdGetPhysicalDeviceProcAddr, so vkGetInstanceProcAddr has to append each one to
 // the loader's instance wide unknown function tables before it can hand back a trampoline.
 VKAPI_ATTR uint32_t VKAPI_CALL test_unknown_phys_dev_function(VkPhysicalDevice, uint32_t foo) { return foo; }

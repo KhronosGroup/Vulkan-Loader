@@ -80,10 +80,17 @@ VkResult wsi_unwrap_icd_surface(struct loader_icd_term *icd_term, VkSurfaceKHR *
     }
 #endif  // VK_USE_PLATFORM_IOS_MVK
 
+    // The surface creation terminators grow each driver's surface_list under loader_lock, which can reallocate the
+    // array this function reads, and terminator_DestroySurfaceKHR clears slots in it under the same lock. The surface
+    // query commands that land here don't require external synchronization of the surface, so take the lock before
+    // touching the list. loader_lock is recursive, so callers already holding it are unaffected.
+    loader_platform_thread_lock_mutex(&loader_lock);
+
     if (NULL == icd_term->surface_list.list ||
         icd_term->surface_list.capacity <= icd_surface->surface_index * sizeof(VkSurfaceKHR)) {
         // This surface handle is not one that was created by the loader, therefore we simply return
         // the input surface handle unmodified. This matches legacy behavior.
+        loader_platform_thread_unlock_mutex(&loader_lock);
         return VK_SUCCESS;
     }
 
@@ -265,6 +272,7 @@ VkResult wsi_unwrap_icd_surface(struct loader_icd_term *icd_term, VkSurfaceKHR *
         *surface = icd_term->surface_list.list[icd_surface->surface_index];
     }
 
+    loader_platform_thread_unlock_mutex(&loader_lock);
     return result;
 }
 
