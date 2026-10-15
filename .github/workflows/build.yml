@@ -590,17 +590,23 @@ jobs:
         runs-on: windows-latest
         timeout-minutes: 30
         defaults:
-            run:
-                shell: bash
+          run:
+            shell: msys2 {0}
         steps:
+            - uses: msys2/setup-msys2@v2
+              with:
+                msystem: UCRT64
+                update: true
+                install: >-
+
             - uses: actions/checkout@v7
             - uses: actions/setup-python@v7
               with:
                 python-version: '3.11'
-            - name: Setup uasm
-              run: |
-                C:/msys64/usr/bin/pacman -Sy --noconfirm --needed mingw-w64-x86_64-uasm
-                printf '%s\n' 'C:/msys64/mingw64/bin' >> $GITHUB_PATH
+            - name: Add msys2 to path
+              env:
+                MSYS2_LOCATION: ${{ steps.msys2.outputs.msys2-location }}
+              run: printf '%s\n' '$env:MSYS2_LOCATION/bin' >> $GITHUB_PATH
             - name: UASM Check
               run: uasm -?
             - name: ccache
