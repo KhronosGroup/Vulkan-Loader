@@ -5594,13 +5594,10 @@ VkResult loader_create_device_chain(VkPhysicalDevice pd, const VkDeviceCreateInf
         create_info_disp.pNext = loader_create_info.pNext;
         loader_create_info.pNext = &create_info_disp;
         res = fpCreateDevice(pd, &loader_create_info, pAllocator, &created_device);
-        if (res != VK_SUCCESS) {
-            return res;
-        }
-        dev->chain_device = created_device;
 
         // Because we changed the pNext chain to use our own VkDeviceGroupDeviceCreateInfo, we need to fixup the chain to
-        // point back at the original VkDeviceGroupDeviceCreateInfo.
+        // point back at the original VkDeviceGroupDeviceCreateInfo. This must happen even if device creation failed, otherwise
+        // the caller's chain is left pointing at our stack allocated copy.
         VkBaseOutStructure *pNext = (VkBaseOutStructure *)loader_create_info.pNext;
         VkBaseOutStructure *pPrev = (VkBaseOutStructure *)&loader_create_info;
         while (NULL != pNext) {
@@ -5616,6 +5613,10 @@ VkResult loader_create_device_chain(VkPhysicalDevice pd, const VkDeviceCreateInf
             pNext = pNext->pNext;
         }
 
+        if (res != VK_SUCCESS) {
+            return res;
+        }
+        dev->chain_device = created_device;
     } else {
         loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0,
                    "loader_create_device_chain: Failed to find \'vkCreateDevice\' in layers or ICD");
