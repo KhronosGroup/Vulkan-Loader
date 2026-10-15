@@ -1675,6 +1675,34 @@ TEST(CreateDevice, ConsecutiveCreateWithoutDestruction) {
     }
 }
 
+// The loader swaps its own copy of VkDeviceGroupDeviceCreateInfo into the pNext chain while creating the device. Make sure the
+// caller's chain is restored when device creation fails, otherwise it is left pointing at the loader's stack.
+TEST(CreateDevice, DeviceGroupPNextRestoredOnFailure) {
+    FrameworkEnvironment env{};
+    // A 1.0 driver without VK_KHR_device_group_creation, so the loader rejects a device group with more than one device
+    env.add_icd(TEST_ICD_PATH_VERSION_2).add_physical_device("physical_device_0");
+
+    InstWrapper inst{env.vulkan_functions};
+    inst.CheckCreate();
+
+    VkPhysicalDevice phys_dev = inst.GetPhysDev();
+    std::array<VkPhysicalDevice, 2> group_devices{phys_dev, phys_dev};
+
+    VkDeviceGroupDeviceCreateInfo group_info{};
+    group_info.sType = VK_STRUCTURE_TYPE_DEVICE_GROUP_DEVICE_CREATE_INFO;
+    group_info.physicalDeviceCount = static_cast<uint32_t>(group_devices.size());
+    group_info.pPhysicalDevices = group_devices.data();
+    VkBaseInStructure spacer_structure{};
+    spacer_structure.sType = static_cast<VkStructureType>(100000);
+    spacer_structure.pNext = reinterpret_cast<const VkBaseInStructure*>(&group_info);
+
+    DeviceWrapper dev{inst};
+    dev.create_info.dev.pNext = &spacer_structure;
+    dev.CheckCreate(phys_dev, VK_ERROR_INITIALIZATION_FAILED);
+
+    ASSERT_EQ(reinterpret_cast<const VkBaseInStructure*>(&group_info), spacer_structure.pNext);
+}
+
 TEST(TryLoadWrongBinaries, WrongICD) {
     FrameworkEnvironment env{};
     env.add_icd(TEST_ICD_PATH_VERSION_2).add_physical_device("physical_device_0");
