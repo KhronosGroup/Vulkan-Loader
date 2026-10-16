@@ -3549,6 +3549,40 @@ TEST(SettingsFile, DeviceConfigurationWithSameDriver) {
     ASSERT_EQ(props2.driverVersion, phys_dev_0.properties.driverVersion);
 }
 
+// Two drivers expose physical devices with identical deviceUUID, driverUUID and driverVersion, and the settings file lists
+// that configuration twice. Each entry must select a different VkPhysicalDevice instead of returning the first one twice.
+TEST(SettingsFile, DeviceConfigurationDoesNotRepeatPhysicalDevice) {
+    FrameworkEnvironment env{};
+    VulkanUUID device_uuid = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15};
+    VulkanUUID driver_uuid = {10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25};
+
+    for (const char* name : {"first", "second"}) {
+        env.add_icd(TEST_ICD_PATH_VERSION_2)
+            .set_icd_api_version(VK_API_VERSION_1_1)
+            .add_physical_device(PhysicalDevice()
+                                     .set_api_version(VK_API_VERSION_1_2)
+                                     .set_deviceUUID(device_uuid)
+                                     .set_driverUUID(driver_uuid)
+                                     .set_deviceName(name));
+    }
+
+    env.loader_settings.set_file_format_version({1, 0, 0}).add_app_specific_setting(AppSpecificSettings{});
+    for (int i = 0; i < 2; i++) {
+        env.loader_settings.app_specific_settings.at(0).add_device_configuration(
+            LoaderSettingsDeviceConfiguration{}.set_deviceUUID(device_uuid).set_driverUUID(driver_uuid));
+    }
+    env.update_loader_settings(env.loader_settings);
+
+    InstWrapper inst{env.vulkan_functions};
+    inst.CheckCreate();
+    auto phys_devs = inst.GetPhysDevs(2);
+    VkPhysicalDeviceProperties props1{};
+    VkPhysicalDeviceProperties props2{};
+    inst->vkGetPhysicalDeviceProperties(phys_devs.at(0), &props1);
+    inst->vkGetPhysicalDeviceProperties(phys_devs.at(1), &props2);
+    ASSERT_FALSE(string_eq(props1.deviceName, props2.deviceName));
+}
+
 // A malformed device_configuration entry must be skipped, not cause every valid entry in the file to be dropped.
 TEST(SettingsFile, DeviceConfigurationSkipsMalformedEntry) {
     FrameworkEnvironment env{};
