@@ -7288,7 +7288,8 @@ VkResult loader_apply_settings_device_configurations(struct loader_instance *ins
         bool configuration_found = false;
         for (uint32_t j = 0; j < inst->phys_dev_count_term; j++) {
             // Don't compare deviceUUID's if they have nothing, since we require deviceUUID's to effectively sort them.
-            if (!pd_details[j].pd_supports_vulkan_11) {
+            // Also skip devices an earlier configuration already selected so the same VkPhysicalDevice isn't output twice.
+            if (!pd_details[j].pd_supports_vulkan_11 || pd_details[j].pd_was_added) {
                 continue;
             }
             if (memcmp(current_deviceUUID, pd_details[j].device_id_properties.deviceUUID, sizeof(uint8_t) * VK_UUID_SIZE) == 0 &&
