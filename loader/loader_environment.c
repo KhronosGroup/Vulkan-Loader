@@ -266,6 +266,7 @@ VkResult parse_generic_filter_environment_var(const struct loader_instance *inst
     }
 
     for (uint32_t iii = 0; iii < env_var_len; ++iii) {
+        // NOLINTNEXTLINE(clang-analyzer-security.ArrayBound)
         parsing_string[iii] = (char)tolower((unsigned char)env_var_value[iii]);
     }
     parsing_string[env_var_len] = '\0';
