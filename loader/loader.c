@@ -4486,7 +4486,7 @@ VkResult loader_scan_for_implicit_layers(struct loader_instance *inst, struct lo
     // actually present in the available layer list
     res = verify_all_meta_layers(inst, layer_filters, &regular_instance_layers, &override_layer_valid);
     if (VK_ERROR_OUT_OF_HOST_MEMORY == res) {
-        return res;
+        goto out;
     }
 
     if (override_layer_valid || implicit_metalayer_present) {
