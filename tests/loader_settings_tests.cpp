@@ -3109,6 +3109,33 @@ TEST(SettingsFile, AdditionalDriverAlreadyFound) {
     inst.CheckCreate();
     ASSERT_EQ(inst.GetPhysDevs().size(), 1U);
 }
+// settings file provided driver path that is not a manifest file (does not end in .json) is skipped rather than aborting
+// the whole driver scan
+TEST(SettingsFile, AdditionalDriverNotManifestFile) {
+    FrameworkEnvironment env{};
+    const char* regular_driver_name = "regular";
+    const char* settings_driver_name = "settings";
+    env.add_icd(TEST_ICD_PATH_VERSION_2).add_physical_device(PhysicalDevice{}.set_deviceName(regular_driver_name));
+    env.add_icd(TEST_ICD_PATH_VERSION_2, ManifestOptions{}.set_discovery_type(ManifestDiscoveryType::override_folder))
+        .add_physical_device(PhysicalDevice{}.set_deviceName(settings_driver_name));
+
+    env.loader_settings.set_file_format_version({1, 0, 0}).add_app_specific_setting(
+        AppSpecificSettings{}
+            .add_driver_configuration(LoaderSettingsDriverConfiguration{}.set_path(env.get_icd_manifest_path(1)))
+            .add_driver_configuration(
+                LoaderSettingsDriverConfiguration{}.set_path(env.get_icd_manifest_path(1).string() + ".bak")));
+    env.update_loader_settings(env.loader_settings);
+
+    InstWrapper inst{env.vulkan_functions};
+    inst.CheckCreate();
+    auto pds = inst.GetPhysDevs();
+    ASSERT_EQ(pds.size(), 2U);
+    VkPhysicalDeviceProperties props1{}, props2{};
+    inst.functions->vkGetPhysicalDeviceProperties(pds.at(0), &props1);
+    inst.functions->vkGetPhysicalDeviceProperties(pds.at(1), &props2);
+    ASSERT_TRUE(string_eq(props1.deviceName, regular_driver_name));
+    ASSERT_TRUE(string_eq(props2.deviceName, settings_driver_name));
+}
 // settings file provided drivers replacing system found drivers
 TEST(SettingsFile, ExclusiveAdditionalDrivers) {
     FrameworkEnvironment env{};
