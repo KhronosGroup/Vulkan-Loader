@@ -1294,7 +1294,20 @@ VkResult loader_settings_get_additional_driver_files(const struct loader_instanc
     }
 
     for (uint32_t i = 0; i < settings->additional_driver_count; i++) {
-        res = prepend_if_manifest_file(inst, settings->additional_drivers[i].path, out_files);
+        VkResult local_res = prepend_if_manifest_file(inst, settings->additional_drivers[i].path, out_files);
+        // VK_INCOMPLETE means the path is not a manifest file (it does not end in .json). Skip that entry rather than
+        // failing the whole driver scan, the same way add_data_files treats this return value.
+        if (VK_INCOMPLETE == local_res) {
+            loader_log(inst, VULKAN_LOADER_WARN_BIT | VULKAN_LOADER_DRIVER_BIT, 0,
+                       "loader_settings_get_additional_driver_files: Skipping additional_drivers path \"%s\" from the loader "
+                       "settings file because it is not a manifest file",
+                       settings->additional_drivers[i].path);
+            continue;
+        }
+        if (VK_SUCCESS != local_res) {
+            res = local_res;
+            goto out;
+        }
     }
 
 out:
