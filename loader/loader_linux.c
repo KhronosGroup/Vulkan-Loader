@@ -258,6 +258,8 @@ VkResult linux_read_sorted_physical_devices(struct loader_instance *inst, uint32
                                             struct loader_icd_physical_devices *icd_devices, uint32_t phys_dev_count,
                                             struct loader_physical_device_term **sorted_device_term) {
     VkResult res = VK_SUCCESS;
+    uint32_t ext_props_alloc_count = 0;
+    VkExtensionProperties *ext_props = NULL;
     bool app_is_vulkan_1_1 = loader_check_version_meets_required(LOADER_VERSION_1_1_0, inst->app_api_version);
 
     struct LinuxSortedDeviceInfo *sorted_device_info = loader_instance_heap_calloc(
@@ -295,11 +297,15 @@ VkResult linux_read_sorted_physical_devices(struct loader_instance *inst, uint32
                 icd_term->dispatch.EnumerateDeviceExtensionProperties(sorted_device_info[index].physical_device, NULL, &ext_count,
                                                                       NULL);
                 if (ext_count > 0) {
-                    VkExtensionProperties *ext_props =
-                        (VkExtensionProperties *)loader_stack_alloc(sizeof(VkExtensionProperties) * ext_count);
-                    if (NULL == ext_props) {
-                        res = VK_ERROR_OUT_OF_HOST_MEMORY;
-                        goto out;
+                    if (NULL == ext_props || ext_props_alloc_count < ext_count) {
+                        ext_props = loader_instance_heap_realloc(inst, ext_props, ext_props_alloc_count,
+                                                                 sizeof(VkExtensionProperties) * ext_count,
+                                                                 VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
+                        if (NULL == ext_props) {
+                            res = VK_ERROR_OUT_OF_HOST_MEMORY;
+                            goto out;
+                        }
+                        ext_props_alloc_count = ext_count;
                     }
                     uint32_t allocated_count = ext_count;
                     icd_term->dispatch.EnumerateDeviceExtensionProperties(sorted_device_info[index].physical_device, NULL,
@@ -361,6 +367,8 @@ VkResult linux_read_sorted_physical_devices(struct loader_instance *inst, uint32
     }
 
 out:
+
+    loader_instance_heap_free(inst, ext_props);
     loader_instance_heap_free(inst, sorted_device_info);
 
     return res;
@@ -370,6 +378,8 @@ out:
 VkResult linux_sort_physical_device_groups(struct loader_instance *inst, uint32_t group_count,
                                            struct loader_physical_device_group_term *sorted_group_term) {
     VkResult res = VK_SUCCESS;
+    uint32_t ext_props_alloc_count = 0;
+    VkExtensionProperties *ext_props = NULL;
     bool app_is_vulkan_1_1 = loader_check_version_meets_required(LOADER_VERSION_1_1_0, inst->app_api_version);
 
     loader_log(inst, VULKAN_LOADER_INFO_BIT | VULKAN_LOADER_DRIVER_BIT, 0, "linux_sort_physical_device_groups:  Original order:");
@@ -401,10 +411,15 @@ VkResult linux_sort_physical_device_groups(struct loader_instance *inst, uint32_
                 icd_term->dispatch.EnumerateDeviceExtensionProperties(
                     sorted_group_term[group].internal_device_info[gpu].physical_device, NULL, &ext_count, NULL);
                 if (ext_count > 0) {
-                    VkExtensionProperties *ext_props =
-                        (VkExtensionProperties *)loader_stack_alloc(sizeof(VkExtensionProperties) * ext_count);
-                    if (NULL == ext_props) {
-                        return VK_ERROR_OUT_OF_HOST_MEMORY;
+                    if (NULL == ext_props || ext_props_alloc_count < ext_count) {
+                        ext_props = loader_instance_heap_realloc(inst, ext_props, ext_props_alloc_count,
+                                                                 sizeof(VkExtensionProperties) * ext_count,
+                                                                 VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
+                        if (NULL == ext_props) {
+                            res = VK_ERROR_OUT_OF_HOST_MEMORY;
+                            goto out;
+                        }
+                        ext_props_alloc_count = ext_count;
                     }
                     uint32_t allocated_count = ext_count;
                     icd_term->dispatch.EnumerateDeviceExtensionProperties(
@@ -473,6 +488,9 @@ VkResult linux_sort_physical_device_groups(struct loader_instance *inst, uint32_
                        (sorted_group_term[group].internal_device_info[gpu].default_device ? "[default]" : ""));
         }
     }
+out:
+
+    loader_instance_heap_free(inst, ext_props);
 
     return res;
 }
