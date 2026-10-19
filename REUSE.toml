@@ -52,6 +52,7 @@ path = [
     "loader/generated/vk_layer_dispatch_table.h",
     "loader/generated/vk_loader_extensions.h",
     "loader/vk_loader_platform.h",
+    "loader/vk_loader_platform.c",
     "scripts/generators/loader_extension_generator.py",
 ]
 precedence = "closest"

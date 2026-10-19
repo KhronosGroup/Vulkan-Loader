@@ -215,6 +215,7 @@ if (!is_android) {
       "loader/unknown_function_handling.c",
       "loader/vk_loader_layer.h",
       "loader/vk_loader_platform.h",
+      "loader/vk_loader_platform.c",
       "loader/wsi.c",
       "loader/wsi.h",
     ]

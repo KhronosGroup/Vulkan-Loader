@@ -103,10 +103,6 @@ loader_platform_thread_mutex loader_preload_icd_lock;
 // vkCreateInstance.
 struct loader_icd_tramp_list preloaded_icds;
 
-// controls whether loader_platform_close_library() closes the libraries or not - controlled by an environment
-// variables - this is just the definition of the variable, usage is in vk_loader_platform.h
-bool loader_disable_dynamic_library_unloading;
-
 LOADER_PLATFORM_THREAD_ONCE_DECLARATION(once_init);
 
 // Creates loader_api_version struct that contains the major and minor fields, setting patch to 0

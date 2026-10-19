@@ -90,6 +90,8 @@ set(NORMAL_LOADER_SRCS
     trampoline.c
     unknown_function_handling.c
     unknown_function_handling.h
+    vk_loader_platform.c
+    vk_loader_platform.h
     wsi.c
     wsi.h
     )

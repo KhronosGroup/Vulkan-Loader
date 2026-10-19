@@ -129,7 +129,21 @@ int main(int argc, char **argv) {
         // clang-format on
     };
 
-    FILE *file = loader_fopen("gen_defines.asm", "w");
+    FILE *file = NULL;
+#if defined(_WIN32)
+    errno_t err = fopen_s(&file, "gen_defines.asm", "w");
+    if (err != 0) {
+        fprintf(stderr, "Error: failed to open gen_defines.asm for writing\n");
+        return -1;
+    }
+#else
+    file = fopen("gen_defines.asm", "w");
+    if (NULL == file) {
+        fprintf(stderr, "Error: failed to open gen_defines.asm for writing\n");
+        return -1;
+    }
+#endif
+
     // NOLINTBEGIN(cert-err33-c) - this is a build-time code generator run by developers, not part of the loader's
     // runtime attack surface; a failed write here is immediately visible as a broken build, not worth per-call checks.
     fprintf(file, "\n");
