@@ -50,26 +50,40 @@ static VkResult loader_read_entire_file(const struct loader_instance *inst, cons
     DWORD len = 0, read_len = 0;
     VkResult res = VK_SUCCESS;
     BOOL read_ok = false;
+    wchar_t *filename_utf16 = NULL;
+    wchar_t *prefixed_utf16 = NULL;
 
-    int filename_utf16_size = MultiByteToWideChar(CP_UTF8, 0, filename, -1, NULL, 0);
-    if (filename_utf16_size > 0) {
-        wchar_t *filename_utf16 = (wchar_t *)loader_stack_alloc(filename_utf16_size * sizeof(wchar_t));
-        if (MultiByteToWideChar(CP_UTF8, 0, filename, -1, filename_utf16, filename_utf16_size) == filename_utf16_size) {
-            file_handle =
-                CreateFileW(filename_utf16, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
-            // A path at or beyond MAX_PATH won't open unless we opt into long paths with the "\\?\" prefix, so retry with it.
-            if (INVALID_HANDLE_VALUE == file_handle && filename_utf16_size >= MAX_PATH) {
-                int prefixed_utf16_size = filename_utf16_size + 4;  // room for the leading "\\?\"
-                wchar_t *prefixed_utf16 = (wchar_t *)loader_stack_alloc(prefixed_utf16_size * sizeof(wchar_t));
-                prefixed_utf16[0] = L'\\';
-                prefixed_utf16[1] = L'\\';
-                prefixed_utf16[2] = L'?';
-                prefixed_utf16[3] = L'\\';
-                memcpy(prefixed_utf16 + 4, filename_utf16, filename_utf16_size * sizeof(wchar_t));
-                file_handle =
-                    CreateFileW(prefixed_utf16, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
-            }
+    bool oom = false;
+    filename_utf16 = loader_convert_char_to_wchar(inst, filename, &oom, VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
+    if (oom) {
+        loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0, "loader_get_json: Failed to allocate memory to read JSON file %s", filename);
+        res = VK_ERROR_OUT_OF_HOST_MEMORY;
+        goto out;
+    }
+    if (NULL == filename_utf16) {
+        loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0, "loader_get_json: Failed to convert JSON file %s to a wchar_t string",
+                   filename);
+        res = VK_ERROR_INITIALIZATION_FAILED;
+        goto out;
+    }
+    size_t filename_utf16_size = wcslen(filename_utf16) + 1;
+
+    file_handle = CreateFileW(filename_utf16, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+    // A path at or beyond MAX_PATH won't open unless we opt into long paths with the "\\?\" prefix, so retry with it.
+    if (INVALID_HANDLE_VALUE == file_handle && filename_utf16_size >= MAX_PATH) {
+        size_t prefixed_utf16_size = filename_utf16_size + 4;  // room for the leading "\\?\"
+        prefixed_utf16 =
+            (wchar_t *)loader_instance_heap_calloc(inst, prefixed_utf16_size * sizeof(wchar_t), VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
+        if (NULL == prefixed_utf16) {
+            res = VK_ERROR_OUT_OF_HOST_MEMORY;
+            goto out;
         }
+        prefixed_utf16[0] = L'\\';
+        prefixed_utf16[1] = L'\\';
+        prefixed_utf16[2] = L'?';
+        prefixed_utf16[3] = L'\\';
+        memcpy(prefixed_utf16 + 4, filename_utf16, filename_utf16_size * sizeof(wchar_t));
+        file_handle = CreateFileW(prefixed_utf16, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
     }
     if (INVALID_HANDLE_VALUE == file_handle) {
         loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0, "loader_get_json: Failed to open JSON file %s", filename);
@@ -101,6 +115,8 @@ out:
     if (INVALID_HANDLE_VALUE != file_handle) {
         CloseHandle(file_handle);
     }
+    loader_instance_heap_free(inst, prefixed_utf16);
+    loader_instance_heap_free(inst, filename_utf16);
     return res;
 }
 #elif COMMON_UNIX_PLATFORMS

@@ -34,7 +34,7 @@
 #include "loader_common.h"
 #include "loader.h"
 #include "log.h"
-#include "stack_allocation.h"
+#include "allocation.h"
 
 // Terminators for 1.0 functions
 
@@ -362,7 +362,8 @@ VKAPI_ATTR void VKAPI_CALL terminator_GetPhysicalDeviceQueueFamilyProperties2(Vk
         } else {
             // Allocate a temporary array for the output of the old function
             uint32_t allocated_count = *pQueueFamilyPropertyCount;
-            VkQueueFamilyProperties *properties = loader_stack_alloc(allocated_count * sizeof(VkQueueFamilyProperties));
+            VkQueueFamilyProperties *properties = loader_instance_heap_calloc(
+                inst, allocated_count * sizeof(VkQueueFamilyProperties), VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
             if (properties == NULL) {
                 *pQueueFamilyPropertyCount = 0;
                 loader_log(icd_term->this_instance, VULKAN_LOADER_ERROR_BIT, 0,
@@ -385,6 +386,7 @@ VKAPI_ATTR void VKAPI_CALL terminator_GetPhysicalDeviceQueueFamilyProperties2(Vk
                                i);
                 }
             }
+            loader_instance_heap_free(inst, properties);
         }
     }
 }
@@ -468,7 +470,8 @@ VKAPI_ATTR void VKAPI_CALL terminator_GetPhysicalDeviceSparseImageFormatProperti
         } else {
             // Allocate a temporary array for the output of the old function
             uint32_t allocated_count = *pPropertyCount;
-            VkSparseImageFormatProperties *properties = loader_stack_alloc(allocated_count * sizeof(VkSparseImageFormatProperties));
+            VkSparseImageFormatProperties *properties = loader_instance_heap_calloc(
+                inst, allocated_count * sizeof(VkSparseImageFormatProperties), VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
             if (properties == NULL) {
                 *pPropertyCount = 0;
                 loader_log(icd_term->this_instance, VULKAN_LOADER_ERROR_BIT, 0,
@@ -492,6 +495,8 @@ VKAPI_ATTR void VKAPI_CALL terminator_GetPhysicalDeviceSparseImageFormatProperti
                                i);
                 }
             }
+
+            loader_instance_heap_free(inst, properties);
         }
     }
 }

@@ -26,18 +26,18 @@
  */
 #include "vk_loader_platform.h"
 
-#if defined(_WIN32)
-#include "stack_allocation.h"
-#endif
+#include "allocation.h"
 
 bool loader_disable_dynamic_library_unloading;
 
 #if COMMON_UNIX_PLATFORMS
 
 // File IO
-bool loader_platform_file_exists(const char *path) {
-    if (access(path, F_OK)) return false;
-    return true;
+// NOLINTNEXTLINE(readability-non-const-parameter) - oom is only used on Windows but clang-tidy doesn't see that
+bool loader_platform_file_exists(const struct loader_instance *inst, const char *path, bool *oom) {
+    (void)inst;
+    (void)oom;
+    return access(path, F_OK) == 0;
 }
 // Returns true if the given string appears to be a relative or absolute
 // path, as opposed to a bare filename.
@@ -50,15 +50,23 @@ bool loader_platform_is_path_absolute(const char *path) {
 char *loader_platform_dirname(char *path) { return dirname(path); }
 
 // loader_platform_executable_path finds application path + name.
-// Path cannot be longer than 1024, returns NULL if it is greater than that.
 #if defined(__linux__) || defined(__GNU__) || defined(__CYGWIN__)
-char *loader_platform_executable_path(char *buffer, size_t size) {
+char *loader_platform_executable_path(const struct loader_instance *inst, bool *oom) {
+    size_t size = 1024;
+    char *buffer = loader_instance_heap_calloc(inst, size, VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
+    if (NULL == buffer) {
+        *oom = true;
+        return NULL;
+    }
     ssize_t count = readlink("/proc/self/exe", buffer, size);
-    if (count == -1) return NULL;
-    if (count == 0) return NULL;
     // readlink does not append a null terminator and returns up to size bytes, so a target of size or more
     // would leave no room for the terminator and buffer[count] would write past the end.
-    if ((size_t)count >= size) return NULL;
+    if (count <= 0 || (size_t)count >= size) {
+        loader_instance_heap_free(inst, buffer);
+        return NULL;
+    }
+    // We make sure count is within bounds of the array, but clang-tidy doesn't see it
+    // NOLINTNEXTLINE(clang-analyzer-security.ArrayBound)
     buffer[count] = '\0';
     return buffer;
 }
@@ -66,22 +74,31 @@ char *loader_platform_executable_path(char *buffer, size_t size) {
 #include <TargetConditionals.h>
 // TARGET_OS_IPHONE isn't just iOS it's also iOS/tvOS/watchOS. See TargetConditionals.h documentation.
 #if TARGET_OS_IPHONE
-char *loader_platform_executable_path(char *buffer, size_t size) {
-    (void)size;
+char *loader_platform_executable_path(const struct loader_instance *inst, bool *oom) {
+    size_t size = 1;
+    char *buffer = loader_instance_heap_calloc(inst, size, VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
+    if (NULL == buffer) {
+        // Return a single character string that only contains the null terminator to preserve existing behavior
+        *oom = true;
+        return NULL;
+    }
     buffer[0] = '\0';
     return buffer;
 }
 #endif
 #if TARGET_OS_OSX
 #include <libproc.h>
-char *loader_platform_executable_path(char *buffer, size_t size) {
-    // proc_pidpath takes a uint32_t for the buffer size
-    if (size > UINT32_MAX) {
+char *loader_platform_executable_path(const struct loader_instance *inst, bool *oom) {
+    size_t size = PROC_PIDPATHINFO_MAXSIZE;
+    char *buffer = loader_instance_heap_calloc(inst, size, VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
+    if (NULL == buffer) {
+        *oom = true;
         return NULL;
     }
     pid_t pid = getpid();
     int ret = proc_pidpath(pid, buffer, (uint32_t)size);
     if (ret <= 0) {
+        loader_instance_heap_free(inst, buffer);
         return NULL;
     }
     buffer[ret] = '\0';
@@ -90,7 +107,13 @@ char *loader_platform_executable_path(char *buffer, size_t size) {
 #endif
 #elif defined(__DragonFly__) || defined(__FreeBSD__) || defined(__NetBSD__)
 #include <sys/sysctl.h>
-char *loader_platform_executable_path(char *buffer, size_t size) {
+char *loader_platform_executable_path(const struct loader_instance *inst, bool *oom) {
+    size_t size = 1024;
+    char *buffer = loader_instance_heap_calloc(inst, size, VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
+    if (NULL == buffer) {
+        *oom = true;
+        return NULL;
+    }
     int mib[] = {
         CTL_KERN,
 #if defined(__NetBSD__)
@@ -104,15 +127,16 @@ char *loader_platform_executable_path(char *buffer, size_t size) {
 #endif
     };
     if (sysctl(mib, sizeof(mib) / sizeof(mib[0]), buffer, &size, NULL, 0) < 0) {
+        loader_instance_heap_free(inst, buffer);
         return NULL;
     }
 
     return buffer;
 }
 #elif defined(__Fuchsia__) || defined(__OpenBSD__)
-char *loader_platform_executable_path(char *buffer, size_t size) {
-    (void)buffer;
-    (void)size;
+char *loader_platform_executable_path(const struct loader_instance *inst, bool *oom) {
+    (void)inst;
+    (void)oom;
     return NULL;
 }
 #elif defined(__QNX__)
@@ -120,16 +144,24 @@ char *loader_platform_executable_path(char *buffer, size_t size) {
 #include <fcntl.h>
 #include <sys/stat.h>
 
-char *loader_platform_executable_path(char *buffer, size_t size) {
-    int fd = open("/proc/self/exefile", O_RDONLY);
-    size_t rdsize;
-
-    if (fd == -1) {
+char *loader_platform_executable_path(const struct loader_instance *inst, bool *oom) {
+    size_t size = 1024;
+    char *buffer = loader_instance_heap_calloc(inst, size, VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
+    if (NULL == buffer) {
+        *oom = true;
         return NULL;
     }
 
-    rdsize = read(fd, buffer, size);
-    if (rdsize == size) {
+    int fd = open("/proc/self/exefile", O_RDONLY);
+    if (fd == -1) {
+        loader_instance_heap_free(inst, buffer);
+        return NULL;
+    }
+
+    ssize_t rdsize = read(fd, buffer, size);
+    if (rdsize < 0 || (size_t)rdsize == size) {
+        loader_instance_heap_free(inst, buffer);
+        close(fd);
         return NULL;
     }
     buffer[rdsize] = 0x00;
@@ -158,11 +190,18 @@ char *loader_platform_executable_path(char *buffer, size_t size) {
 loader_platform_dl_handle loader_platform_open_driver(const char *libPath) {
     return dlopen_fuchsia(libPath, LOADER_DLOPEN_MODE, true);
 }
-loader_platform_dl_handle loader_platform_open_library(const char *libPath) {
+loader_platform_dl_handle loader_platform_open_library(const struct loader_instance *inst, const char *libPath, bool *oom) {
+    (void)inst;
+    (void)oom;
     return dlopen_fuchsia(libPath, LOADER_DLOPEN_MODE, false);
 }
 #else
-loader_platform_dl_handle loader_platform_open_library(const char *libPath) { return dlopen(libPath, LOADER_DLOPEN_MODE); }
+// NOLINTNEXTLINE(readability-non-const-parameter) - oom is only used on Windows but clang-tidy doesn't see that
+loader_platform_dl_handle loader_platform_open_library(const struct loader_instance *inst, const char *libPath, bool *oom) {
+    (void)inst;
+    (void)oom;
+    return dlopen(libPath, LOADER_DLOPEN_MODE);
+}
 #endif
 
 const char *loader_platform_open_library_error(const char *libPath) {
@@ -217,6 +256,48 @@ char *loader_strncpy(char *dest, size_t dest_sz, const char *src, size_t count) 
 
 #elif defined(_WIN32)
 
+char *loader_convert_wchar_to_char(const struct loader_instance *inst, const wchar_t *str_utf16, bool *oom, uint32_t scope) {
+    *oom = false;
+    int str_utf8_size = WideCharToMultiByte(CP_UTF8, 0, str_utf16, -1, NULL, 0, NULL, NULL);
+    if (str_utf8_size <= 0) {
+        return NULL;
+    }
+
+    char *str_utf8 = (char *)loader_instance_heap_calloc(inst, str_utf8_size, (VkSystemAllocationScope)scope);
+    if (NULL == str_utf8) {
+        *oom = true;
+        return NULL;
+    }
+
+    if (WideCharToMultiByte(CP_UTF8, 0, str_utf16, -1, str_utf8, str_utf8_size, NULL, NULL) != str_utf8_size) {
+        loader_instance_heap_free(inst, str_utf8);
+        return NULL;
+    }
+    assert((size_t)str_utf8_size == strlen(str_utf8) + 1);
+
+    return str_utf8;
+}
+
+wchar_t *loader_convert_char_to_wchar(const struct loader_instance *inst, const char *str_utf8, bool *oom, uint32_t scope) {
+    *oom = false;
+    int str_utf16_size = MultiByteToWideChar(CP_UTF8, 0, str_utf8, -1, NULL, 0);
+    if (str_utf16_size <= 0) {
+        return NULL;
+    }
+    wchar_t *str_utf16 =
+        (wchar_t *)loader_instance_heap_calloc(inst, str_utf16_size * sizeof(wchar_t), (VkSystemAllocationScope)scope);
+    if (NULL == str_utf16) {
+        *oom = true;
+        return NULL;
+    }
+    if (MultiByteToWideChar(CP_UTF8, 0, str_utf8, -1, str_utf16, str_utf16_size) != str_utf16_size) {
+        loader_instance_heap_free(inst, str_utf16);
+        return NULL;
+    }
+    assert((size_t)str_utf16_size == wcslen(str_utf16) + 1);
+    return str_utf16;
+}
+
 // Get the key for the plug n play driver registry
 // The string returned by this function should NOT be freed
 const char *LoaderPnpDriverRegistry(void) {
@@ -257,19 +338,14 @@ const wchar_t *LoaderPnpILayerRegistryWide(void) {
 }
 
 // File IO
-bool loader_platform_file_exists(const char *path) {
-    int path_utf16_size = MultiByteToWideChar(CP_UTF8, 0, path, -1, NULL, 0);
-    if (path_utf16_size <= 0) {
+bool loader_platform_file_exists(const struct loader_instance *inst, const char *path, bool *oom) {
+    wchar_t *path_utf16 = loader_convert_char_to_wchar(inst, path, oom, VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
+    if (*oom || NULL == path_utf16) {
         return false;
     }
-    wchar_t *path_utf16 = (wchar_t *)loader_stack_alloc(path_utf16_size * sizeof(wchar_t));
-    if (MultiByteToWideChar(CP_UTF8, 0, path, -1, path_utf16, path_utf16_size) != path_utf16_size) {
-        return false;
-    }
-    if (_waccess(path_utf16, 0) == -1)
-        return false;
-    else
-        return true;
+    bool ret = _waccess(path_utf16, 0) != -1;  // -1 means the file doesn't exist
+    loader_instance_heap_free(inst, path_utf16);
+    return ret;
 }
 
 // Returns true if the given string appears to be a relative or absolute
@@ -303,41 +379,48 @@ char *loader_platform_dirname(char *path) {
     return path;
 }
 
-char *loader_platform_executable_path(char *buffer, size_t size) {
-    wchar_t *buffer_utf16 = (wchar_t *)loader_stack_alloc(size * sizeof(wchar_t));
-    DWORD ret = GetModuleFileNameW(NULL, buffer_utf16, (DWORD)size);
+char *loader_platform_executable_path(const struct loader_instance *inst, bool *oom) {
+    char *buffer = NULL;
+    size_t size = 1024;
+    wchar_t *str_utf16 = (wchar_t *)loader_instance_heap_calloc(inst, size * sizeof(wchar_t), VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
+    if (NULL == str_utf16) {
+        *oom = true;
+        goto out;
+    }
+    DWORD ret = GetModuleFileNameW(NULL, str_utf16, (DWORD)size);
     if (ret == 0) {
-        return NULL;
+        goto out;
     }
     if (GetLastError() == ERROR_INSUFFICIENT_BUFFER) {
-        return NULL;
+        goto out;
     }
-    int buffer_utf8_size = WideCharToMultiByte(CP_UTF8, 0, buffer_utf16, -1, NULL, 0, NULL, NULL);
-    if (buffer_utf8_size <= 0 || (size_t)buffer_utf8_size > size) {
-        return NULL;
+    buffer = loader_convert_wchar_to_char(inst, str_utf16, oom, VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
+    if (*oom || NULL == buffer) {
+        goto out;
     }
-    if (WideCharToMultiByte(CP_UTF8, 0, buffer_utf16, -1, buffer, buffer_utf8_size, NULL, NULL) != buffer_utf8_size) {
-        return NULL;
-    }
+out:
+    loader_instance_heap_free(inst, str_utf16);
     return buffer;
 }
 
 // Dynamic Loading:
-loader_platform_dl_handle loader_platform_open_library(const char *lib_path) {
-    int lib_path_utf16_size = MultiByteToWideChar(CP_UTF8, 0, lib_path, -1, NULL, 0);
-    if (lib_path_utf16_size <= 0) {
+loader_platform_dl_handle loader_platform_open_library(const struct loader_instance *inst, const char *lib_path, bool *oom) {
+    loader_platform_dl_handle lib_handle = NULL;
+    wchar_t *lib_path_utf16 = loader_convert_char_to_wchar(inst, lib_path, oom, VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
+    if (*oom || NULL == lib_path_utf16) {
         return NULL;
     }
-    wchar_t *lib_path_utf16 = (wchar_t *)loader_stack_alloc(lib_path_utf16_size * sizeof(wchar_t));
-    if (MultiByteToWideChar(CP_UTF8, 0, lib_path, -1, lib_path_utf16, lib_path_utf16_size) != lib_path_utf16_size) {
-        return NULL;
-    }
+
     // Try loading the library the original way first.
-    loader_platform_dl_handle lib_handle = LoadLibraryW(lib_path_utf16);
+    lib_handle = LoadLibraryW(lib_path_utf16);
     if (lib_handle == NULL && GetLastError() == ERROR_MOD_NOT_FOUND) {
         // If that failed, then try loading it with broader search folders.
         lib_handle = LoadLibraryExW(lib_path_utf16, NULL, LOAD_LIBRARY_SEARCH_DEFAULT_DIRS | LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR);
     }
+    // Save the error so we don't lose it when we free the temporary string
+    DWORD last_error = GetLastError();
+    loader_instance_heap_free(inst, lib_path_utf16);
+    SetLastError(last_error);
     return lib_handle;
 }
 const char *loader_platform_open_library_error(const char *libPath) {

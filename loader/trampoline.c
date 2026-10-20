@@ -36,10 +36,8 @@
 #include "loader_environment.h"
 #include "log.h"
 #include "settings.h"
-#include "stack_allocation.h"
 #include "vk_loader_extensions.h"
 #include "vk_loader_platform.h"
-#include "wsi.h"
 
 // Trampoline entrypoints are in this file for core Vulkan commands
 
@@ -201,8 +199,12 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumerateInstanceExtensionPropert
         if (NULL == layers.list[i].pre_instance_functions.enumerate_instance_extension_properties) {
             continue;
         }
-
-        loader_open_layer_file(NULL, &layers.list[i]);
+        bool oom = false;
+        loader_open_layer_file(NULL, &layers.list[i], &oom);
+        if (oom) {
+            res = VK_ERROR_OUT_OF_HOST_MEMORY;
+            goto out;
+        }
         if (layers.list[i].lib_handle == NULL) {
             continue;
         }
@@ -237,6 +239,7 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumerateInstanceExtensionPropert
         res = chain_head->pfnNextLayer(chain_head->pNextLink, pLayerName, pPropertyCount, pProperties);
     }
 
+out:
     // Free up the layers
     loader_delete_layer_list_and_properties(NULL, &layers);
 
@@ -292,7 +295,12 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumerateInstanceLayerProperties(
             continue;
         }
 
-        loader_open_layer_file(NULL, &layers.list[i]);
+        bool oom = false;
+        loader_open_layer_file(NULL, &layers.list[i], &oom);
+        if (oom) {
+            res = VK_ERROR_OUT_OF_HOST_MEMORY;
+            goto out;
+        }
         if (layers.list[i].lib_handle == NULL) {
             continue;
         }
@@ -327,6 +335,7 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumerateInstanceLayerProperties(
         res = chain_head->pfnNextLayer(chain_head->pNextLink, pPropertyCount, pProperties);
     }
 
+out:
     // Free up the layers
     loader_delete_layer_list_and_properties(NULL, &layers);
 
@@ -389,7 +398,12 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumerateInstanceVersion(uint32_t
             continue;
         }
 
-        loader_open_layer_file(NULL, &layers.list[i]);
+        bool oom = false;
+        loader_open_layer_file(NULL, &layers.list[i], &oom);
+        if (oom) {
+            res = VK_ERROR_OUT_OF_HOST_MEMORY;
+            goto out;
+        }
         if (layers.list[i].lib_handle == NULL) {
             continue;
         }
@@ -423,6 +437,7 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumerateInstanceVersion(uint32_t
         res = chain_head->pfnNextLayer(chain_head->pNextLink, pApiVersion);
     }
 
+out:
     // Free up the layers
     loader_delete_layer_list_and_properties(NULL, &layers);
 
@@ -872,6 +887,7 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumeratePhysicalDevices(VkInstan
                                                                         VkPhysicalDevice *pPhysicalDevices) {
     VkResult res = VK_SUCCESS;
     struct loader_instance *inst;
+    VkPhysicalDevice *physical_devices = NULL;
 
     struct loader_envvar_id_filter device_id_filter = {0, NULL};
     struct loader_envvar_id_filter vendor_id_filter = {0, NULL};
@@ -894,9 +910,12 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumeratePhysicalDevices(VkInstan
         goto out;
     }
 
-    parse_id_filter_environment_var(inst, VK_DEVICE_ID_FILTER_ENV_VAR, &device_id_filter);
-    parse_id_filter_environment_var(inst, VK_VENDOR_ID_FILTER_ENV_VAR, &vendor_id_filter);
-    parse_id_filter_environment_var(inst, VK_DRIVER_ID_FILTER_ENV_VAR, &driver_id_filter);
+    res = parse_id_filter_environment_var(inst, VK_DEVICE_ID_FILTER_ENV_VAR, &device_id_filter);
+    if (VK_ERROR_OUT_OF_HOST_MEMORY == res) goto out;
+    res = parse_id_filter_environment_var(inst, VK_VENDOR_ID_FILTER_ENV_VAR, &vendor_id_filter);
+    if (VK_ERROR_OUT_OF_HOST_MEMORY == res) goto out;
+    res = parse_id_filter_environment_var(inst, VK_DRIVER_ID_FILTER_ENV_VAR, &driver_id_filter);
+    if (VK_ERROR_OUT_OF_HOST_MEMORY == res) goto out;
 
     // Call down the chain to get the physical device info
     if ((0 == device_id_filter.count) && (0 == vendor_id_filter.count) && (0 == driver_id_filter.count)) {
@@ -904,11 +923,18 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumeratePhysicalDevices(VkInstan
     } else {
         uint32_t physical_device_count = 0;
         res = inst->disp->layer_inst_disp.EnumeratePhysicalDevices(inst->instance, &physical_device_count, NULL);
-        if (res != VK_SUCCESS) {
+        if (res != VK_SUCCESS || physical_device_count == 0) {
+            *pPhysicalDeviceCount = 0;
             goto out;
         }
 
-        VkPhysicalDevice *physical_devices = loader_stack_alloc(physical_device_count * sizeof(VkPhysicalDevice));
+        physical_devices = (VkPhysicalDevice *)loader_instance_heap_calloc(inst, physical_device_count * sizeof(VkPhysicalDevice),
+                                                                           VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
+        if (NULL == physical_devices) {
+            res = VK_ERROR_OUT_OF_HOST_MEMORY;
+            goto out;
+        }
+
         res = inst->disp->layer_inst_disp.EnumeratePhysicalDevices(inst->instance, &physical_device_count, physical_devices);
         if (res != VK_SUCCESS) {
             goto out;
@@ -931,6 +957,8 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumeratePhysicalDevices(VkInstan
     }
 
 out:
+    loader_instance_heap_free(inst, (void *)physical_devices);
+
     free_id_filters(inst, &device_id_filter);
     free_id_filters(inst, &vendor_id_filter);
     free_id_filters(inst, &driver_id_filter);
@@ -2642,6 +2670,7 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumeratePhysicalDeviceGroups(
     VkInstance instance, uint32_t *pPhysicalDeviceGroupCount, VkPhysicalDeviceGroupProperties *pPhysicalDeviceGroupProperties) {
     VkResult res = VK_SUCCESS;
     struct loader_instance *inst = NULL;
+    VkPhysicalDeviceGroupProperties *physical_device_group_properties = NULL;
 
     struct loader_envvar_id_filter device_id_filter = {0, NULL};
     struct loader_envvar_id_filter vendor_id_filter = {0, NULL};
@@ -2664,9 +2693,12 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumeratePhysicalDeviceGroups(
         goto out;
     }
 
-    parse_id_filter_environment_var(inst, VK_DEVICE_ID_FILTER_ENV_VAR, &device_id_filter);
-    parse_id_filter_environment_var(inst, VK_VENDOR_ID_FILTER_ENV_VAR, &vendor_id_filter);
-    parse_id_filter_environment_var(inst, VK_DRIVER_ID_FILTER_ENV_VAR, &driver_id_filter);
+    res = parse_id_filter_environment_var(inst, VK_DEVICE_ID_FILTER_ENV_VAR, &device_id_filter);
+    if (VK_ERROR_OUT_OF_HOST_MEMORY == res) goto out;
+    res = parse_id_filter_environment_var(inst, VK_VENDOR_ID_FILTER_ENV_VAR, &vendor_id_filter);
+    if (VK_ERROR_OUT_OF_HOST_MEMORY == res) goto out;
+    res = parse_id_filter_environment_var(inst, VK_DRIVER_ID_FILTER_ENV_VAR, &driver_id_filter);
+    if (VK_ERROR_OUT_OF_HOST_MEMORY == res) goto out;
 
     // Call down the chain to get the physical device group info.
     if ((0 == device_id_filter.count) && (0 == vendor_id_filter.count) && (0 == driver_id_filter.count)) {
@@ -2675,13 +2707,21 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumeratePhysicalDeviceGroups(
     } else {
         uint32_t physical_device_group_count = 0;
         res = inst->disp->layer_inst_disp.EnumeratePhysicalDeviceGroups(inst->instance, &physical_device_group_count, NULL);
-        if (res != VK_SUCCESS) {
+        if (res != VK_SUCCESS || physical_device_group_count == 0) {
+            *pPhysicalDeviceGroupCount = 0;
             goto out;
         }
 
-        VkPhysicalDeviceGroupProperties *physical_device_group_properties =
-            loader_stack_alloc(physical_device_group_count * sizeof(VkPhysicalDeviceGroupProperties));
-        memset(physical_device_group_properties, 0, physical_device_group_count * sizeof(VkPhysicalDeviceGroupProperties));
+        physical_device_group_properties = loader_instance_heap_calloc(
+            inst, physical_device_group_count * sizeof(VkPhysicalDeviceGroupProperties), VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
+        if (NULL == physical_device_group_properties) {
+            res = VK_ERROR_OUT_OF_HOST_MEMORY;
+            goto out;
+        }
+
+        for (uint32_t i = 0; i < physical_device_group_count; i++) {
+            physical_device_group_properties[i].sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_GROUP_PROPERTIES;
+        }
 
         res = inst->disp->layer_inst_disp.EnumeratePhysicalDeviceGroups(inst->instance, &physical_device_group_count,
                                                                         physical_device_group_properties);
@@ -2703,6 +2743,8 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumeratePhysicalDeviceGroups(
     }
 
 out:
+    loader_instance_heap_free(inst, physical_device_group_properties);
+
     free_id_filters(inst, &device_id_filter);
     free_id_filters(inst, &vendor_id_filter);
     free_id_filters(inst, &driver_id_filter);

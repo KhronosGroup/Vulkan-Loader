@@ -52,7 +52,7 @@ bool check_name_matches_filter_environment_var(const char *name, const struct lo
 VkResult loader_add_environment_layers(struct loader_instance *inst, const char *enabled_layers_env,
                                        const struct loader_envvar_all_filters *filters);
 
-void parse_id_filter_environment_var(const struct loader_instance *inst, const char *env_var_name,
-                                     struct loader_envvar_id_filter *filter_struct);
+VkResult parse_id_filter_environment_var(const struct loader_instance *inst, const char *env_var_name,
+                                         struct loader_envvar_id_filter *filter_struct);
 bool check_id_matches_filter_environment_var(const uint32_t id, const struct loader_envvar_id_filter *filter_struct);
 void free_id_filters(const struct loader_instance *inst, struct loader_envvar_id_filter *filter_struct);

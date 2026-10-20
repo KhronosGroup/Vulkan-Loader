@@ -51,14 +51,10 @@ if(WIN32)
         configure_file(loader.rc.in ${CMAKE_CURRENT_BINARY_DIR}/loader.rc)
     endif()
 else()
-    # Used to make alloca() and secure_getenv() available
+    # Used to make secure_getenv() available
     target_compile_definitions(loader_specific_options INTERFACE _GNU_SOURCE)
     if(CMAKE_SYSTEM_NAME MATCHES "FreeBSD")
         target_compile_definitions(loader_specific_options INTERFACE __BSD_VISIBLE=1)
-    endif()
-    check_include_file("alloca.h" HAVE_ALLOCA_H)
-    if(HAVE_ALLOCA_H)
-        target_compile_definitions(loader_specific_options INTERFACE HAVE_ALLOCA_H)
     endif()
 
     set(THREADS_PREFER_PTHREAD_FLAG ON)

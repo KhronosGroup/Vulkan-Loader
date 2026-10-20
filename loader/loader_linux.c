@@ -33,7 +33,6 @@
 #include "loader_environment.h"
 #include "loader.h"
 #include "log.h"
-#include "stack_allocation.h"
 
 // Determine a priority based on device type with the higher value being higher priority.
 uint32_t determine_priority_type_value(VkPhysicalDeviceType type) {
@@ -298,13 +297,14 @@ VkResult linux_read_sorted_physical_devices(struct loader_instance *inst, uint32
                                                                       NULL);
                 if (ext_count > 0) {
                     if (NULL == ext_props || ext_props_alloc_count < ext_count) {
-                        ext_props = loader_instance_heap_realloc(inst, ext_props, ext_props_alloc_count,
-                                                                 sizeof(VkExtensionProperties) * ext_count,
-                                                                 VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
-                        if (NULL == ext_props) {
+                        VkExtensionProperties *new_ext_props = loader_instance_heap_realloc(
+                            inst, ext_props, ext_props_alloc_count, sizeof(VkExtensionProperties) * ext_count,
+                            VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
+                        if (NULL == new_ext_props) {
                             res = VK_ERROR_OUT_OF_HOST_MEMORY;
                             goto out;
                         }
+                        ext_props = new_ext_props;
                         ext_props_alloc_count = ext_count;
                     }
                     uint32_t allocated_count = ext_count;
@@ -412,13 +412,14 @@ VkResult linux_sort_physical_device_groups(struct loader_instance *inst, uint32_
                     sorted_group_term[group].internal_device_info[gpu].physical_device, NULL, &ext_count, NULL);
                 if (ext_count > 0) {
                     if (NULL == ext_props || ext_props_alloc_count < ext_count) {
-                        ext_props = loader_instance_heap_realloc(inst, ext_props, ext_props_alloc_count,
-                                                                 sizeof(VkExtensionProperties) * ext_count,
-                                                                 VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
-                        if (NULL == ext_props) {
+                        VkExtensionProperties *new_ext_props = loader_instance_heap_realloc(
+                            inst, ext_props, ext_props_alloc_count, sizeof(VkExtensionProperties) * ext_count,
+                            VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
+                        if (NULL == new_ext_props) {
                             res = VK_ERROR_OUT_OF_HOST_MEMORY;
                             goto out;
                         }
+                        ext_props = new_ext_props;
                         ext_props_alloc_count = ext_count;
                     }
                     uint32_t allocated_count = ext_count;

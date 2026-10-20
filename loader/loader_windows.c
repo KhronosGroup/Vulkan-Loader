@@ -1020,7 +1020,8 @@ VkResult windows_sort_physical_device_groups(struct loader_instance *inst, const
     return VK_SUCCESS;
 }
 
-char *windows_get_app_package_manifest_path(const struct loader_instance *inst) {
+char *windows_get_app_package_manifest_path(const struct loader_instance *inst, bool *oom) {
+    *oom = false;
     // These functions are only available on Windows 8 and above, load them dynamically for compatibility with Windows 7
     typedef LONG(WINAPI * PFN_GetPackagesByPackageFamily)(PCWSTR, UINT32 *, PWSTR *, UINT32 *, WCHAR *);
     PFN_GetPackagesByPackageFamily fpGetPackagesByPackageFamily =
@@ -1050,6 +1051,7 @@ char *windows_get_app_package_manifest_path(const struct loader_instance *inst) 
     WCHAR *buffer = loader_instance_heap_calloc(inst, sizeof(WCHAR) * bufferLength, VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
     PWSTR *packages = loader_instance_heap_calloc(inst, sizeof(PWSTR) * numPackages, VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
     if (!buffer || !packages) {
+        *oom = true;
         loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0,
                    "windows_get_app_package_manifest_path: Failed to allocate memory for package names");
         goto cleanup;
@@ -1080,6 +1082,7 @@ char *windows_get_app_package_manifest_path(const struct loader_instance *inst) 
 
     ret = loader_instance_heap_calloc(inst, narrowPathLength, VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
     if (!ret) {
+        *oom = true;
         loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0, "windows_get_app_package_manifest_path: Failed to allocate path");
         goto cleanup;
     }
@@ -1121,7 +1124,12 @@ VkResult get_settings_path_if_exists_in_registry_key(const struct loader_instanc
 
         if (strcmp(VK_LOADER_SETTINGS_FILENAME, &(name[start_of_path_filename])) == 0) {
             // Make sure the path exists first
-            if (!loader_platform_file_exists(name)) {
+            bool oom = false;
+            bool file_exists = loader_platform_file_exists(inst, name, &oom);
+            if (oom) {
+                return VK_ERROR_OUT_OF_HOST_MEMORY;
+            }
+            if (!file_exists) {
                 loader_log(
                     inst, VULKAN_LOADER_DEBUG_BIT, 0,
                     "Registry contained entry to vk_loader_settings.json but the corresponding file does not exist, ignoring");
