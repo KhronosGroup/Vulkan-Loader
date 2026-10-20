@@ -3979,10 +3979,11 @@ VkResult loader_parse_icd_manifest(const struct loader_instance *inst, char *fil
 
     char *file_vers_str = loader_cJSON_GetStringValue(file_format_version_json);
     if (NULL == file_vers_str) {
-        // Only reason the print can fail is if there was an allocation issue
+        // The field is present but isn't a string
         loader_log(inst, VULKAN_LOADER_WARN_BIT | VULKAN_LOADER_DRIVER_BIT, 0,
                    "loader_parse_icd_manifest: Failed retrieving ICD JSON %s \'file_format_version\' field. Skipping ICD JSON",
                    file_str);
+        res = VK_ERROR_INCOMPATIBLE_DRIVER;
         goto out;
     }
     loader_log(inst, VULKAN_LOADER_DRIVER_BIT, 0, "Found ICD manifest file %s, version %s", file_str, file_vers_str);
@@ -4049,10 +4050,10 @@ VkResult loader_parse_icd_manifest(const struct loader_instance *inst, char *fil
     }
     char *version_str = loader_cJSON_GetStringValue(api_version_json);
     if (NULL == version_str) {
-        // Only reason the print can fail is if there was an allocation issue
+        // The field is present but isn't a string
         loader_log(inst, VULKAN_LOADER_WARN_BIT | VULKAN_LOADER_DRIVER_BIT, 0,
                    "loader_parse_icd_manifest: Failed retrieving ICD JSON %s \'api_version\' field. Skipping ICD JSON.", file_str);
-
+        res = VK_ERROR_INCOMPATIBLE_DRIVER;
         goto out;
     }
     icd->version = loader_parse_version_string(version_str);

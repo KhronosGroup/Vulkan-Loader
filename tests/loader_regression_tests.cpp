@@ -27,6 +27,7 @@
  * Author: Charles Giessen <charles@lunarg.com>
  */
 
+#include "util/json_writer.h"
 #include "manifest_builders.h"
 #include "test_environment.h"
 
@@ -4905,6 +4906,43 @@ TEST(InvalidManifest, LayerMissingRequiredField) {
     // Only the valid layer is discovered; the two malformed manifests are skipped.
     auto layer_props = env.GetLayerProperties(1);
     EXPECT_TRUE(string_eq(layer_props.at(0).layerName, valid_layer_name));
+}
+
+// A driver manifest whose "file_format_version" or "api_version" is present but not a string must be skipped.
+// loader_parse_icd_manifest logs "Skipping ICD JSON" for these but returned VK_SUCCESS, so the driver was still loaded
+// with an api_version of 0, or with no library path at all when file_format_version was the bad field.
+TEST(InvalidManifest, ICDNonStringVersionField) {
+    for (const char* bad_field : {"file_format_version", "api_version"}) {
+        FrameworkEnvironment env{};
+
+        JsonWriter writer;
+        writer.StartObject();
+        if (string_eq(bad_field, "file_format_version")) {
+            writer.AddKeyedInteger("file_format_version", 1);
+        } else {
+            writer.AddKeyedString("file_format_version", "1.0.0");
+        }
+        writer.StartKeyedObject("ICD");
+        writer.AddKeyedString("library_path", std::filesystem::path(TEST_ICD_PATH_VERSION_2).native());
+        if (string_eq(bad_field, "api_version")) {
+            writer.AddKeyedInteger("api_version", VK_API_VERSION_1_0);
+        } else {
+            writer.AddKeyedString("api_version", "1.0.0");
+        }
+        writer.EndObject();
+        writer.EndObject();
+
+        std::filesystem::path new_path =
+            env.get_folder(ManifestLocation::driver).write_manifest("bad_version_driver.json", writer.output);
+#if defined(WIN32)
+        env.platform_shim->add_manifest_to_registry(ManifestCategory::icd, new_path);
+#endif
+
+        InstWrapper inst{env.vulkan_functions};
+        FillDebugUtilsCreateDetails(inst.create_info, env.debug_log);
+        inst.CheckCreate(VK_ERROR_INCOMPATIBLE_DRIVER);
+        EXPECT_FALSE(env.debug_log.find("Failed loading library associated with ICD JSON")) << bad_field;
+    }
 }
 #if defined(WIN32)
 void add_dxgi_adapter(FrameworkEnvironment& env, std::filesystem::path const& name, LUID luid, uint32_t vendor_id) {
