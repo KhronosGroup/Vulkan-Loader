@@ -217,7 +217,7 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumerateInstanceExtensionPropert
         }
 
         VkEnumerateInstanceExtensionPropertiesChain *chain_link =
-            loader_alloc(NULL, sizeof(VkEnumerateInstanceExtensionPropertiesChain), VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
+            loader_calloc(NULL, sizeof(VkEnumerateInstanceExtensionPropertiesChain), VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
         if (chain_link == NULL) {
             res = VK_ERROR_OUT_OF_HOST_MEMORY;
             break;
@@ -307,7 +307,7 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumerateInstanceLayerProperties(
         }
 
         VkEnumerateInstanceLayerPropertiesChain *chain_link =
-            loader_alloc(NULL, sizeof(VkEnumerateInstanceLayerPropertiesChain), VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
+            loader_calloc(NULL, sizeof(VkEnumerateInstanceLayerPropertiesChain), VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
         if (chain_link == NULL) {
             res = VK_ERROR_OUT_OF_HOST_MEMORY;
             break;
@@ -403,7 +403,7 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumerateInstanceVersion(uint32_t
         }
 
         VkEnumerateInstanceVersionChain *chain_link =
-            loader_alloc(NULL, sizeof(VkEnumerateInstanceVersionChain), VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
+            loader_calloc(NULL, sizeof(VkEnumerateInstanceVersionChain), VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
         if (chain_link == NULL) {
             res = VK_ERROR_OUT_OF_HOST_MEMORY;
             break;
@@ -700,8 +700,8 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkCreateInstance(const VkInstanceCr
         goto out;
     }
 
-    ptr_instance->disp = loader_instance_heap_alloc(ptr_instance, sizeof(struct loader_instance_dispatch_table),
-                                                    VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
+    ptr_instance->disp = loader_instance_heap_calloc(ptr_instance, sizeof(struct loader_instance_dispatch_table),
+                                                     VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
     if (ptr_instance->disp == NULL) {
         loader_log(ptr_instance, VULKAN_LOADER_ERROR_BIT, 0,
                    "vkCreateInstance:  Failed to allocate Loader's full Instance dispatch table.");

@@ -182,7 +182,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateDebugUtilsMessengerEXT(VkInstanc
     uint32_t next_index = 0;
     bool index_reserved = false;
 
-    uint32_t *pNextIndex = loader_instance_heap_alloc(inst, sizeof(uint32_t), VK_SYSTEM_ALLOCATION_SCOPE_OBJECT);
+    uint32_t *pNextIndex = loader_instance_heap_calloc(inst, sizeof(uint32_t), VK_SYSTEM_ALLOCATION_SCOPE_OBJECT);
     if (NULL == pNextIndex) {
         res = VK_ERROR_OUT_OF_HOST_MEMORY;
         goto out;
@@ -466,7 +466,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateDebugReportCallbackEXT(VkInstanc
     uint32_t next_index = 0;
     bool index_reserved = false;
 
-    uint32_t *pNextIndex = loader_instance_heap_alloc(inst, sizeof(uint32_t), VK_SYSTEM_ALLOCATION_SCOPE_OBJECT);
+    uint32_t *pNextIndex = loader_instance_heap_calloc(inst, sizeof(uint32_t), VK_SYSTEM_ALLOCATION_SCOPE_OBJECT);
     if (NULL == pNextIndex) {
         res = VK_ERROR_OUT_OF_HOST_MEMORY;
         goto out;

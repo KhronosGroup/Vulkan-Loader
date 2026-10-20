@@ -360,8 +360,8 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_GetPhysicalDeviceToolPropertiesEXT(VkP
         goto out;
     }
 
-    ext_props = loader_instance_heap_alloc(icd_term->this_instance, sizeof(VkExtensionProperties) * ext_count,
-                                           VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
+    ext_props = loader_instance_heap_calloc(icd_term->this_instance, sizeof(VkExtensionProperties) * ext_count,
+                                            VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
     if (!ext_props) {
         res = VK_ERROR_OUT_OF_HOST_MEMORY;
         goto out;

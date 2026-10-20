@@ -137,7 +137,7 @@ char *loader_getenv(const char *name, const struct loader_instance *inst) {
     if (val_utf8_size <= 0) {
         return NULL;
     }
-    char *val_utf8 = (char *)loader_instance_heap_alloc(inst, val_utf8_size * sizeof(char), VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
+    char *val_utf8 = (char *)loader_instance_heap_calloc(inst, val_utf8_size * sizeof(char), VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
     if (val_utf8 == NULL) {
         return NULL;
     }
@@ -584,7 +584,7 @@ void parse_id_filter_environment_var(const struct loader_instance *inst, const c
     }
     parsing_string[env_var_len] = '\0';
 
-    filter_struct->filters = (struct loader_envvar_id_filter_value *)loader_instance_heap_alloc(
+    filter_struct->filters = (struct loader_envvar_id_filter_value *)loader_instance_heap_calloc(
         inst, (num_commas + 1) * sizeof(struct loader_envvar_id_filter_value), VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
     filter_struct->count = 0;
     char *context = NULL;
