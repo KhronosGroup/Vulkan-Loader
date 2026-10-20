@@ -990,7 +990,7 @@ loader_cJSON_PrintBuffered(const cJSON *item, int prebuffer, cJSON_bool fmt, boo
         return NULL;
     }
 
-    p.buffer = (unsigned char *)loader_alloc(item->pAllocator, (size_t)prebuffer, VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
+    p.buffer = (unsigned char *)loader_calloc(item->pAllocator, (size_t)prebuffer, VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
     if (!p.buffer) {
         return NULL;
     }

@@ -1896,7 +1896,7 @@ VkResult loader_init_scanned_icd_list(const struct loader_instance *inst, struct
     VkResult res = VK_SUCCESS;
     loader_clear_scanned_icd_list(inst, icd_tramp_list);
     icd_tramp_list->capacity = 8 * sizeof(struct loader_scanned_icd);
-    icd_tramp_list->scanned_list = loader_instance_heap_alloc(inst, icd_tramp_list->capacity, VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
+    icd_tramp_list->scanned_list = loader_instance_heap_calloc(inst, icd_tramp_list->capacity, VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
     if (NULL == icd_tramp_list->scanned_list) {
         loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0,
                    "loader_init_scanned_icd_list: Realloc failed for layer list when attempting to add new layer");
@@ -6600,8 +6600,8 @@ VkResult setup_loader_tramp_phys_devs(struct loader_instance *inst, uint32_t phy
             }
             // Something wasn't found, so it's new so add it to the new list
             if (!old_item_found) {
-                new_phys_devs[new_idx] = loader_instance_heap_alloc(inst, sizeof(struct loader_physical_device_tramp),
-                                                                    VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
+                new_phys_devs[new_idx] = loader_instance_heap_calloc(inst, sizeof(struct loader_physical_device_tramp),
+                                                                     VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
                 if (NULL == new_phys_devs[new_idx]) {
                     loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0,
                                "setup_loader_tramp_phys_devs:  Failed to allocate new trampoline physical device");
@@ -6743,7 +6743,7 @@ VkResult check_and_add_to_new_phys_devs(struct loader_instance *inst, VkPhysical
     }
     // If this physical device is new, we need to allocate space for it.
     new_phys_devs[idx] =
-        loader_instance_heap_alloc(inst, sizeof(struct loader_physical_device_term), VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
+        loader_instance_heap_calloc(inst, sizeof(struct loader_physical_device_term), VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
     if (NULL == new_phys_devs[idx]) {
         loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0,
                    "check_and_add_to_new_phys_devs:  Failed to allocate physical device terminator object %d", idx);
@@ -6905,7 +6905,7 @@ VkResult setup_loader_term_phys_devs(struct loader_instance *inst) {
     if (is_linux_sort_enabled(inst)) {
         for (uint32_t dev = new_phys_devs_count; dev < new_phys_devs_capacity; ++dev) {
             new_phys_devs[dev] =
-                loader_instance_heap_alloc(inst, sizeof(struct loader_physical_device_term), VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
+                loader_instance_heap_calloc(inst, sizeof(struct loader_physical_device_term), VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
             if (NULL == new_phys_devs[dev]) {
                 loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0,
                            "setup_loader_term_phys_devs:  Failed to allocate physical device terminator object %d", dev);
@@ -7486,7 +7486,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_EnumerateDeviceExtensionProperties(VkP
     // Then allocate memory to store the physical device extension list + the extensions layers provide
     // all_exts.count currently is the number of driver extensions
     all_exts.capacity = sizeof(VkExtensionProperties) * (all_exts.count + 20);
-    all_exts.list = loader_instance_heap_alloc(icd_term->this_instance, all_exts.capacity, VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
+    all_exts.list = loader_instance_heap_calloc(icd_term->this_instance, all_exts.capacity, VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
     if (NULL == all_exts.list) {
         res = VK_ERROR_OUT_OF_HOST_MEMORY;
         goto out;
@@ -8120,7 +8120,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_EnumeratePhysicalDeviceGroups(
             }
             // If this physical device group isn't in the old buffer, create it
             if (group_properties != NULL && NULL == new_phys_dev_groups[idx]) {
-                new_phys_dev_groups[idx] = (VkPhysicalDeviceGroupProperties *)loader_instance_heap_alloc(
+                new_phys_dev_groups[idx] = (VkPhysicalDeviceGroupProperties *)loader_instance_heap_calloc(
                     inst, sizeof(VkPhysicalDeviceGroupProperties), VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
                 if (NULL == new_phys_dev_groups[idx]) {
                     loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0,

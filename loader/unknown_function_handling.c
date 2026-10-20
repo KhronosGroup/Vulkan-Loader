@@ -198,7 +198,7 @@ void *loader_dev_ext_gpa_impl(struct loader_instance *inst, const char *funcName
     // add found function to dev_ext_disp_functions;
     size_t funcName_len = strlen(funcName) + 1;
     inst->dev_ext_disp_functions[inst->dev_ext_disp_function_count] =
-        (char *)loader_instance_heap_alloc(inst, funcName_len, VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
+        (char *)loader_instance_heap_calloc(inst, funcName_len, VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
     if (NULL == inst->dev_ext_disp_functions[inst->dev_ext_disp_function_count]) {
         // failed to allocate memory, return NULL
         return NULL;
@@ -320,7 +320,7 @@ void *loader_phys_dev_ext_gpa_impl(struct loader_instance *inst, const char *fun
         // add found function to phys_dev_ext_disp_functions;
         size_t funcName_len = strlen(funcName) + 1;
         inst->phys_dev_ext_disp_functions[inst->phys_dev_ext_disp_function_count] =
-            (char *)loader_instance_heap_alloc(inst, funcName_len, VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
+            (char *)loader_instance_heap_calloc(inst, funcName_len, VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
         if (NULL == inst->phys_dev_ext_disp_functions[inst->phys_dev_ext_disp_function_count]) {
             // failed to allocate memory, return NULL
             return NULL;

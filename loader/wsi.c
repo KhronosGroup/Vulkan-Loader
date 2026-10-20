@@ -779,7 +779,7 @@ VkResult copy_surface_create_info(struct loader_instance *loader_inst, VkIcdSurf
         }
     }
 
-    icd_surface->create_info = loader_instance_heap_alloc(loader_inst, create_info_total_size, VK_SYSTEM_ALLOCATION_SCOPE_OBJECT);
+    icd_surface->create_info = loader_instance_heap_calloc(loader_inst, create_info_total_size, VK_SYSTEM_ALLOCATION_SCOPE_OBJECT);
     if (NULL == icd_surface->create_info) {
         return VK_ERROR_OUT_OF_HOST_MEMORY;
     }
@@ -1403,7 +1403,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateAndroidSurfaceKHR(VkInstance ins
 
     // Next, if so, proceed with the implementation of this function:
     VkIcdSurfaceAndroid *icd_surface =
-        loader_instance_heap_alloc(loader_inst, sizeof(VkIcdSurfaceAndroid), VK_SYSTEM_ALLOCATION_SCOPE_OBJECT);
+        loader_instance_heap_calloc(loader_inst, sizeof(VkIcdSurfaceAndroid), VK_SYSTEM_ALLOCATION_SCOPE_OBJECT);
     if (icd_surface == NULL) {
         return VK_ERROR_OUT_OF_HOST_MEMORY;
     }
@@ -1601,7 +1601,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateIOSSurfaceMVK(VkInstance instanc
 
     // Next, if so, proceed with the implementation of this function:
     VkIcdSurfaceIOS *icd_surface =
-        loader_instance_heap_alloc(loader_inst, sizeof(VkIcdSurfaceIOS), VK_SYSTEM_ALLOCATION_SCOPE_OBJECT);
+        loader_instance_heap_calloc(loader_inst, sizeof(VkIcdSurfaceIOS), VK_SYSTEM_ALLOCATION_SCOPE_OBJECT);
     if (icd_surface == NULL) {
         return VK_ERROR_OUT_OF_HOST_MEMORY;
     }

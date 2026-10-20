@@ -176,7 +176,7 @@ VkResult windows_get_device_registry_entry(const struct loader_instance *inst, s
 
     // Registry string values are not guaranteed to be stored with a terminating null (see RegQueryValueEx). Reserve two
     // extra bytes so the value can be terminated after it is read, before it is walked with strlen below.
-    manifest_path = loader_instance_heap_alloc(inst, requiredSize + 2, VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
+    manifest_path = loader_instance_heap_calloc(inst, requiredSize + 2, VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
     if (manifest_path == NULL) {
         loader_log(inst, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_DRIVER_BIT, 0,
                    "windows_get_device_registry_entry: Failed to allocate space for DriverName.");
@@ -241,7 +241,7 @@ VkResult windows_get_device_registry_files(const struct loader_instance *inst, u
 
         loader_instance_heap_free(inst, pDeviceNames);
 
-        pDeviceNames = loader_instance_heap_alloc(inst, deviceNamesSize * sizeof(wchar_t), VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
+        pDeviceNames = loader_instance_heap_calloc(inst, deviceNamesSize * sizeof(wchar_t), VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
         if (pDeviceNames == NULL) {
             loader_log(inst, VULKAN_LOADER_ERROR_BIT | log_target_flag, 0,
                        "windows_get_device_registry_files: Failed to allocate space for display device names.");
@@ -526,8 +526,8 @@ VkResult windows_read_manifest_from_d3d_adapters(const struct loader_instance *i
     // Get all of the adapters
     NTSTATUS status = fpLoaderEnumAdapters2(&adapters);
     if (status == STATUS_SUCCESS && adapters.adapter_count > 0) {
-        adapters.adapters = loader_instance_heap_alloc(inst, sizeof(*adapters.adapters) * adapters.adapter_count,
-                                                       VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
+        adapters.adapters = loader_instance_heap_calloc(inst, sizeof(*adapters.adapters) * adapters.adapter_count,
+                                                        VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
         if (adapters.adapters == NULL) {
             goto out;
         }
@@ -1047,8 +1047,8 @@ char *windows_get_app_package_manifest_path(const struct loader_instance *inst) 
     }
 
     char *ret = NULL;
-    WCHAR *buffer = loader_instance_heap_alloc(inst, sizeof(WCHAR) * bufferLength, VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
-    PWSTR *packages = loader_instance_heap_alloc(inst, sizeof(PWSTR) * numPackages, VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
+    WCHAR *buffer = loader_instance_heap_calloc(inst, sizeof(WCHAR) * bufferLength, VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
+    PWSTR *packages = loader_instance_heap_calloc(inst, sizeof(PWSTR) * numPackages, VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
     if (!buffer || !packages) {
         loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0,
                    "windows_get_app_package_manifest_path: Failed to allocate memory for package names");
@@ -1078,7 +1078,7 @@ char *windows_get_app_package_manifest_path(const struct loader_instance *inst) 
         goto cleanup;
     }
 
-    ret = loader_instance_heap_alloc(inst, narrowPathLength, VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
+    ret = loader_instance_heap_calloc(inst, narrowPathLength, VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
     if (!ret) {
         loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0, "windows_get_app_package_manifest_path: Failed to allocate path");
         goto cleanup;
