@@ -208,7 +208,6 @@ if (!is_android) {
       # "loader/phys_dev_ext.c",
       "loader/settings.c",
       "loader/settings.h",
-      "loader/stack_allocation.h",
       "loader/terminator.c",
       "loader/trampoline.c",
       "loader/unknown_function_handling.h",

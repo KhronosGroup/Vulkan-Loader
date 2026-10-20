@@ -32,7 +32,6 @@
 #include "loader_windows.h"
 #endif
 #include "log.h"
-#include "stack_allocation.h"
 #include "vk_loader_platform.h"
 
 loader_platform_thread_mutex global_loader_settings_lock;
@@ -469,7 +468,14 @@ TEST_FUNCTION_EXPORT VkResult check_if_settings_path_exists(const struct loader_
         loader_strncpy(*settings_file_path, path_len, base + start, segment_len);
         loader_strncat(*settings_file_path, path_len, suffix, suffix_len);
 
-        if (loader_platform_file_exists(*settings_file_path)) {
+        bool oom = false;
+        bool file_exists = loader_platform_file_exists(inst, *settings_file_path, &oom);
+        if (oom) {
+            loader_instance_heap_free(inst, *settings_file_path);
+            *settings_file_path = NULL;
+            return VK_ERROR_OUT_OF_HOST_MEMORY;
+        }
+        if (file_exists) {
             return VK_SUCCESS;
         }
         loader_instance_heap_free(inst, *settings_file_path);
@@ -689,6 +695,7 @@ VkResult get_loader_settings(const struct loader_instance* inst, loader_settings
     cJSON* json = NULL;
     char* file_format_version_string = NULL;
     char* settings_file_path = NULL;
+    char* current_process_path = NULL;
 #if defined(WIN32)
     res = windows_get_loader_settings_file_path(inst, &settings_file_path);
     if (res != VK_SUCCESS) {
@@ -749,9 +756,13 @@ VkResult get_loader_settings(const struct loader_instance* inst, loader_settings
     // Corresponds to the settings object which has a matching app key
     cJSON* settings_to_use = NULL;
 
-    char current_process_path[1024];
-    bool valid_exe_path = NULL != loader_platform_executable_path(current_process_path, 1024);
-
+    bool oom = false;
+    current_process_path = loader_platform_executable_path(inst, &oom);
+    if (oom) {
+        res = VK_ERROR_OUT_OF_HOST_MEMORY;
+        goto out;
+    }
+    bool valid_exe_path = NULL != current_process_path;
     cJSON* settings_object_iter = NULL;
     cJSON_ArrayForEach(settings_object_iter, &settings_iter_parent) {
         if (settings_object_iter->type != cJSON_Object) {
@@ -882,6 +893,8 @@ out:
     loader_instance_heap_free(inst, settings_file_path);
 
     loader_instance_heap_free(inst, file_format_version_string);
+
+    loader_instance_heap_free(inst, current_process_path);
     return res;
 }
 
@@ -1177,8 +1190,12 @@ VkResult enable_correct_layers_from_settings(struct loader_instance* inst, const
     char* vk_instance_layers_env_copy = NULL;
     if (vk_instance_layers_env != NULL) {
         vk_instance_layers_env_len = strlen(vk_instance_layers_env) + 1;
-        vk_instance_layers_env_copy = loader_stack_alloc(vk_instance_layers_env_len);
-        memset(vk_instance_layers_env_copy, 0, vk_instance_layers_env_len);
+        vk_instance_layers_env_copy =
+            loader_instance_heap_calloc(inst, vk_instance_layers_env_len, VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
+        if (NULL == vk_instance_layers_env_copy) {
+            res = VK_ERROR_OUT_OF_HOST_MEMORY;
+            goto out;
+        }
 
         loader_log(inst, VULKAN_LOADER_WARN_BIT | VULKAN_LOADER_LAYER_BIT, 0, "env var \'%s\' defined and adding layers: %s",
                    ENABLED_LAYERS_ENV, vk_instance_layers_env);
@@ -1273,6 +1290,8 @@ VkResult enable_correct_layers_from_settings(struct loader_instance* inst, const
         }
     }
 out:
+    loader_instance_heap_free(inst, vk_instance_layers_env_copy);
+
     if (vk_instance_layers_env != NULL) {
         loader_free_getenv(vk_instance_layers_env, inst);
     }

@@ -31,7 +31,6 @@
 #include "allocation.h"
 #include "loader.h"
 #include "log.h"
-#include "stack_allocation.h"
 #include "vk_loader_platform.h"
 #include "wsi.h"
 
@@ -2258,20 +2257,26 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateSharedSwapchainsKHR(VkDevice dev
                    "VK_KHR_display_swapchain extension enabled?");
         return VK_SUCCESS;
     }
-
-    VkSwapchainCreateInfoKHR *pCreateCopy = loader_stack_alloc(sizeof(VkSwapchainCreateInfoKHR) * swapchainCount);
+    VkResult res = VK_SUCCESS;
+    VkSwapchainCreateInfoKHR *pCreateCopy = loader_calloc_with_instance_fallback(
+        pAllocator, icd_term->this_instance, sizeof(VkSwapchainCreateInfoKHR) * swapchainCount, VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
     if (NULL == pCreateCopy) {
-        return VK_ERROR_OUT_OF_HOST_MEMORY;
+        res = VK_ERROR_OUT_OF_HOST_MEMORY;
+        goto out;
     }
     memcpy(pCreateCopy, pCreateInfos, sizeof(VkSwapchainCreateInfoKHR) * swapchainCount);
     for (uint32_t sc = 0; sc < swapchainCount; sc++) {
-        VkResult res = wsi_unwrap_icd_surface(icd_term, &pCreateCopy[sc].surface);
+        res = wsi_unwrap_icd_surface(icd_term, &pCreateCopy[sc].surface);
         if (res != VK_SUCCESS) {
-            return res;
+            goto out;
         }
     }
-    return dev->loader_dispatch.extension_terminator_dispatch.CreateSharedSwapchainsKHR(device, swapchainCount, pCreateCopy,
-                                                                                        pAllocator, pSwapchains);
+    res = dev->loader_dispatch.extension_terminator_dispatch.CreateSharedSwapchainsKHR(device, swapchainCount, pCreateCopy,
+                                                                                       pAllocator, pSwapchains);
+
+out:
+    loader_free_with_instance_fallback(pAllocator, icd_term->this_instance, pCreateCopy);
+    return res;
 }
 
 LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL
@@ -2415,21 +2420,25 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_GetPhysicalDeviceDisplayProperties2KHR
     if (pProperties == NULL || *pPropertyCount == 0) {
         return icd_term->dispatch.GetPhysicalDeviceDisplayPropertiesKHR(phys_dev_term->phys_dev, pPropertyCount, NULL);
     }
-
+    VkResult res = VK_SUCCESS;
     // If we do have to write to pProperties, then we need to write to a temporary array of VkDisplayPropertiesKHR and copy it
     uint32_t allocated_count = *pPropertyCount;
-    VkDisplayPropertiesKHR *properties = loader_stack_alloc(allocated_count * sizeof(VkDisplayPropertiesKHR));
+    VkDisplayPropertiesKHR *properties = loader_instance_heap_calloc(
+        icd_term->this_instance, allocated_count * sizeof(VkDisplayPropertiesKHR), VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
     if (properties == NULL) {
-        return VK_ERROR_OUT_OF_HOST_MEMORY;
+        res = VK_ERROR_OUT_OF_HOST_MEMORY;
+        goto out;
     }
-    VkResult res = icd_term->dispatch.GetPhysicalDeviceDisplayPropertiesKHR(phys_dev_term->phys_dev, pPropertyCount, properties);
+    res = icd_term->dispatch.GetPhysicalDeviceDisplayPropertiesKHR(phys_dev_term->phys_dev, pPropertyCount, properties);
     if (res < 0) {
-        return res;
+        goto out;
     }
     // The driver reports the written count back in pPropertyCount; never copy past the array we sized.
     for (uint32_t i = 0; i < *pPropertyCount && i < allocated_count; ++i) {
         memcpy(&pProperties[i].displayProperties, &properties[i], sizeof(VkDisplayPropertiesKHR));
     }
+out:
+    loader_instance_heap_free(icd_term->this_instance, properties);
     return res;
 }
 
@@ -2472,22 +2481,26 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_GetPhysicalDeviceDisplayPlanePropertie
     if (pProperties == NULL || *pPropertyCount == 0) {
         return icd_term->dispatch.GetPhysicalDeviceDisplayPlanePropertiesKHR(phys_dev_term->phys_dev, pPropertyCount, NULL);
     }
-
+    VkResult res = VK_SUCCESS;
     // If we do have to write to pProperties, then we need to write to a temporary array of VkDisplayPlanePropertiesKHR and copy it
     uint32_t allocated_count = *pPropertyCount;
-    VkDisplayPlanePropertiesKHR *properties = loader_stack_alloc(allocated_count * sizeof(VkDisplayPlanePropertiesKHR));
+    VkDisplayPlanePropertiesKHR *properties = loader_instance_heap_calloc(
+        icd_term->this_instance, allocated_count * sizeof(VkDisplayPlanePropertiesKHR), VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
     if (properties == NULL) {
-        return VK_ERROR_OUT_OF_HOST_MEMORY;
+        res = VK_ERROR_OUT_OF_HOST_MEMORY;
+        goto out;
     }
-    VkResult res =
-        icd_term->dispatch.GetPhysicalDeviceDisplayPlanePropertiesKHR(phys_dev_term->phys_dev, pPropertyCount, properties);
+    res = icd_term->dispatch.GetPhysicalDeviceDisplayPlanePropertiesKHR(phys_dev_term->phys_dev, pPropertyCount, properties);
     if (res < 0) {
-        return res;
+        goto out;
     }
     // The driver reports the written count back in pPropertyCount; never copy past the array we sized.
     for (uint32_t i = 0; i < *pPropertyCount && i < allocated_count; ++i) {
         memcpy(&pProperties[i].displayPlaneProperties, &properties[i], sizeof(VkDisplayPlanePropertiesKHR));
     }
+
+out:
+    loader_instance_heap_free(icd_term->this_instance, properties);
     return res;
 }
 
@@ -2533,19 +2546,24 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_GetDisplayModeProperties2KHR(VkPhysica
     }
 
     // If we do have to write to pProperties, then we need to write to a temporary array of VkDisplayModePropertiesKHR and copy it
+    VkResult res = VK_SUCCESS;
     uint32_t allocated_count = *pPropertyCount;
-    VkDisplayModePropertiesKHR *properties = loader_stack_alloc(allocated_count * sizeof(VkDisplayModePropertiesKHR));
+    VkDisplayModePropertiesKHR *properties = loader_instance_heap_calloc(
+        icd_term->this_instance, allocated_count * sizeof(VkDisplayModePropertiesKHR), VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
     if (properties == NULL) {
-        return VK_ERROR_OUT_OF_HOST_MEMORY;
+        res = VK_ERROR_OUT_OF_HOST_MEMORY;
+        goto out;
     }
-    VkResult res = icd_term->dispatch.GetDisplayModePropertiesKHR(phys_dev_term->phys_dev, display, pPropertyCount, properties);
+    res = icd_term->dispatch.GetDisplayModePropertiesKHR(phys_dev_term->phys_dev, display, pPropertyCount, properties);
     if (res < 0) {
-        return res;
+        goto out;
     }
     // The driver reports the written count back in pPropertyCount; never copy past the array we sized.
     for (uint32_t i = 0; i < *pPropertyCount && i < allocated_count; ++i) {
         memcpy(&pProperties[i].displayModeProperties, &properties[i], sizeof(VkDisplayModePropertiesKHR));
     }
+out:
+    loader_instance_heap_free(icd_term->this_instance, properties);
     return res;
 }
 
@@ -2867,14 +2885,16 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_GetPhysicalDeviceSurfaceFormats2KHR(Vk
         return icd_term->dispatch.GetPhysicalDeviceSurfaceFormatsKHR(phys_dev_term->phys_dev, surface, pSurfaceFormatCount, NULL);
     }
     // Allocate a temporary array for the output of the old function
+    VkResult res = VK_SUCCESS;
     uint32_t allocated_count = *pSurfaceFormatCount;
-    VkSurfaceFormatKHR *formats = loader_stack_alloc(allocated_count * sizeof(VkSurfaceFormatKHR));
+    VkSurfaceFormatKHR *formats = loader_instance_heap_calloc(icd_term->this_instance, allocated_count * sizeof(VkSurfaceFormatKHR),
+                                                              VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
     if (formats == NULL) {
-        return VK_ERROR_OUT_OF_HOST_MEMORY;
+        res = VK_ERROR_OUT_OF_HOST_MEMORY;
+        goto out;
     }
 
-    VkResult res =
-        icd_term->dispatch.GetPhysicalDeviceSurfaceFormatsKHR(phys_dev_term->phys_dev, surface, pSurfaceFormatCount, formats);
+    res = icd_term->dispatch.GetPhysicalDeviceSurfaceFormatsKHR(phys_dev_term->phys_dev, surface, pSurfaceFormatCount, formats);
     // The driver reports the written count back in pSurfaceFormatCount; never copy past the array we sized.
     for (uint32_t i = 0; i < *pSurfaceFormatCount && i < allocated_count; ++i) {
         pSurfaceFormats[i].surfaceFormat = formats[i];
@@ -2885,6 +2905,8 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_GetPhysicalDeviceSurfaceFormats2KHR(Vk
                        i);
         }
     }
+out:
+    loader_instance_heap_free(icd_term->this_instance, formats);
     return res;
 }
 

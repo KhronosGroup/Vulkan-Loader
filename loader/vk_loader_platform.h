@@ -282,21 +282,24 @@ static inline void loader_platform_thread_win32_once_fn(INIT_ONCE *ctl, PINIT_ON
 
 #endif
 
+struct loader_instance;
+
 // File IO
-bool loader_platform_file_exists(const char *path);
+bool loader_platform_file_exists(const struct loader_instance *inst, const char *path, bool *oom);
 // Returns true if the given string appears to be a relative or absolute
 // path, as opposed to a bare filename.
 bool loader_platform_is_path_absolute(const char *path);
 // NOLINTNEXTLINE(concurrency-mt-unsafe) - no portable reentrant dirname; the returned buffer is copied by callers immediately
 char *loader_platform_dirname(char *path);
 // loader_platform_executable_path finds application path + name.
-// Path cannot be longer than 1024, returns NULL if it is greater than that.
-char *loader_platform_executable_path(char *buffer, size_t size);
+// Allocates memory to store the path and returns it - caller is responsible for freeing
+// Sets oom to true if allocation failed. If it didn't fail allocating but didn't succeed getting the exe path, it returns NULL
+char *loader_platform_executable_path(const struct loader_instance *inst, bool *oom);
 
 #if defined(__Fuchsia__)
 loader_platform_dl_handle loader_platform_open_driver(const char *libPath);
 #endif
-loader_platform_dl_handle loader_platform_open_library(const char *libPath);
+loader_platform_dl_handle loader_platform_open_library(const struct loader_instance *inst, const char *libPath, bool *oom);
 
 const char *loader_platform_open_library_error(const char *libPath);
 void loader_platform_close_library(loader_platform_dl_handle library);
@@ -315,6 +318,17 @@ char *loader_strncat(char *dest, size_t dest_sz, const char *src, size_t count);
 char *loader_strncpy(char *dest, size_t dest_sz, const char *src, size_t count);
 
 #if defined(_WIN32)
+
+// Converts a wchar_t string to multi byte character string (utf-8)
+// oom is set to true if allocation failed
+// scope must be a valid VkSystemAllocationScope enum value - uint32_t is used to avoid needing to include vulkan.h
+char *loader_convert_wchar_to_char(const struct loader_instance *inst, const wchar_t *str_utf16, bool *oom, uint32_t scope);
+
+// Converts a multi byte character string (utf-8) string to  wchar_t string
+// oom is set to true if allocation failed
+// scope must be a valid VkSystemAllocationScope enum value - uint32_t is used to avoid needing to include vulkan.h
+wchar_t *loader_convert_char_to_wchar(const struct loader_instance *inst, const char *str_utf8, bool *oom, uint32_t scope);
+
 // Get the key for the plug n play driver registry
 // The string returned by this function should NOT be freed
 const char *LoaderPnpDriverRegistry(void);

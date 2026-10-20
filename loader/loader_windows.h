@@ -113,7 +113,7 @@ VkLoaderFeatureFlags windows_initialize_dxgi(void);
 
 // Retrieve a path to an installed app package that contains Vulkan manifests.
 // When done using the returned string, the caller should free the pointer.
-char *windows_get_app_package_manifest_path(const struct loader_instance *inst);
+char *windows_get_app_package_manifest_path(const struct loader_instance *inst, bool *oom);
 
 // Gets the path to the loader settings file, if it exists. If it doesn't exists, writes NULL to out_path.
 // The path is located through the registry as an entry in HKEY_CURRENT_USER/SOFTWARE/Khronos/Vulkan/LoaderSettings

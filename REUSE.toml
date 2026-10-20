@@ -220,7 +220,6 @@ path = [
     "loader/debug_utils.c",
     "loader/loader_windows.h",
     "loader/allocation.h",
-    "loader/stack_allocation.h",
     "loader/loader.h",
     "loader/debug_utils.h",
     "loader/loader_windows.c",
