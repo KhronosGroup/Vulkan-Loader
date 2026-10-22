@@ -4870,7 +4870,7 @@ VKAPI_ATTR VkResult VKAPI_CALL loader_layer_create_device(VkInstance instance, V
                                                           const VkDeviceCreateInfo *pCreateInfo,
                                                           const VkAllocationCallbacks *pAllocator, VkDevice *pDevice,
                                                           PFN_vkGetInstanceProcAddr layerGIPA, PFN_vkGetDeviceProcAddr *nextGDPA) {
-    VkResult res;
+    VkResult res = VK_SUCCESS;
     VkPhysicalDevice internal_device = VK_NULL_HANDLE;
     struct loader_device *dev = NULL;
     struct loader_instance *inst = NULL;
@@ -5023,10 +5023,10 @@ VkResult loader_create_instance_chain(const VkInstanceCreateInfo *pCreateInfo, c
                                       struct loader_instance *inst, VkInstance *created_instance) {
     uint32_t num_activated_layers = 0;
     struct activated_layer_info *activated_layers = NULL;
-    VkLayerInstanceCreateInfo chain_info;
+    VkLayerInstanceCreateInfo chain_info = {0};
     VkLayerInstanceLink *layer_instance_link_info = NULL;
-    VkInstanceCreateInfo loader_create_info;
-    VkResult res;
+    VkInstanceCreateInfo loader_create_info = {0};
+    VkResult res = VK_SUCCESS;
 
     PFN_vkGetInstanceProcAddr next_gipa = loader_gpa_instance_terminator;
     PFN_vkGetInstanceProcAddr cur_gipa = loader_gpa_instance_terminator;
@@ -5374,11 +5374,11 @@ VkResult loader_create_device_chain(VkPhysicalDevice pd, const VkDeviceCreateInf
 #endif
     uint32_t num_activated_layers = 0;
     struct activated_layer_info *activated_layers = NULL;
-    VkLayerDeviceLink *layer_device_link_info;
-    VkLayerDeviceCreateInfo chain_info;
-    VkDeviceCreateInfo loader_create_info;
+    VkLayerDeviceLink *layer_device_link_info = NULL;
+    VkLayerDeviceCreateInfo chain_info = {0};
+    VkDeviceCreateInfo loader_create_info = {0};
     VkDeviceGroupDeviceCreateInfo *original_device_group_create_info_struct = NULL;
-    VkResult res;
+    VkResult res = VK_SUCCESS;
 
     PFN_vkGetDeviceProcAddr fpGDPA = NULL;
     PFN_vkGetDeviceProcAddr nextGDPA = loader_gpa_device_terminator;
@@ -7476,7 +7476,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_EnumerateDeviceExtensionProperties(VkP
     // This case is during the call down the instance chain with pLayerName == NULL and pProperties == NULL
     struct loader_icd_term *icd_term = phys_dev_term->this_icd_term;
     struct loader_extension_list all_exts = {0};
-    VkResult res;
+    VkResult res = VK_SUCCESS;
 
     // We need to find the count without duplicates. This requires querying the driver for the names of the extensions.
     res = icd_term->dispatch.EnumerateDeviceExtensionProperties(phys_dev_term->phys_dev, NULL, &all_exts.count, NULL);
