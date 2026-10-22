@@ -671,6 +671,63 @@ TEST(Allocation, DebugUtilsMessengerCreateRollbackStaysInBounds) {
     ASSERT_TRUE(tracker.empty());
 }
 
+static VKAPI_ATTR VkBool32 VKAPI_CALL noop_debug_report_callback(VkDebugReportFlagsEXT, VkDebugReportObjectTypeEXT, uint64_t,
+                                                                 size_t, int32_t, const char*, const char*, void*) {
+    return VK_FALSE;
+}
+
+// The allocator passed to vkCreate/vkDestroyDebugUtilsMessengerEXT and vkCreate/vkDestroyDebugReportCallbackEXT may differ
+// from the instance allocator. Everything the loader allocates for the messenger/callback has to come from, and go back to,
+// the allocator passed to those calls.
+TEST(Allocation, DebugMessengerAndReportCallbackUseObjectAllocator) {
+    FrameworkEnvironment env{};
+    env.add_icd(TEST_ICD_PATH_VERSION_2)
+        .set_min_icd_interface_version(5)
+        .add_instance_extension(VK_EXT_DEBUG_UTILS_EXTENSION_NAME)
+        .add_physical_device({});
+
+    MemoryTracker instance_tracker{};
+    MemoryTracker object_tracker{};
+
+    VkInstance instance = VK_NULL_HANDLE;
+    InstanceCreateInfo inst_create_info{};
+    inst_create_info.add_extension(VK_EXT_DEBUG_UTILS_EXTENSION_NAME).add_extension(VK_EXT_DEBUG_REPORT_EXTENSION_NAME);
+    ASSERT_EQ(VK_SUCCESS, env.vulkan_functions.vkCreateInstance(inst_create_info.get(), instance_tracker.get(), &instance));
+
+    PFN_vkCreateDebugUtilsMessengerEXT create_messenger = reinterpret_cast<PFN_vkCreateDebugUtilsMessengerEXT>(
+        env.vulkan_functions.vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT"));
+    PFN_vkDestroyDebugUtilsMessengerEXT destroy_messenger = reinterpret_cast<PFN_vkDestroyDebugUtilsMessengerEXT>(
+        env.vulkan_functions.vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT"));
+    PFN_vkCreateDebugReportCallbackEXT create_callback = reinterpret_cast<PFN_vkCreateDebugReportCallbackEXT>(
+        env.vulkan_functions.vkGetInstanceProcAddr(instance, "vkCreateDebugReportCallbackEXT"));
+    PFN_vkDestroyDebugReportCallbackEXT destroy_callback = reinterpret_cast<PFN_vkDestroyDebugReportCallbackEXT>(
+        env.vulkan_functions.vkGetInstanceProcAddr(instance, "vkDestroyDebugReportCallbackEXT"));
+    ASSERT_NE(create_messenger, nullptr);
+    ASSERT_NE(destroy_messenger, nullptr);
+    ASSERT_NE(create_callback, nullptr);
+    ASSERT_NE(destroy_callback, nullptr);
+
+    VkDebugUtilsMessengerCreateInfoEXT messenger_info{VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT};
+    messenger_info.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
+    messenger_info.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT;
+    messenger_info.pfnUserCallback = noop_debug_utils_callback;
+    VkDebugUtilsMessengerEXT messenger = VK_NULL_HANDLE;
+    ASSERT_EQ(VK_SUCCESS, create_messenger(instance, &messenger_info, object_tracker.get(), &messenger));
+
+    VkDebugReportCallbackCreateInfoEXT callback_info{VK_STRUCTURE_TYPE_DEBUG_REPORT_CALLBACK_CREATE_INFO_EXT};
+    callback_info.flags = VK_DEBUG_REPORT_ERROR_BIT_EXT;
+    callback_info.pfnCallback = noop_debug_report_callback;
+    VkDebugReportCallbackEXT callback = VK_NULL_HANDLE;
+    ASSERT_EQ(VK_SUCCESS, create_callback(instance, &callback_info, object_tracker.get(), &callback));
+
+    destroy_messenger(instance, messenger, object_tracker.get());
+    destroy_callback(instance, callback, object_tracker.get());
+    ASSERT_TRUE(object_tracker.empty());
+
+    env.vulkan_functions.vkDestroyInstance(instance, instance_tracker.get());
+    ASSERT_TRUE(instance_tracker.empty());
+}
+
 // Test failure during vkCreateInstance to make sure we don't leak memory if
 // one of the out-of-memory conditions trigger.
 TEST(Allocation, CreateInstanceIntentionalAllocFailWithSettingsFilePresent) {
