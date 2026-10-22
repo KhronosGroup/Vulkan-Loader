@@ -44,8 +44,7 @@
 - [Layer Dispatch Initialization](#layer-dispatch-initialization)
 - [Example Code for CreateInstance](#example-code-for-createinstance)
 - [Example Code for CreateDevice](#example-code-for-createdevice)
-- [Meta-layers](#meta-layers)
-  - [Override Meta-Layer](#override-meta-layer)
+- [Meta-layers - REMOVED](#meta-layers---removed)
 - [Pre-Instance Functions](#pre-instance-functions)
 - [Special Considerations](#special-considerations)
   - [Associating Private Data with Vulkan Objects Within a Layer](#associating-private-data-with-vulkan-objects-within-a-layer)
@@ -56,6 +55,7 @@
   - [Versioning and Activation Interactions](#versioning-and-activation-interactions)
 - [Layer Manifest File Format](#layer-manifest-file-format)
   - [Layer Manifest File Version History](#layer-manifest-file-version-history)
+  - [Layer Manifest File Version 1.2.2](#layer-manifest-file-version-122)
   - [Layer Manifest File Version 1.2.1](#layer-manifest-file-version-121)
     - [Layer Manifest File Version 1.2.0](#layer-manifest-file-version-120)
     - [Layer Manifest File Version 1.1.2](#layer-manifest-file-version-112)
@@ -1170,92 +1170,19 @@ In practice, this would be done by any method a layer chooses to get an
 instance handle from the physical device.
 
 
-## Meta-layers
+## Meta-layers - REMOVED
 
-Meta-layers are a special kind of layer which is only available through the
-Khronos loader.
-While normal layers are associated with one particular library, a meta-layer
-is actually a collection layer which contains an ordered list of other layers
-(called component layers).
+Meta-layers have been removed from the Khronos Loader.
+Their function was to allow enabling a group of layers in a particular
+order, but the were functionally replaced by the Vulkan Loader Settings file.
 
-The benefits of a meta-layer are:
- 1. More than one layer may be activated using a single layer name by simply
-grouping multiple layers in a meta-layer.
- 2. The order of individual component layers is loaded can be defined within
-the meta-layer.
- 3. Layer configurations (internal to the meta-layer manifest file) can easily
-be shared with others.
- 4. The loader will automatically collate all instance and device extensions in
-a meta-layer's component layers, and report them as the meta-layer's properties
-to the application when queried.
+See [LoaderSettingsFile.md](LoaderSettingsFile.md) for more details.
 
-Restrictions to defining and using a meta-layer are:
- 1. A Meta-layer Manifest file **must** be a properly formatted that contains
-one or more component layers.
- 3. All component layers **must be** present on a system for the meta-layer to
-be used.
- 4. All component layers **must be** at the same Vulkan API major and minor
-version as the meta-layer for the meta-layer to be used.
-
-The ordering of a meta-layer's component layers in the instance or device call-
-chain is simple:
-  * The first layer listed will be the layer closest to the application.
-  * The last layer listed will be the layer closest to the drivers.
-
-Inside the meta-layer Manifest file, each component layer is listed by its
-layer name.
-This is the "name" tag's value associated with each component layer's Manifest
-file under the "layer" or "layers" tag.
-This is also the name that would normally be used when activating a layer
-during `vkCreateInstance`.
-
-Any duplicate layer names in either the component layer list, or globally among
-all enabled layers, will simply be ignored by the loader.
-Only the first instance of any layer name will be used.
-
-For example, if a layer is enabled using the environment variable
-`VK_INSTANCE_LAYERS` and have that same layer listed in a meta-layer, then the
-environment-variable-enabled layer will be used and the component layer will
-be dropped.
-Likewise, if a person were to enable a meta-layer and then separately enable
-one of the component layers afterwards, the second instantiation of the layer
-name would be ignored.
-
-The Manifest file formatting necessary to define a meta-layer can be found in
-the [Layer Manifest File Format](#layer-manifest-file-format) section.
-
-### Override Meta-Layer
-
-If an implicit meta-layer was found on the system with the name
-`VK_LAYER_LUNARG_override`, the loader uses it as an 'override' layer.
-This is used to selectively enable and disable other layers from being loaded.
-It can be applied globally or to a specific application or applications.
-The override meta layer can have the following additional keys:
-  * `blacklisted_layers` - List of explicit layer names that should not be
-loaded even if requested by the application.
-  * `app_keys` - List of paths to executables that the override layer applies
-to.
-  * `override_paths` - List of paths which will be used as the search location
-for component layers.
-
-When an application starts up and the override layer is present, the loader
-first checks to see if the application is in the list.
-If it isn't, the override layer is not applied.
-If the list is empty or if `app_keys` doesn't exist, the loader makes the
-override layer global and applies it to every application upon startup.
-
-If the override layer contains `override_paths`, then it uses this list of
-paths exclusively for component layers.
-Thus, it ignores both the default explicit and implicit layer layer search
-locations as well as paths set by environment variables like `VK_LAYER_PATH`.
-If any component layer is not present in the provided override paths, the meta
-layer is disabled.
-
-The override meta-layer is primarily enabled when using the
-[VkConfig](https://github.com/LunarG/VulkanTools/blob/main/vkconfig/README.md)
-tool included in the Vulkan SDK.
-It is typically only available while the VkConfig tool is actually executing.
-Please refer to that documentation for more information.
+The *Override Meta-Layer* was a special meta layer that was utilized by
+VkConfig to provide additional controls over which layers were enabled,
+which weren't allowed to be enabled, and custom paths to load layers from.
+The Loader Settings File replaced the functionality that the *Override*
+*Meta-Layer* provided, so was removed to eliminate duplicate functionality.
 
 ## Pre-Instance Functions
 
@@ -1570,41 +1497,11 @@ newer API versions.
 Thus, the disabling caused confusion for users but didn't protect them from
 potentially badly behaving layers.
 
-* An implicit layer will ignore its disable environment variable being set if
-it is a component in an active meta layer.
-
 * The environment `VK_LAYER_PATH` only affects explicit layer searching, not
 implicit.
 Layers found in this path are treated as explicit, even if they contain all the
 requisite fields to be an implicit layer.
 This means they will not be implicitly enabled.
-
-* Meta layers do not have to be implicit - they can be explicit.
-It cannot be assumed that because a meta layer is present that it will be active.
-
-* The `blacklisted_layers` member of the override meta layer will prevent both
-implicitly enabled and explicitely enabled layers from activating.
-Any layers in an application's `VkInstanceCreateInfo::ppEnabledLayerNames` that
-are in the blacklist will not be enabled.
-
-* The `app_keys` member of the override meta layer will make a meta layer apply
-to only applications found in this list.
-If there are any items in the app keys list, the meta layer isn't enabled for
-any application except those found in the list.
-
-* The `override_paths` member of the override meta layer, if present, will
-replace the search paths the loader uses to find component layers.
-If any component layer isn't present in the override paths, the override meta
-layer is not applied.
-So if an override meta layer wants to mix default and custom layer locations,
-the override paths must contain both custom and default layer locations.
-
-* If the override layer is both present and contains `override_paths`, the
-paths from the environment variable `VK_LAYER_PATH` are ignored when searching
-for explicit layers.
-For example, when both the meta layer override paths and `VK_LAYER_PATH` are
-present, none of the layers in `VK_LAYER_PATH` are discoverable, and the
-loader will not find them.
 
 
 ## Layer Manifest File Format
@@ -1685,24 +1582,6 @@ manifest file:
 }
 ```
 
-Here's an example of a meta-layer manifest file:
-```json
-{
-   "file_format_version" : "1.1.1",
-   "layer": {
-       "name": "VK_LAYER_META_layer",
-       "type": "GLOBAL",
-       "api_version" : "1.0.40",
-       "implementation_version" : "1",
-       "description" : "LunarG Meta-layer example",
-       "component_layers": [
-           "VK_LAYER_KHRONOS_validation",
-           "VK_LAYER_LUNARG_api_dump"
-       ]
-   }
-}
-```
-
 
 <table style="width:100%">
   <tr>
@@ -1726,41 +1605,6 @@ Here's an example of a meta-layer manifest file:
     <td>"layer"/"layers"</td>
     <td><b>Yes</b></td>
     <td><small>vkEnumerateInstanceLayerProperties</small></td>
-  </tr>
-  <tr>
-    <td>"app_keys"</td>
-    <td>List of paths to executables that the meta-layer applies to.
-    </td>
-    <td><b>Meta-layers Only</b></td>
-    <td>"layer"/"layers"</td>
-    <td>No</td>
-    <td><small>N/A</small></td>
-  </tr>
-  <tr>
-    <td>"blacklisted_layers"</td>
-    <td>List of explicit layer names that should not be loaded even if
-        requested by the application.
-    </td>
-    <td><b>Meta-layers Only</b></td>
-    <td>"layer"/"layers"</td>
-    <td>No</td>
-    <td><small>N/A</small></td>
-  </tr>
-  <tr>
-    <td>"component_layers"</td>
-    <td>Indicates the component layer names that are
-        part of a meta-layer.
-        The names listed must be the "name" identified in each of the component
-        layer's Mainfest file "name" tag (this is the same as the name of the
-        layer that is passed to the `vkCreateInstance` command).
-        All component layers must be present on the system and found by the
-        loader in order for this meta-layer to be available and activated. <br/>
-        <b>This field must not be present if "library_path" is defined</b>.
-    </td>
-    <td><b>Meta-layers Only</b></td>
-    <td>"layer"/"layers"</td>
-    <td>No</td>
-    <td><small>N/A</small></td>
   </tr>
   <tr>
     <td>"description"</td>
@@ -1895,7 +1739,7 @@ Here's an example of a meta-layer manifest file:
   </tr>
   <tr>
     <td>"library_path"</td>
-    <td>Specifies either a filename, a relative pathname, or a full pathname to
+    <td><b>REQUIRED:</b> Specifies either a filename, a relative pathname, or a full pathname to
         a layer shared library file.
         If "library_path" specifies a relative pathname, it is relative to the
         path of the JSON manifest file (e.g. for cases when an application
@@ -1906,11 +1750,10 @@ Here's an example of a meta-layer manifest file:
         There are no rules about the name of the layer shared library files
         other than it should end with the appropriate suffix (".DLL" on Windows,
         ".so" on Linux, and ".dylib" on macOS).<br/>
-        <b>This field must not be present if "component_layers" is defined</b>.
     </td>
-    <td><b>Not Valid For Meta-layers</b></td>
+    <td>None</td>
     <td>"layer"/"layers"</td>
-    <td><b>Yes for Non-Meta layers</b></td>
+    <td><b>Yes</b></td>
     <td><small>N/A</small></td>
   </tr>
   <td>"library_arch"</td>
@@ -1932,16 +1775,6 @@ Here's an example of a meta-layer manifest file:
     <td>"layer"/"layers"</td>
     <td><b>Yes</b></td>
     <td><small>vkEnumerateInstanceLayerProperties</small></td>
-  </tr>
-  <tr>
-    <td>"override_paths"</td>
-    <td>List of paths which will be used as the search location for component
-        layers.
-    </td>
-    <td><b>Meta-layers Only</b></td>
-    <td>"layer"/"layers"</td>
-    <td>No</td>
-    <td><small>N/A</small></td>
   </tr>
   <tr>
     <td>"pre_instance_functions"</td>
@@ -1984,6 +1817,16 @@ Here's an example of a meta-layer manifest file:
 
 The current highest supported Layer Manifest file format supported is 1.2.0.
 Information about each version is detailed in the following sub-sections:
+
+### Layer Manifest File Version 1.2.2
+
+Deprecates Meta Layers and the following fields in the layer manifest file:
+* "app\_keys"
+* "blacklisted\_layers"
+* "component\_layers"
+* "override\_paths"
+
+The "library_path" field is now mandatory.
 
 ### Layer Manifest File Version 1.2.1
 
@@ -2310,7 +2153,7 @@ Android Vulkan documentation</a>.
   </tr>
   <tr>
     <td><small><b>LLP_LAYER_7</b></small></td>
-    <td>If a layer is a Meta-layer, each component layer in its manifest file
+    <td><b>DEPRECATED:</b> If a layer is a Meta-layer, each component layer in its manifest file
         <b>must</b> be present on the system.
     </td>
     <td>The layer will not be loaded.</td>
@@ -2322,7 +2165,7 @@ Android Vulkan documentation</a>.
   </tr>
   <tr>
     <td><small><b>LLP_LAYER_8</b></small></td>
-    <td>If a layer is a Meta-layer, each component layer in its manifest file
+    <td><b>DEPRECATED:</b> If a layer is a Meta-layer, each component layer in its manifest file
         <b>must</b> report the same or a newer Vulkan API major and minor
         version than the meta-layer.
     </td>
@@ -2716,7 +2559,7 @@ Android Vulkan documentation</a>.
   </tr>
   <tr>
     <td><small><b>LLP_LOADER_10</b></small></td>
-    <td>A loader <b>must</b> verify that all meta-layers contain valid
+    <td><b>DEPRECATED:</b> A loader <b>must</b> verify that all meta-layers contain valid
         component layers that the loader can find on the system and that also
         report the same Vulkan API version as the meta-layer itself before it
         loads the meta-layer.
@@ -2729,7 +2572,7 @@ Android Vulkan documentation</a>.
   </tr>
   <tr>
     <td><small><b>LLP_LOADER_11</b></small></td>
-    <td>If the override meta-layer is present, a loader <b>must</b> load it
+    <td><b>DEPRECATED:</b> If the override meta-layer is present, a loader <b>must</b> load it
         and corresponding component layers after all other implicit layers have
         been added to the call chain.
     </td>
@@ -2741,7 +2584,7 @@ Android Vulkan documentation</a>.
   </tr>
   <tr>
     <td><small><b>LLP_LOADER_12</b></small></td>
-    <td>If the override meta-layer is present and has a blacklist of layers to
+    <td><b>DEPRECATED:</b> If the override meta-layer is present and has a blacklist of layers to
         remove, a loader <b>must</b> disable all layers listed in the blacklist.
     </td>
     <td>The behavior is undefined and may result in crashes or corruption.</td>

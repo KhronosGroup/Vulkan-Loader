@@ -141,7 +141,7 @@ TEST(SettingsFile, SettingsInUnsecuredLocation) {
     env.add_icd(TEST_ICD_PATH_VERSION_2).add_physical_device({});
     const char* regular_layer_name = "VK_LAYER_TestLayer_0";
     env.add_explicit_layer(
-        ManifestOptions{}.set_discovery_type(ManifestDiscoveryType::override_folder),
+        ManifestOptions{}.set_discovery_type(ManifestDiscoveryType::overflow_folder),
         ManifestLayer{}.add_layer(
             ManifestLayer::LayerDescription{}.set_name(regular_layer_name).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)));
     env.update_loader_settings(
@@ -170,7 +170,7 @@ TEST(SettingsFile, SettingsInUnsecuredLocationRunningWithElevatedPrivileges) {
     env.add_icd(TEST_ICD_PATH_VERSION_2).add_physical_device({});
     const char* regular_layer_name = "VK_LAYER_TestLayer_0";
     env.add_explicit_layer(
-        ManifestOptions{}.set_discovery_type(ManifestDiscoveryType::override_folder),
+        ManifestOptions{}.set_discovery_type(ManifestDiscoveryType::overflow_folder),
         ManifestLayer{}.add_layer(
             ManifestLayer::LayerDescription{}.set_name(regular_layer_name).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)));
     env.update_loader_settings(
@@ -197,7 +197,7 @@ TEST(SettingsFile, SettingsInSecuredLocation) {
     env.add_icd(TEST_ICD_PATH_VERSION_2);
     const char* regular_layer_name = "VK_LAYER_TestLayer_0";
     env.add_explicit_layer(
-        ManifestOptions{}.set_discovery_type(ManifestDiscoveryType::override_folder),
+        ManifestOptions{}.set_discovery_type(ManifestDiscoveryType::overflow_folder),
         ManifestLayer{}.add_layer(
             ManifestLayer::LayerDescription{}.set_name(regular_layer_name).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)));
     env.update_loader_settings(env.loader_settings.set_file_format_version({1, 0, 0}).add_app_specific_setting(
@@ -224,13 +224,13 @@ TEST(SettingsFile, SupportsMultipleSettingsSimultaneously) {
     FrameworkEnvironment env{};
     const char* app_specific_layer_name = "VK_LAYER_TestLayer_0";
     env.add_explicit_layer(
-        ManifestOptions{}.set_discovery_type(ManifestDiscoveryType::override_folder),
+        ManifestOptions{}.set_discovery_type(ManifestDiscoveryType::overflow_folder),
         ManifestLayer{}.add_layer(
             ManifestLayer::LayerDescription{}.set_name(app_specific_layer_name).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)));
 
     const char* global_layer_name = "VK_LAYER_TestLayer_1";
     env.add_explicit_layer(
-        ManifestOptions{}.set_discovery_type(ManifestDiscoveryType::override_folder),
+        ManifestOptions{}.set_discovery_type(ManifestDiscoveryType::overflow_folder),
         ManifestLayer{}.add_layer(
             ManifestLayer::LayerDescription{}.set_name(global_layer_name).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)));
 
@@ -300,7 +300,7 @@ TEST(SettingsFile, LayerAutoEnabledByEnvVars) {
 
     const char* layer_name = "VK_LAYER_automatic";
     env.add_explicit_layer(
-        ManifestOptions{}.set_discovery_type(ManifestDiscoveryType::override_folder),
+        ManifestOptions{}.set_discovery_type(ManifestDiscoveryType::overflow_folder),
         ManifestLayer{}.add_layer(
             ManifestLayer::LayerDescription{}.set_name(layer_name).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)));
 
@@ -773,267 +773,6 @@ TEST(SettingsFile, MismatchedLayerNameAndManifestPath) {
     inst.CheckCreate();
     ASSERT_TRUE(env.debug_log.find(get_settings_location_log_message(env)));
     ASSERT_NO_FATAL_FAILURE(inst.GetActiveLayers(inst.GetPhysDev(), 0));
-}
-
-// Settings file should take precedence over the meta layer, if present
-TEST(SettingsFile, ImplicitLayerWithEnableEnvironment) {
-    FrameworkEnvironment env{};
-    env.add_icd(TEST_ICD_PATH_VERSION_2).add_physical_device({});
-
-    const char* explicit_layer_1 = "VK_LAYER_Regular_TestLayer";
-    env.add_explicit_layer(
-        {}, ManifestLayer{}.add_layer(
-                ManifestLayer::LayerDescription{}.set_name(explicit_layer_1).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)));
-
-    const char* implicit_layer_1 = "VK_LAYER_RegularImplicit_TestLayer";
-    env.add_implicit_layer({}, ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
-                                                             .set_name(implicit_layer_1)
-                                                             .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
-                                                             .set_disable_environment("AndISaidHey")
-                                                             .set_enable_environment("WhatsGoingOn")));
-
-    const char* explicit_layer_2 = "VK_LAYER_Regular_TestLayer1";
-    env.add_explicit_layer(
-        {}, ManifestLayer{}.add_layer(
-                ManifestLayer::LayerDescription{}.set_name(explicit_layer_2).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)));
-
-    const char* implicit_layer_2 = "VK_LAYER_RegularImplicit_TestLayer2";
-    env.add_explicit_layer({}, ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
-                                                             .set_name(implicit_layer_2)
-                                                             .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
-                                                             .set_disable_environment("HeyHeyHeyyaya")
-                                                             .set_enable_environment("HeyHeyHeyhey")));
-
-    const char* explicit_layer_3 = "VK_LAYER_Regular_TestLayer3";
-    env.add_explicit_layer(
-        {}, ManifestLayer{}.add_layer(
-                ManifestLayer::LayerDescription{}.set_name(explicit_layer_3).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)));
-
-    env.update_loader_settings(env.loader_settings.set_file_format_version({1, 0, 0}).add_app_specific_setting(
-        AppSpecificSettings{}
-            .add_stderr_log_filter("all")
-            .add_layer_configuration(LoaderSettingsLayerConfiguration{}
-                                         .set_name(explicit_layer_1)
-                                         .set_path(env.get_shimmed_layer_manifest_path(0))
-                                         .set_control("auto")
-                                         .set_treat_as_implicit_manifest(false))
-            .add_layer_configuration(LoaderSettingsLayerConfiguration{}.set_control("unordered_layer_location"))
-            .add_layer_configuration(LoaderSettingsLayerConfiguration{}
-                                         .set_name(implicit_layer_1)
-                                         .set_path(env.get_shimmed_layer_manifest_path(1))
-                                         .set_control("auto")
-                                         .set_treat_as_implicit_manifest(true))
-            .add_layer_configuration(LoaderSettingsLayerConfiguration{}
-                                         .set_name(explicit_layer_2)
-                                         .set_path(env.get_shimmed_layer_manifest_path(2))
-                                         .set_control("auto")
-                                         .set_treat_as_implicit_manifest(false))
-            .add_layer_configuration(LoaderSettingsLayerConfiguration{}
-                                         .set_name(implicit_layer_2)
-                                         .set_path(env.get_shimmed_layer_manifest_path(3))
-                                         .set_control("auto")
-                                         .set_treat_as_implicit_manifest(true))
-            .add_layer_configuration(LoaderSettingsLayerConfiguration{}
-                                         .set_name(explicit_layer_3)
-                                         .set_path(env.get_shimmed_layer_manifest_path(4))
-                                         .set_control("on")
-                                         .set_treat_as_implicit_manifest(false))));
-    {
-        auto layer_props = env.GetLayerProperties(5);
-        ASSERT_TRUE(string_eq(layer_props.at(0).layerName, explicit_layer_1));
-        ASSERT_TRUE(string_eq(layer_props.at(1).layerName, implicit_layer_1));
-        ASSERT_TRUE(string_eq(layer_props.at(2).layerName, explicit_layer_2));
-        ASSERT_TRUE(string_eq(layer_props.at(3).layerName, implicit_layer_2));
-        ASSERT_TRUE(string_eq(layer_props.at(4).layerName, explicit_layer_3));
-
-        InstWrapper inst{env.vulkan_functions};
-        FillDebugUtilsCreateDetails(inst.create_info, env.debug_log);
-        inst.CheckCreate();
-        ASSERT_TRUE(env.debug_log.find(get_settings_location_log_message(env)));
-        auto layers = inst.GetActiveLayers(inst.GetPhysDev(), 1);
-        ASSERT_TRUE(string_eq(layers.at(0).layerName, explicit_layer_3));
-    }
-    {
-        EnvVarWrapper enable_meta_layer{"WhatsGoingOn", "1"};
-        auto layer_props = env.GetLayerProperties(5);
-        ASSERT_TRUE(string_eq(layer_props.at(0).layerName, explicit_layer_1));
-        ASSERT_TRUE(string_eq(layer_props.at(1).layerName, implicit_layer_1));
-        ASSERT_TRUE(string_eq(layer_props.at(2).layerName, explicit_layer_2));
-        ASSERT_TRUE(string_eq(layer_props.at(3).layerName, implicit_layer_2));
-        ASSERT_TRUE(string_eq(layer_props.at(4).layerName, explicit_layer_3));
-
-        InstWrapper inst{env.vulkan_functions};
-        FillDebugUtilsCreateDetails(inst.create_info, env.debug_log);
-        inst.CheckCreate();
-        ASSERT_TRUE(env.debug_log.find(get_settings_location_log_message(env)));
-        auto layers = inst.GetActiveLayers(inst.GetPhysDev(), 2);
-        ASSERT_TRUE(string_eq(layers.at(0).layerName, implicit_layer_1));
-        ASSERT_TRUE(string_eq(layers.at(1).layerName, explicit_layer_3));
-    }
-    {
-        EnvVarWrapper enable_meta_layer{"HeyHeyHeyhey", "1"};
-        auto layer_props = env.GetLayerProperties(5);
-        ASSERT_TRUE(string_eq(layer_props.at(0).layerName, explicit_layer_1));
-        ASSERT_TRUE(string_eq(layer_props.at(1).layerName, implicit_layer_1));
-        ASSERT_TRUE(string_eq(layer_props.at(2).layerName, explicit_layer_2));
-        ASSERT_TRUE(string_eq(layer_props.at(3).layerName, implicit_layer_2));
-        ASSERT_TRUE(string_eq(layer_props.at(4).layerName, explicit_layer_3));
-
-        InstWrapper inst{env.vulkan_functions};
-        FillDebugUtilsCreateDetails(inst.create_info, env.debug_log);
-        inst.CheckCreate();
-        ASSERT_TRUE(env.debug_log.find(get_settings_location_log_message(env)));
-        auto layers = inst.GetActiveLayers(inst.GetPhysDev(), 2);
-        ASSERT_TRUE(string_eq(layers.at(0).layerName, implicit_layer_2));
-        ASSERT_TRUE(string_eq(layers.at(1).layerName, explicit_layer_3));
-    }
-}
-
-// Settings file should take precedence over the meta layer, if present
-TEST(SettingsFile, MetaLayerAlsoActivates) {
-    FrameworkEnvironment env{};
-    env.add_icd(TEST_ICD_PATH_VERSION_2).add_physical_device({});
-
-    const char* settings_explicit_layer_name = "VK_LAYER_Regular_TestLayer";
-    env.add_explicit_layer({}, ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
-                                                             .set_name(settings_explicit_layer_name)
-                                                             .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)));
-
-    const char* settings_implicit_layer_name = "VK_LAYER_RegularImplicit_TestLayer";
-    env.add_implicit_layer({}, ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
-                                                             .set_name(settings_implicit_layer_name)
-                                                             .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
-                                                             .set_disable_environment("AndISaidHey")
-                                                             .set_enable_environment("WhatsGoingOn")));
-
-    const char* component_explicit_layer_name1 = "VK_LAYER_Component_TestLayer1";
-    env.add_explicit_layer({}, ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
-                                                             .set_name(component_explicit_layer_name1)
-                                                             .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)));
-
-    const char* component_explicit_layer_name2 = "VK_LAYER_Component_TestLayer2";
-    env.add_explicit_layer({}, ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
-                                                             .set_name(component_explicit_layer_name2)
-                                                             .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)));
-
-    const char* meta_layer_name1 = "VK_LAYER_meta_layer1";
-    env.add_implicit_layer(
-        {}, ManifestLayer{}.set_file_format_version({1, 1, 2}).add_layer(ManifestLayer::LayerDescription{}
-                                                                             .set_name(meta_layer_name1)
-                                                                             .add_component_layer(component_explicit_layer_name2)
-                                                                             .add_component_layer(component_explicit_layer_name1)
-                                                                             .set_disable_environment("NotGonnaWork")));
-
-    const char* meta_layer_name2 = "VK_LAYER_meta_layer2";
-    env.add_implicit_layer(
-        {}, ManifestLayer{}.set_file_format_version({1, 1, 2}).add_layer(ManifestLayer::LayerDescription{}
-                                                                             .set_name(meta_layer_name2)
-                                                                             .add_component_layer(component_explicit_layer_name1)
-                                                                             .set_disable_environment("ILikeTrains")
-                                                                             .set_enable_environment("BakedBeans")));
-
-    env.update_loader_settings(env.loader_settings.set_file_format_version({1, 0, 0}).add_app_specific_setting(
-        AppSpecificSettings{}
-            .add_stderr_log_filter("all")
-            .add_layer_configuration(LoaderSettingsLayerConfiguration{}
-                                         .set_name(settings_explicit_layer_name)
-                                         .set_path(env.get_shimmed_layer_manifest_path(0))
-                                         .set_control("on")
-                                         .set_treat_as_implicit_manifest(false))
-            .add_layer_configuration(LoaderSettingsLayerConfiguration{}.set_control("unordered_layer_location"))
-            .add_layer_configuration(LoaderSettingsLayerConfiguration{}
-                                         .set_name(settings_implicit_layer_name)
-                                         .set_path(env.get_shimmed_layer_manifest_path(1))
-                                         .set_control("auto")
-                                         .set_treat_as_implicit_manifest(true))));
-    {
-        EnvVarWrapper enable_meta_layer{"WhatsGoingOn", "1"};
-        auto layer_props = env.GetLayerProperties(6);
-        ASSERT_TRUE(string_eq(layer_props.at(0).layerName, settings_explicit_layer_name));
-        ASSERT_TRUE(string_eq(layer_props.at(1).layerName, meta_layer_name1));
-        ASSERT_TRUE(string_eq(layer_props.at(2).layerName, meta_layer_name2));
-        ASSERT_TRUE(string_eq(layer_props.at(3).layerName, component_explicit_layer_name1));
-        ASSERT_TRUE(string_eq(layer_props.at(4).layerName, component_explicit_layer_name2));
-        ASSERT_TRUE(string_eq(layer_props.at(5).layerName, settings_implicit_layer_name));
-
-        InstWrapper inst{env.vulkan_functions};
-        FillDebugUtilsCreateDetails(inst.create_info, env.debug_log);
-        inst.CheckCreate();
-        ASSERT_TRUE(env.debug_log.find(get_settings_location_log_message(env)));
-        auto layers = inst.GetActiveLayers(inst.GetPhysDev(), 5);
-        ASSERT_TRUE(string_eq(layers.at(0).layerName, settings_explicit_layer_name));
-        ASSERT_TRUE(string_eq(layers.at(1).layerName, component_explicit_layer_name2));
-        ASSERT_TRUE(string_eq(layers.at(2).layerName, component_explicit_layer_name1));
-        ASSERT_TRUE(string_eq(layers.at(3).layerName, meta_layer_name1));
-        ASSERT_TRUE(string_eq(layers.at(4).layerName, settings_implicit_layer_name));
-    }
-    {
-        EnvVarWrapper enable_meta_layer{"BakedBeans", "1"};
-        auto layer_props = env.GetLayerProperties(6);
-        ASSERT_TRUE(string_eq(layer_props.at(0).layerName, settings_explicit_layer_name));
-        ASSERT_TRUE(string_eq(layer_props.at(1).layerName, meta_layer_name1));
-        ASSERT_TRUE(string_eq(layer_props.at(2).layerName, meta_layer_name2));
-        ASSERT_TRUE(string_eq(layer_props.at(3).layerName, component_explicit_layer_name1));
-        ASSERT_TRUE(string_eq(layer_props.at(4).layerName, component_explicit_layer_name2));
-        ASSERT_TRUE(string_eq(layer_props.at(5).layerName, settings_implicit_layer_name));
-
-        InstWrapper inst{env.vulkan_functions};
-        FillDebugUtilsCreateDetails(inst.create_info, env.debug_log);
-        inst.CheckCreate();
-        ASSERT_TRUE(env.debug_log.find(get_settings_location_log_message(env)));
-        auto layers = inst.GetActiveLayers(inst.GetPhysDev(), 5);
-        ASSERT_TRUE(string_eq(layers.at(0).layerName, settings_explicit_layer_name));
-        ASSERT_TRUE(string_eq(layers.at(1).layerName, component_explicit_layer_name2));
-        ASSERT_TRUE(string_eq(layers.at(2).layerName, component_explicit_layer_name1));
-        ASSERT_TRUE(string_eq(layers.at(3).layerName, meta_layer_name1));
-        ASSERT_TRUE(string_eq(layers.at(4).layerName, meta_layer_name2));
-    }
-}
-
-TEST(SettingsFile, DuplicateMetaLayers) {
-    FrameworkEnvironment env{};
-    env.add_icd(TEST_ICD_PATH_VERSION_2).add_physical_device({});
-
-    const char* explicit_layer_name = "VK_LAYER_Regular_TestLayer";
-    env.add_explicit_layer(
-        {}, ManifestLayer{}.add_layer(
-                ManifestLayer::LayerDescription{}.set_name(explicit_layer_name).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)));
-    // Add an implicit layer and a meta layer that share a name
-    const char* meta_layer_name = "VK_LAYER_meta_layer";
-    env.add_implicit_layer({}, ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
-                                                             .set_name(meta_layer_name)
-                                                             .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
-                                                             .set_disable_environment("NotGonnaWork")));
-    env.add_implicit_layer(
-        {}, ManifestLayer{}.set_file_format_version({1, 1, 2}).add_layer(ManifestLayer::LayerDescription{}
-                                                                             .set_name(meta_layer_name)
-                                                                             .add_component_layer(explicit_layer_name)
-                                                                             .set_disable_environment("NotGonnaWork")));
-
-    env.update_loader_settings(env.loader_settings.set_file_format_version({1, 0, 0}).add_app_specific_setting(
-        AppSpecificSettings{}
-            .add_stderr_log_filter("all")
-            .add_layer_configuration(LoaderSettingsLayerConfiguration{}
-                                         .set_name(explicit_layer_name)
-                                         .set_path(env.get_shimmed_layer_manifest_path(0))
-                                         .set_control("auto")
-                                         .set_treat_as_implicit_manifest(false))
-            .add_layer_configuration(LoaderSettingsLayerConfiguration{}.set_control("unordered_layer_location"))
-            .add_layer_configuration(
-                LoaderSettingsLayerConfiguration{}
-                    .set_name(meta_layer_name)
-                    .set_path(env.get_folder(ManifestLocation::implicit_layer).location() / "meta_test_layer.json")
-                    .set_control("auto")
-                    .set_treat_as_implicit_manifest(true))
-            .add_layer_configuration(LoaderSettingsLayerConfiguration{}
-                                         .set_name(meta_layer_name)
-                                         .set_path(env.get_shimmed_layer_manifest_path(1))
-                                         .set_control("auto")
-                                         .set_treat_as_implicit_manifest(true))
-
-            ));
-    InstWrapper inst{env.vulkan_functions};
-    inst.CheckCreate();
 }
 
 // Layers are correctly ordered by settings file.
@@ -1799,7 +1538,7 @@ TEST(SettingsFile, MultipleKeysInRegistryInUnsecureLocation) {
 
     const char* regular_layer_name = "VK_LAYER_TestLayer_0";
     env.add_explicit_layer(
-        ManifestOptions{}.set_discovery_type(ManifestDiscoveryType::override_folder),
+        ManifestOptions{}.set_discovery_type(ManifestDiscoveryType::overflow_folder),
         ManifestLayer{}.add_layer(
             ManifestLayer::LayerDescription{}.set_name(regular_layer_name).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)));
 
@@ -1832,7 +1571,7 @@ TEST(SettingsFile, MultipleKeysInRegistryInSecureLocation) {
 
     const char* regular_layer_name = "VK_LAYER_TestLayer_0";
     env.add_explicit_layer(
-        ManifestOptions{}.set_discovery_type(ManifestDiscoveryType::override_folder),
+        ManifestOptions{}.set_discovery_type(ManifestDiscoveryType::overflow_folder),
         ManifestLayer{}.add_layer(
             ManifestLayer::LayerDescription{}.set_name(regular_layer_name).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)));
 
@@ -2797,7 +2536,7 @@ TEST(SettingsFile, TooManyLayers) {
     for (uint32_t i = 0; i < layer_count; i++) {
         env.add_explicit_layer(ManifestOptions{}
                                    .set_json_name(layer_name + std::to_string(i) + ".json")
-                                   .set_discovery_type(ManifestDiscoveryType::override_folder),
+                                   .set_discovery_type(ManifestDiscoveryType::overflow_folder),
                                ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
                                                              .set_name(layer_name + std::to_string(i))
                                                              .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)));
@@ -3048,7 +2787,7 @@ TEST(SettingsFile, DontAllowDuplicatesBetweenSettingsLayersAndDefaultLayers) {
                 ManifestLayer::LayerDescription{}.set_name(explicit_layer_name1).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)));
 
     env.add_explicit_layer(
-        ManifestOptions{}.set_discovery_type(ManifestDiscoveryType::override_folder),
+        ManifestOptions{}.set_discovery_type(ManifestDiscoveryType::overflow_folder),
         ManifestLayer{}.add_layer(
             ManifestLayer::LayerDescription{}.set_name(explicit_layer_name1).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)));
 
@@ -3077,7 +2816,7 @@ TEST(SettingsFile, AdditionalDrivers) {
     const char* regular_driver_name = "regular";
     const char* settings_driver_name = "settings";
     env.add_icd(TEST_ICD_PATH_VERSION_2).add_physical_device(PhysicalDevice{}.set_deviceName(regular_driver_name));
-    env.add_icd(TEST_ICD_PATH_VERSION_2, ManifestOptions{}.set_discovery_type(ManifestDiscoveryType::override_folder))
+    env.add_icd(TEST_ICD_PATH_VERSION_2, ManifestOptions{}.set_discovery_type(ManifestDiscoveryType::overflow_folder))
         .add_physical_device(PhysicalDevice{}.set_deviceName(settings_driver_name));
 
     env.loader_settings.set_file_format_version({1, 0, 0}).add_app_specific_setting(
@@ -3116,7 +2855,7 @@ TEST(SettingsFile, AdditionalDriverNotManifestFile) {
     const char* regular_driver_name = "regular";
     const char* settings_driver_name = "settings";
     env.add_icd(TEST_ICD_PATH_VERSION_2).add_physical_device(PhysicalDevice{}.set_deviceName(regular_driver_name));
-    env.add_icd(TEST_ICD_PATH_VERSION_2, ManifestOptions{}.set_discovery_type(ManifestDiscoveryType::override_folder))
+    env.add_icd(TEST_ICD_PATH_VERSION_2, ManifestOptions{}.set_discovery_type(ManifestDiscoveryType::overflow_folder))
         .add_physical_device(PhysicalDevice{}.set_deviceName(settings_driver_name));
 
     env.loader_settings.set_file_format_version({1, 0, 0}).add_app_specific_setting(
@@ -3142,7 +2881,7 @@ TEST(SettingsFile, ExclusiveAdditionalDrivers) {
     const char* regular_driver_name = "regular";
     const char* settings_driver_name = "settings";
     env.add_icd(TEST_ICD_PATH_VERSION_2).add_physical_device(PhysicalDevice{}.set_deviceName(regular_driver_name));
-    env.add_icd(TEST_ICD_PATH_VERSION_2, ManifestOptions{}.set_discovery_type(ManifestDiscoveryType::override_folder))
+    env.add_icd(TEST_ICD_PATH_VERSION_2, ManifestOptions{}.set_discovery_type(ManifestDiscoveryType::overflow_folder))
         .add_physical_device(PhysicalDevice{}.set_deviceName(settings_driver_name));
 
     env.loader_settings.set_file_format_version({1, 0, 0}).add_app_specific_setting(
@@ -3164,7 +2903,7 @@ TEST(SettingsFile, AdditionalDriversReplacesVK_LOADER_DRIVERS_SELECT) {
     const char* regular_driver_name = "regular";
     const char* settings_driver_name = "settings";
     env.add_icd(TEST_ICD_PATH_VERSION_2).add_physical_device(PhysicalDevice{}.set_deviceName(regular_driver_name));
-    env.add_icd(TEST_ICD_PATH_VERSION_2, ManifestOptions{}.set_discovery_type(ManifestDiscoveryType::override_folder))
+    env.add_icd(TEST_ICD_PATH_VERSION_2, ManifestOptions{}.set_discovery_type(ManifestDiscoveryType::overflow_folder))
         .add_physical_device(PhysicalDevice{}.set_deviceName(settings_driver_name));
 
     env.loader_settings.set_file_format_version({1, 0, 0}).add_app_specific_setting(
@@ -3224,12 +2963,12 @@ TEST(SettingsFile, InvalidAdditionalDriversField) {
     const char* layer_name = "VK_LAYER_layer";
     const char* driver_name = "driver";
     const char* settings_driver_name = "settings_driver";
-    env.add_icd(TEST_ICD_PATH_VERSION_2, ManifestOptions{}.set_discovery_type(ManifestDiscoveryType::override_folder))
+    env.add_icd(TEST_ICD_PATH_VERSION_2, ManifestOptions{}.set_discovery_type(ManifestDiscoveryType::overflow_folder))
         .add_physical_device(PhysicalDevice{}.set_deviceName(settings_driver_name));
     env.add_icd(TEST_ICD_PATH_VERSION_2).add_physical_device(PhysicalDevice{}.set_deviceName(driver_name));
 
     env.add_explicit_layer(
-        ManifestOptions{}.set_discovery_type(ManifestDiscoveryType::override_folder),
+        ManifestOptions{}.set_discovery_type(ManifestDiscoveryType::overflow_folder),
         ManifestLayer{}.add_layer(
             ManifestLayer::LayerDescription{}.set_name("VK_LAYER_layer").set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)));
 
@@ -3746,7 +3485,7 @@ TEST(SettingsFile, DriverConfigurationsAndAdditionalDrivers) {
         count++;
     }
 
-    env.add_icd(TEST_ICD_PATH_VERSION_2, ManifestOptions{}.set_discovery_type(ManifestDiscoveryType::override_folder))
+    env.add_icd(TEST_ICD_PATH_VERSION_2, ManifestOptions{}.set_discovery_type(ManifestDiscoveryType::overflow_folder))
         .add_physical_device(
             PhysicalDevice{}.set_api_version(VK_API_VERSION_1_1).set_deviceName("additional_device").set_deviceUUID(uuids[0]));
 
@@ -3795,7 +3534,7 @@ TEST(SettingsFile, InvalidDriverConfigurations) {
         .add_physical_device(
             PhysicalDevice{}.set_api_version(VK_API_VERSION_1_1).set_deviceName("regular_driver").set_deviceUUID(uuids[0]));
 
-    env.add_icd(TEST_ICD_PATH_VERSION_2, ManifestOptions{}.set_discovery_type(ManifestDiscoveryType::override_folder))
+    env.add_icd(TEST_ICD_PATH_VERSION_2, ManifestOptions{}.set_discovery_type(ManifestDiscoveryType::overflow_folder))
         .add_physical_device(
             PhysicalDevice{}.set_api_version(VK_API_VERSION_1_1).set_deviceName("additional_device").set_deviceUUID(uuids[2]));
 
@@ -3831,7 +3570,7 @@ TEST(SettingsFile, DeviceConfigurationReordersAdditionalDrivers) {
         .add_physical_device(
             PhysicalDevice{}.set_api_version(VK_API_VERSION_1_1).set_deviceName("regular_driverB").set_deviceUUID(uuids[1]));
 
-    env.add_icd(TEST_ICD_PATH_VERSION_2, ManifestOptions{}.set_discovery_type(ManifestDiscoveryType::override_folder))
+    env.add_icd(TEST_ICD_PATH_VERSION_2, ManifestOptions{}.set_discovery_type(ManifestDiscoveryType::overflow_folder))
         .set_icd_api_version(VK_API_VERSION_1_1)
         .add_physical_device(
             PhysicalDevice{}.set_api_version(VK_API_VERSION_1_1).set_deviceName("additional_device").set_deviceUUID(uuids[2]));
@@ -3891,7 +3630,7 @@ TEST(SettingsFile, DeviceConfigurationReordersExclusiveAdditionalDrivers) {
         .add_physical_device(
             PhysicalDevice{}.set_api_version(VK_API_VERSION_1_1).set_deviceName("regular_driverB").set_deviceUUID(uuids[1]));
 
-    env.add_icd(TEST_ICD_PATH_VERSION_2, ManifestOptions{}.set_discovery_type(ManifestDiscoveryType::override_folder))
+    env.add_icd(TEST_ICD_PATH_VERSION_2, ManifestOptions{}.set_discovery_type(ManifestDiscoveryType::overflow_folder))
         .set_icd_api_version(VK_API_VERSION_1_1)
         .add_physical_device(
             PhysicalDevice{}.set_api_version(VK_API_VERSION_1_1).set_deviceName("additional_device").set_deviceUUID(uuids[2]));
@@ -3937,50 +3676,4 @@ TEST(SettingsFile, DeviceConfigurationPreservesLayerEnumeration) {
 
     auto layer_props = env.GetLayerProperties(1);
     EXPECT_TRUE(string_eq(layer_props.at(0).layerName, layer_name));
-}
-
-// A meta-layer whose component chain loops back to itself is normally rejected by
-// verify_all_meta_layers, but layers pulled in from the settings file skip that pass. Without a
-// recursion guard in loader_add_meta_layer this cyclic reference recurses until the stack overflows.
-TEST(SettingsFile, CyclicMetaLayerComponentDoesNotRecurse) {
-    FrameworkEnvironment env{};
-    env.add_icd(TEST_ICD_PATH_VERSION_2).add_physical_device({});
-
-    const char* meta_a = "VK_LAYER_meta_A";
-    const char* meta_b = "VK_LAYER_meta_B";
-    env.add_implicit_layer(
-        ManifestOptions{}.set_json_name("meta_a.json"),
-        ManifestLayer{}.set_file_format_version({1, 2, 0}).add_layer(ManifestLayer::LayerDescription{}
-                                                                         .set_name(meta_a)
-                                                                         .set_api_version(VK_MAKE_API_VERSION(0, 1, 1, 0))
-                                                                         .add_component_layer(meta_b)
-                                                                         .set_disable_environment("DISABLE_A")));
-    env.add_implicit_layer(
-        ManifestOptions{}.set_json_name("meta_b.json"),
-        ManifestLayer{}.set_file_format_version({1, 2, 0}).add_layer(ManifestLayer::LayerDescription{}
-                                                                         .set_name(meta_b)
-                                                                         .set_api_version(VK_MAKE_API_VERSION(0, 1, 1, 0))
-                                                                         .add_component_layer(meta_a)
-                                                                         .set_disable_environment("DISABLE_B")));
-
-    std::filesystem::path folder = env.get_folder(ManifestLocation::implicit_layer).location();
-    env.update_loader_settings(env.loader_settings.set_file_format_version({1, 0, 0}).add_app_specific_setting(
-        AppSpecificSettings{}
-            .add_stderr_log_filter("all")
-            .add_layer_configuration(LoaderSettingsLayerConfiguration{}
-                                         .set_name(meta_a)
-                                         .set_path(folder / "meta_a.json")
-                                         .set_control("on")
-                                         .set_treat_as_implicit_manifest(true))
-            .add_layer_configuration(LoaderSettingsLayerConfiguration{}
-                                         .set_name(meta_b)
-                                         .set_path(folder / "meta_b.json")
-                                         .set_control("on")
-                                         .set_treat_as_implicit_manifest(true))));
-
-    InstWrapper inst{env.vulkan_functions};
-    FillDebugUtilsCreateDetails(inst.create_info, env.debug_log);
-    // Before the recursion guard this call never returned - it recursed until the stack overflowed.
-    inst.CheckCreate();
-    ASSERT_TRUE(env.debug_log.find("recursively references itself through its component layers"));
 }

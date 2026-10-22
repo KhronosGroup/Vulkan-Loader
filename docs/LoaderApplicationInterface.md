@@ -28,7 +28,6 @@
     - [MacOs Dynamic Library Usage](#macos-dynamic-library-usage)
   - [Bundling the Loader With An Application](#bundling-the-loader-with-an-application)
 - [Application Layer Usage](#application-layer-usage)
-  - [Meta-Layers](#meta-layers)
   - [Implicit vs Explicit Layers](#implicit-vs-explicit-layers)
     - [Override Layer](#override-layer)
   - [Forcing Layer Source Folders](#forcing-layer-source-folders)
@@ -357,28 +356,6 @@ information on layer ordering.
 >   * `ppEnabledLayerNames`
 >   * `enabledLayerCount`
 > * The `vkEnumerateDeviceLayerProperties` function
-
-
-### Meta-Layers
-
-Meta-layers are layers which contain an ordered list of other layers to enable.
-This is to allow grouping layers together in a specified order so that they can
-interact properly.
-Originally, this was used to group together the individual Vulkan Validation
-layers in the proper order to avoid conflicts.
-It was necessary because instead of a single Validation layer, validation was
-split into multiple component layers.
-The new `VK_LAYER_KHRONOS_validation` layer pulled everything into a single
-layer, dropping the need for meta layers.
-While not necessary for validation anymore, VkConfig does use meta layers to
-group layers together based on user's preferences.
-More can be found out about this functionality through both the
-[VkConfig documentation](https://github.com/LunarG/VulkanTools/blob/main/vkconfig/README.md)
-and the section later on the [Override Layer](#override-layer).
-
-Meta-layers are detailed more in the
-[Meta-Layers](LoaderLayerInterface.md#meta-layers) section of the
-[LoaderLayerInterface.md](LoaderLayerInterface.md) file in this folder.
 
 
 ### Implicit vs Explicit Layers

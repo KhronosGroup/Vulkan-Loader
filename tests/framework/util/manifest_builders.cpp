@@ -122,10 +122,6 @@ void ManifestLayer::LayerDescription::get_manifest_str(JsonWriter& writer) const
         writer.AddKeyedString(disable_environment, "1");
         writer.EndObject();
     }
-    print_vector_of_strings(writer, "component_layers", component_layers);
-    print_vector_of_strings(writer, "blacklisted_layers", blacklisted_layers);
-    print_vector_of_strings(writer, "override_paths", override_paths);
-    print_vector_of_strings(writer, "app_keys", app_keys);
     print_object_of_t(writer, "pre_instance_functions", pre_instance_functions);
     if (!library_arch.empty()) {
         writer.AddKeyedString("library_arch", library_arch);

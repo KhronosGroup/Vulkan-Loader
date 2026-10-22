@@ -100,8 +100,6 @@ struct TestLayer {
     std::filesystem::path manifest_file_path;
     uint32_t manifest_version = VK_MAKE_API_VERSION(0, 1, 1, 2);
 
-    BUILDER_VALUE(bool, is_meta_layer)
-
     BUILDER_VALUE_WITH_DEFAULT(uint32_t, api_version, VK_API_VERSION_1_0)
     BUILDER_VALUE_WITH_DEFAULT(uint32_t, reported_layer_props, 1)
     BUILDER_VALUE(uint32_t, reported_extension_props)
@@ -129,8 +127,6 @@ struct TestLayer {
     BUILDER_VECTOR(Extension, injected_instance_extensions, injected_instance_extension)
     // Modifies the extension list returned by  vkEnumerateDeviceExtensionProperties to include what is in this vector
     BUILDER_VECTOR(Extension, injected_device_extensions, injected_device_extension)
-
-    BUILDER_VECTOR(LayerDefinition, meta_component_layers, meta_component_layer);
 
     BUILDER_VALUE(bool, intercept_vkEnumerateInstanceExtensionProperties)
     BUILDER_VALUE(bool, intercept_vkEnumerateInstanceLayerProperties)

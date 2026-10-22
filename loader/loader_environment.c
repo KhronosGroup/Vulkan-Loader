@@ -497,14 +497,9 @@ VkResult loader_add_environment_layers(struct loader_instance *inst, const char 
                         found = true;
                         // Only add it if it doesn't already appear in the layer list
                         if (!loader_find_layer_name_in_list(source_prop->info.layerName, &inst->expanded_activated_layer_list)) {
-                            if (0 == (source_prop->type_flags & VK_LAYER_TYPE_FLAG_META_LAYER)) {
-                                source_prop->enabled_by_what = ENABLED_BY_WHAT_VK_INSTANCE_LAYERS;
-                                res = loader_add_layer_properties_to_list(inst, source_prop);
-                                if (res == VK_ERROR_OUT_OF_HOST_MEMORY) goto out;
-                            } else {
-                                res = loader_add_meta_layer(inst, filters, source_prop, NULL);
-                                if (res == VK_ERROR_OUT_OF_HOST_MEMORY) goto out;
-                            }
+                            source_prop->enabled_by_what = ENABLED_BY_WHAT_VK_INSTANCE_LAYERS;
+                            res = loader_add_layer_properties_to_list(inst, source_prop);
+                            if (res == VK_ERROR_OUT_OF_HOST_MEMORY) goto out;
                             break;
                         }
                     }
@@ -554,15 +549,9 @@ VkResult loader_add_environment_layers(struct loader_instance *inst, const char 
         loader_log(inst, VULKAN_LOADER_WARN_BIT | VULKAN_LOADER_LAYER_BIT, 0, "Layer \"%s\" forced enabled due to env var \'%s\'",
                    source_prop->info.layerName, VK_LAYERS_ENABLE_ENV_VAR);
 
-        // If not a meta-layer, simply add it.
-        if (0 == (source_prop->type_flags & VK_LAYER_TYPE_FLAG_META_LAYER)) {
-            source_prop->enabled_by_what = ENABLED_BY_WHAT_VK_LOADER_LAYERS_ENABLE;
-            res = loader_add_layer_properties_to_list(inst, source_prop);
-            if (res == VK_ERROR_OUT_OF_HOST_MEMORY) goto out;
-        } else {
-            res = loader_add_meta_layer(inst, filters, source_prop, NULL);
-            if (res == VK_ERROR_OUT_OF_HOST_MEMORY) goto out;
-        }
+        source_prop->enabled_by_what = ENABLED_BY_WHAT_VK_LOADER_LAYERS_ENABLE;
+        res = loader_add_layer_properties_to_list(inst, source_prop);
+        if (res == VK_ERROR_OUT_OF_HOST_MEMORY) goto out;
     }
 
 out:

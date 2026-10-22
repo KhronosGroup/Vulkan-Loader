@@ -1049,8 +1049,7 @@ TEST_FUNCTION_EXPORT VkResult get_settings_layers(const struct loader_instance* 
             for (uint32_t k = 0; k < j; k++) {
                 if (0 == strncmp(settings_layers->list[k].info.layerName, newly_added_layer->info.layerName,
                                  VK_MAX_EXTENSION_NAME_SIZE)) {
-                    if (0 == (newly_added_layer->type_flags & VK_LAYER_TYPE_FLAG_META_LAYER) &&
-                        settings_layers->list[k].lib_name != NULL && newly_added_layer->lib_name != NULL &&
+                    if (settings_layers->list[k].lib_name != NULL && newly_added_layer->lib_name != NULL &&
                         strcmp(settings_layers->list[k].lib_name, newly_added_layer->lib_name) == 0) {
                         should_remove = true;
                         break;
@@ -1071,7 +1070,6 @@ out:
 
 // Check if layers has an element with the same name.
 // LAYER_CONTROL_OFF layers are missing some fields, just make sure the layerName is the same
-// If layer_property is a meta layer, just make sure the layerName is the same
 // Skip comparing to UNORDERED_LAYER_LOCATION
 // If layer_property is a regular layer, check if the lib_path is the same.
 // Make sure that the lib_name pointers are non-null before calling strcmp.
@@ -1079,13 +1077,9 @@ out:
 // between settings file provided layers and default found layers
 bool check_if_layer_is_in_list(struct loader_layer_list* layer_list, struct loader_layer_properties* layer_property,
                                bool consider_lib_path) {
-    // If the layer is a meta layer, just check against the name
     for (uint32_t i = 0; i < layer_list->count; i++) {
         if (0 == strncmp(layer_list->list[i].info.layerName, layer_property->info.layerName, VK_MAX_EXTENSION_NAME_SIZE)) {
             if (layer_list->list[i].settings_control_value == LOADER_SETTINGS_LAYER_CONTROL_OFF) {
-                return true;
-            }
-            if (VK_LAYER_TYPE_FLAG_META_LAYER == (layer_property->type_flags & VK_LAYER_TYPE_FLAG_META_LAYER)) {
                 return true;
             }
             if (!consider_lib_path) {
@@ -1277,15 +1271,9 @@ VkResult enable_correct_layers_from_settings(struct loader_instance* inst, const
         }
 
         if (enable_layer) {
-            // Check if the layer is a meta layer reuse the existing function to add the meta layer
-            if (props->type_flags & VK_LAYER_TYPE_FLAG_META_LAYER) {
-                res = loader_add_meta_layer(inst, filters, props, NULL);
-                if (res == VK_ERROR_OUT_OF_HOST_MEMORY) goto out;
-            } else {
-                res = loader_add_layer_properties_to_list(inst, props);
-                if (res != VK_SUCCESS) {
-                    goto out;
-                }
+            res = loader_add_layer_properties_to_list(inst, props);
+            if (res != VK_SUCCESS) {
+                goto out;
             }
         }
     }
