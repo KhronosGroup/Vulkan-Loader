@@ -61,7 +61,7 @@ jobs:
             - run: sudo apt update
             - run: sudo apt install --yes --no-install-recommends libwayland-dev libxrandr-dev
             - name: ccache
-              uses: hendrikmuhs/ccache-action@v1.2
+              uses: hendrikmuhs/ccache-action@v1.2.24
               with:
                 key: linux-${{ matrix.os }}-${{ matrix.compiler.cc }}-${{ matrix.config }}
             - run: |
@@ -96,7 +96,7 @@ jobs:
             - run: sudo apt update
             - run: sudo apt install --yes --no-install-recommends libwayland-dev libxrandr-dev
             - name: ccache
-              uses: hendrikmuhs/ccache-action@v1.2
+              uses: hendrikmuhs/ccache-action@v1.2.24
               with:
                 key: linux-no-asm
             - run: |
@@ -137,7 +137,7 @@ jobs:
                 gcc-multilib g++-multilib libc6:i386 libc6-dev-i386 libgcc-s1:i386 \
                 libwayland-dev:i386 libxrandr-dev:i386
             - name: ccache
-              uses: hendrikmuhs/ccache-action@v1.2
+              uses: hendrikmuhs/ccache-action@v1.2.24
               with:
                 key: linux-32-${{ matrix.config }}
             - run: |
@@ -179,7 +179,7 @@ jobs:
                 gcc-multilib g++-multilib libc6:i386 libc6-dev-i386 libgcc-s1:i386 \
                 libwayland-dev:i386 libxrandr-dev:i386
             - name: ccache
-              uses: hendrikmuhs/ccache-action@v1.2
+              uses: hendrikmuhs/ccache-action@v1.2.24
               with:
                 key: linux-32-no-asm
             - run: |
@@ -212,7 +212,7 @@ jobs:
             - run: sudo apt update
             - run: sudo apt install --yes --no-install-recommends libwayland-dev libxrandr-dev
             - name: ccache
-              uses: hendrikmuhs/ccache-action@v1.2
+              uses: hendrikmuhs/ccache-action@v1.2.24
               with:
                 key: linux-arm
             - run: |
@@ -248,7 +248,7 @@ jobs:
             - run: sudo apt update
             - run: sudo apt install --yes --no-install-recommends libwayland-dev libxrandr-dev
             - name: ccache
-              uses: hendrikmuhs/ccache-action@v1.2
+              uses: hendrikmuhs/ccache-action@v1.2.24
               with:
                 key: linux-threading
             - run: |
@@ -406,7 +406,7 @@ jobs:
           - uses: actions/checkout@v7
           - uses: ilammy/msvc-dev-cmd@v1
           - name: ccache
-            uses: hendrikmuhs/ccache-action@v1.2
+            uses: hendrikmuhs/ccache-action@v1.2.24
             with:
               key: windows_clang-${{ matrix.compiler }}-${{ matrix.config }}
           - run: |
@@ -439,7 +439,7 @@ jobs:
               with:
                 python-version: '3.11'
             - name: ccache
-              uses: hendrikmuhs/ccache-action@v1.2
+              uses: hendrikmuhs/ccache-action@v1.2.24
               with:
                 key: mac-${{ matrix.config }}-${{ matrix.static_build }}
             - run: |
@@ -475,7 +475,7 @@ jobs:
             with:
               python-version: '3.11'
           - name: ccache
-            uses: hendrikmuhs/ccache-action@v1.2
+            uses: hendrikmuhs/ccache-action@v1.2.24
             with:
               key: apple-cross-compile-${{ matrix.CMAKE_SYSTEM_NAME }}
           - run: |
@@ -514,7 +514,7 @@ jobs:
               with:
                 python-version: '3.11'
             - name: ccache
-              uses: hendrikmuhs/ccache-action@v1.2
+              uses: hendrikmuhs/ccache-action@v1.2.24
               with:
                 key: mac-universal-${{ matrix.static }}
             - run: |
@@ -605,7 +605,7 @@ jobs:
             - name: UASM Check
               run: uasm -?
             - name: ccache
-              uses: hendrikmuhs/ccache-action@v1.2
+              uses: hendrikmuhs/ccache-action@v1.2.24
               with:
                 key: mingw
             - run: |
@@ -633,7 +633,7 @@ jobs:
               with:
                 python-version: '3.11'
             - name: ccache
-              uses: hendrikmuhs/ccache-action@v1.2
+              uses: hendrikmuhs/ccache-action@v1.2.24
               with:
                 key: mingw-use-gas
             - run: |
@@ -662,7 +662,7 @@ jobs:
               with:
                 python-version: '3.11'
             - name: ccache
-              uses: hendrikmuhs/ccache-action@v1.2
+              uses: hendrikmuhs/ccache-action@v1.2.24
               with:
                 key: mingw-no-asm
             # Make sure this doesn't fail even without explicitly setting '-D USE_MASM=OFF' and without uasm
@@ -688,7 +688,7 @@ jobs:
         steps:
             - uses: actions/checkout@v7
             - name: ccache
-              uses: hendrikmuhs/ccache-action@v1.2
+              uses: hendrikmuhs/ccache-action@v1.2.24
               with:
                 key: mingw-no-asm-explicit
             - run: |
