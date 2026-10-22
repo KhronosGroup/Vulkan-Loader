@@ -186,7 +186,6 @@ enum layer_type_flags {
     VK_LAYER_TYPE_FLAG_NONE = 0x0,
     VK_LAYER_TYPE_FLAG_INSTANCE_LAYER = 0x1,  // If not set, indicates Device layer
     VK_LAYER_TYPE_FLAG_EXPLICIT_LAYER = 0x2,  // If not set, indicates Implicit layer
-    VK_LAYER_TYPE_FLAG_META_LAYER = 0x4,      // If not set, indicates standard layer
 };
 
 enum loader_layer_enabled_by_what {
@@ -196,7 +195,6 @@ enum loader_layer_enabled_by_what {
     ENABLED_BY_WHAT_VK_INSTANCE_LAYERS,
     ENABLED_BY_WHAT_VK_LOADER_LAYERS_ENABLE,
     ENABLED_BY_WHAT_IN_APPLICATION_API,
-    ENABLED_BY_WHAT_META_LAYER,
 };
 
 struct loader_layer_properties {
@@ -215,19 +213,11 @@ struct loader_layer_properties {
     struct loader_device_extension_list device_extension_list;
     struct loader_name_value disable_env_var;
     struct loader_name_value enable_env_var;
-    struct loader_string_list component_layer_names;
     struct {
         char *enumerate_instance_extension_properties;
         char *enumerate_instance_layer_properties;
         char *enumerate_instance_version;
     } pre_instance_functions;
-    struct loader_string_list override_paths;
-    bool is_override;
-    bool keep;
-    // Set while this meta-layer is being expanded, used to break cyclic component references.
-    bool is_being_expanded;
-    struct loader_string_list blacklist_layer_names;
-    struct loader_string_list app_key_paths;
 };
 
 // Stores a list of loader_layer_properties
@@ -373,11 +363,9 @@ struct loader_instance {
     struct loader_string_list enabled_layer_names;
 
     struct loader_layer_list instance_layer_list;
-    bool override_layer_present;
 
-    // List of activated layers, including the layers enabled from expanding meta-layers into their individual component
-    // layers. This active list of layers can include layers that failed to actually be enabled, such as not being able to load the
-    // binary, failing version negotiation, and not being able to query vkGetInstanceProcAddr
+    // List of activated layers. This active list of layers can include layers that failed to actually be enabled, such as not being
+    // able to load the binary, failing version negotiation, and not being able to query vkGetInstanceProcAddr
     struct loader_pointer_layer_list expanded_activated_layer_list;
 
     VkInstance instance;  // layers/ICD instance returned to trampoline

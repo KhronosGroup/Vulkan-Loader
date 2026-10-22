@@ -157,8 +157,6 @@ const char *get_enabled_by_what_str(enum loader_layer_enabled_by_what enabled_by
             return "Environment Variable VK_LOADER_LAYERS_ENABLE";
         case ENABLED_BY_WHAT_IN_APPLICATION_API:
             return "By the Application";
-        case ENABLED_BY_WHAT_META_LAYER:
-            return "Meta Layer (Vulkan Configurator)";
     }
 }
 
@@ -257,13 +255,9 @@ void loader_free_layer_properties(const struct loader_instance *inst, struct loa
     loader_instance_heap_free(inst, layer_properties->disable_env_var.value);
     loader_instance_heap_free(inst, layer_properties->enable_env_var.name);
     loader_instance_heap_free(inst, layer_properties->enable_env_var.value);
-    free_string_list(inst, &layer_properties->component_layer_names);
     loader_instance_heap_free(inst, layer_properties->pre_instance_functions.enumerate_instance_extension_properties);
     loader_instance_heap_free(inst, layer_properties->pre_instance_functions.enumerate_instance_layer_properties);
     loader_instance_heap_free(inst, layer_properties->pre_instance_functions.enumerate_instance_version);
-    free_string_list(inst, &layer_properties->override_paths);
-    free_string_list(inst, &layer_properties->blacklist_layer_names);
-    free_string_list(inst, &layer_properties->app_key_paths);
 
     // Make sure to clear out the removed layer, in case new layers are added in the previous location
     memset(layer_properties, 0, sizeof(struct loader_layer_properties));
@@ -843,16 +837,6 @@ bool loader_find_layer_name_in_list(const char *name, const struct loader_pointe
     return false;
 }
 
-// Search the override layer's blacklist for a layer matching the given layer name
-bool loader_find_layer_name_in_blacklist(const char *layer_name, struct loader_layer_properties *meta_layer_props) {
-    for (uint32_t black_layer = 0; black_layer < meta_layer_props->blacklist_layer_names.count; ++black_layer) {
-        if (!strcmp(meta_layer_props->blacklist_layer_names.list[black_layer], layer_name)) {
-            return true;
-        }
-    }
-    return false;
-}
-
 // Remove all layer properties entries from the list
 TEST_FUNCTION_EXPORT void loader_delete_layer_list_and_properties(const struct loader_instance *inst,
                                                                   struct loader_layer_list *layer_list) {
@@ -884,8 +868,7 @@ void loader_remove_layer_in_list(const struct loader_instance *inst, struct load
     }
     loader_free_layer_properties(inst, &(layer_list->list[layer_to_remove]));
 
-    // Remove the current invalid meta-layer from the layer list.  Use memmove since we are
-    // overlapping the source and destination addresses.
+    // Remove the layer from the layer list. Use memmove since we are overlapping the source and destination addresses.
     if (layer_to_remove + 1 <= layer_list->count) {
         memmove(&layer_list->list[layer_to_remove], &layer_list->list[layer_to_remove + 1],
                 sizeof(struct loader_layer_properties) * (layer_list->count - 1 - layer_to_remove));
@@ -893,89 +876,6 @@ void loader_remove_layer_in_list(const struct loader_instance *inst, struct load
     // Decrement the count (because we now have one less) and decrement the loop index since we need to
     // re-check this index.
     layer_list->count--;
-}
-
-// Remove all layers in the layer list that are blacklisted by the override layer.
-// NOTE: This should only be called if an override layer is found and not expired.
-void loader_remove_layers_in_blacklist(const struct loader_instance *inst, struct loader_layer_list *layer_list) {
-    struct loader_layer_properties *override_prop = loader_find_layer_property(VK_OVERRIDE_LAYER_NAME, layer_list);
-    if (NULL == override_prop) {
-        return;
-    }
-
-    for (int32_t j = 0; j < (int32_t)(layer_list->count); j++) {
-        struct loader_layer_properties cur_layer_prop = layer_list->list[j];
-        const char *cur_layer_name = &cur_layer_prop.info.layerName[0];
-
-        // Skip the override layer itself.
-        if (!strcmp(VK_OVERRIDE_LAYER_NAME, cur_layer_name)) {
-            continue;
-        }
-
-        // If found in the override layer's blacklist, remove it
-        if (loader_find_layer_name_in_blacklist(cur_layer_name, override_prop)) {
-            loader_log(inst, VULKAN_LOADER_DEBUG_BIT, 0,
-                       "loader_remove_layers_in_blacklist: Override layer is active and layer %s is in the blacklist inside of it. "
-                       "Removing that layer from current layer list.",
-                       cur_layer_name);
-            loader_remove_layer_in_list(inst, layer_list, j);
-            j--;
-
-            // Re-do the query for the override layer
-            override_prop = loader_find_layer_property(VK_OVERRIDE_LAYER_NAME, layer_list);
-        }
-    }
-}
-
-// Remove all layers in the layer list that are not found inside any implicit meta-layers.
-void loader_remove_layers_not_in_implicit_meta_layers(const struct loader_instance *inst, struct loader_layer_list *layer_list) {
-    int32_t i;
-    int32_t j;
-    int32_t layer_count = (int32_t)(layer_list->count);
-
-    for (i = 0; i < layer_count; i++) {
-        layer_list->list[i].keep = false;
-    }
-
-    for (i = 0; i < layer_count; i++) {
-        struct loader_layer_properties *cur_layer_prop = &layer_list->list[i];
-
-        if (0 == (cur_layer_prop->type_flags & VK_LAYER_TYPE_FLAG_EXPLICIT_LAYER)) {
-            cur_layer_prop->keep = true;
-            continue;
-        }
-        for (j = 0; j < layer_count; j++) {
-            struct loader_layer_properties *layer_to_check = &layer_list->list[j];
-
-            if (i == j) {
-                continue;
-            }
-
-            if (layer_to_check->type_flags & VK_LAYER_TYPE_FLAG_META_LAYER) {
-                // For all layers found in this meta layer, we want to keep them as well.
-                for (uint32_t comp_layer = 0; comp_layer < layer_to_check->component_layer_names.count; comp_layer++) {
-                    if (!strcmp(layer_to_check->component_layer_names.list[comp_layer], cur_layer_prop->info.layerName)) {
-                        cur_layer_prop->keep = true;
-                    }
-                }
-            }
-        }
-    }
-
-    // Remove any layers we don't want to keep (Don't use layer_count here as we need it to be
-    // dynamically updated if we delete a layer property in the list).
-    for (i = 0; i < (int32_t)(layer_list->count); i++) {
-        struct loader_layer_properties *cur_layer_prop = &layer_list->list[i];
-        if (!cur_layer_prop->keep) {
-            loader_log(
-                inst, VULKAN_LOADER_DEBUG_BIT, 0,
-                "loader_remove_layers_not_in_implicit_meta_layers : Implicit meta-layers are active, and layer %s is not list "
-                "inside of any.  So removing layer from current layer list.",
-                cur_layer_prop->info.layerName);
-            loader_remove_layer_in_list(inst, layer_list, i);
-            i--;
-        }
-    }
 }
 
 VkResult loader_add_instance_extensions(const struct loader_instance *inst,
@@ -1372,15 +1272,9 @@ VkResult loader_add_layer_names_to_list(struct loader_instance *inst, const stru
             continue;
         }
 
-        // If not a meta-layer, simply add it.
-        if (0 == (layer_prop->type_flags & VK_LAYER_TYPE_FLAG_META_LAYER)) {
-            layer_prop->enabled_by_what = ENABLED_BY_WHAT_IN_APPLICATION_API;
-            err = loader_add_layer_properties_to_list(inst, layer_prop);
-            if (err == VK_ERROR_OUT_OF_HOST_MEMORY) return err;
-        } else {
-            err = loader_add_meta_layer(inst, filters, layer_prop, NULL);
-            if (err == VK_ERROR_OUT_OF_HOST_MEMORY) return err;
-        }
+        layer_prop->enabled_by_what = ENABLED_BY_WHAT_IN_APPLICATION_API;
+        err = loader_add_layer_properties_to_list(inst, layer_prop);
+        if (err == VK_ERROR_OUT_OF_HOST_MEMORY) return err;
     }
 
     return err;
@@ -1447,133 +1341,24 @@ bool loader_implicit_layer_is_enabled(const struct loader_instance *inst, const 
                    "Implicit layer \"%s\" missing disabled environment variable!", prop->info.layerName);
     }
 
-    // Enable this layer if it is included in the override layer
-    if (inst != NULL && inst->override_layer_present) {
-        struct loader_layer_properties *override = NULL;
-        for (uint32_t i = 0; i < inst->instance_layer_list.count; ++i) {
-            if (strcmp(inst->instance_layer_list.list[i].info.layerName, VK_OVERRIDE_LAYER_NAME) == 0) {
-                override = &inst->instance_layer_list.list[i];
-                break;
-            }
-        }
-        if (override != NULL) {
-            for (uint32_t i = 0; i < override->component_layer_names.count; ++i) {
-                if (strcmp(override->component_layer_names.list[i], prop->info.layerName) == 0) {
-                    enable = true;
-                    break;
-                }
-            }
-        }
-    }
-
     return enable;
 }
 
 // Check the individual implicit layer for the enable/disable environment variable settings.  Only add it after
 // every check has passed indicating it should be used, including making sure a layer of the same name hasn't already been
 // added.
-// NOLINTNEXTLINE(misc-no-recursion) - mutual recursion with loader_add_meta_layer is bounded by finite meta-layer nesting
 VkResult loader_add_implicit_layer(struct loader_instance *inst, struct loader_layer_properties *prop,
                                    const struct loader_envvar_all_filters *filters) {
     VkResult result = VK_SUCCESS;
     if (loader_implicit_layer_is_enabled(inst, filters, prop)) {
-        if (0 == (prop->type_flags & VK_LAYER_TYPE_FLAG_META_LAYER)) {
-            // Make sure the layer isn't already in the output_list, skip adding it if it is.
-            if (loader_find_layer_name_in_list(&prop->info.layerName[0], &inst->expanded_activated_layer_list)) {
-                return result;
-            }
-            prop->enabled_by_what = ENABLED_BY_WHAT_IMPLICIT_LAYER;
-            result = loader_add_layer_properties_to_list(inst, prop);
-            if (result == VK_ERROR_OUT_OF_HOST_MEMORY) return result;
-        } else {
-            result = loader_add_meta_layer(inst, filters, prop, NULL);
+        // Make sure the layer isn't already in the output_list, skip adding it if it is.
+        if (loader_find_layer_name_in_list(&prop->info.layerName[0], &inst->expanded_activated_layer_list)) {
+            return result;
         }
-    }
-    return result;
-}
-
-// Add the component layers of a meta-layer to the active list of layers
-// NOLINTNEXTLINE(misc-no-recursion) - mutual recursion with loader_add_implicit_layer is bounded by finite meta-layer nesting
-VkResult loader_add_meta_layer(struct loader_instance *inst, const struct loader_envvar_all_filters *filters,
-                               struct loader_layer_properties *prop, bool *out_found_all_component_layers) {
-    VkResult result = VK_SUCCESS;
-    bool found_all_component_layers = true;
-
-    // A meta-layer whose component chain loops back to itself would recurse here until the stack overflows.
-    // verify_all_meta_layers rejects such cycles for layers found through normal discovery, but layers pulled
-    // in from the settings file skip that check, so break the recursion on the second entry to the same layer.
-    if (prop->is_being_expanded) {
-        loader_log(inst, VULKAN_LOADER_WARN_BIT | VULKAN_LOADER_LAYER_BIT, 0,
-                   "loader_add_meta_layer: Meta-layer %s recursively references itself through its component layers. Skipping the "
-                   "recursive reference.",
-                   prop->info.layerName);
-        if (NULL != out_found_all_component_layers) {
-            *out_found_all_component_layers = false;
-        }
-        return VK_SUCCESS;
-    }
-    prop->is_being_expanded = true;
-
-    // We need to add all the individual component layers
-    loader_api_version meta_layer_api_version = loader_make_version(prop->info.specVersion);
-    for (uint32_t comp_layer = 0; comp_layer < prop->component_layer_names.count; comp_layer++) {
-        struct loader_layer_properties *search_prop =
-            loader_find_layer_property(prop->component_layer_names.list[comp_layer], &inst->instance_layer_list);
-        if (NULL == search_prop) {
-            loader_log(inst, VULKAN_LOADER_WARN_BIT | VULKAN_LOADER_LAYER_BIT, 0,
-                       "Failed to find layer name \"%s\" component layer \"%s\" to activate (Policy #LLP_LAYER_7)",
-                       prop->component_layer_names.list[comp_layer], prop->component_layer_names.list[comp_layer]);
-            found_all_component_layers = false;
-            continue;
-        }
-        loader_api_version search_prop_version = loader_make_version(prop->info.specVersion);
-        if (!loader_check_version_meets_required(meta_layer_api_version, search_prop_version)) {
-            loader_log(inst, VULKAN_LOADER_WARN_BIT | VULKAN_LOADER_LAYER_BIT, 0,
-                       "Meta-layer \"%s\" API version %u.%u, component layer \"%s\" version %u.%u, may have "
-                       "incompatibilities (Policy #LLP_LAYER_8)!",
-                       prop->info.layerName, meta_layer_api_version.major, meta_layer_api_version.minor,
-                       search_prop->info.layerName, search_prop_version.major, search_prop_version.minor);
-        }
-
-        if (!loader_layer_is_available(inst, filters, search_prop)) {
-            loader_log(inst, VULKAN_LOADER_WARN_BIT | VULKAN_LOADER_LAYER_BIT, 0,
-                       "Meta Layer \"%s\" component layer \"%s\" disabled.", prop->info.layerName, search_prop->info.layerName);
-            continue;
-        }
-
-        // If the component layer is itself an implicit layer, we need to do the implicit layer enable
-        // checks
-        if (0 == (search_prop->type_flags & VK_LAYER_TYPE_FLAG_EXPLICIT_LAYER)) {
-            search_prop->enabled_by_what = ENABLED_BY_WHAT_META_LAYER;
-            result = loader_add_implicit_layer(inst, search_prop, filters);
-            if (result == VK_ERROR_OUT_OF_HOST_MEMORY) return result;
-        } else {
-            if (0 != (search_prop->type_flags & VK_LAYER_TYPE_FLAG_META_LAYER)) {
-                bool found_layers_in_component_meta_layer = true;
-                search_prop->enabled_by_what = ENABLED_BY_WHAT_META_LAYER;
-                result = loader_add_meta_layer(inst, filters, search_prop, &found_layers_in_component_meta_layer);
-                if (result == VK_ERROR_OUT_OF_HOST_MEMORY) return result;
-                if (!found_layers_in_component_meta_layer) found_all_component_layers = false;
-            } else if (!loader_find_layer_name_in_list(&search_prop->info.layerName[0], &inst->expanded_activated_layer_list)) {
-                // Make sure the layer isn't already in the output_list, skip adding it if it is.
-                search_prop->enabled_by_what = ENABLED_BY_WHAT_META_LAYER;
-                result = loader_add_layer_properties_to_list(inst, search_prop);
-                if (result == VK_ERROR_OUT_OF_HOST_MEMORY) return result;
-            }
-        }
-    }
-
-    prop->is_being_expanded = false;
-
-    // Add this layer to the overall target list (not the expanded one)
-    if (found_all_component_layers) {
-        prop->enabled_by_what = ENABLED_BY_WHAT_META_LAYER;
+        prop->enabled_by_what = ENABLED_BY_WHAT_IMPLICIT_LAYER;
         result = loader_add_layer_properties_to_list(inst, prop);
         if (result == VK_ERROR_OUT_OF_HOST_MEMORY) return result;
-        // Write the result to out_found_all_component_layers in case this function is being recursed
-        if (out_found_all_component_layers) *out_found_all_component_layers = found_all_component_layers;
     }
-
     return result;
 }
 
@@ -2592,266 +2377,10 @@ out:
     return res;
 }
 
-// Verify that all component layers in a meta-layer are valid.
-// This function is potentially recursive so we pass in an array of "already checked" (length of the instance_layers->count) meta
-// layers, preventing a stack overflow verifying  meta layers that are each other's component layers
-// NOLINTNEXTLINE(misc-no-recursion) - self-recursion is bounded by already_checked_meta_layers sized to instance_layers->count
-bool verify_meta_layer_component_layers(const struct loader_instance *inst, size_t prop_index,
-                                        struct loader_layer_list *instance_layers, bool *already_checked_meta_layers) {
-    struct loader_layer_properties *prop = &instance_layers->list[prop_index];
-    loader_api_version meta_layer_version = loader_make_version(prop->info.specVersion);
-
-    // Mark this meta layer as 'already checked', indicating which layers have already been recursed.
-    already_checked_meta_layers[prop_index] = true;
-
-    for (uint32_t comp_layer = 0; comp_layer < prop->component_layer_names.count; comp_layer++) {
-        struct loader_layer_properties *comp_prop =
-            loader_find_layer_property(prop->component_layer_names.list[comp_layer], instance_layers);
-        if (comp_prop == NULL) {
-            loader_log(inst, VULKAN_LOADER_WARN_BIT, 0,
-                       "verify_meta_layer_component_layers: Meta-layer %s can't find component layer %s at index %d."
-                       "  Skipping this layer.",
-                       prop->info.layerName, prop->component_layer_names.list[comp_layer], comp_layer);
-
-            return false;
-        }
-
-        // Check the version of each layer, they need to be at least MAJOR and MINOR
-        loader_api_version comp_prop_version = loader_make_version(comp_prop->info.specVersion);
-        if (!loader_check_version_meets_required(meta_layer_version, comp_prop_version)) {
-            loader_log(inst, VULKAN_LOADER_WARN_BIT, 0,
-                       "verify_meta_layer_component_layers: Meta-layer uses API version %d.%d, but component "
-                       "layer %d has API version %d.%d that is lower.  Skipping this layer.",
-                       meta_layer_version.major, meta_layer_version.minor, comp_layer, comp_prop_version.major,
-                       comp_prop_version.minor);
-
-            return false;
-        }
-
-        // Make sure the layer isn't using it's own name
-        if (!strcmp(prop->info.layerName, prop->component_layer_names.list[comp_layer])) {
-            loader_log(inst, VULKAN_LOADER_WARN_BIT, 0,
-                       "verify_meta_layer_component_layers: Meta-layer %s lists itself in its component layer "
-                       "list at index %d.  Skipping this layer.",
-                       prop->info.layerName, comp_layer);
-
-            return false;
-        }
-        if (comp_prop->type_flags & VK_LAYER_TYPE_FLAG_META_LAYER) {
-            size_t comp_prop_index = INT32_MAX;
-            // Make sure we haven't verified this meta layer before
-            for (uint32_t i = 0; i < instance_layers->count; i++) {
-                if (strcmp(comp_prop->info.layerName, instance_layers->list[i].info.layerName) == 0) {
-                    comp_prop_index = i;
-                }
-            }
-            if (comp_prop_index != INT32_MAX && already_checked_meta_layers[comp_prop_index]) {
-                loader_log(inst, VULKAN_LOADER_WARN_BIT, 0,
-                           "verify_meta_layer_component_layers: Recursive dependency between Meta-layer %s and  Meta-layer %s.  "
-                           "Skipping this layer.",
-                           instance_layers->list[prop_index].info.layerName, comp_prop->info.layerName);
-                return false;
-            }
-
-            loader_log(inst, VULKAN_LOADER_INFO_BIT, 0,
-                       "verify_meta_layer_component_layers: Adding meta-layer %s which also contains meta-layer %s",
-                       prop->info.layerName, comp_prop->info.layerName);
-
-            // Make sure if the layer is using a meta-layer in its component list that we also verify that.
-            if (!verify_meta_layer_component_layers(inst, comp_prop_index, instance_layers, already_checked_meta_layers)) {
-                loader_log(inst, VULKAN_LOADER_WARN_BIT, 0,
-                           "Meta-layer %s component layer %s can not find all component layers."
-                           "  Skipping this layer.",
-                           prop->info.layerName, prop->component_layer_names.list[comp_layer]);
-                return false;
-            }
-        }
-    }
-    // Didn't exit early so that means it passed all checks
-    loader_log(inst, VULKAN_LOADER_INFO_BIT | VULKAN_LOADER_LAYER_BIT, 0,
-               "Meta-layer \"%s\" all %d component layers appear to be valid.", prop->info.layerName,
-               prop->component_layer_names.count);
-
-    // If layer logging is on, list the internals included in the meta-layer
-    for (uint32_t comp_layer = 0; comp_layer < prop->component_layer_names.count; comp_layer++) {
-        loader_log(inst, VULKAN_LOADER_LAYER_BIT, 0, "  [%d] %s", comp_layer, prop->component_layer_names.list[comp_layer]);
-    }
-    return true;
-}
-
-// Add any instance and device extensions from component layers to this layer
-// list, so that anyone querying extensions will only need to look at the meta-layer
-VkResult update_meta_layer_extensions_from_component_layers(const struct loader_instance *inst,
-                                                            struct loader_layer_properties *prop,
-                                                            struct loader_layer_list *instance_layers) {
-    VkResult res = VK_SUCCESS;
-    for (uint32_t comp_layer = 0; comp_layer < prop->component_layer_names.count; comp_layer++) {
-        struct loader_layer_properties *comp_prop =
-            loader_find_layer_property(prop->component_layer_names.list[comp_layer], instance_layers);
-
-        if (NULL != comp_prop->instance_extension_list.list) {
-            for (uint32_t ext = 0; ext < comp_prop->instance_extension_list.count; ext++) {
-                loader_log(inst, VULKAN_LOADER_DEBUG_BIT, 0, "Meta-layer %s component layer %s adding instance extension %s",
-                           prop->info.layerName, prop->component_layer_names.list[comp_layer],
-                           comp_prop->instance_extension_list.list[ext].extensionName);
-
-                if (!has_vk_extension_property(&comp_prop->instance_extension_list.list[ext], &prop->instance_extension_list)) {
-                    res = loader_add_to_ext_list(inst, &prop->instance_extension_list, 1,
-                                                 &comp_prop->instance_extension_list.list[ext]);
-                    if (VK_ERROR_OUT_OF_HOST_MEMORY == res) {
-                        return res;
-                    }
-                }
-            }
-        }
-        if (NULL != comp_prop->device_extension_list.list) {
-            for (uint32_t ext = 0; ext < comp_prop->device_extension_list.count; ext++) {
-                loader_log(inst, VULKAN_LOADER_DEBUG_BIT, 0, "Meta-layer %s component layer %s adding device extension %s",
-                           prop->info.layerName, prop->component_layer_names.list[comp_layer],
-                           comp_prop->device_extension_list.list[ext].props.extensionName);
-
-                if (!has_vk_dev_ext_property(&comp_prop->device_extension_list.list[ext].props, &prop->device_extension_list)) {
-                    res = loader_add_to_dev_ext_list(inst, &prop->device_extension_list,
-                                                     &comp_prop->device_extension_list.list[ext].props, NULL);
-                    if (VK_ERROR_OUT_OF_HOST_MEMORY == res) {
-                        return res;
-                    }
-                }
-            }
-        }
-    }
-    return res;
-}
-
-// Verify that all meta-layers in a layer list are valid.
-VkResult verify_all_meta_layers(struct loader_instance *inst, const struct loader_envvar_all_filters *filters,
-                                struct loader_layer_list *instance_layers, bool *override_layer_present) {
-    VkResult res = VK_SUCCESS;
-    *override_layer_present = false;
-    // No layers, no problem
-    if (instance_layers->count == 0) {
-        return VK_SUCCESS;
-    }
-    bool *already_checked_meta_layers =
-        loader_instance_heap_calloc(inst, sizeof(bool) * instance_layers->count, VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
-    if (NULL == already_checked_meta_layers) {
-        return VK_ERROR_OUT_OF_HOST_MEMORY;
-    }
-    for (int32_t i = 0; i < (int32_t)instance_layers->count; i++) {
-        struct loader_layer_properties *prop = &instance_layers->list[i];
-
-        // If this is a meta-layer, make sure it is valid
-        if (prop->type_flags & VK_LAYER_TYPE_FLAG_META_LAYER) {
-            // The size of the layer list doesn't change so we can re-use the allocation, but we do need to clear it every iteration
-            memset(already_checked_meta_layers, 0, sizeof(bool) * instance_layers->count);
-
-            if (verify_meta_layer_component_layers(inst, i, instance_layers, already_checked_meta_layers)) {
-                // If any meta layer is valid, update its extension list to include the extensions from its component layers.
-                res = update_meta_layer_extensions_from_component_layers(inst, prop, instance_layers);
-                if (VK_ERROR_OUT_OF_HOST_MEMORY == res) {
-                    goto out;
-                }
-                if (prop->is_override && loader_implicit_layer_is_enabled(inst, filters, prop)) {
-                    *override_layer_present = true;
-                }
-            } else {
-                loader_log(inst, VULKAN_LOADER_DEBUG_BIT, 0,
-                           "Removing meta-layer %s from instance layer list since it appears invalid.", prop->info.layerName);
-
-                loader_remove_layer_in_list(inst, instance_layers, i);
-                i--;
-            }
-        }
-    }
-out:
-    loader_instance_heap_free(inst, already_checked_meta_layers);
-
-    return res;
-}
-
-// If the current working directory matches any app_key_path of the layers, remove all other override layers.
-// Otherwise if no matching app_key was found, remove all but the global override layer, which has no app_key_path.
-VkResult remove_all_non_valid_override_layers(struct loader_instance *inst, struct loader_layer_list *instance_layers) {
-    if (instance_layers == NULL) {
-        return VK_SUCCESS;
-    }
-
-    bool oom = false;
-    char *cur_path = loader_platform_executable_path(inst, &oom);
-    if (oom) {
-        return VK_ERROR_OUT_OF_HOST_MEMORY;
-    }
-    if (NULL == cur_path) {
-        return VK_SUCCESS;  // No way to get the current app path, so give up
-    }
-    // Find out if there is an override layer with same the app_key_path as the path to the current executable.
-    // If more than one is found, remove it and use the first layer
-    // Remove any layers which aren't global and do not have the same app_key_path as the path to the current executable.
-    bool found_active_override_layer = false;
-    int global_layer_index = -1;
-    for (uint32_t i = 0; i < instance_layers->count; i++) {
-        struct loader_layer_properties *props = &instance_layers->list[i];
-        if (strcmp(props->info.layerName, VK_OVERRIDE_LAYER_NAME) == 0) {
-            if (props->app_key_paths.count > 0) {  // not the global layer
-                for (uint32_t j = 0; j < props->app_key_paths.count; j++) {
-                    if (strcmp(props->app_key_paths.list[j], cur_path) == 0) {
-                        if (!found_active_override_layer) {
-                            found_active_override_layer = true;
-                        } else {
-                            loader_log(inst, VULKAN_LOADER_WARN_BIT | VULKAN_LOADER_LAYER_BIT, 0,
-                                       "remove_all_non_valid_override_layers: Multiple override layers where the same path in "
-                                       "app_keys "
-                                       "was found. Using the first layer found");
-
-                            // Remove duplicate active override layers that have the same app_key_path
-                            loader_remove_layer_in_list(inst, instance_layers, i);
-                            i--;
-                        }
-                    }
-                }
-                if (!found_active_override_layer) {
-                    loader_log(inst, VULKAN_LOADER_INFO_BIT | VULKAN_LOADER_LAYER_BIT, 0,
-                               "--Override layer found but not used because app \'%s\' is not in \'app_keys\' list!", cur_path);
-
-                    // Remove non-global override layers that don't have an app_key that matches cur_path
-                    loader_remove_layer_in_list(inst, instance_layers, i);
-                    i--;
-                }
-            } else {
-                if (global_layer_index == -1) {
-                    global_layer_index = (int)i;
-                } else {
-                    loader_log(
-                        inst, VULKAN_LOADER_WARN_BIT | VULKAN_LOADER_LAYER_BIT, 0,
-                        "remove_all_non_valid_override_layers: Multiple global override layers found. Using the first global "
-                        "layer found");
-                    loader_remove_layer_in_list(inst, instance_layers, i);
-                    i--;
-                }
-            }
-        }
-    }
-    // Remove global layer if layer with same the app_key_path as the path to the current executable is found
-    if (found_active_override_layer && global_layer_index >= 0) {
-        loader_remove_layer_in_list(inst, instance_layers, global_layer_index);
-    }
-    // Should be at most 1 override layer in the list now.
-    if (found_active_override_layer) {
-        loader_log(inst, VULKAN_LOADER_INFO_BIT | VULKAN_LOADER_LAYER_BIT, 0, "Using the override layer for app key %s", cur_path);
-    } else if (global_layer_index >= 0) {
-        loader_log(inst, VULKAN_LOADER_INFO_BIT | VULKAN_LOADER_LAYER_BIT, 0, "Using the global override layer");
-    }
-
-    loader_instance_heap_free(inst, cur_path);
-
-    return VK_SUCCESS;
-}
-
 /* The following are required in the "layer" object:
  * "name"
  * "type"
- * (for non-meta layers) "library_path"
- * (for meta layers) "component_layers"
+ * "library_path"
  * "api_version"
  * "implementation_version"
  * "description"
@@ -2878,11 +2407,6 @@ VkResult loader_read_layer_json(const struct loader_instance *inst, struct loade
                    "Layer located at %s didn't find required layer value \"name\" in manifest JSON file, skipping this layer",
                    filename);
         goto out;
-    }
-
-    // Check if this layer's name matches the override layer name, set is_override to true if so.
-    if (!strcmp(props.info.layerName, VK_OVERRIDE_LAYER_NAME)) {
-        props.is_override = true;
     }
 
     if (0 != strncmp(props.info.layerName, "VK_LAYER_", 9)) {
@@ -2976,69 +2500,24 @@ VkResult loader_read_layer_json(const struct loader_instance *inst, struct loade
         result = VK_ERROR_OUT_OF_HOST_MEMORY;
         goto out;
     }
-    if (NULL != library_path) {
-        if (NULL != loader_cJSON_GetObjectItem(layer_node, "component_layers")) {
-            loader_log(
-                inst, VULKAN_LOADER_WARN_BIT, 0,
-                "Layer \"%s\" contains meta-layer-specific component_layers, but also defining layer library path.  Both are not "
-                "compatible, so skipping this layer",
-                props.info.layerName);
-            result = VK_ERROR_INITIALIZATION_FAILED;
-            loader_instance_heap_free(inst, library_path);
-            goto out;
-        }
-
-        // This function takes ownership of library_path_str - so we don't need to clean it up
-        result = combine_manifest_directory_and_library_path(inst, library_path, filename, &props.lib_name);
-        if (result == VK_ERROR_OUT_OF_HOST_MEMORY) goto out;
-    }
-
-    // Parse component_layers
-
     if (NULL == library_path) {
-        if (!loader_check_version_meets_required(LOADER_VERSION_1_1_0, version)) {
+        if (NULL != loader_cJSON_GetObjectItem(layer_node, "component_layers")) {
             loader_log(inst, VULKAN_LOADER_WARN_BIT, 0,
-                       "Layer \"%s\" contains meta-layer-specific component_layers, but using older JSON file version.",
+                       "Layer \"%s\" contains meta-layer-specific component_layers. Meta-layer support has been removed from the "
+                       "loader, so skipping this layer",
+                       props.info.layerName);
+        } else {
+            loader_log(inst, VULKAN_LOADER_WARN_BIT, 0,
+                       "Layer \"%s\" is missing the library_path field. It MUST be defined. Skipping this layer",
                        props.info.layerName);
         }
-
-        result = loader_parse_json_array_of_strings(inst, layer_node, "component_layers", &(props.component_layer_names));
-        if (VK_ERROR_OUT_OF_HOST_MEMORY == result) {
-            goto out;
-        }
-        if (VK_ERROR_INITIALIZATION_FAILED == result) {
-            loader_log(inst, VULKAN_LOADER_WARN_BIT, 0,
-                       "Layer \"%s\" is missing both library_path and component_layers fields.  One or the other MUST be defined.  "
-                       "Skipping this layer",
-                       props.info.layerName);
-            goto out;
-        }
-        // This is now, officially, a meta-layer
-        props.type_flags |= VK_LAYER_TYPE_FLAG_META_LAYER;
-        loader_log(inst, VULKAN_LOADER_INFO_BIT | VULKAN_LOADER_LAYER_BIT, 0, "Encountered meta-layer \"%s\"",
-                   props.info.layerName);
-    }
-
-    // Parse blacklisted_layers
-
-    if (props.is_override) {
-        result = loader_parse_json_array_of_strings(inst, layer_node, "blacklisted_layers", &(props.blacklist_layer_names));
-        if (VK_ERROR_OUT_OF_HOST_MEMORY == result) {
-            goto out;
-        }
-    }
-
-    // Parse override_paths
-
-    result = loader_parse_json_array_of_strings(inst, layer_node, "override_paths", &(props.override_paths));
-    if (VK_ERROR_OUT_OF_HOST_MEMORY == result) {
+        result = VK_ERROR_INITIALIZATION_FAILED;
         goto out;
     }
-    if (NULL != props.override_paths.list && !loader_check_version_meets_required(loader_combine_version(1, 1, 0), version)) {
-        loader_log(inst, VULKAN_LOADER_WARN_BIT, 0,
-                   "Layer \"%s\" contains meta-layer-specific override paths, but using older JSON file version.",
-                   props.info.layerName);
-    }
+
+    // This function takes ownership of library_path_str - so we don't need to clean it up
+    result = combine_manifest_directory_and_library_path(inst, library_path, filename, &props.lib_name);
+    if (result == VK_ERROR_OUT_OF_HOST_MEMORY) goto out;
 
     // Parse disable_environment
 
@@ -3227,18 +2706,6 @@ VkResult loader_read_layer_json(const struct loader_instance *inst, struct loade
                                               &props.pre_instance_functions.enumerate_instance_version);
             if (result == VK_ERROR_OUT_OF_HOST_MEMORY) goto out;
         }
-    }
-
-    if (loader_cJSON_GetObjectItem(layer_node, "app_keys")) {
-        if (!props.is_override) {
-            loader_log(inst, VULKAN_LOADER_WARN_BIT | VULKAN_LOADER_LAYER_BIT, 0,
-                       "Layer %s contains app_keys, but any app_keys can only be provided by the override meta layer. "
-                       "These will be ignored.",
-                       props.info.layerName);
-        }
-
-        result = loader_parse_json_array_of_strings(inst, layer_node, "app_keys", &props.app_key_paths);
-        if (result == VK_ERROR_OUT_OF_HOST_MEMORY) goto out;
     }
 
     char *library_arch = loader_cJSON_GetStringValue(loader_cJSON_GetObjectItem(layer_node, "library_arch"));
@@ -4370,23 +3837,6 @@ out:
     return res;
 }
 
-// Given a loader_layer_properties struct that is a valid override layer, concatenate the properties override paths and put them
-// into the output parameter override_paths
-VkResult get_override_layer_override_paths(struct loader_instance *inst, struct loader_layer_properties *prop,
-                                           struct loader_string_list *override_paths) {
-    if (prop->override_paths.count > 0) {
-        for (uint32_t j = 0; j < prop->override_paths.count; j++) {
-            VkResult result = copy_data_file_info(inst, prop->override_paths.list[j], NULL, 0, override_paths);
-            if (VK_SUCCESS != result) {
-                return result;
-            }
-            loader_log(inst, VULKAN_LOADER_WARN_BIT | VULKAN_LOADER_LAYER_BIT, 0, "Override layer has override path %s",
-                       prop->override_paths.list[j]);
-        }
-    }
-    return VK_SUCCESS;
-}
-
 void loader_remove_duplicate_layers(struct loader_instance *inst, struct loader_layer_list *layers) {
     // Remove duplicate layers (that share the same layerName)
     for (uint32_t i = 0; i < layers->count; ++i) {
@@ -4413,7 +3863,6 @@ VkResult loader_scan_for_layers(struct loader_instance *inst, struct loader_laye
     VkResult res = VK_SUCCESS;
     struct loader_layer_list settings_layers = {0};
     struct loader_layer_list regular_instance_layers = {0};
-    bool override_layer_valid = false;
     struct loader_string_list override_paths = {0};
 
     bool should_search_for_other_layers = true;
@@ -4435,42 +3884,10 @@ VkResult loader_scan_for_layers(struct loader_instance *inst, struct loader_laye
         goto out;
     }
 
-    // Remove any extraneous override layers.
-    res = remove_all_non_valid_override_layers(inst, &regular_instance_layers);
-    if (VK_SUCCESS != res) {
-        goto out;
-    }
-
-    // Check to see if the override layer is present, and use it's override paths.
-    for (uint32_t i = 0; i < regular_instance_layers.count; i++) {
-        struct loader_layer_properties *prop = &regular_instance_layers.list[i];
-        if (prop->is_override && loader_implicit_layer_is_enabled(inst, filters, prop) && prop->override_paths.count > 0) {
-            res = get_override_layer_override_paths(inst, prop, &override_paths);
-            if (VK_SUCCESS != res) {
-                goto out;
-            }
-            break;
-        }
-    }
-
     // Get a list of manifest files for explicit layers
     res = loader_parse_instance_layers(inst, LOADER_DATA_FILE_MANIFEST_EXPLICIT_LAYER, &override_paths, &regular_instance_layers);
     if (VK_SUCCESS != res) {
         goto out;
-    }
-
-    // Verify any meta-layers in the list are valid and all the component layers are
-    // actually present in the available layer list
-    res = verify_all_meta_layers(inst, filters, &regular_instance_layers, &override_layer_valid);
-    if (VK_ERROR_OUT_OF_HOST_MEMORY == res) {
-        goto out;
-    }
-
-    if (override_layer_valid) {
-        loader_remove_layers_in_blacklist(inst, &regular_instance_layers);
-        if (NULL != inst) {
-            inst->override_layer_present = true;
-        }
     }
 
     // Remove disabled layers
@@ -4499,9 +3916,7 @@ VkResult loader_scan_for_implicit_layers(struct loader_instance *inst, struct lo
     VkResult res = VK_SUCCESS;
     struct loader_layer_list settings_layers = {0};
     struct loader_layer_list regular_instance_layers = {0};
-    bool override_layer_valid = false;
     struct loader_string_list override_paths = {0};
-    bool implicit_metalayer_present = false;
 
     bool should_search_for_other_layers = true;
     res = get_settings_layers(inst, &settings_layers, &should_search_for_other_layers);
@@ -4531,51 +3946,6 @@ VkResult loader_scan_for_implicit_layers(struct loader_instance *inst, struct lo
     res = loader_parse_instance_layers(inst, LOADER_DATA_FILE_MANIFEST_IMPLICIT_LAYER, NULL, &regular_instance_layers);
     if (VK_SUCCESS != res) {
         goto out;
-    }
-
-    // Remove any extraneous override layers.
-    res = remove_all_non_valid_override_layers(inst, &regular_instance_layers);
-    if (VK_SUCCESS != res) {
-        goto out;
-    }
-    // Check to see if either the override layer is present, or another implicit meta-layer.
-    // Each of these may require explicit layers to be enabled at this time.
-    for (uint32_t i = 0; i < regular_instance_layers.count; i++) {
-        struct loader_layer_properties *prop = &regular_instance_layers.list[i];
-        if (prop->is_override && loader_implicit_layer_is_enabled(inst, layer_filters, prop)) {
-            override_layer_valid = true;
-            res = get_override_layer_override_paths(inst, prop, &override_paths);
-            if (VK_SUCCESS != res) {
-                goto out;
-            }
-        } else if (!prop->is_override && prop->type_flags & VK_LAYER_TYPE_FLAG_META_LAYER) {
-            implicit_metalayer_present = true;
-        }
-    }
-
-    // If either the override layer or an implicit meta-layer are present, we need to add
-    // explicit layer info as well.  Not to worry, though, all explicit layers not included
-    // in the override layer will be removed below in loader_remove_layers_in_blacklist().
-    if (override_layer_valid || implicit_metalayer_present) {
-        res =
-            loader_parse_instance_layers(inst, LOADER_DATA_FILE_MANIFEST_EXPLICIT_LAYER, &override_paths, &regular_instance_layers);
-        if (VK_SUCCESS != res) {
-            goto out;
-        }
-    }
-
-    // Verify any meta-layers in the list are valid and all the component layers are
-    // actually present in the available layer list
-    res = verify_all_meta_layers(inst, layer_filters, &regular_instance_layers, &override_layer_valid);
-    if (VK_ERROR_OUT_OF_HOST_MEMORY == res) {
-        goto out;
-    }
-
-    if (override_layer_valid || implicit_metalayer_present) {
-        loader_remove_layers_not_in_implicit_meta_layers(inst, &regular_instance_layers);
-        if (override_layer_valid && inst != NULL) {
-            inst->override_layer_present = true;
-        }
     }
 
     // Remove disabled layers
@@ -5150,14 +4520,12 @@ VkResult loader_create_instance_chain(const VkInstanceCreateInfo *pCreateInfo, c
             loader_platform_dl_handle lib_handle;
 
             // Skip it if a Layer with the same name has been already successfully activated
-            if (loader_names_array_has_layer_property(&layer_prop->info, num_activated_layers, activated_layers)) {
+            // Ignore this if the settings file is active
+            if ((!inst->settings.settings_active || !inst->settings.layer_configurations_active) &&
+                loader_names_array_has_layer_property(&layer_prop->info, num_activated_layers, activated_layers)) {
                 continue;
             }
 
-            // Skip meta layers
-            if (NULL == layer_prop->lib_name) {
-                continue;
-            }
             bool oom = false;
             lib_handle = loader_open_layer_file(inst, layer_prop, &oom);
             if (oom || layer_prop->lib_status == LOADER_LAYER_LIB_ERROR_OUT_OF_MEMORY) {
@@ -5295,9 +4663,9 @@ VkResult loader_create_instance_chain(const VkInstanceCreateInfo *pCreateInfo, c
                 break;
             }
         }
-        // If it wasn't found and it isn't a meta layer (which doesn't have a lib name) we want to at least log an error.  However,
-        // if it was enabled by the application directly, we want to return a bad layer error.
-        if (!found && NULL != exp_layer_prop->lib_name) {
+        // If it wasn't found we want to at least log an error.  However if it was enabled by the application directly, we want to
+        // return a bad layer error.
+        if (!found) {
             bool app_requested = false;
             for (uint32_t act = 0; act < pCreateInfo->enabledLayerCount; ++act) {
                 if (!strcmp(pCreateInfo->ppEnabledLayerNames[act], exp_layer_prop->info.layerName)) {

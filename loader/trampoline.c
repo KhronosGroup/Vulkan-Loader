@@ -1131,11 +1131,10 @@ LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumerateDeviceLayerProperties(Vk
 
     const struct loader_instance *inst = phys_dev->this_instance;
 
-    // Only count layers that successfully loaded, or had nothing to load (like meta layers)
+    // Only count layers that successfully loaded
     uint32_t count = 0;
     for (uint32_t i = 0; i < inst->expanded_activated_layer_list.count; i++) {
-        if (inst->expanded_activated_layer_list.list[i]->lib_status == LOADER_LAYER_LIB_NOT_LOADED ||
-            inst->expanded_activated_layer_list.list[i]->lib_status == LOADER_LAYER_LIB_SUCCESS_LOADED) {
+        if (inst->expanded_activated_layer_list.list[i]->lib_status == LOADER_LAYER_LIB_SUCCESS_LOADED) {
             count++;
         }
     }

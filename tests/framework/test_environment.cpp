@@ -366,8 +366,8 @@ ManifestLocation FrameworkEnvironment::map_discovery_type_to_location(ManifestDi
         case (ManifestDiscoveryType::windows_app_package):
             return ManifestLocation::windows_app_package;
 #endif
-        case (ManifestDiscoveryType::override_folder):
-            return ManifestLocation::override_layer;
+        case (ManifestDiscoveryType::overflow_folder):
+            return ManifestLocation::overflow;
 #if defined(__APPLE__)
         case (ManifestDiscoveryType::macos_bundle):
             return ManifestLocation::macos_bundle;

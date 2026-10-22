@@ -137,9 +137,6 @@
 #define VK_LOADER_SEARCH_ONLY_IN_BUNDLE_ENV_VAR "VK_LOADER_SEARCH_ONLY_IN_BUNDLE"
 #endif
 
-// Override layer information
-#define VK_OVERRIDE_LAYER_NAME "VK_LAYER_LUNARG_override"
-
 // Loader Settings filename
 #define VK_LOADER_SETTINGS_FILENAME "vk_loader_settings.json"
 

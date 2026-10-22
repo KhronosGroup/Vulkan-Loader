@@ -95,11 +95,7 @@ struct ManifestLayer {
         BUILDER_VECTOR(Extension, device_extensions, device_extension)
         BUILDER_VALUE(std::string, enable_environment)
         BUILDER_VALUE(std::string, disable_environment)
-        BUILDER_VECTOR(std::string, component_layers, component_layer)
-        BUILDER_VECTOR(std::string, blacklisted_layers, blacklisted_layer)
-        BUILDER_VECTOR(std::filesystem::path, override_paths, override_path)
         BUILDER_VECTOR(FunctionOverride, pre_instance_functions, pre_instance_function)
-        BUILDER_VECTOR(std::string, app_keys, app_key)
         BUILDER_VALUE(std::string, library_arch)
 
         void get_manifest_str(JsonWriter& writer) const;

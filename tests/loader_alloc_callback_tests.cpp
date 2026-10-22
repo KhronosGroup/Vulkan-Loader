@@ -1093,14 +1093,6 @@ TEST(Allocation, CreateInstanceDeviceIntentionalAllocFail) {
                                                              .set_api_version(VK_MAKE_API_VERSION(0, 1, 1, 0))
                                                              .add_device_extension({"NeverGonnaLetYouDown"})));
 
-    const char* override_layer_name = "VK_LAYER_LUNARG_override";
-    env.add_implicit_layer({}, ManifestLayer{}
-                                   .set_file_format_version(ManifestVersion{1, 1, 2})
-                                   .add_layer(ManifestLayer::LayerDescription{}
-                                                  .set_name(override_layer_name)
-                                                  .set_disable_environment("DISABLE_ENV")
-                                                  .add_component_layer(regular_layer_name)));
-
     const char* layer_name = "VK_LAYER_ImplicitAllocFail";
     env.add_implicit_layer({}, ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
                                                              .set_name(layer_name)

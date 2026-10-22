@@ -4527,7 +4527,7 @@ TEST(LibraryLoading, SystemLocations) {
 TEST(ManifestDiscovery, ValidSymlinkInUnsecureLocation) {
     FrameworkEnvironment env;
     env.add_icd(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA,
-                ManifestOptions{}.set_discovery_type(ManifestDiscoveryType::override_folder))
+                ManifestOptions{}.set_discovery_type(ManifestDiscoveryType::overflow_folder))
         .add_physical_device({});
 
     env.add_symlink(ManifestLocation::unsecured_driver, env.get_icd_manifest_path(0), "symlink_to_driver.json");
@@ -4541,7 +4541,7 @@ TEST(ManifestDiscovery, ValidSymlinkInUnsecureLocation) {
 TEST(ManifestDiscovery, ValidSymlink) {
     FrameworkEnvironment env{FrameworkSettings{}};
     env.add_icd(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA,
-                ManifestOptions{}.set_discovery_type(ManifestDiscoveryType::override_folder))
+                ManifestOptions{}.set_discovery_type(ManifestDiscoveryType::overflow_folder))
         .add_physical_device({});
 
     env.add_symlink(ManifestLocation::driver, env.get_icd_manifest_path(0), "symlink_to_driver.json");

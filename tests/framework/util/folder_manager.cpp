@@ -177,7 +177,7 @@ FileSystemManager::FileSystemManager()
     folders.try_emplace(ManifestLocation::implicit_layer, root, std::string("implicit_layer_manifests"));
     folders.try_emplace(ManifestLocation::implicit_layer_env_var, root, std::string("implicit_env_var_layer_manifests"));
     folders.try_emplace(ManifestLocation::implicit_layer_add_env_var, root, std::string("implicit_add_env_var_layer_manifests"));
-    folders.try_emplace(ManifestLocation::override_layer, root, std::string("override_layer_manifests"));
+    folders.try_emplace(ManifestLocation::overflow, root, std::string("overflow"));
 #if defined(_WIN32)
     folders.try_emplace(ManifestLocation::windows_app_package, root, std::string("app_package_manifests"));
 #endif
