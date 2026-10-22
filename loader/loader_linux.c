@@ -277,7 +277,7 @@ VkResult linux_read_sorted_physical_devices(struct loader_instance *inst, uint32
     for (uint32_t icd_idx = 0; icd_idx < icd_count; ++icd_idx) {
         for (uint32_t phys_dev = 0; phys_dev < icd_devices[icd_idx].device_count; ++phys_dev) {
             struct loader_icd_term *icd_term = icd_devices[icd_idx].icd_term;
-            VkPhysicalDeviceProperties dev_props = {};
+            VkPhysicalDeviceProperties dev_props = {0};
 
             sorted_device_info[index].physical_device = icd_devices[icd_idx].physical_devices[phys_dev];
             sorted_device_info[index].icd_term = icd_term;
@@ -389,7 +389,7 @@ VkResult linux_sort_physical_device_groups(struct loader_instance *inst, uint32_
 
         struct loader_icd_term *icd_term = sorted_group_term[group].this_icd_term;
         for (uint32_t gpu = 0; gpu < sorted_group_term[group].group_props.physicalDeviceCount; ++gpu) {
-            VkPhysicalDeviceProperties dev_props = {};
+            VkPhysicalDeviceProperties dev_props = {0};
 
             sorted_group_term[group].internal_device_info[gpu].physical_device =
                 sorted_group_term[group].group_props.physicalDevices[gpu];
