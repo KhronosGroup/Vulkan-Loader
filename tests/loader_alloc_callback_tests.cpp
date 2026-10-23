@@ -728,6 +728,121 @@ TEST(Allocation, DebugMessengerAndReportCallbackUseObjectAllocator) {
     ASSERT_TRUE(instance_tracker.empty());
 }
 
+// vkDestroyDebugUtilsMessengerEXT used to leave the destroyed driver handle behind in each ICD's debug_utils_messenger_list
+// slot. The slot index is handed to the next create, whose error rollback treats a non-NULL slot as a handle this call
+// created, so a driver create failing on a reused slot made the rollback destroy a driver handle a second time.
+TEST(Allocation, DebugUtilsMessengerCreateFailOnReusedSlot) {
+    FrameworkEnvironment env{};
+    env.add_icd(TEST_ICD_PATH_VERSION_2)
+        .set_min_icd_interface_version(5)
+        .add_instance_extension(VK_EXT_DEBUG_UTILS_EXTENSION_NAME)
+        .add_physical_device({});
+
+    MemoryTracker instance_tracker{};
+
+    VkInstance instance = VK_NULL_HANDLE;
+    InstanceCreateInfo inst_create_info{};
+    inst_create_info.add_extension(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+    ASSERT_EQ(VK_SUCCESS, env.vulkan_functions.vkCreateInstance(inst_create_info.get(), instance_tracker.get(), &instance));
+
+    PFN_vkCreateDebugUtilsMessengerEXT create_messenger = reinterpret_cast<PFN_vkCreateDebugUtilsMessengerEXT>(
+        env.vulkan_functions.vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT"));
+    PFN_vkDestroyDebugUtilsMessengerEXT destroy_messenger = reinterpret_cast<PFN_vkDestroyDebugUtilsMessengerEXT>(
+        env.vulkan_functions.vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT"));
+    ASSERT_NE(create_messenger, nullptr);
+    ASSERT_NE(destroy_messenger, nullptr);
+
+    VkDebugUtilsMessengerCreateInfoEXT messenger_info{VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT};
+    messenger_info.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
+    messenger_info.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT;
+    messenger_info.pfnUserCallback = noop_debug_utils_callback;
+
+    auto& icd_details = env.get_test_icd(0).created_instance_details.begin()->second;
+
+    size_t fail_index = 0;
+    VkResult result = VK_ERROR_OUT_OF_HOST_MEMORY;
+    while (result == VK_ERROR_OUT_OF_HOST_MEMORY && fail_index <= 100) {
+        // Create and destroy a messenger so slot 0 has held a driver handle that is now destroyed.
+        MemoryTracker object_tracker{};
+        VkDebugUtilsMessengerEXT messenger = VK_NULL_HANDLE;
+        ASSERT_EQ(VK_SUCCESS, create_messenger(instance, &messenger_info, object_tracker.get(), &messenger));
+        destroy_messenger(instance, messenger, object_tracker.get());
+        ASSERT_TRUE(object_tracker.empty());
+        ASSERT_EQ(icd_details.messenger_handles.size(), 0u);
+
+        // Create again into the same slot, failing one allocation at a time until the create succeeds. One of these
+        // iterations fails the driver's own allocation, so the driver returns VK_ERROR_OUT_OF_HOST_MEMORY and the
+        // loader rolls back with the slot still holding the handle destroyed above.
+        MemoryTracker failing_tracker({false, 0, true, fail_index});
+        VkDebugUtilsMessengerEXT retried_messenger = VK_NULL_HANDLE;
+        result = create_messenger(instance, &messenger_info, failing_tracker.get(), &retried_messenger);
+        if (result == VK_SUCCESS) {
+            destroy_messenger(instance, retried_messenger, failing_tracker.get());
+        }
+        ASSERT_TRUE(failing_tracker.empty());
+        ASSERT_EQ(icd_details.messenger_handles.size(), 0u);
+        fail_index++;
+    }
+    ASSERT_EQ(VK_SUCCESS, result);
+
+    env.vulkan_functions.vkDestroyInstance(instance, instance_tracker.get());
+    ASSERT_TRUE(instance_tracker.empty());
+}
+
+// Same as above for vkDestroyDebugReportCallbackEXT and each ICD's debug_report_callback_list.
+TEST(Allocation, DebugReportCallbackCreateFailOnReusedSlot) {
+    FrameworkEnvironment env{};
+    env.add_icd(TEST_ICD_PATH_VERSION_2)
+        .set_min_icd_interface_version(5)
+        .add_instance_extension(VK_EXT_DEBUG_REPORT_EXTENSION_NAME)
+        .add_physical_device({});
+
+    MemoryTracker instance_tracker{};
+
+    VkInstance instance = VK_NULL_HANDLE;
+    InstanceCreateInfo inst_create_info{};
+    inst_create_info.add_extension(VK_EXT_DEBUG_REPORT_EXTENSION_NAME);
+    ASSERT_EQ(VK_SUCCESS, env.vulkan_functions.vkCreateInstance(inst_create_info.get(), instance_tracker.get(), &instance));
+
+    PFN_vkCreateDebugReportCallbackEXT create_callback = reinterpret_cast<PFN_vkCreateDebugReportCallbackEXT>(
+        env.vulkan_functions.vkGetInstanceProcAddr(instance, "vkCreateDebugReportCallbackEXT"));
+    PFN_vkDestroyDebugReportCallbackEXT destroy_callback = reinterpret_cast<PFN_vkDestroyDebugReportCallbackEXT>(
+        env.vulkan_functions.vkGetInstanceProcAddr(instance, "vkDestroyDebugReportCallbackEXT"));
+    ASSERT_NE(create_callback, nullptr);
+    ASSERT_NE(destroy_callback, nullptr);
+
+    VkDebugReportCallbackCreateInfoEXT callback_info{VK_STRUCTURE_TYPE_DEBUG_REPORT_CALLBACK_CREATE_INFO_EXT};
+    callback_info.flags = VK_DEBUG_REPORT_ERROR_BIT_EXT;
+    callback_info.pfnCallback = noop_debug_report_callback;
+
+    auto& icd_details = env.get_test_icd(0).created_instance_details.begin()->second;
+
+    size_t fail_index = 0;
+    VkResult result = VK_ERROR_OUT_OF_HOST_MEMORY;
+    while (result == VK_ERROR_OUT_OF_HOST_MEMORY && fail_index <= 100) {
+        MemoryTracker object_tracker{};
+        VkDebugReportCallbackEXT callback = VK_NULL_HANDLE;
+        ASSERT_EQ(VK_SUCCESS, create_callback(instance, &callback_info, object_tracker.get(), &callback));
+        destroy_callback(instance, callback, object_tracker.get());
+        ASSERT_TRUE(object_tracker.empty());
+        ASSERT_EQ(icd_details.callback_handles.size(), 0u);
+
+        MemoryTracker failing_tracker({false, 0, true, fail_index});
+        VkDebugReportCallbackEXT retried_callback = VK_NULL_HANDLE;
+        result = create_callback(instance, &callback_info, failing_tracker.get(), &retried_callback);
+        if (result == VK_SUCCESS) {
+            destroy_callback(instance, retried_callback, failing_tracker.get());
+        }
+        ASSERT_TRUE(failing_tracker.empty());
+        ASSERT_EQ(icd_details.callback_handles.size(), 0u);
+        fail_index++;
+    }
+    ASSERT_EQ(VK_SUCCESS, result);
+
+    env.vulkan_functions.vkDestroyInstance(instance, instance_tracker.get());
+    ASSERT_TRUE(instance_tracker.empty());
+}
+
 // Test failure during vkCreateInstance to make sure we don't leak memory if
 // one of the out-of-memory conditions trigger.
 TEST(Allocation, CreateInstanceIntentionalAllocFailWithSettingsFilePresent) {
