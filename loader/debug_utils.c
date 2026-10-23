@@ -253,6 +253,7 @@ out:
                     NULL != icd_term->dispatch.DestroyDebugUtilsMessengerEXT) {
                     icd_term->dispatch.DestroyDebugUtilsMessengerEXT(
                         icd_term->instance, icd_term->debug_utils_messenger_list.list[next_index], pAllocator);
+                    icd_term->debug_utils_messenger_list.list[next_index] = VK_NULL_HANDLE;
                 }
             }
         }
@@ -288,6 +289,7 @@ VKAPI_ATTR void VKAPI_CALL terminator_DestroyDebugUtilsMessengerEXT(VkInstance i
             NULL != icd_term->dispatch.DestroyDebugUtilsMessengerEXT) {
             icd_term->dispatch.DestroyDebugUtilsMessengerEXT(
                 icd_term->instance, icd_term->debug_utils_messenger_list.list[*debug_messenger_index], pAllocator);
+            icd_term->debug_utils_messenger_list.list[*debug_messenger_index] = VK_NULL_HANDLE;
         }
     }
 
@@ -538,6 +540,7 @@ out:
                     NULL != icd_term->dispatch.DestroyDebugReportCallbackEXT) {
                     icd_term->dispatch.DestroyDebugReportCallbackEXT(
                         icd_term->instance, icd_term->debug_report_callback_list.list[next_index], pAllocator);
+                    icd_term->debug_report_callback_list.list[next_index] = VK_NULL_HANDLE;
                 }
             }
         }
@@ -572,6 +575,7 @@ VKAPI_ATTR void VKAPI_CALL terminator_DestroyDebugReportCallbackEXT(VkInstance i
             NULL != icd_term->dispatch.DestroyDebugReportCallbackEXT) {
             icd_term->dispatch.DestroyDebugReportCallbackEXT(
                 icd_term->instance, icd_term->debug_report_callback_list.list[*debug_report_index], pAllocator);
+            icd_term->debug_report_callback_list.list[*debug_report_index] = VK_NULL_HANDLE;
         }
     }
 

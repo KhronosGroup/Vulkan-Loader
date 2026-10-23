@@ -475,6 +475,9 @@ test_vkCreateDebugUtilsMessengerEXT(VkInstance instance, [[maybe_unused]] const 
         if (pAllocator) {
             new_handle_ptr =
                 (uint8_t*)pAllocator->pfnAllocation(pAllocator->pUserData, sizeof(uint8_t*), 8, VK_SYSTEM_ALLOCATION_SCOPE_OBJECT);
+            if (nullptr == new_handle_ptr) {
+                return VK_ERROR_OUT_OF_HOST_MEMORY;
+            }
         } else {
             new_handle_ptr = new uint8_t;
         }
@@ -526,6 +529,9 @@ test_vkCreateDebugReportCallbackEXT(VkInstance instance, [[maybe_unused]] const 
         if (pAllocator) {
             new_handle_ptr =
                 (uint8_t*)pAllocator->pfnAllocation(pAllocator->pUserData, sizeof(uint8_t*), 8, VK_SYSTEM_ALLOCATION_SCOPE_OBJECT);
+            if (nullptr == new_handle_ptr) {
+                return VK_ERROR_OUT_OF_HOST_MEMORY;
+            }
         } else {
             new_handle_ptr = new uint8_t;
         }
