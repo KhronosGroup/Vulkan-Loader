@@ -590,6 +590,10 @@ VkResult parse_id_filter_environment_var(const struct loader_instance *inst, con
 
     filter_struct->filters = (struct loader_envvar_id_filter_value *)loader_instance_heap_calloc(
         inst, (num_commas + 1) * sizeof(struct loader_envvar_id_filter_value), VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
+    if (NULL == filter_struct->filters) {
+        res = VK_ERROR_OUT_OF_HOST_MEMORY;
+        goto out;
+    }
     filter_struct->count = 0;
     char *context = NULL;
     char *token = thread_safe_strtok(parsing_string, ",", &context);

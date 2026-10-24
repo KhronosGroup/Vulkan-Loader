@@ -990,6 +990,42 @@ TEST(Allocation, DriverEnvVarIntentionalAllocFail) {
     }
 }
 
+// Test failure while parsing the VK_LOADER_*_ID_FILTER environment variables, which happens inside
+// vkEnumeratePhysicalDevices and vkEnumeratePhysicalDeviceGroups using the instance allocator.
+TEST(Allocation, EnumeratePhysicalDevicesWithIdFilterIntentionalAllocFail) {
+    FrameworkEnvironment env{FrameworkSettings{}.set_log_filter("error,warn")};
+    auto& driver = env.add_icd(TEST_ICD_PATH_VERSION_2).set_icd_api_version(VK_API_VERSION_1_1);
+    driver.add_and_get_physical_device("physical_device_0").properties.deviceID = 0x1001;
+
+    env.env_var_vk_loader_device_id_filter.set_new_value("0x1000-0x1002,0x1005");
+
+    size_t fail_index = 0;
+    VkResult result = VK_ERROR_OUT_OF_HOST_MEMORY;
+    while (result == VK_ERROR_OUT_OF_HOST_MEMORY && fail_index <= 10000) {
+        MemoryTracker tracker({false, 0, true, fail_index});
+
+        VkInstance instance;
+        InstanceCreateInfo inst_create_info{};
+        inst_create_info.set_api_version(1, 1, 0);
+        result = env.vulkan_functions.vkCreateInstance(inst_create_info.get(), tracker.get(), &instance);
+        if (result == VK_SUCCESS) {
+            uint32_t physical_count = 1;
+            VkPhysicalDevice physical_device{};
+            result = env.vulkan_functions.vkEnumeratePhysicalDevices(instance, &physical_count, &physical_device);
+            if (result == VK_SUCCESS) {
+                uint32_t group_count = 1;
+                VkPhysicalDeviceGroupProperties group_props{};
+                group_props.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_GROUP_PROPERTIES;
+                result = env.vulkan_functions.vkEnumeratePhysicalDeviceGroups(instance, &group_count, &group_props);
+            }
+            env.vulkan_functions.vkDestroyInstance(instance, tracker.get());
+        }
+        ASSERT_TRUE(tracker.empty());
+        fail_index++;
+    }
+    ASSERT_EQ(VK_SUCCESS, result);
+}
+
 // Test failure during vkCreateDevice to make sure we don't leak memory if
 // one of the out-of-memory conditions trigger.
 // Use 2 physical devices so that anything which copies a list of devices item by item
