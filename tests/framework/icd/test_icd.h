@@ -328,6 +328,8 @@ struct TestICD {
 
     BUILDER_VALUE_WITH_DEFAULT(VkResult, enum_physical_devices_return_code, VK_SUCCESS);
     BUILDER_VALUE_WITH_DEFAULT(VkResult, enum_adapter_physical_devices_return_code, VK_SUCCESS);
+    // When not VK_SUCCESS, vkEnumerateDeviceExtensionProperties returns this code without writing pPropertyCount or pProperties
+    BUILDER_VALUE_WITH_DEFAULT(VkResult, enum_device_extension_properties_return_code, VK_SUCCESS);
 
     InstanceCreateInfo GetVkInstanceCreateInfo() {
         InstanceCreateInfo info;
