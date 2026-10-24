@@ -707,6 +707,9 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vkEnumerateDeviceExtensionProperties(VkPhysi
                                                                          uint32_t* pPropertyCount,
                                                                          VkExtensionProperties* pProperties) {
     std::lock_guard lg(icd.mutex);
+    if (icd.enum_device_extension_properties_return_code != VK_SUCCESS) {
+        return icd.enum_device_extension_properties_return_code;
+    }
     auto& phys_dev = GetPhysDevice(physicalDevice);
     if (pLayerName != nullptr) {
         assert(false && "Drivers don't contain layers???");

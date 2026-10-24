@@ -4004,6 +4004,40 @@ TEST(SortedPhysicalDevices, DeviceGroupsSortedEnabled) {
     }
 }
 
+// A driver may fail the device extension count query without writing the count. Group sorting must not use the count in
+// that case.
+TEST(SortedPhysicalDevices, DeviceGroupsSortedExtensionQueryFails) {
+    FrameworkEnvironment env{};
+
+    env.add_icd(TEST_ICD_PATH_VERSION_2, {}, ManifestICD{}.set_api_version(VK_API_VERSION_1_1));
+    auto& cur_icd = env.get_test_icd(0);
+    cur_icd.set_icd_api_version(VK_API_VERSION_1_1);
+    auto& test_physical_device_0 = cur_icd.add_and_get_physical_device({"pd0"});
+    test_physical_device_0.set_pci_bus(7);
+    test_physical_device_0.extensions.push_back({VK_EXT_PCI_BUS_INFO_EXTENSION_NAME, 0});
+    FillInRandomDeviceProps(test_physical_device_0.properties, VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU, VK_API_VERSION_1_1, 888,
+                            0xAAA001);
+    auto& test_physical_device_1 = cur_icd.add_and_get_physical_device({"pd1"});
+    test_physical_device_1.set_pci_bus(3);
+    test_physical_device_1.extensions.push_back({VK_EXT_PCI_BUS_INFO_EXTENSION_NAME, 0});
+    FillInRandomDeviceProps(test_physical_device_1.properties, VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU, VK_API_VERSION_1_1, 888,
+                            0xAAA002);
+    cur_icd.physical_device_groups.push_back({});
+    cur_icd.physical_device_groups.back().use_physical_devices({0, 1});
+    cur_icd.set_enum_device_extension_properties_return_code(VK_ERROR_OUT_OF_HOST_MEMORY);
+
+    InstWrapper inst(env.vulkan_functions);
+    inst.create_info.set_api_version(VK_API_VERSION_1_1);
+    inst.CheckCreate();
+
+    uint32_t group_count = 1;
+    VkPhysicalDeviceGroupProperties group{};
+    group.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_GROUP_PROPERTIES;
+    ASSERT_EQ(VK_SUCCESS, inst->vkEnumeratePhysicalDeviceGroups(inst, &group_count, &group));
+    ASSERT_EQ(group_count, 1U);
+    ASSERT_EQ(group.physicalDeviceCount, 2U);
+}
+
 TEST(SortedPhysicalDevices, DeviceGroupsSortedDisabled) {
     FrameworkEnvironment env{};
 
