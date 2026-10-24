@@ -407,7 +407,7 @@ VkResult linux_sort_physical_device_groups(struct loader_instance *inst, uint32_
             bool device_is_1_1_capable =
                 loader_check_version_meets_required(LOADER_VERSION_1_1_0, loader_make_version(dev_props.apiVersion));
             if (!sorted_group_term[group].internal_device_info[gpu].has_pci_bus_info) {
-                uint32_t ext_count;
+                uint32_t ext_count = 0;
                 icd_term->dispatch.EnumerateDeviceExtensionProperties(
                     sorted_group_term[group].internal_device_info[gpu].physical_device, NULL, &ext_count, NULL);
                 if (ext_count > 0) {
