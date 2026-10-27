@@ -119,6 +119,9 @@ BOOL WINAPI DllMain(HINSTANCE hinstance, DWORD reason, LPVOID reserved) {
     return TRUE;
 }
 
+// Append the JSON path data to the list and allocate/grow the list if it's not large enough.
+// Function returns true if filename was appended to reg_data list.
+// Caller should free reg_data.
 VkResult windows_add_json_entry(const struct loader_instance* inst, struct loader_string_list* search_paths,
                                 LPCSTR key_name,  // key name - used for debug prints - i.e. VulkanDriverName
                                 DWORD key_type,   // key data type
@@ -146,6 +149,11 @@ VkResult windows_add_json_entry(const struct loader_instance* inst, struct loade
     return VK_SUCCESS;
 }
 
+// Find the list of registry files (names VulkanDriverName/VulkanDriverNameWow) in hkr.
+//
+// This function looks for filename in given device handle, filename is then added to return list
+// function return true if filename was appended to reg_data list
+// If error occurs result is updated with failure reason
 VkResult windows_get_device_registry_entry(const struct loader_instance* inst, struct loader_string_list* search_paths,
                                            DEVINST dev_id, LPCSTR value_name) {
     VkResult res = VK_SUCCESS;
@@ -213,6 +221,17 @@ out:
     return res;
 }
 
+// Find the list of registry files (names VulkanDriverName/VulkanDriverNameWow) in hkr .
+//
+// This function looks for display devices and childish software components
+// for a list of files which are added to a returned list (function return
+// value).
+// Function return is a string with a ';'  separated list of filenames.
+// Function return is NULL if no valid name/value pairs  are found in the key,
+// or the key is not found.
+//
+// *reg_data contains a string list of filenames as pointer.
+// When done using the returned string list, the caller should free the pointer.
 VkResult windows_get_device_registry_files(const struct loader_instance* inst, uint32_t log_target_flag,
                                            struct loader_string_list* search_paths, LPCSTR value_name) {
     const wchar_t* softwareComponentGUID = L"{5c4c3332-344d-483c-8739-259e934c9cc8}";
@@ -337,6 +356,19 @@ VkResult windows_get_device_registry_files(const struct loader_instance* inst, u
     return result;
 }
 
+// Find the list of registry files (names within a key) in key "location".
+//
+// This function looks in the registry (hive = DEFAULT_VK_REGISTRY_HIVE) key as
+// given in "location"
+// for a list or name/values which are added to a returned list (function return
+// value).
+// The DWORD values within the key must be 0 or they are skipped.
+// Function return is a string with a ';'  separated list of filenames.
+// Function return is NULL if no valid name/value pairs  are found in the key,
+// or the key is not found.
+//
+// *reg_data contains a string list of filenames as pointer.
+// When done using the returned string list, the caller should free the pointer.
 VkResult windows_get_registry_files(const struct loader_instance* inst, char* location, bool use_secondary_hive,
                                     struct loader_string_list* search_paths) {
     // This list contains all of the allowed ICDs. This allows us to verify that a device is actually present from the vendor
