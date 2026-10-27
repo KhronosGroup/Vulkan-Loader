@@ -39,6 +39,10 @@ Folder::Folder(std::filesystem::path root_path, std::string name) noexcept : fol
     clear();
     // Don't actually create the folder yet, as we will do it on demand
 }
+Folder::Folder(std::filesystem::path root_path, std::wstring name) noexcept : folder((root_path / name).lexically_normal()) {
+    clear();
+    // Don't actually create the folder yet, as we will do it on demand
+}
 Folder::~Folder() noexcept { clear(); }
 Folder::Folder(Folder&& other) noexcept : actually_created(other.actually_created), folder(other.folder) { other.folder.clear(); }
 Folder& Folder::operator=(Folder&& other) noexcept {
@@ -160,7 +164,7 @@ std::filesystem::path category_path_name(ManifestCategory category) {
         return "icd.d";
 }
 
-FileSystemManager::FileSystemManager()
+FileSystemManager::FileSystemManager(bool use_unicode_in_unsecured_folders)
     : root_folder(std::filesystem::path(TEST_EXECUTION_DIRECTORY),
                   std::string(::testing::UnitTest::GetInstance()->GetInstance()->current_test_suite()->name()) + "_" +
                       ::testing::UnitTest::GetInstance()->current_test_info()->name()) {
@@ -185,10 +189,16 @@ FileSystemManager::FileSystemManager()
     folders.try_emplace(ManifestLocation::macos_bundle, root, std::string("macos_bundle"));
 #endif
     folders.try_emplace(ManifestLocation::settings_location, root, std::string("settings_location"));
-    folders.try_emplace(ManifestLocation::unsecured_driver, root, std::string("unsecured_driver"));
-    folders.try_emplace(ManifestLocation::unsecured_explicit_layer, root, std::string("unsecured_explicit_layer"));
-    folders.try_emplace(ManifestLocation::unsecured_implicit_layer, root, std::string("unsecured_implicit_layer"));
-    folders.try_emplace(ManifestLocation::unsecured_settings, root, std::string("unsecured_settings"));
+
+    std::string unsecured_name = "unsecured_";
+    if (use_unicode_in_unsecured_folders) {
+        unsecured_name += TEST_JSON_NAME_VERSION_2_UNICODE;
+        unsecured_name += "_";
+    }
+    folders.try_emplace(ManifestLocation::unsecured_driver, root, widen(unsecured_name + "driver"));
+    folders.try_emplace(ManifestLocation::unsecured_explicit_layer, root, widen(unsecured_name + "explicit_layer"));
+    folders.try_emplace(ManifestLocation::unsecured_implicit_layer, root, widen(unsecured_name + "implicit_layer"));
+    folders.try_emplace(ManifestLocation::unsecured_settings, root, widen(unsecured_name + "settings"));
 }
 
 fs::Folder& FileSystemManager::get_folder(ManifestLocation location) noexcept { return folders.at(location); }
