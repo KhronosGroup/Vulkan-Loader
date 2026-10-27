@@ -28,6 +28,9 @@ AddSharedLibrary(test_layer_export_version_0_named_gpa DEF_FILE test_layer_0_nam
 AddSharedLibrary(test_layer_export_version_1 DEF_FILE test_layer_1 SOURCES test_layer.cpp DEFINITIONS ${TEST_LAYER_VERSION_1_EXPORTS})
 AddSharedLibrary(test_layer_export_version_2 DEF_FILE test_layer_2 SOURCES test_layer.cpp DEFINITIONS ${TEST_LAYER_VERSION_2_EXPORTS})
 
+AddSharedLibrary(test_unicode_layer DEF_FILE 🌋🌋 SOURCES test_layer.cpp DEFINITIONS ${TEST_LAYER_VERSION_2_EXPORTS})
+set_target_properties(test_unicode_layer PROPERTIES OUTPUT_NAME "🌋🌋") # Test unicode library
+
 # Wrap Objects layer which wraps dispatchable handles to test that the loader will properly
 # work in the case where handles in the terminator don't match handles in the trampoline portion.
 set(WRAP_LAYER_VERSION_1_EXPORTS

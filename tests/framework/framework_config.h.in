@@ -68,6 +68,8 @@
 #define TEST_LAYER_WRAP_OBJECTS_2 "$<TARGET_FILE:test_layer_wrap_objects_2>"
 #define TEST_LAYER_WRAP_OBJECTS_3 "$<TARGET_FILE:test_layer_wrap_objects_3>"
 
+#define TEST_LAYER_PATH_VERSION_2_UNICODE "$<TARGET_FILE:test_unicode_layer>"
+
 #define COMPLEX_JSON_FILE "${CMAKE_CURRENT_SOURCE_DIR}/data/VkLayer_complex_file.json"
 #define FUZZER_OUTPUT_JSON_FILE "${CMAKE_CURRENT_SOURCE_DIR}/data/fuzzer_output.json"
 

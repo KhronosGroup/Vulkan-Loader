@@ -39,6 +39,7 @@ namespace fs {
 class Folder {
    public:
     explicit Folder(std::filesystem::path root_path, std::string name) noexcept;
+    explicit Folder(std::filesystem::path root_path, std::wstring name) noexcept;
     ~Folder() noexcept;
     Folder(Folder const&) = delete;
     Folder& operator=(Folder const&) = delete;
@@ -82,7 +83,7 @@ class FileSystemManager {
     std::unordered_map<std::string, ManifestLocation> redirected_paths;
 
    public:
-    FileSystemManager();
+    explicit FileSystemManager(bool use_unicode_in_unsecured_folders);
 
     Folder& get_folder(ManifestLocation location) noexcept;
     Folder const& get_folder(ManifestLocation location) const noexcept;

@@ -238,7 +238,9 @@ TestBinaryHandle<TestLayer, GetTestLayerFunc, GetNewTestLayerFunc>::TestBinaryHa
 
 FrameworkEnvironment::FrameworkEnvironment() noexcept : FrameworkEnvironment(FrameworkSettings{}) {}
 FrameworkEnvironment::FrameworkEnvironment(FrameworkSettings const& settings) noexcept
-    : settings(settings), platform_shim(file_system_manager, settings.log_filter) {
+    : settings(settings),
+      file_system_manager(settings.use_unicode_in_unsecured_folders),
+      platform_shim(file_system_manager, settings.log_filter) {
     // Setup default path redirection
 
     platform_shim->set_elevated_privilege(settings.run_as_if_with_elevated_privileges);
@@ -543,8 +545,10 @@ void FrameworkEnvironment::add_layer_impl(ManifestOptions args, ManifestLayer ma
 
             // Don't load the layer binary if using any of the wrap objects layers, since it doesn't export the same interface
             // functions
-            if (!args.is_fake && layer.lib_path.stem().string().find(
-                                     std::filesystem::path(TEST_LAYER_WRAP_OBJECTS).stem().string()) == std::string::npos) {
+            auto lib_path_stem = layer.lib_path.stem().native();
+            auto wrap_objects_stem = std::filesystem::path(TEST_LAYER_WRAP_OBJECTS).stem().native();
+
+            if (!args.is_fake && lib_path_stem.find(wrap_objects_stem) == std::string::npos) {
                 layers.push_back(TestLayerHandle(new_layer_location));
                 layers.back().reset();
             }

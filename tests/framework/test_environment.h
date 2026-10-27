@@ -448,14 +448,13 @@ struct FrameworkSettings {
     BUILDER_VALUE_WITH_DEFAULT(const char*, log_filter, "all");
     BUILDER_VALUE_WITH_DEFAULT(bool, run_as_if_with_elevated_privileges, false);
 
-#if TESTING_COMMON_UNIX_PLATFORMS
     BUILDER_VALUE_WITH_DEFAULT(std::string, home_env_var, "/home/fake_home");
-#if !defined(__APPLE__)
+    BUILDER_VALUE_WITH_DEFAULT(bool, use_unicode_in_unsecured_folders, false);
+#if TESTING_COMMON_UNIX_PLATFORMS && !defined(__APPLE__)
     BUILDER_VALUE(std::string, xdg_config_home_env_var);
     BUILDER_VALUE(std::string, xdg_config_dirs_env_var);
     BUILDER_VALUE(std::string, xdg_data_home_env_var);
     BUILDER_VALUE(std::string, xdg_data_dirs_env_var);
-#endif
 #endif
 };
 
