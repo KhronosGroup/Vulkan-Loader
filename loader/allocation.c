@@ -33,6 +33,11 @@
 
 void *loader_calloc(const VkAllocationCallbacks *pAllocator, size_t size, VkSystemAllocationScope allocation_scope) {
     void *pMemory = NULL;
+
+    // Requesting a size 0 allocation to either calloc or custom Vulkan allocators is unspecified. This means we could get NULL as
+    // the return value, which can end up as an OOM error from the loader when execution can continue without issues.
+    if (size == 0) size = 1;
+
 #if (DEBUG_DISABLE_APP_ALLOCATORS == 1)
     {
 #else
