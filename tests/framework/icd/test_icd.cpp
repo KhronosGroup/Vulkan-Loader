@@ -257,6 +257,9 @@ void check_allocator_handle(const VkAllocationCallbacks* pAllocator) {
 VKAPI_ATTR VkResult VKAPI_CALL test_vkEnumerateInstanceExtensionProperties(const char* pLayerName, uint32_t* pPropertyCount,
                                                                            VkExtensionProperties* pProperties) {
     std::lock_guard lg(icd.mutex);
+    if (icd.enum_instance_extension_properties_return_code != VK_SUCCESS) {
+        return icd.enum_instance_extension_properties_return_code;
+    }
     if (pLayerName != nullptr) {
         auto& layer = FindLayer(icd.instance_layers, std::string(pLayerName));
         return FillCountPtr(layer.extensions, pPropertyCount, pProperties);
