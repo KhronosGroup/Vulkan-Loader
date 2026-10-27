@@ -237,9 +237,18 @@ VkResult windows_get_device_registry_files(const struct loader_instance *inst, u
 
     // if after obtaining the DeviceNameSize, new device is added start over
     do {
-        CM_Get_Device_ID_List_SizeW(&deviceNamesSize, displayGUID, flags);
-
         loader_instance_heap_free(inst, pDeviceNames);
+        pDeviceNames = NULL;
+
+        CONFIGRET cm_ret = CM_Get_Device_ID_List_SizeW(&deviceNamesSize, displayGUID, flags);
+        if (CR_SUCCESS != cm_ret) {
+            loader_log(inst, VULKAN_LOADER_ERROR_BIT | log_target_flag, 0,
+                       "windows_get_device_registry_files: Failed call to CM_Get_Device_ID_List_SizeW with error code %lu", cm_ret);
+            return VK_ERROR_INCOMPATIBLE_DRIVER;
+        }
+        if (deviceNamesSize == 0) {
+            break;
+        }
 
         pDeviceNames = loader_instance_heap_calloc(inst, deviceNamesSize * sizeof(wchar_t), VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
         if (pDeviceNames == NULL) {
@@ -593,6 +602,10 @@ VkResult windows_read_manifest_from_d3d_adapters(const struct loader_instance *i
             goto out;
         }
 
+        // Zero size adapter, skip it.
+        if (full_info->output_value_size == 0) {
+            continue;
+        }
         // Convert the wide string to a narrow string
         void *buffer = loader_instance_heap_realloc(inst, json_path, json_path_size, full_info->output_value_size,
                                                     VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
@@ -740,6 +753,11 @@ VkResult enumerate_adapter_physical_devices(struct loader_instance *inst, struct
 
     // Get the actual physical devices
     do {
+        // As the driver should return the count in the first call, making sure we don't call realloc with a size of zero.
+        if (count == 0) {
+            return VK_SUCCESS;
+        }
+
         void *new_ptr = loader_instance_heap_realloc(inst, next_icd_phys_devs->physical_devices,
                                                      next_icd_phys_devs->device_count * sizeof(VkPhysicalDevice),
                                                      count * sizeof(VkPhysicalDevice), VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
