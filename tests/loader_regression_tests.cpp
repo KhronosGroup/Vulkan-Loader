@@ -326,6 +326,23 @@ TEST(EnumerateInstanceExtensionProperties, FilterUnkownInstanceExtensions) {
     }
 }
 
+// A driver may fail its instance extension query. The loader gives up on the call, but it must still release the drivers it
+// scanned the same way the success path does, otherwise every driver's library handle and path leak on each call.
+TEST(EnumerateInstanceExtensionProperties, DriverExtensionQueryFails) {
+    FrameworkEnvironment env{};
+    env.add_icd(TEST_ICD_PATH_VERSION_2);
+    env.add_icd(TEST_ICD_PATH_VERSION_2);
+    env.get_test_icd(1).set_enum_instance_extension_properties_return_code(VK_ERROR_INITIALIZATION_FAILED);
+
+    uint32_t extension_count = 0;
+    ASSERT_EQ(VK_ERROR_INITIALIZATION_FAILED,
+              env.vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, nullptr));
+
+    env.get_test_icd(1).set_enum_instance_extension_properties_return_code(VK_SUCCESS);
+    ASSERT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, nullptr));
+    ASSERT_EQ(extension_count, 4U);  // debug report & debug utils & portability enumeration & direct driver loading
+}
+
 TEST(EnumerateDeviceLayerProperties, LayersMatch) {
     FrameworkEnvironment env{};
     env.add_icd(TEST_ICD_PATH_VERSION_2).add_physical_device("physical_device_0");
