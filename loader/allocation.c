@@ -32,6 +32,7 @@
 #define DEBUG_DISABLE_APP_ALLOCATORS 0
 
 void *loader_calloc(const VkAllocationCallbacks *pAllocator, size_t size, VkSystemAllocationScope allocation_scope) {
+    assert(size > 0 && "All allocations must have a size greater than zero!");
     void *pMemory = NULL;
 #if (DEBUG_DISABLE_APP_ALLOCATORS == 1)
     {
@@ -67,6 +68,7 @@ void loader_free(const VkAllocationCallbacks *pAllocator, void *pMemory) {
 
 void *loader_realloc(const VkAllocationCallbacks *pAllocator, void *pMemory, size_t orig_size, size_t size,
                      VkSystemAllocationScope allocation_scope) {
+    assert(size > 0 && "All allocations must have a size greater than zero!");
     void *pNewMem = NULL;
     if (pMemory == NULL || orig_size == 0) {
         pNewMem = loader_calloc(pAllocator, size, allocation_scope);

@@ -356,7 +356,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_GetPhysicalDeviceToolPropertiesEXT(VkP
     VkResult enumerate_res = VK_SUCCESS;
 
     enumerate_res = icd_term->dispatch.EnumerateDeviceExtensionProperties(phys_dev_term->phys_dev, NULL, &ext_count, NULL);
-    if (enumerate_res != VK_SUCCESS) {
+    if (enumerate_res != VK_SUCCESS || ext_count == 0) {
         goto out;
     }
 

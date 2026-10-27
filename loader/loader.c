@@ -3699,11 +3699,13 @@ VkResult loader_icd_scan(const struct loader_instance *inst, struct loader_icd_t
         goto out;
     }
 
-    icd_details = loader_instance_heap_calloc(inst, sizeof(struct ICDManifestInfo) * manifest_files.count,
-                                              VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
-    if (NULL == icd_details) {
-        res = VK_ERROR_OUT_OF_HOST_MEMORY;
-        goto out;
+    if (manifest_files.count > 0) {
+        icd_details = loader_instance_heap_calloc(inst, sizeof(struct ICDManifestInfo) * manifest_files.count,
+                                                  VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
+        if (NULL == icd_details) {
+            res = VK_ERROR_OUT_OF_HOST_MEMORY;
+            goto out;
+        }
     }
 
     for (uint32_t i = 0; i < manifest_files.count; i++) {
@@ -6037,13 +6039,16 @@ VkResult setup_loader_tramp_phys_devs(struct loader_instance *inst, uint32_t phy
         new_count = phys_dev_count;
     }
 
-    // We want an old to new index array and a new to old index array
-    old_to_new_index =
-        (int32_t *)loader_instance_heap_calloc(inst, sizeof(int32_t) * old_count, VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
-    if (NULL == old_to_new_index) {
-        res = VK_ERROR_OUT_OF_HOST_MEMORY;
-        goto out;
+    if (old_count > 0) {
+        // We want an old to new index array and a new to old index array
+        old_to_new_index =
+            (int32_t *)loader_instance_heap_calloc(inst, sizeof(int32_t) * old_count, VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
+        if (NULL == old_to_new_index) {
+            res = VK_ERROR_OUT_OF_HOST_MEMORY;
+            goto out;
+        }
     }
+
     new_to_old_index =
         (int32_t *)loader_instance_heap_calloc(inst, sizeof(int32_t) * new_count, VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
     if (NULL == new_to_old_index) {
@@ -6648,6 +6653,11 @@ VkResult setup_loader_tramp_phys_dev_groups(struct loader_instance *inst, uint32
     for (cur_idx = 0; cur_idx < group_count; ++cur_idx) {
         phys_dev_count += groups[cur_idx].physicalDeviceCount;
     }
+
+    if (phys_dev_count == 0) {
+        return VK_SUCCESS;
+    }
+
     VkPhysicalDevice *devices = (VkPhysicalDevice *)loader_instance_heap_calloc(inst, sizeof(VkPhysicalDevice) * phys_dev_count,
                                                                                 VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
     if (NULL == devices) {
@@ -7392,7 +7402,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_EnumeratePhysicalDeviceGroups(
         }
     }
 
-    if (NULL != pPhysicalDeviceGroupProperties) {
+    if (NULL != pPhysicalDeviceGroupProperties && total_count > 0) {
         // Create an array for the new physical device groups, which will be stored
         // in the instance for the Terminator code.
         new_phys_dev_groups = (VkPhysicalDeviceGroupProperties **)loader_instance_heap_calloc(
