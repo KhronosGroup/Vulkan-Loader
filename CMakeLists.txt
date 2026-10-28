@@ -268,7 +268,7 @@ if(CMAKE_C_COMPILER_ID MATCHES "MSVC" OR (CMAKE_C_COMPILER_ID STREQUAL "Clang" A
 
     # Enable EH Continuation Metadata for 64-bit architectures
     if (CMAKE_SIZEOF_VOID_P EQUAL 8)
-        target_compile_options(loader_common_options INTERFACE $<$<COMPILE_LANGUAGE::CXX,C>:/guard:ehcont>)
+        target_compile_options(loader_common_options INTERFACE $<$<COMPILE_LANGUAGE:CXX,C>:/guard:ehcont>)
         target_link_options(loader_common_options INTERFACE "LINKER:/guard:ehcont")
     endif()
 
