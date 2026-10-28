@@ -68,6 +68,14 @@ if (WIN32)
     endif()
 endif()
 
+# Make sure our deps also enable /guard:ehcont as on windows ninja wont build without it
+if ((CMAKE_C_COMPILER_ID MATCHES "MSVC" OR (CMAKE_C_COMPILER_ID STREQUAL "Clang" AND CMAKE_C_COMPILER_FRONTEND_VARIANT MATCHES "MSVC")) AND CMAKE_SIZEOF_VOID_P EQUAL 8)
+    target_compile_options(gtest PUBLIC "/guard:ehcont")
+    target_link_options(gtest PUBLIC "LINKER:/guard:ehcont")
+    target_compile_options(detours PUBLIC "/guard:ehcont")
+    target_link_options(detours PUBLIC "LINKER:/guard:ehcont")
+endif()
+
 option(ENABLE_LIVE_VERIFICATION_TESTS "Enable tests which expect to run on live drivers. Meant for manual verification only" OFF)
 
 set(TEST_EXECUTION_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/executing_tests")
