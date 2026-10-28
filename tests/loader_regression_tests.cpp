@@ -4627,6 +4627,30 @@ TEST(ManifestDiscovery, InvalidSymlink) {
 }
 #endif
 
+#if TESTING_COMMON_UNIX_PLATFORMS
+// An invalid symlink in a manifest folder must not make the loader open a manifest with the same name from the current
+// working directory
+TEST(ManifestDiscovery, InvalidSymlinkNotOpenedFromWorkingDirectory) {
+    FrameworkEnvironment env;
+    // The overflow folder isn't searched, so this driver can only be found through the working directory
+    env.add_icd(
+        TEST_ICD_PATH_VERSION_2,
+        ManifestOptions{}.set_discovery_type(ManifestDiscoveryType::overflow_folder).set_json_name("symlink_to_nothing.json"));
+
+    env.add_symlink(ManifestLocation::driver, env.get_folder(ManifestLocation::driver).location() / "nothing_here.json",
+                    "symlink_to_nothing.json");
+
+    auto original_working_directory = std::filesystem::current_path();
+    std::filesystem::current_path(env.get_folder(ManifestLocation::overflow).location());
+
+    InstWrapper inst{env.vulkan_functions};
+    FillDebugUtilsCreateDetails(inst.create_info, env.debug_log);
+    inst.CheckCreate(VK_ERROR_INCOMPATIBLE_DRIVER);
+
+    std::filesystem::current_path(original_working_directory);
+}
+#endif
+
 #if defined(__APPLE__)
 // Add two drivers, one to the bundle and one to the system locations
 TEST(ManifestDiscovery, AppleBundles) {
