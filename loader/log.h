@@ -78,6 +78,12 @@ void generate_debug_flag_str(VkFlags msg_type, size_t cmd_line_size, char* cmd_l
 void DECORATE_PRINTF(4, 5) loader_log(const struct loader_instance* inst, VkFlags msg_type, int32_t msg_code, const char* format,
                                       ...) ASM_NAME("loader_log");
 
+#if defined(_WIN32)
+// Same as loader_log but accepts a wide format string.
+// Use this when printing wide character strings
+void loader_log_wide(const struct loader_instance* inst, VkFlags msg_type, int32_t msg_code, const wchar_t* format, ...);
+#endif
+
 // Used for the assembly code to emit an specific error message
 // This is a work around for linux 32 bit error handling not passing relocatable strings correctly
 void loader_log_asm_function_not_supported(const struct loader_instance* inst, VkFlags msg_type, int32_t msg_code,

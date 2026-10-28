@@ -136,17 +136,20 @@ void generate_debug_flag_str(VkFlags msg_type, size_t cmd_line_size, char* cmd_l
 #undef STRNCAT_TO_BUFFER
 }
 
+#define MESSAGE_BUFFER_LEN 512
+#define CMD_LINE_MESSAGE_BUFFER_LEN 64
+
 void DECORATE_PRINTF(4, 5)
     // NOLINTNEXTLINE(bugprone-easily-swappable-parameters) - msg_type/msg_code (unused) are convertible types; public API order
     loader_log(const struct loader_instance* inst, VkFlags msg_type, int32_t msg_code, const char* format, ...) {
     (void)msg_code;
-    char msg[512] = {0};
+    char msg[MESSAGE_BUFFER_LEN] = {0};
 
     va_list ap;
     va_start(ap, format);
-    int ret = vsnprintf(msg, sizeof(msg), format, ap);
-    if ((ret >= (int)sizeof(msg)) || ret < 0) {
-        msg[sizeof(msg) - 1] = '\0';
+    int ret = vsnprintf(msg, MESSAGE_BUFFER_LEN, format, ap);
+    if ((ret >= (int)MESSAGE_BUFFER_LEN) || ret < 0) {
+        msg[MESSAGE_BUFFER_LEN - 1] = '\0';
     }
     va_end(ap);
 
@@ -216,7 +219,7 @@ void DECORATE_PRINTF(4, 5)
 
     // Only need enough space to create the filter description header for log messages
     // Also use the same header for all output
-    char cmd_line_msg[64] = {0};
+    char cmd_line_msg[CMD_LINE_MESSAGE_BUFFER_LEN] = {0};
     size_t cmd_line_size = sizeof(cmd_line_msg);
 
     loader_strncat(cmd_line_msg, cmd_line_size, "[Vulkan Loader] ", sizeof("[Vulkan Loader] "));
@@ -270,12 +273,48 @@ void DECORATE_PRINTF(4, 5)
     fputs(msg, stderr);
     fputc('\n', stderr);
     // NOLINTEND(cert-err33-c)
-#if defined(WIN32)
-    OutputDebugString(cmd_line_msg);
-    OutputDebugString(msg);
-    OutputDebugString("\n");
+#if defined(_WIN32)
+
+    wchar_t wide_cmd_line_msg[CMD_LINE_MESSAGE_BUFFER_LEN] = {0};
+    wchar_t wide_msg[MESSAGE_BUFFER_LEN] = {0};
+
+    MultiByteToWideChar(CP_UTF8, 0, cmd_line_msg, -1, wide_cmd_line_msg, CMD_LINE_MESSAGE_BUFFER_LEN);
+    MultiByteToWideChar(CP_UTF8, 0, msg, -1, wide_msg, MESSAGE_BUFFER_LEN);
+
+    // Make sure these are always null terminated even if we cut off the last character
+    wide_cmd_line_msg[CMD_LINE_MESSAGE_BUFFER_LEN - 1] = L'\0';
+    wide_msg[MESSAGE_BUFFER_LEN - 1] = L'\0';
+
+    OutputDebugStringW(wide_cmd_line_msg);
+    OutputDebugStringW(wide_msg);
+    OutputDebugStringW(L"\n");
 #endif
 }
+#if defined(_WIN32)
+// NOLINTNEXTLINE(bugprone-easily-swappable-parameters) - msg_type/msg_code (unused) are convertible types; public API order
+void loader_log_wide(const struct loader_instance* inst, VkFlags msg_type, int32_t msg_code, const wchar_t* format, ...) {
+    (void)msg_code;
+    wchar_t msg[MESSAGE_BUFFER_LEN] = {0};
+
+    va_list ap;
+    va_start(ap, format);
+    int ret = _vsnwprintf_s(msg, MESSAGE_BUFFER_LEN, MESSAGE_BUFFER_LEN - 1, format, ap);
+    if ((ret >= (int)MESSAGE_BUFFER_LEN) || ret < 0) {
+        msg[MESSAGE_BUFFER_LEN - 1] = '\0';
+    }
+    va_end(ap);
+
+    int msg_narrow_len = MESSAGE_BUFFER_LEN * 3 + 1;
+    char msg_narrow[MESSAGE_BUFFER_LEN * 3 + 1] = {0};
+    if (WideCharToMultiByte(CP_UTF8, 0, msg, -1, msg_narrow, msg_narrow_len, NULL, NULL) <= 0) {
+        loader_log(inst, VULKAN_LOADER_ERROR_BIT, msg_code, "loader_log_wide: Failed to convert message from wchar_t to char");
+    } else {
+        loader_log(inst, msg_type, msg_code, "%s", msg_narrow);
+    }
+}
+#endif
+#undef MESSAGE_BUFFER_LEN
+#undef CMD_LINE_MESSAGE_BUFFER_LEN
 
 void loader_log_asm_function_not_supported(const struct loader_instance* inst, VkFlags msg_type, int32_t msg_code,
                                            const char* func_name) {

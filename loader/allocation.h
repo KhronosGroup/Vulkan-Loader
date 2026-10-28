@@ -35,11 +35,13 @@
 
 void* loader_instance_heap_calloc(const struct loader_instance* instance, size_t size, VkSystemAllocationScope allocation_scope);
 void loader_instance_heap_free(const struct loader_instance* instance, void* pMemory);
+// Returns the new pointer containing the allocation. Indicates OOM by returning NULL, caller is responsible for freeing pMemory
 void* loader_instance_heap_realloc(const struct loader_instance* instance, void* pMemory, size_t orig_size, size_t size,
                                    VkSystemAllocationScope allocation_scope);
 
 void* loader_device_heap_calloc(const struct loader_device* device, size_t size, VkSystemAllocationScope allocation_scope);
 void loader_device_heap_free(const struct loader_device* device, void* pMemory);
+// Returns the new pointer containing the allocation. Indicates OOM by returning NULL, caller is responsible for freeing pMemory
 void* loader_device_heap_realloc(const struct loader_device* device, void* pMemory, size_t orig_size, size_t size,
                                  VkSystemAllocationScope allocation_scope);
 
@@ -47,6 +49,7 @@ void* loader_device_heap_realloc(const struct loader_device* device, void* pMemo
 // otherwise use the system functions
 void* loader_calloc(const VkAllocationCallbacks* pAllocator, size_t size, VkSystemAllocationScope allocation_scope);
 void loader_free(const VkAllocationCallbacks* pAllocator, void* pMemory);
+// Returns the new pointer containing the allocation. Indicates OOM by returning NULL, caller is responsible for freeing pMemory
 void* loader_realloc(const VkAllocationCallbacks* pAllocator, void* pMemory, size_t orig_size, size_t size,
                      VkSystemAllocationScope allocation_scope);
 
@@ -55,5 +58,6 @@ void* loader_calloc_with_instance_fallback(const VkAllocationCallbacks* pAllocat
                                            size_t size, VkSystemAllocationScope allocation_scope);
 void loader_free_with_instance_fallback(const VkAllocationCallbacks* pAllocator, const struct loader_instance* instance,
                                         void* pMemory);
+// Returns the new pointer containing the allocation. Indicates OOM by returning NULL, caller is responsible for freeing pMemory
 void* loader_realloc_with_instance_fallback(const VkAllocationCallbacks* pAllocator, const struct loader_instance* instance,
                                             void* pMemory, size_t orig_size, size_t size, VkSystemAllocationScope allocation_scope);

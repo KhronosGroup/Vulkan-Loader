@@ -10,22 +10,24 @@
 
 */
 
-#include <vulkan/vulkan.h>
-
 #if defined(__cplusplus)
 extern "C" {
 #endif
 
+struct loader_instance;
 typedef struct DIR DIR;
 
+// Need storage enough to hold a 260 wchar_t string converted to a multi-byte-character char string and a null terminator
+#define MAX_PATH_DIRENT (260 * 4 + 1)
+
 struct dirent {
-    char* d_name;
+    char d_name[MAX_PATH_DIRENT];
 };
 
 // pass in VkAllocationCallbacks to allow allocation callback usage
-DIR* opendir(const VkAllocationCallbacks* pAllocator, const char*);
-int closedir(const VkAllocationCallbacks* pAllocator, DIR*);
-struct dirent* readdir(DIR*);
+DIR* opendir(const struct loader_instance* inst, const char*);
+int closedir(const struct loader_instance* inst, DIR*);
+struct dirent* readdir(const struct loader_instance* inst, DIR*);
 void rewinddir(DIR*);
 
 /*
