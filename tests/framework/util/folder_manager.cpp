@@ -150,7 +150,12 @@ void Folder::clear() const noexcept {
         std::error_code err;
         std::filesystem::remove_all(folder, err);
         if (err.value() != 0) {
+#if defined(_WIN32)
+            // If the folder name has unicode characters in it, convert it to utf-8 first.
+            std::cerr << "Failed to remove folder " << narrow(folder.wstring()) << " because " << err.message() << "\n";
+#else
             std::cerr << "Failed to remove folder " << folder << " because " << err.message() << "\n";
+#endif
         }
     }
 }

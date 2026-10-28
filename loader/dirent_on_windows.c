@@ -15,6 +15,7 @@
 #include <string.h>
 
 #include "allocation.h"
+#include "loader_common.h"
 
 #if defined(__cplusplus)
 extern "C" {
@@ -23,40 +24,56 @@ extern "C" {
 typedef ptrdiff_t handle_type; /* C99's intptr_t not sufficiently portable */
 
 struct DIR {
-    handle_type handle;       /* -1 for failed rewind */
-    struct _finddata_t info;  // NOLINT(bugprone-reserved-identifier) - matching the Windows CRT type name
-    struct dirent result;     /* d_name null iff first time */
-    char* name;               /* null-terminated char string */
+    handle_type handle;        /* -1 for failed rewind */
+    struct _wfinddata_t info;  // NOLINT(bugprone-reserved-identifier) - matching the Windows CRT type name
+    struct dirent result;      /* d_name memset to zero after opendir & rewinddir */
+    wchar_t* name;             /* null-terminated wchar_t string */
+    bool readdir_called;       /*indicates if readdir has been called on this DIR object - set to false when rewinddir is called*/
 };
 
-DIR* opendir(const VkAllocationCallbacks* pAllocator, const char* name) {
+DIR* opendir(const struct loader_instance* inst, const char* name) {
     DIR* dir = 0;
 
     if (name && name[0]) {
-        size_t base_length = strlen(name);
-        const char* all = /* search pattern must end with suitable wildcard */
-            strchr("/\\", name[base_length - 1]) ? "*" : "/*";
-        size_t full_length = base_length + strlen(all) + 1;
+        bool oom = false;
+        wchar_t* name_wide = loader_convert_char_to_wchar(inst, name, &oom, VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
+        if (oom) {
+            errno = ENOMEM;
+            return dir;
+        }
+        if (NULL == name_wide) {
+            loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0, "opendir: Failed to convert char string %s to a wchar_t string", name);
+            errno = EINVAL;
+            return dir;
+        }
 
-        if ((dir = (DIR*)loader_calloc(pAllocator, sizeof *dir, VK_SYSTEM_ALLOCATION_SCOPE_COMMAND)) != 0 &&
-            (dir->name = (char*)loader_calloc(pAllocator, full_length, VK_SYSTEM_ALLOCATION_SCOPE_COMMAND)) != 0) {
-            loader_strncpy(dir->name, full_length, name, base_length);
-            loader_strncat(dir->name, full_length, all, strlen(all));
+        size_t base_length = wcslen(name_wide);
+        const wchar_t* all = /* search pattern must end with suitable wildcard */
+            wcschr(L"/\\", name_wide[base_length - 1]) ? L"*" : L"/*";
+        size_t full_length = base_length + wcslen(all) + 1;
 
-            if ((dir->handle = (handle_type)_findfirst(dir->name, &dir->info)) != -1) {
-                dir->result.d_name = 0;
+        if ((dir = (DIR*)loader_instance_heap_calloc(inst, sizeof *dir, VK_SYSTEM_ALLOCATION_SCOPE_COMMAND)) != 0 &&
+            (dir->name = (wchar_t*)loader_instance_heap_calloc(inst, sizeof(wchar_t) * full_length,
+                                                               VK_SYSTEM_ALLOCATION_SCOPE_COMMAND)) != 0) {
+            loader_wcsncpy(dir->name, full_length, name_wide, base_length);
+            loader_wcsncat(dir->name, full_length, all, wcslen(all));
+
+            if ((dir->handle = (handle_type)_wfindfirst(dir->name, &dir->info)) != -1) {
+                memset(dir->result.d_name, 0, MAX_PATH_DIRENT);
+                dir->readdir_called = false;
             } else /* rollback */
             {
-                loader_free(pAllocator, dir->name);
-                loader_free(pAllocator, dir);
+                loader_instance_heap_free(inst, dir->name);
+                loader_instance_heap_free(inst, dir);
                 dir = 0;
             }
         } else /* rollback */
         {
-            loader_free(pAllocator, dir);
+            loader_instance_heap_free(inst, dir);
             dir = 0;
             errno = ENOMEM;
         }
+        loader_instance_heap_free(inst, name_wide);
     } else {
         errno = EINVAL;
     }
@@ -64,7 +81,7 @@ DIR* opendir(const VkAllocationCallbacks* pAllocator, const char* name) {
     return dir;
 }
 
-int closedir(const VkAllocationCallbacks* pAllocator, DIR* dir) {
+int closedir(const struct loader_instance* inst, DIR* dir) {
     int result = -1;
 
     if (dir) {
@@ -72,8 +89,8 @@ int closedir(const VkAllocationCallbacks* pAllocator, DIR* dir) {
             result = _findclose(dir->handle);
         }
 
-        loader_free(pAllocator, dir->name);
-        loader_free(pAllocator, dir);
+        loader_instance_heap_free(inst, dir->name);
+        loader_instance_heap_free(inst, dir);
     }
 
     if (result == -1) /* map all errors to EBADF */
@@ -84,17 +101,36 @@ int closedir(const VkAllocationCallbacks* pAllocator, DIR* dir) {
     return result;
 }
 
-struct dirent* readdir(DIR* dir) {
+struct dirent* readdir(const struct loader_instance* inst, DIR* dir) {
     struct dirent* result = 0;
 
     if (dir && dir->handle != -1) {
-        if (!dir->result.d_name || _findnext(dir->handle, &dir->info) != -1) {
-            result = &dir->result;
-            result->d_name = dir->info.name;
+        if (dir->readdir_called) {
+            int find_next_ret = _wfindnext(dir->handle, &dir->info);
+            if (find_next_ret == -1) {
+                // _findnext sets errno to ENOENT when no more matching files could be found, does not indicate an error
+                if (errno == ENOENT) {
+                    errno = 0;
+                }
+                return result;
+            }
+        } else {
+            dir->readdir_called = true;
         }
-        // _findnext sets errno to ENOENT when no more matching files could be found, does not indicate an error
-        if (errno == ENOENT) {
-            errno = 0;
+        result = &dir->result;
+
+        memset(dir->result.d_name, 0, MAX_PATH_DIRENT);
+        size_t name_len = wcsnlen(dir->info.name, MAX_PATH);
+
+        int convert_ret =
+            WideCharToMultiByte(CP_UTF8, 0, dir->info.name, (int)name_len, result->d_name, (int)MAX_PATH_DIRENT, NULL, NULL);
+        if (convert_ret <= 0) {
+            errno = EOVERFLOW;
+            DWORD err = GetLastError();
+            loader_log_wide(inst, VULKAN_LOADER_ERROR_BIT, 0,
+                            L"readdir: Failed to convert wchar_t string %ls to a char string with error code %lu", dir->info.name,
+                            err);
+            return result;
         }
     } else {
         errno = EBADF;
@@ -106,8 +142,9 @@ struct dirent* readdir(DIR* dir) {
 void rewinddir(DIR* dir) {
     if (dir && dir->handle != -1) {
         _findclose(dir->handle);
-        dir->handle = (handle_type)_findfirst(dir->name, &dir->info);
-        dir->result.d_name = 0;
+        dir->handle = (handle_type)_wfindfirst(dir->name, &dir->info);
+        memset(dir->result.d_name, 0, MAX_PATH_DIRENT);
+        dir->readdir_called = false;
     } else {
         errno = EBADF;
     }

@@ -197,9 +197,9 @@ typedef pthread_cond_t loader_platform_thread_cond;
 #define PATH_SEPARATOR ';'
 #define DIRECTORY_SYMBOL '\\'
 #define DEFAULT_VK_REGISTRY_HIVE HKEY_LOCAL_MACHINE
-#define DEFAULT_VK_REGISTRY_HIVE_STR "HKEY_LOCAL_MACHINE"
+#define DEFAULT_VK_REGISTRY_HIVE_STR L"HKEY_LOCAL_MACHINE"
 #define SECONDARY_VK_REGISTRY_HIVE HKEY_CURRENT_USER
-#define SECONDARY_VK_REGISTRY_HIVE_STR "HKEY_CURRENT_USER"
+#define SECONDARY_VK_REGISTRY_HIVE_STR L"HKEY_CURRENT_USER"
 
 #define VK_DRIVERS_INFO_RELATIVE_DIR ""
 #define VK_SETTINGS_INFO_RELATIVE_DIR ""
@@ -209,10 +209,10 @@ typedef pthread_cond_t loader_platform_thread_cond;
 #define VK_VARIANT_REG_STR ""
 #define VK_VARIANT_REG_STR_W L""
 
-#define VK_DRIVERS_INFO_REGISTRY_LOC "SOFTWARE\\Khronos\\Vulkan" VK_VARIANT_REG_STR "\\Drivers"
-#define VK_ELAYERS_INFO_REGISTRY_LOC "SOFTWARE\\Khronos\\Vulkan" VK_VARIANT_REG_STR "\\ExplicitLayers"
-#define VK_ILAYERS_INFO_REGISTRY_LOC "SOFTWARE\\Khronos\\Vulkan" VK_VARIANT_REG_STR "\\ImplicitLayers"
-#define VK_SETTINGS_INFO_REGISTRY_LOC "SOFTWARE\\Khronos\\Vulkan" VK_VARIANT_REG_STR "\\LoaderSettings"
+#define VK_DRIVERS_INFO_REGISTRY_LOC L"SOFTWARE\\Khronos\\Vulkan" VK_VARIANT_REG_STR_W L"\\Drivers"
+#define VK_ELAYERS_INFO_REGISTRY_LOC L"SOFTWARE\\Khronos\\Vulkan" VK_VARIANT_REG_STR_W L"\\ExplicitLayers"
+#define VK_ILAYERS_INFO_REGISTRY_LOC L"SOFTWARE\\Khronos\\Vulkan" VK_VARIANT_REG_STR_W L"\\ImplicitLayers"
+#define VK_SETTINGS_INFO_REGISTRY_LOC L"SOFTWARE\\Khronos\\Vulkan" VK_VARIANT_REG_STR_W L"\\LoaderSettings"
 
 #define PRINTF_SIZE_T_SPECIFIER "%Iu"
 
@@ -316,6 +316,9 @@ char* loader_strncpy(char* dest, size_t dest_sz, const char* src, size_t count);
 
 #if defined(_WIN32)
 
+wchar_t* loader_wcsncat(wchar_t* dest, size_t dest_sz, const wchar_t* src, size_t count);
+wchar_t* loader_wcsncpy(wchar_t* dest, size_t dest_sz, const wchar_t* src, size_t count);
+
 // Converts a wchar_t string to multi byte character string (utf-8)
 // oom is set to true if allocation failed
 // scope must be a valid VkSystemAllocationScope enum value - uint32_t is used to avoid needing to include vulkan.h
@@ -338,15 +341,12 @@ wchar_t* loader_convert_char_to_wchar_realloc(const struct loader_instance* inst
                                               wchar_t* str_utf16, size_t* str_utf16_count);
 // Get the key for the plug n play driver registry
 // The string returned by this function should NOT be freed
-const char* LoaderPnpDriverRegistry(void);
-const wchar_t* LoaderPnpDriverRegistryWide(void);
+const wchar_t* LoaderPnpDriverRegistry(void);
 // Get the key for the plug 'n play explicit layer registry
 // The string returned by this function should NOT be freed
-const char* LoaderPnpELayerRegistry(void);
-const wchar_t* LoaderPnpELayerRegistryWide(void);
+const wchar_t* LoaderPnpELayerRegistry(void);
 // Get the key for the plug 'n play implicit layer registry
 // The string returned by this function should NOT be freed
-const char* LoaderPnpILayerRegistry(void);
-const wchar_t* LoaderPnpILayerRegistryWide(void);
+const wchar_t* LoaderPnpILayerRegistry(void);
 
 #endif

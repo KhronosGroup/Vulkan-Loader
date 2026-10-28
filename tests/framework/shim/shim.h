@@ -73,10 +73,10 @@ struct TempFile {
 #define VK_VARIANT_REG_STR ""
 #define VK_VARIANT_REG_STR_W L""
 
-#define VK_DRIVERS_INFO_REGISTRY_LOC "SOFTWARE\\Khronos\\Vulkan" VK_VARIANT_REG_STR "\\Drivers"
-#define VK_ELAYERS_INFO_REGISTRY_LOC "SOFTWARE\\Khronos\\Vulkan" VK_VARIANT_REG_STR "\\ExplicitLayers"
-#define VK_ILAYERS_INFO_REGISTRY_LOC "SOFTWARE\\Khronos\\Vulkan" VK_VARIANT_REG_STR "\\ImplicitLayers"
-#define VK_SETTINGS_INFO_REGISTRY_LOC "SOFTWARE\\Khronos\\Vulkan" VK_VARIANT_REG_STR "\\LoaderSettings"
+#define VK_DRIVERS_INFO_REGISTRY_LOC L"SOFTWARE\\Khronos\\Vulkan" VK_VARIANT_REG_STR_W L"\\Drivers"
+#define VK_ELAYERS_INFO_REGISTRY_LOC L"SOFTWARE\\Khronos\\Vulkan" VK_VARIANT_REG_STR_W L"\\ExplicitLayers"
+#define VK_ILAYERS_INFO_REGISTRY_LOC L"SOFTWARE\\Khronos\\Vulkan" VK_VARIANT_REG_STR_W L"\\ImplicitLayers"
+#define VK_SETTINGS_INFO_REGISTRY_LOC L"SOFTWARE\\Khronos\\Vulkan" VK_VARIANT_REG_STR_W L"\\LoaderSettings"
 
 struct RegistryEntry {
     RegistryEntry() = default;
@@ -87,14 +87,14 @@ struct RegistryEntry {
 };
 
 struct HKeyHandle {
-    explicit HKeyHandle(const size_t value, const std::string& key_path) noexcept : key(HKEY{}), path(key_path) {
+    explicit HKeyHandle(const size_t value, const std::wstring& key_path) noexcept : key(HKEY{}), path(key_path) {
         key = reinterpret_cast<HKEY>(value);
     }
 
     HKEY get() const noexcept { return key; }
 
     HKEY key{};
-    std::string path;
+    std::wstring path;
 };
 
 static const char* pnp_registry_path = "SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}";
