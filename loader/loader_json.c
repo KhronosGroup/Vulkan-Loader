@@ -137,6 +137,13 @@ static VkResult loader_read_entire_file(const struct loader_instance *inst, cons
         res = VK_ERROR_INITIALIZATION_FAILED;
         goto out;
     }
+    // st_size is a 64-bit off_t even in 32-bit builds, so make sure the contents plus the null terminator fit in a size_t
+    // before using it as the allocation size and the read length.
+    if ((uint64_t)stats.st_size >= SIZE_MAX) {
+        loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0, "loader_get_json: JSON file %s is too large to read", filename);
+        res = VK_ERROR_INITIALIZATION_FAILED;
+        goto out;
+    }
     *out_buff = (char *)loader_instance_heap_calloc(inst, stats.st_size + 1, VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
     if (NULL == *out_buff) {
         loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0, "loader_get_json: Failed to allocate memory to read JSON file %s", filename);

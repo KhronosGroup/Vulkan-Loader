@@ -418,6 +418,27 @@ TEST(ExtensionNameCompare, UnterminatedNameDoesNotReadPastField) {
 }
 
 #if COMMON_UNIX_PLATFORMS
+// st_size is a 64-bit off_t even in 32-bit builds, where size_t is 32 bits. For a JSON file of SIZE_MAX bytes st_size + 1
+// truncated to 0, so loader_read_entire_file allocated an empty buffer and then asked fread for SIZE_MAX bytes into it.
+// The file is sparse, so it takes no disk space.
+TEST(BadJsonInput, FileTooLargeForSizeT) {
+    if (sizeof(size_t) >= sizeof(uint64_t)) {
+        GTEST_SKIP() << "size_t can hold the size of any file on this platform";
+    }
+    std::filesystem::path json_path = std::filesystem::temp_directory_path() / "loader_json_too_large_test.json";
+    {
+        std::ofstream f(json_path, std::ios::binary | std::ios::trunc);
+        f << "{\"file_format_version\": \"1.0.0\"}";
+    }
+    std::filesystem::resize_file(json_path, static_cast<std::uintmax_t>(SIZE_MAX));
+
+    cJSON* json = NULL;
+    EXPECT_EQ(loader_get_json(NULL, json_path.string().c_str(), &json), VK_ERROR_INITIALIZATION_FAILED);
+    EXPECT_EQ(json, nullptr);
+
+    std::filesystem::remove(json_path);
+}
+
 // get_unix_settings_path hands colon separated path lists (XDG_CONFIG_DIRS, XDG_DATA_DIRS and their fallbacks) to
 // check_if_settings_path_exists. The segment walk kept the separator at the front of every segment after the first,
 // so the candidate path became ":<dir><suffix>" and a settings file in any segment but the first was never found.
