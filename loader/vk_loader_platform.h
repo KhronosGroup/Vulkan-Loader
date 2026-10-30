@@ -320,12 +320,22 @@ char* loader_strncpy(char* dest, size_t dest_sz, const char* src, size_t count);
 // oom is set to true if allocation failed
 // scope must be a valid VkSystemAllocationScope enum value - uint32_t is used to avoid needing to include vulkan.h
 char* loader_convert_wchar_to_char(const struct loader_instance* inst, const wchar_t* str_utf16, bool* oom, uint32_t scope);
-
+// Same as loader_convert_wchar_to_char but uses realloc() internally, so caller must pass in the original pointer & a pointer to
+// their size variable.
+// Return value is the 'new' pointer, caller must  replace the original pointer on success.
+// str_utf8 is free'd if realloc returns OOM or if str_utf16 fails to be converted
+char* loader_convert_wchar_to_char_realloc(const struct loader_instance* inst, const wchar_t* str_utf16, bool* oom, uint32_t scope,
+                                           char* str_utf8, size_t* str_utf8_size);
 // Converts a multi byte character string (utf-8) string to  wchar_t string
 // oom is set to true if allocation failed
 // scope must be a valid VkSystemAllocationScope enum value - uint32_t is used to avoid needing to include vulkan.h
 wchar_t* loader_convert_char_to_wchar(const struct loader_instance* inst, const char* str_utf8, bool* oom, uint32_t scope);
-
+// Same as loader_convert_char_to_wchar but uses realloc() internally, so caller must pass in the original pointer & a pointer to
+// their size variable.
+// Return value is the 'new' pointer, caller must replace the original pointer on success
+// str_utf16  is free'd if realloc returns OOM or if str_utf8 fails to be converted
+wchar_t* loader_convert_char_to_wchar_realloc(const struct loader_instance* inst, const char* str_utf8, bool* oom, uint32_t scope,
+                                              wchar_t* str_utf16, size_t* str_utf16_count);
 // Get the key for the plug n play driver registry
 // The string returned by this function should NOT be freed
 const char* LoaderPnpDriverRegistry(void);

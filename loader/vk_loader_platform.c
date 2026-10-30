@@ -257,45 +257,63 @@ char* loader_strncpy(char* dest, size_t dest_sz, const char* src, size_t count) 
 #elif defined(_WIN32)
 
 char* loader_convert_wchar_to_char(const struct loader_instance* inst, const wchar_t* str_utf16, bool* oom, uint32_t scope) {
+    size_t empty_size = 0;
+    return loader_convert_wchar_to_char_realloc(inst, str_utf16, oom, scope, NULL, &empty_size);
+}
+
+char* loader_convert_wchar_to_char_realloc(const struct loader_instance* inst, const wchar_t* str_utf16, bool* oom, uint32_t scope,
+                                           char* str_utf8, size_t* str_utf8_size) {
     *oom = false;
-    int str_utf8_size = WideCharToMultiByte(CP_UTF8, 0, str_utf16, -1, NULL, 0, NULL, NULL);
-    if (str_utf8_size <= 0) {
+    int new_str_utf8_size = WideCharToMultiByte(CP_UTF8, 0, str_utf16, -1, NULL, 0, NULL, NULL);
+    if (new_str_utf8_size <= 0) {
         return NULL;
     }
 
-    char* str_utf8 = (char*)loader_instance_heap_calloc(inst, str_utf8_size, (VkSystemAllocationScope)scope);
-    if (NULL == str_utf8) {
+    char* new_str_utf8 =
+        (char*)loader_instance_heap_realloc(inst, str_utf8, *str_utf8_size, new_str_utf8_size, (VkSystemAllocationScope)scope);
+    if (NULL == new_str_utf8) {
         *oom = true;
-        return NULL;
-    }
-
-    if (WideCharToMultiByte(CP_UTF8, 0, str_utf16, -1, str_utf8, str_utf8_size, NULL, NULL) != str_utf8_size) {
         loader_instance_heap_free(inst, str_utf8);
         return NULL;
     }
-    assert((size_t)str_utf8_size == strlen(str_utf8) + 1);
+    *str_utf8_size = new_str_utf8_size;
 
-    return str_utf8;
+    if (WideCharToMultiByte(CP_UTF8, 0, str_utf16, -1, new_str_utf8, new_str_utf8_size, NULL, NULL) != new_str_utf8_size) {
+        loader_instance_heap_free(inst, new_str_utf8);
+        return NULL;
+    }
+    assert((size_t)new_str_utf8_size == strlen(new_str_utf8) + 1);
+
+    return new_str_utf8;
 }
 
 wchar_t* loader_convert_char_to_wchar(const struct loader_instance* inst, const char* str_utf8, bool* oom, uint32_t scope) {
+    size_t empty_size = 0;
+    return loader_convert_char_to_wchar_realloc(inst, str_utf8, oom, scope, NULL, &empty_size);
+}
+
+wchar_t* loader_convert_char_to_wchar_realloc(const struct loader_instance* inst, const char* str_utf8, bool* oom, uint32_t scope,
+                                              wchar_t* str_utf16, size_t* str_utf16_count) {
     *oom = false;
-    int str_utf16_size = MultiByteToWideChar(CP_UTF8, 0, str_utf8, -1, NULL, 0);
-    if (str_utf16_size <= 0) {
+    int new_str_utf16_count = MultiByteToWideChar(CP_UTF8, 0, str_utf8, -1, NULL, 0);
+    if (new_str_utf16_count <= 0) {
         return NULL;
     }
-    wchar_t* str_utf16 =
-        (wchar_t*)loader_instance_heap_calloc(inst, str_utf16_size * sizeof(wchar_t), (VkSystemAllocationScope)scope);
-    if (NULL == str_utf16) {
+    wchar_t* new_str_utf16 = (wchar_t*)loader_instance_heap_realloc(
+        inst, str_utf16, *str_utf16_count * sizeof(wchar_t), new_str_utf16_count * sizeof(wchar_t), (VkSystemAllocationScope)scope);
+    if (NULL == new_str_utf16) {
+        loader_instance_heap_free(inst, str_utf16);
         *oom = true;
         return NULL;
     }
-    if (MultiByteToWideChar(CP_UTF8, 0, str_utf8, -1, str_utf16, str_utf16_size) != str_utf16_size) {
-        loader_instance_heap_free(inst, str_utf16);
+    *str_utf16_count = (size_t)new_str_utf16;
+
+    if (MultiByteToWideChar(CP_UTF8, 0, str_utf8, -1, new_str_utf16, new_str_utf16_count) != new_str_utf16_count) {
+        loader_instance_heap_free(inst, new_str_utf16);
         return NULL;
     }
-    assert((size_t)str_utf16_size == wcslen(str_utf16) + 1);
-    return str_utf16;
+    assert((size_t)new_str_utf16_count == wcslen(new_str_utf16) + 1);
+    return new_str_utf16;
 }
 
 // Get the key for the plug n play driver registry
