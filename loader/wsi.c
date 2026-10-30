@@ -261,6 +261,18 @@ VkResult wsi_unwrap_icd_surface(struct loader_icd_term *icd_term, VkSurfaceKHR *
                     break;
 #endif  // VK_USE_PLATFORM_FUCHSIA
 
+#if defined(VK_USE_PLATFORM_UBM_SEC)
+                case VK_ICD_WSI_PLATFORM_UBM:
+                    if (NULL != icd_term->dispatch.CreateUbmSurfaceSEC && icd_term->enabled_instance_extensions.sec_ubm_surface) {
+                        result = icd_term->dispatch.CreateUbmSurfaceSEC(
+                            icd_term->instance, (const VkUbmSurfaceCreateInfoSEC *)icd_surface->create_info, pAllocator,
+                            &icd_term->surface_list.list[icd_surface->surface_index]);
+                    } else {
+                        result = VK_ERROR_EXTENSION_NOT_PRESENT;
+                    }
+                    break;
+#endif  // VK_USE_PLATFORM_UBM_SEC
+
                 default:
                     // Not supported
                     result = VK_ERROR_EXTENSION_NOT_PRESENT;
@@ -1908,6 +1920,99 @@ out:
 
 #endif  // VK_USE_PLATFORM_VI_NN
 
+#if defined(VK_USE_PLATFORM_UBM_SEC)
+
+// Functions for the VK_SEC_ubm_surface extension:
+
+// This is the trampoline entrypoint for vkCreateUbmSurfaceSEC
+LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkCreateUbmSurfaceSEC(VkInstance instance,
+                                                                   const VkUbmSurfaceCreateInfoSEC *pCreateInfo,
+                                                                   const VkAllocationCallbacks *pAllocator,
+                                                                   VkSurfaceKHR *pSurface) {
+    struct loader_instance *loader_inst = loader_get_instance(instance);
+    if (NULL == loader_inst) {
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkCreateUbmSurfaceSEC: Invalid instance [VUID-vkCreateUbmSurfaceSEC-instance-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    return loader_inst->disp->layer_inst_disp.CreateUbmSurfaceSEC(loader_inst->instance, pCreateInfo, pAllocator, pSurface);
+}
+
+// This is the instance chain terminator function for CreateUbmSurfaceSEC
+VKAPI_ATTR VkResult VKAPI_CALL terminator_vkCreateUbmSurfaceSEC(VkInstance instance, const VkUbmSurfaceCreateInfoSEC *pCreateInfo,
+                                                                const VkAllocationCallbacks *pAllocator, VkSurfaceKHR *pSurface) {
+    VkResult result = VK_SUCCESS;
+    VkIcdSurface *icd_surface = NULL;
+    loader_platform_thread_lock_mutex(&loader_lock);
+
+    // First, check to ensure the appropriate extension was enabled:
+    struct loader_instance *loader_inst = loader_get_instance(instance);
+    if (!loader_inst->enabled_extensions.sec_ubm_surface) {
+        loader_log(loader_inst, VULKAN_LOADER_ERROR_BIT, 0,
+                   "VK_SEC_ubm_surface extension not enabled. CreateUbmSurfaceSEC not executed!");
+        result = VK_ERROR_EXTENSION_NOT_PRESENT;
+        goto out;
+    }
+
+    // Next, if so, proceed with the implementation of this function:
+    result = allocate_icd_surface_struct(loader_inst, sizeof(icd_surface->ubm_surf.base), sizeof(icd_surface->ubm_surf), pAllocator,
+                                         &icd_surface);
+    if (VK_SUCCESS != result) {
+        goto out;
+    }
+
+    icd_surface->ubm_surf.base.platform = VK_ICD_WSI_PLATFORM_UBM;
+    icd_surface->ubm_surf.device = pCreateInfo->device;
+    icd_surface->ubm_surf.surface = pCreateInfo->surface;
+
+    const struct loader_struct_type_info ci_types[] = {
+        {VK_STRUCTURE_TYPE_UBM_SURFACE_CREATE_INFO_SEC, sizeof(VkUbmSurfaceCreateInfoSEC)},
+    };
+    result = copy_surface_create_info(loader_inst, icd_surface, pCreateInfo, sizeof(ci_types) / sizeof(ci_types[0]), ci_types,
+                                      "VkUbmSurfaceCreateInfoSEC", pAllocator);
+    if (VK_SUCCESS != result) {
+        goto out;
+    }
+
+    *pSurface = wrap_surface_handle(icd_surface);
+
+out:
+    cleanup_surface_creation(loader_inst, result, icd_surface, pAllocator);
+    loader_platform_thread_unlock_mutex(&loader_lock);
+
+    return result;
+}
+
+LOADER_EXPORT VKAPI_ATTR VkBool32 VKAPI_CALL vkGetPhysicalDeviceUbmPresentationSupportSEC(VkPhysicalDevice physicalDevice,
+                                                                                          uint32_t queueFamilyIndex,
+                                                                                          struct ubm_device *device) {
+    const VkLayerInstanceDispatchTable *disp;
+    VkPhysicalDevice unwrapped_phys_dev = loader_unwrap_physical_device(physicalDevice);
+    if (VK_NULL_HANDLE == unwrapped_phys_dev) {
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "vkGetPhysicalDeviceUbmPresentationSupportSEC: Invalid physicalDevice "
+                   "[VUID-vkGetPhysicalDeviceUbmPresentationSupportSEC-physicalDevice-parameter]");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    disp = loader_get_instance_layer_dispatch(physicalDevice);
+    return disp->GetPhysicalDeviceUbmPresentationSupportSEC(unwrapped_phys_dev, queueFamilyIndex, device);
+}
+
+VKAPI_ATTR VkBool32 VKAPI_CALL terminator_GetPhysicalDeviceUbmPresentationSupportSEC(VkPhysicalDevice physicalDevice,
+                                                                                     uint32_t queueFamilyIndex,
+                                                                                     struct ubm_device *device) {
+    struct loader_physical_device_term *phys_dev_term = (struct loader_physical_device_term *)physicalDevice;
+    struct loader_icd_term *icd_term = phys_dev_term->this_icd_term;
+    if (NULL == icd_term->dispatch.GetPhysicalDeviceUbmPresentationSupportSEC) {
+        loader_log(icd_term->this_instance, VULKAN_LOADER_ERROR_BIT, 0,
+                   "ICD associated with VkPhysicalDevice does not support GetPhysicalDeviceUbmPresentationSupportSEC");
+        return VK_ERROR_EXTENSION_NOT_PRESENT;
+    }
+    return icd_term->dispatch.GetPhysicalDeviceUbmPresentationSupportSEC(phys_dev_term->phys_dev, queueFamilyIndex, device);
+}
+
+#endif  // VK_USE_PLATFORM_UBM_SEC
+
 // Functions for the VK_KHR_display instance extension:
 LOADER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkGetPhysicalDeviceDisplayPropertiesKHR(VkPhysicalDevice physicalDevice,
                                                                                      uint32_t *pPropertyCount,
@@ -3132,6 +3237,18 @@ bool wsi_swapchain_instance_gpa(struct loader_instance *loader_inst, const char 
         return true;
     }
 #endif  // VK_USE_PLATFORM_VI_NN
+
+#if defined(VK_USE_PLATFORM_UBM_SEC)
+    // Functions for the VK_SEC_ubm_surface extension:
+    if (!strcmp("vkCreateUbmSurfaceSEC", name)) {
+        *addr = loader_inst->enabled_extensions.sec_ubm_surface ? (void *)vkCreateUbmSurfaceSEC : NULL;
+        return true;
+    }
+    if (!strcmp("vkGetPhysicalDeviceUbmPresentationSupportSEC", name)) {
+        *addr = loader_inst->enabled_extensions.sec_ubm_surface ? (void *)vkGetPhysicalDeviceUbmPresentationSupportSEC : NULL;
+        return true;
+    }
+#endif
 
     // Functions for VK_KHR_display extension:
     if (!strcmp("vkGetPhysicalDeviceDisplayPropertiesKHR", name)) {

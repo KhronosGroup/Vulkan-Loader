@@ -14050,74 +14050,6 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_GetPhysicalDeviceCooperativeMatrixProp
 }
 
 
-// ---- VK_SEC_ubm_surface extension trampoline/terminators
-
-#if defined(VK_USE_PLATFORM_UBM_SEC)
-VKAPI_ATTR VkResult VKAPI_CALL CreateUbmSurfaceSEC(
-    VkInstance                                  instance,
-    const VkUbmSurfaceCreateInfoSEC*            pCreateInfo,
-    const VkAllocationCallbacks*                pAllocator,
-    VkSurfaceKHR*                               pSurface) {
-    struct loader_instance *inst = loader_get_instance(instance);
-    if (NULL == inst) {
-        loader_log(
-            NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
-            "vkCreateUbmSurfaceSEC: Invalid instance [VUID-vkCreateUbmSurfaceSEC-instance-parameter]");
-        abort(); /* Intentionally fail so user can correct issue. */
-    }
-#error("Not implemented. Likely needs to be manually generated!");
-    return inst->disp->CreateUbmSurfaceSEC(instance, pCreateInfo, pAllocator, pSurface);
-}
-
-VKAPI_ATTR VkResult VKAPI_CALL terminator_CreateUbmSurfaceSEC(
-    VkInstance                                  instance,
-    const VkUbmSurfaceCreateInfoSEC*            pCreateInfo,
-    const VkAllocationCallbacks*                pAllocator,
-    VkSurfaceKHR*                               pSurface) {
-    struct loader_instance *inst = loader_get_instance(instance);
-    if (NULL == inst) {
-        loader_log(
-            NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
-            "vkCreateUbmSurfaceSEC: Invalid instance [VUID-vkCreateUbmSurfaceSEC-instance-parameter]");
-        abort(); /* Intentionally fail so user can correct issue. */
-    }
-#error("Not implemented. Likely needs to be manually generated!");
-}
-
-#endif // VK_USE_PLATFORM_UBM_SEC
-#if defined(VK_USE_PLATFORM_UBM_SEC)
-VKAPI_ATTR VkBool32 VKAPI_CALL GetPhysicalDeviceUbmPresentationSupportSEC(
-    VkPhysicalDevice                            physicalDevice,
-    uint32_t                                    queueFamilyIndex,
-    struct ubm_device*                          device) {
-    const VkLayerInstanceDispatchTable *disp;
-    VkPhysicalDevice unwrapped_phys_dev = loader_unwrap_physical_device(physicalDevice);
-    if (VK_NULL_HANDLE == unwrapped_phys_dev) {
-        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
-                   "vkGetPhysicalDeviceUbmPresentationSupportSEC: Invalid physicalDevice "
-                   "[VUID-vkGetPhysicalDeviceUbmPresentationSupportSEC-physicalDevice-parameter]");
-        abort(); /* Intentionally fail so user can correct issue. */
-    }
-    disp = loader_get_instance_layer_dispatch(physicalDevice);
-    return disp->GetPhysicalDeviceUbmPresentationSupportSEC(unwrapped_phys_dev, queueFamilyIndex, device);
-}
-
-VKAPI_ATTR VkBool32 VKAPI_CALL terminator_GetPhysicalDeviceUbmPresentationSupportSEC(
-    VkPhysicalDevice                            physicalDevice,
-    uint32_t                                    queueFamilyIndex,
-    struct ubm_device*                          device) {
-    struct loader_physical_device_term *phys_dev_term = (struct loader_physical_device_term *)physicalDevice;
-    struct loader_icd_term *icd_term = phys_dev_term->this_icd_term;
-    if (NULL == icd_term->dispatch.GetPhysicalDeviceUbmPresentationSupportSEC) {
-        loader_log(icd_term->this_instance, VULKAN_LOADER_ERROR_BIT, 0,
-                   "ICD associated with VkPhysicalDevice does not support GetPhysicalDeviceUbmPresentationSupportSEC");
-        return VK_ERROR_EXTENSION_NOT_PRESENT;
-    }
-    return icd_term->dispatch.GetPhysicalDeviceUbmPresentationSupportSEC(phys_dev_term->phys_dev, queueFamilyIndex, device);
-}
-
-#endif // VK_USE_PLATFORM_UBM_SEC
-
 // ---- VK_EXT_primitive_restart_index extension trampoline/terminators
 
 VKAPI_ATTR void VKAPI_CALL CmdSetPrimitiveRestartIndexEXT(
@@ -18155,28 +18087,6 @@ bool extension_instance_gpa(struct loader_instance *ptr_instance, const char *na
                 return true;
             }
             break;
-
-        // ---- VK_SEC_ubm_surface extension commands
-#if defined(VK_USE_PLATFORM_UBM_SEC)
-        case 0x9630af04u:
-            if (!strcmp("vkCreateUbmSurfaceSEC", name)) {
-                *addr = (ptr_instance->enabled_extensions.sec_ubm_surface == 1)
-                             ? (void *)CreateUbmSurfaceSEC
-                             : NULL;
-                return true;
-            }
-            break;
-#endif // VK_USE_PLATFORM_UBM_SEC
-#if defined(VK_USE_PLATFORM_UBM_SEC)
-        case 0x42f91885u:
-            if (!strcmp("vkGetPhysicalDeviceUbmPresentationSupportSEC", name)) {
-                *addr = (ptr_instance->enabled_extensions.sec_ubm_surface == 1)
-                             ? (void *)GetPhysicalDeviceUbmPresentationSupportSEC
-                             : NULL;
-                return true;
-            }
-            break;
-#endif // VK_USE_PLATFORM_UBM_SEC
 
         // ---- VK_EXT_primitive_restart_index extension commands
         case 0x19fa512du:
