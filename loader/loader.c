@@ -3022,6 +3022,13 @@ VkResult add_data_files(const struct loader_instance *inst, struct loader_string
                     if (VK_ERROR_OUT_OF_HOST_MEMORY == vk_result) {
                         break;
                     }
+                    // loader_get_fullpath falls back to the bare filename when the entry can't be found in cur_file (eg a dangling
+                    // symlink), which would then be opened relative to the current working directory. Skip the entry instead.
+                    if (!loader_platform_is_path(full_path)) {
+                        loader_log(inst, VULKAN_LOADER_DEBUG_BIT, 0, "add_data_files: Unable to find %s in %s, skipping it", name,
+                                   cur_file);
+                        continue;
+                    }
                     name = full_path;
 
                     VkResult local_res;
