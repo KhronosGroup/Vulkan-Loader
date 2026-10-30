@@ -65,6 +65,9 @@ typedef struct {
 #endif  // VK_USE_PLATFORM_VI_NN
         VkIcdSurfaceDisplay display_surf;
         VkIcdSurfaceHeadless headless_surf;
+#if defined(VK_USE_PLATFORM_UBM_SEC)
+        VkIcdSurfaceUbm ubm_surf;
+#endif  // VK_USE_PLATFORM_UBM_SEC
 
         // All of the specific ICD surface structures start with the base structure
         VkIcdSurfaceBase base;

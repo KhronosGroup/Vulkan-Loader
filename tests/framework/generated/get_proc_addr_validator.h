@@ -1296,4 +1296,10 @@ static constexpr std::array kPlatformExportedFunctionNames = {
 #if defined(VK_USE_PLATFORM_SCREEN_QNX)
     "vkGetPhysicalDeviceScreenPresentationSupportQNX",
 #endif  // defined(VK_USE_PLATFORM_SCREEN_QNX)
+#if defined(VK_USE_PLATFORM_UBM_SEC)
+    "vkCreateUbmSurfaceSEC",
+#endif  // defined(VK_USE_PLATFORM_UBM_SEC)
+#if defined(VK_USE_PLATFORM_UBM_SEC)
+    "vkGetPhysicalDeviceUbmPresentationSupportSEC",
+#endif  // defined(VK_USE_PLATFORM_UBM_SEC)
 };
