@@ -1172,7 +1172,7 @@ instance handle from the physical device.
 
 ## Meta-layers - REMOVED
 
-Meta-layers have been removed from the Khronos Loader.
+Meta-layers have been removed from the Khronos Loader in Vulkan-Header version 1.4.366
 Their function was to allow enabling a group of layers in a particular
 order, but the were functionally replaced by the Vulkan Loader Settings file.
 
