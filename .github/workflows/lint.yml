@@ -17,10 +17,10 @@ permissions:
 jobs:
   clang-format:
     name: clang-format
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
 
     env:
-      CLANG_FORMAT_VERSION: 16
+      CLANG_FORMAT_VERSION: 22
       CLANG_FORMAT_FILES: "*.c *.h *.cpp *.hpp"
 
     steps:

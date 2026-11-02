@@ -140,9 +140,9 @@ std::vector<VkExtensionProperties> InstWrapper::EnumerateLayerDeviceExtensions(V
 }
 
 DeviceWrapper::DeviceWrapper(InstWrapper& inst_wrapper, VkAllocationCallbacks* callbacks) noexcept
-    : functions(inst_wrapper.functions), callbacks(callbacks){};
+    : functions(inst_wrapper.functions), callbacks(callbacks) {};
 DeviceWrapper::DeviceWrapper(VulkanFunctions& functions, VkDevice device, VkAllocationCallbacks* callbacks) noexcept
-    : functions(&functions), dev(device), callbacks(callbacks){};
+    : functions(&functions), dev(device), callbacks(callbacks) {};
 DeviceWrapper::~DeviceWrapper() noexcept { functions->vkDestroyDevice(dev, callbacks); }
 
 DeviceWrapper::DeviceWrapper(DeviceWrapper&& other) noexcept {

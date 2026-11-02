@@ -97,7 +97,7 @@ FRAMEWORK_EXPORT PlatformShim* get_platform_shim() {
 #endif
 
 using PFN_OPENDIR = DIR* (*)(const char* path_name);
-using PFN_READDIR = struct dirent* (*)(DIR* dir_stream);
+using PFN_READDIR = struct dirent* (*)(DIR * dir_stream);
 using PFN_CLOSEDIR = int (*)(DIR* dir_stream);
 using PFN_ACCESS = int (*)(const char* pathname, int mode);
 using PFN_FOPEN = FILE* (*)(const char* filename, const char* mode);

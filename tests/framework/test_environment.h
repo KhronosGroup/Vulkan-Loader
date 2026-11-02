@@ -307,7 +307,7 @@ struct DebugUtilsWrapper {
           local_vkCreateDebugUtilsMessengerEXT(
               FromVoidStarFunc(inst_wrapper.functions->vkGetInstanceProcAddr(inst_wrapper.inst, "vkCreateDebugUtilsMessengerEXT"))),
           local_vkDestroyDebugUtilsMessengerEXT(FromVoidStarFunc(
-              inst_wrapper.functions->vkGetInstanceProcAddr(inst_wrapper.inst, "vkDestroyDebugUtilsMessengerEXT"))){};
+              inst_wrapper.functions->vkGetInstanceProcAddr(inst_wrapper.inst, "vkDestroyDebugUtilsMessengerEXT"))) {};
     ~DebugUtilsWrapper() noexcept {
         if (messenger) {
             local_vkDestroyDebugUtilsMessengerEXT(inst, messenger, callbacks);

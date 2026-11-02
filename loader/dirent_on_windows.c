@@ -26,20 +26,20 @@ struct DIR {
     handle_type handle;       /* -1 for failed rewind */
     struct _finddata_t info;  // NOLINT(bugprone-reserved-identifier) - matching the Windows CRT type name
     struct dirent result;     /* d_name null iff first time */
-    char *name;               /* null-terminated char string */
+    char* name;               /* null-terminated char string */
 };
 
-DIR *opendir(const VkAllocationCallbacks *pAllocator, const char *name) {
-    DIR *dir = 0;
+DIR* opendir(const VkAllocationCallbacks* pAllocator, const char* name) {
+    DIR* dir = 0;
 
     if (name && name[0]) {
         size_t base_length = strlen(name);
-        const char *all = /* search pattern must end with suitable wildcard */
+        const char* all = /* search pattern must end with suitable wildcard */
             strchr("/\\", name[base_length - 1]) ? "*" : "/*";
         size_t full_length = base_length + strlen(all) + 1;
 
-        if ((dir = (DIR *)loader_calloc(pAllocator, sizeof *dir, VK_SYSTEM_ALLOCATION_SCOPE_COMMAND)) != 0 &&
-            (dir->name = (char *)loader_calloc(pAllocator, full_length, VK_SYSTEM_ALLOCATION_SCOPE_COMMAND)) != 0) {
+        if ((dir = (DIR*)loader_calloc(pAllocator, sizeof *dir, VK_SYSTEM_ALLOCATION_SCOPE_COMMAND)) != 0 &&
+            (dir->name = (char*)loader_calloc(pAllocator, full_length, VK_SYSTEM_ALLOCATION_SCOPE_COMMAND)) != 0) {
             loader_strncpy(dir->name, full_length, name, base_length);
             loader_strncat(dir->name, full_length, all, strlen(all));
 
@@ -64,7 +64,7 @@ DIR *opendir(const VkAllocationCallbacks *pAllocator, const char *name) {
     return dir;
 }
 
-int closedir(const VkAllocationCallbacks *pAllocator, DIR *dir) {
+int closedir(const VkAllocationCallbacks* pAllocator, DIR* dir) {
     int result = -1;
 
     if (dir) {
@@ -84,8 +84,8 @@ int closedir(const VkAllocationCallbacks *pAllocator, DIR *dir) {
     return result;
 }
 
-struct dirent *readdir(DIR *dir) {
-    struct dirent *result = 0;
+struct dirent* readdir(DIR* dir) {
+    struct dirent* result = 0;
 
     if (dir && dir->handle != -1) {
         if (!dir->result.d_name || _findnext(dir->handle, &dir->info) != -1) {
@@ -103,7 +103,7 @@ struct dirent *readdir(DIR *dir) {
     return result;
 }
 
-void rewinddir(DIR *dir) {
+void rewinddir(DIR* dir) {
     if (dir && dir->handle != -1) {
         _findclose(dir->handle);
         dir->handle = (handle_type)_findfirst(dir->name, &dir->info);

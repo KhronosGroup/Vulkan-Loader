@@ -56,7 +56,7 @@ void loader_init_global_debug_level(void);
 void loader_set_global_debug_level(uint32_t new_loader_debug);
 
 // Writes a stringified version of enum vulkan_loader_debug_flags into a char array cmd_line_msg of length cmd_line_size
-void generate_debug_flag_str(VkFlags msg_type, size_t cmd_line_size, char *cmd_line_msg);
+void generate_debug_flag_str(VkFlags msg_type, size_t cmd_line_size, char* cmd_line_msg);
 
 // The asm declaration prevents name mangling which is necessary for macOS
 #if defined(MODIFY_UNKNOWN_FUNCTION_DECLS)
@@ -75,13 +75,13 @@ void generate_debug_flag_str(VkFlags msg_type, size_t cmd_line_size, char *cmd_l
 
 // Logs a message to stderr
 // May output to DebugUtils if the instance isn't null and the extension is enabled.
-void DECORATE_PRINTF(4, 5) loader_log(const struct loader_instance *inst, VkFlags msg_type, int32_t msg_code, const char *format,
+void DECORATE_PRINTF(4, 5) loader_log(const struct loader_instance* inst, VkFlags msg_type, int32_t msg_code, const char* format,
                                       ...) ASM_NAME("loader_log");
 
 // Used for the assembly code to emit an specific error message
 // This is a work around for linux 32 bit error handling not passing relocatable strings correctly
-void loader_log_asm_function_not_supported(const struct loader_instance *inst, VkFlags msg_type, int32_t msg_code,
-                                           const char *func_name) ASM_NAME("loader_log_asm_function_not_supported");
+void loader_log_asm_function_not_supported(const struct loader_instance* inst, VkFlags msg_type, int32_t msg_code,
+                                           const char* func_name) ASM_NAME("loader_log_asm_function_not_supported");
 
 #undef ASM_NAME
 

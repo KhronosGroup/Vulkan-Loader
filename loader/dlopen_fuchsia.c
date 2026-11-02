@@ -30,7 +30,7 @@
 
 static char g_error[128] = {};
 
-const char *dlerror_fuchsia(void) { return g_error; }
+const char* dlerror_fuchsia(void) { return g_error; }
 
 static zx_handle_t vulkan_loader_svc = ZX_HANDLE_INVALID;
 void connect_to_vulkan_loader_svc(void) {
@@ -47,11 +47,11 @@ void connect_to_vulkan_loader_svc(void) {
 
 static once_flag svc_connect_once_flag = ONCE_FLAG_INIT;
 
-void *dlopen_fuchsia(const char *name, int mode, bool driver) {
+void* dlopen_fuchsia(const char* name, int mode, bool driver) {
     // First try to just dlopen() from our own namespace. This will succeed for
     // any layers that are packaged with the application, but will fail for
     // client drivers loaded from the system.
-    void *result;
+    void* result;
     if (!driver) {
         result = dlopen(name, mode);
         if (result != NULL) return result;

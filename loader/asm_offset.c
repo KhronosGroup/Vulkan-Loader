@@ -36,8 +36,8 @@
 void produce_asm_define() {
     // GCC and clang make it easy to print easy to regex for values
     __asm__("# VULKAN_LOADER_ERROR_BIT = %c0" : : "i"(VULKAN_LOADER_ERROR_BIT));
-    __asm__("# PTR_SIZE = %c0" : : "i"(sizeof(void *)));
-    __asm__("# CHAR_PTR_SIZE = %c0" : : "i"(sizeof(char *)));
+    __asm__("# PTR_SIZE = %c0" : : "i"(sizeof(void*)));
+    __asm__("# CHAR_PTR_SIZE = %c0" : : "i"(sizeof(char*)));
     __asm__("# FUNCTION_OFFSET_INSTANCE = %c0" : : "i"(offsetof(struct loader_instance, phys_dev_ext_disp_functions)));
     __asm__("# PHYS_DEV_OFFSET_INST_DISPATCH = %c0" : : "i"(offsetof(struct loader_instance_dispatch_table, phys_dev_ext)));
     __asm__("# PHYS_DEV_OFFSET_PHYS_DEV_TRAMP = %c0" : : "i"(offsetof(struct loader_physical_device_tramp, phys_dev)));
@@ -50,8 +50,8 @@ void produce_asm_define() {
 #elif defined(_WIN32)
 // MSVC will print the name of the value and the value in hex
 // Must disable optimization for this translation unit, otherwise the compiler strips out the variables
-static const uint32_t PTR_SIZE = sizeof(void *);
-static const uint32_t CHAR_PTR_SIZE = sizeof(char *);
+static const uint32_t PTR_SIZE = sizeof(void*);
+static const uint32_t CHAR_PTR_SIZE = sizeof(char*);
 static const uint32_t FUNCTION_OFFSET_INSTANCE = offsetof(struct loader_instance, phys_dev_ext_disp_functions);
 static const uint32_t PHYS_DEV_OFFSET_INST_DISPATCH = offsetof(struct loader_instance_dispatch_table, phys_dev_ext);
 static const uint32_t PHYS_DEV_OFFSET_PHYS_DEV_TRAMP = offsetof(struct loader_physical_device_tramp, phys_dev);
@@ -73,9 +73,9 @@ static const uint32_t EXT_OFFSET_DEVICE_DISPATCH = offsetof(struct loader_dev_di
 #endif
 
 struct ValueInfo {
-    const char *name;
+    const char* name;
     size_t value;
-    const char *comment;
+    const char* comment;
 };
 
 enum Assembler {
@@ -87,7 +87,7 @@ enum Assembler {
 
 // This file can both be executed to produce gen_defines.asm and contains all the relevant data which
 // the parse_asm_values.py script needs to write gen_defines.asm, necessary for cross compilation
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
     enum Assembler assembler = UNKNOWN;
     for (int i = 0; i < argc; ++i) {
         if (!strcmp(argv[i], "MASM")) {
@@ -129,7 +129,7 @@ int main(int argc, char **argv) {
         // clang-format on
     };
 
-    FILE *file = NULL;
+    FILE* file = NULL;
 #if defined(_WIN32)
     errno_t err = fopen_s(&file, "gen_defines.asm", "w");
     if (err != 0) {
@@ -164,12 +164,12 @@ int main(int argc, char **argv) {
         fprintf(file, "    END\n");
     } else if (assembler == GAS) {
 #if defined(__x86_64__) || defined(__i386__)
-        const char *comment_delimiter = "#";
+        const char* comment_delimiter = "#";
 #if defined(__x86_64__)
         fprintf(file, ".set X86_64, 1\n");
 #endif  // defined(__x86_64__)
 #elif defined(__aarch64__) || defined(__arm__)
-        const char *comment_delimiter = "//";
+        const char* comment_delimiter = "//";
 #if defined(__aarch64__)
         fprintf(file, ".set AARCH_64, 1\n");
 #else
@@ -177,7 +177,7 @@ int main(int argc, char **argv) {
 #endif
 #else
         // Default comment delimiter
-        const char *comment_delimiter = "#";
+        const char* comment_delimiter = "#";
 #endif
         for (size_t i = 0; i < sizeof(values) / sizeof(values[0]); ++i) {
             fprintf(file, ".set %-32s, " SIZE_T_FMT "%s %s\n", values[i].name, values[i].value, comment_delimiter,

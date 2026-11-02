@@ -34,26 +34,26 @@ bool loader_disable_dynamic_library_unloading;
 
 // File IO
 // NOLINTNEXTLINE(readability-non-const-parameter) - oom is only used on Windows but clang-tidy doesn't see that
-bool loader_platform_file_exists(const struct loader_instance *inst, const char *path, bool *oom) {
+bool loader_platform_file_exists(const struct loader_instance* inst, const char* path, bool* oom) {
     (void)inst;
     (void)oom;
     return access(path, F_OK) == 0;
 }
 // Returns true if the given string appears to be a relative or absolute
 // path, as opposed to a bare filename.
-bool loader_platform_is_path_absolute(const char *path) {
+bool loader_platform_is_path_absolute(const char* path) {
     if (path[0] == '/') return true;
     return false;
 }
 
 // NOLINTNEXTLINE(concurrency-mt-unsafe) - no portable reentrant dirname; the returned buffer is copied by callers immediately
-char *loader_platform_dirname(char *path) { return dirname(path); }
+char* loader_platform_dirname(char* path) { return dirname(path); }
 
 // loader_platform_executable_path finds application path + name.
 #if defined(__linux__) || defined(__GNU__) || defined(__CYGWIN__)
-char *loader_platform_executable_path(const struct loader_instance *inst, bool *oom) {
+char* loader_platform_executable_path(const struct loader_instance* inst, bool* oom) {
     size_t size = 1024;
-    char *buffer = loader_instance_heap_calloc(inst, size, VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
+    char* buffer = loader_instance_heap_calloc(inst, size, VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
     if (NULL == buffer) {
         *oom = true;
         return NULL;
@@ -74,9 +74,9 @@ char *loader_platform_executable_path(const struct loader_instance *inst, bool *
 #include <TargetConditionals.h>
 // TARGET_OS_IPHONE isn't just iOS it's also iOS/tvOS/watchOS. See TargetConditionals.h documentation.
 #if TARGET_OS_IPHONE
-char *loader_platform_executable_path(const struct loader_instance *inst, bool *oom) {
+char* loader_platform_executable_path(const struct loader_instance* inst, bool* oom) {
     size_t size = 1;
-    char *buffer = loader_instance_heap_calloc(inst, size, VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
+    char* buffer = loader_instance_heap_calloc(inst, size, VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
     if (NULL == buffer) {
         // Return a single character string that only contains the null terminator to preserve existing behavior
         *oom = true;
@@ -88,9 +88,9 @@ char *loader_platform_executable_path(const struct loader_instance *inst, bool *
 #endif
 #if TARGET_OS_OSX
 #include <libproc.h>
-char *loader_platform_executable_path(const struct loader_instance *inst, bool *oom) {
+char* loader_platform_executable_path(const struct loader_instance* inst, bool* oom) {
     size_t size = PROC_PIDPATHINFO_MAXSIZE;
-    char *buffer = loader_instance_heap_calloc(inst, size, VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
+    char* buffer = loader_instance_heap_calloc(inst, size, VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
     if (NULL == buffer) {
         *oom = true;
         return NULL;
@@ -107,9 +107,9 @@ char *loader_platform_executable_path(const struct loader_instance *inst, bool *
 #endif
 #elif defined(__DragonFly__) || defined(__FreeBSD__) || defined(__NetBSD__)
 #include <sys/sysctl.h>
-char *loader_platform_executable_path(const struct loader_instance *inst, bool *oom) {
+char* loader_platform_executable_path(const struct loader_instance* inst, bool* oom) {
     size_t size = 1024;
-    char *buffer = loader_instance_heap_calloc(inst, size, VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
+    char* buffer = loader_instance_heap_calloc(inst, size, VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
     if (NULL == buffer) {
         *oom = true;
         return NULL;
@@ -134,7 +134,7 @@ char *loader_platform_executable_path(const struct loader_instance *inst, bool *
     return buffer;
 }
 #elif defined(__Fuchsia__) || defined(__OpenBSD__)
-char *loader_platform_executable_path(const struct loader_instance *inst, bool *oom) {
+char* loader_platform_executable_path(const struct loader_instance* inst, bool* oom) {
     (void)inst;
     (void)oom;
     return NULL;
@@ -144,9 +144,9 @@ char *loader_platform_executable_path(const struct loader_instance *inst, bool *
 #include <fcntl.h>
 #include <sys/stat.h>
 
-char *loader_platform_executable_path(const struct loader_instance *inst, bool *oom) {
+char* loader_platform_executable_path(const struct loader_instance* inst, bool* oom) {
     size_t size = 1024;
-    char *buffer = loader_instance_heap_calloc(inst, size, VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
+    char* buffer = loader_instance_heap_calloc(inst, size, VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
     if (NULL == buffer) {
         *oom = true;
         return NULL;
@@ -187,24 +187,24 @@ char *loader_platform_executable_path(const struct loader_instance *inst, bool *
 #define LOADER_DLOPEN_MODE (RTLD_LAZY | RTLD_LOCAL)
 
 #if defined(__Fuchsia__)
-loader_platform_dl_handle loader_platform_open_driver(const char *libPath) {
+loader_platform_dl_handle loader_platform_open_driver(const char* libPath) {
     return dlopen_fuchsia(libPath, LOADER_DLOPEN_MODE, true);
 }
-loader_platform_dl_handle loader_platform_open_library(const struct loader_instance *inst, const char *libPath, bool *oom) {
+loader_platform_dl_handle loader_platform_open_library(const struct loader_instance* inst, const char* libPath, bool* oom) {
     (void)inst;
     (void)oom;
     return dlopen_fuchsia(libPath, LOADER_DLOPEN_MODE, false);
 }
 #else
 // NOLINTNEXTLINE(readability-non-const-parameter) - oom is only used on Windows but clang-tidy doesn't see that
-loader_platform_dl_handle loader_platform_open_library(const struct loader_instance *inst, const char *libPath, bool *oom) {
+loader_platform_dl_handle loader_platform_open_library(const struct loader_instance* inst, const char* libPath, bool* oom) {
     (void)inst;
     (void)oom;
     return dlopen(libPath, LOADER_DLOPEN_MODE);
 }
 #endif
 
-const char *loader_platform_open_library_error(const char *libPath) {
+const char* loader_platform_open_library_error(const char* libPath) {
     (void)libPath;
 #if defined(__Fuchsia__)
     return dlerror_fuchsia();
@@ -220,50 +220,50 @@ void loader_platform_close_library(loader_platform_dl_handle library) {
         (void)library;
     }
 }
-void *loader_platform_get_proc_address(loader_platform_dl_handle library, const char *name) {
+void* loader_platform_get_proc_address(loader_platform_dl_handle library, const char* name) {
     assert(library);
     assert(name);
     return dlsym(library, name);
 }
-const char *loader_platform_get_proc_address_error(const char *name) {
+const char* loader_platform_get_proc_address_error(const char* name) {
     (void)name;
     // NOLINTNEXTLINE(concurrency-mt-unsafe) - dlerror has no reentrant variant; the message is used immediately, not retained
     return dlerror();
 }
 
 // Thread mutex:
-void loader_platform_thread_create_mutex(loader_platform_thread_mutex *pMutex) {
+void loader_platform_thread_create_mutex(loader_platform_thread_mutex* pMutex) {
     pthread_mutexattr_t attr;
     pthread_mutexattr_init(&attr);
     pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE);
     pthread_mutex_init(pMutex, &attr);
 }
-void loader_platform_thread_lock_mutex(loader_platform_thread_mutex *pMutex) { pthread_mutex_lock(pMutex); }
-void loader_platform_thread_unlock_mutex(loader_platform_thread_mutex *pMutex) { pthread_mutex_unlock(pMutex); }
-void loader_platform_thread_delete_mutex(loader_platform_thread_mutex *pMutex) { pthread_mutex_destroy(pMutex); }
+void loader_platform_thread_lock_mutex(loader_platform_thread_mutex* pMutex) { pthread_mutex_lock(pMutex); }
+void loader_platform_thread_unlock_mutex(loader_platform_thread_mutex* pMutex) { pthread_mutex_unlock(pMutex); }
+void loader_platform_thread_delete_mutex(loader_platform_thread_mutex* pMutex) { pthread_mutex_destroy(pMutex); }
 
-void *thread_safe_strtok(char *str, const char *delim, char **saveptr) { return strtok_r(str, delim, saveptr); }
+void* thread_safe_strtok(char* str, const char* delim, char** saveptr) { return strtok_r(str, delim, saveptr); }
 
-FILE *loader_fopen(const char *fileName, const char *mode) { return fopen(fileName, mode); }
-char *loader_strncat(char *dest, size_t dest_sz, const char *src, size_t count) {
+FILE* loader_fopen(const char* fileName, const char* mode) { return fopen(fileName, mode); }
+char* loader_strncat(char* dest, size_t dest_sz, const char* src, size_t count) {
     (void)dest_sz;
     return strncat(dest, src, count);
 }
-char *loader_strncpy(char *dest, size_t dest_sz, const char *src, size_t count) {
+char* loader_strncpy(char* dest, size_t dest_sz, const char* src, size_t count) {
     (void)dest_sz;
     return strncpy(dest, src, count);
 }
 
 #elif defined(_WIN32)
 
-char *loader_convert_wchar_to_char(const struct loader_instance *inst, const wchar_t *str_utf16, bool *oom, uint32_t scope) {
+char* loader_convert_wchar_to_char(const struct loader_instance* inst, const wchar_t* str_utf16, bool* oom, uint32_t scope) {
     *oom = false;
     int str_utf8_size = WideCharToMultiByte(CP_UTF8, 0, str_utf16, -1, NULL, 0, NULL, NULL);
     if (str_utf8_size <= 0) {
         return NULL;
     }
 
-    char *str_utf8 = (char *)loader_instance_heap_calloc(inst, str_utf8_size, (VkSystemAllocationScope)scope);
+    char* str_utf8 = (char*)loader_instance_heap_calloc(inst, str_utf8_size, (VkSystemAllocationScope)scope);
     if (NULL == str_utf8) {
         *oom = true;
         return NULL;
@@ -278,14 +278,14 @@ char *loader_convert_wchar_to_char(const struct loader_instance *inst, const wch
     return str_utf8;
 }
 
-wchar_t *loader_convert_char_to_wchar(const struct loader_instance *inst, const char *str_utf8, bool *oom, uint32_t scope) {
+wchar_t* loader_convert_char_to_wchar(const struct loader_instance* inst, const char* str_utf8, bool* oom, uint32_t scope) {
     *oom = false;
     int str_utf16_size = MultiByteToWideChar(CP_UTF8, 0, str_utf8, -1, NULL, 0);
     if (str_utf16_size <= 0) {
         return NULL;
     }
-    wchar_t *str_utf16 =
-        (wchar_t *)loader_instance_heap_calloc(inst, str_utf16_size * sizeof(wchar_t), (VkSystemAllocationScope)scope);
+    wchar_t* str_utf16 =
+        (wchar_t*)loader_instance_heap_calloc(inst, str_utf16_size * sizeof(wchar_t), (VkSystemAllocationScope)scope);
     if (NULL == str_utf16) {
         *oom = true;
         return NULL;
@@ -300,12 +300,12 @@ wchar_t *loader_convert_char_to_wchar(const struct loader_instance *inst, const 
 
 // Get the key for the plug n play driver registry
 // The string returned by this function should NOT be freed
-const char *LoaderPnpDriverRegistry(void) {
+const char* LoaderPnpDriverRegistry(void) {
     BOOL is_wow;
     IsWow64Process(GetCurrentProcess(), &is_wow);
     return is_wow ? "Vulkan" VK_VARIANT_REG_STR "DriverNameWow" : "Vulkan" VK_VARIANT_REG_STR "DriverName";
 }
-const wchar_t *LoaderPnpDriverRegistryWide(void) {
+const wchar_t* LoaderPnpDriverRegistryWide(void) {
     BOOL is_wow;
     IsWow64Process(GetCurrentProcess(), &is_wow);
     return is_wow ? L"Vulkan" VK_VARIANT_REG_STR_W L"DriverNameWow" : L"Vulkan" VK_VARIANT_REG_STR_W L"DriverName";
@@ -313,12 +313,12 @@ const wchar_t *LoaderPnpDriverRegistryWide(void) {
 
 // Get the key for the plug 'n play explicit layer registry
 // The string returned by this function should NOT be freed
-const char *LoaderPnpELayerRegistry(void) {
+const char* LoaderPnpELayerRegistry(void) {
     BOOL is_wow;
     IsWow64Process(GetCurrentProcess(), &is_wow);
     return is_wow ? "Vulkan" VK_VARIANT_REG_STR "ExplicitLayersWow" : "Vulkan" VK_VARIANT_REG_STR "ExplicitLayers";
 }
-const wchar_t *LoaderPnpELayerRegistryWide(void) {
+const wchar_t* LoaderPnpELayerRegistryWide(void) {
     BOOL is_wow;
     IsWow64Process(GetCurrentProcess(), &is_wow);
     return is_wow ? L"Vulkan" VK_VARIANT_REG_STR_W L"ExplicitLayersWow" : L"Vulkan" VK_VARIANT_REG_STR_W L"ExplicitLayers";
@@ -326,20 +326,20 @@ const wchar_t *LoaderPnpELayerRegistryWide(void) {
 
 // Get the key for the plug 'n play implicit layer registry
 // The string returned by this function should NOT be freed
-const char *LoaderPnpILayerRegistry(void) {
+const char* LoaderPnpILayerRegistry(void) {
     BOOL is_wow;
     IsWow64Process(GetCurrentProcess(), &is_wow);
     return is_wow ? "Vulkan" VK_VARIANT_REG_STR "ImplicitLayersWow" : "Vulkan" VK_VARIANT_REG_STR "ImplicitLayers";
 }
-const wchar_t *LoaderPnpILayerRegistryWide(void) {
+const wchar_t* LoaderPnpILayerRegistryWide(void) {
     BOOL is_wow;
     IsWow64Process(GetCurrentProcess(), &is_wow);
     return is_wow ? L"Vulkan" VK_VARIANT_REG_STR_W L"ImplicitLayersWow" : L"Vulkan" VK_VARIANT_REG_STR_W L"ImplicitLayers";
 }
 
 // File IO
-bool loader_platform_file_exists(const struct loader_instance *inst, const char *path, bool *oom) {
-    wchar_t *path_utf16 = loader_convert_char_to_wchar(inst, path, oom, VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
+bool loader_platform_file_exists(const struct loader_instance* inst, const char* path, bool* oom) {
+    wchar_t* path_utf16 = loader_convert_char_to_wchar(inst, path, oom, VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
     if (*oom || NULL == path_utf16) {
         return false;
     }
@@ -350,7 +350,7 @@ bool loader_platform_file_exists(const struct loader_instance *inst, const char 
 
 // Returns true if the given string appears to be a relative or absolute
 // path, as opposed to a bare filename.
-bool loader_platform_is_path_absolute(const char *path) {
+bool loader_platform_is_path_absolute(const char* path) {
     if (!path || !*path) {
         return false;
     }
@@ -361,7 +361,7 @@ bool loader_platform_is_path_absolute(const char *path) {
 }
 
 // WIN32 runtime doesn't have dirname().
-char *loader_platform_dirname(char *path) {
+char* loader_platform_dirname(char* path) {
     char *current, *next;
 
     // TODO/TBD: Do we need to deal with the Windows's ":" character?
@@ -379,10 +379,10 @@ char *loader_platform_dirname(char *path) {
     return path;
 }
 
-char *loader_platform_executable_path(const struct loader_instance *inst, bool *oom) {
-    char *buffer = NULL;
+char* loader_platform_executable_path(const struct loader_instance* inst, bool* oom) {
+    char* buffer = NULL;
     size_t size = 1024;
-    wchar_t *str_utf16 = (wchar_t *)loader_instance_heap_calloc(inst, size * sizeof(wchar_t), VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
+    wchar_t* str_utf16 = (wchar_t*)loader_instance_heap_calloc(inst, size * sizeof(wchar_t), VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
     if (NULL == str_utf16) {
         *oom = true;
         goto out;
@@ -404,9 +404,9 @@ out:
 }
 
 // Dynamic Loading:
-loader_platform_dl_handle loader_platform_open_library(const struct loader_instance *inst, const char *lib_path, bool *oom) {
+loader_platform_dl_handle loader_platform_open_library(const struct loader_instance* inst, const char* lib_path, bool* oom) {
     loader_platform_dl_handle lib_handle = NULL;
-    wchar_t *lib_path_utf16 = loader_convert_char_to_wchar(inst, lib_path, oom, VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
+    wchar_t* lib_path_utf16 = loader_convert_char_to_wchar(inst, lib_path, oom, VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
     if (*oom || NULL == lib_path_utf16) {
         return NULL;
     }
@@ -423,7 +423,7 @@ loader_platform_dl_handle loader_platform_open_library(const struct loader_insta
     SetLastError(last_error);
     return lib_handle;
 }
-const char *loader_platform_open_library_error(const char *libPath) {
+const char* loader_platform_open_library_error(const char* libPath) {
     static char errorMsg[512];
     (void)snprintf(errorMsg, 511, "Failed to open dynamic library \"%s\" with error %lu", libPath, GetLastError());
     return errorMsg;
@@ -435,39 +435,39 @@ void loader_platform_close_library(loader_platform_dl_handle library) {
         (void)library;
     }
 }
-void *loader_platform_get_proc_address(loader_platform_dl_handle library, const char *name) {
+void* loader_platform_get_proc_address(loader_platform_dl_handle library, const char* name) {
     assert(library);
     assert(name);
-    return (void *)GetProcAddress(library, name);
+    return (void*)GetProcAddress(library, name);
 }
-const char *loader_platform_get_proc_address_error(const char *name) {
+const char* loader_platform_get_proc_address_error(const char* name) {
     static char errorMsg[120];
     (void)snprintf(errorMsg, 119, "Failed to find function \"%s\" in dynamic library", name);
     return errorMsg;
 }
 
 // Thread mutex:
-void loader_platform_thread_create_mutex(loader_platform_thread_mutex *pMutex) { InitializeCriticalSection(pMutex); }
-void loader_platform_thread_lock_mutex(loader_platform_thread_mutex *pMutex) { EnterCriticalSection(pMutex); }
-void loader_platform_thread_unlock_mutex(loader_platform_thread_mutex *pMutex) { LeaveCriticalSection(pMutex); }
-void loader_platform_thread_delete_mutex(loader_platform_thread_mutex *pMutex) { DeleteCriticalSection(pMutex); }
+void loader_platform_thread_create_mutex(loader_platform_thread_mutex* pMutex) { InitializeCriticalSection(pMutex); }
+void loader_platform_thread_lock_mutex(loader_platform_thread_mutex* pMutex) { EnterCriticalSection(pMutex); }
+void loader_platform_thread_unlock_mutex(loader_platform_thread_mutex* pMutex) { LeaveCriticalSection(pMutex); }
+void loader_platform_thread_delete_mutex(loader_platform_thread_mutex* pMutex) { DeleteCriticalSection(pMutex); }
 
-void *thread_safe_strtok(char *str, const char *delimiters, char **context) { return strtok_s(str, delimiters, context); }
+void* thread_safe_strtok(char* str, const char* delimiters, char** context) { return strtok_s(str, delimiters, context); }
 
-FILE *loader_fopen(const char *fileName, const char *mode) {
-    FILE *file = NULL;
+FILE* loader_fopen(const char* fileName, const char* mode) {
+    FILE* file = NULL;
     errno_t err = fopen_s(&file, fileName, mode);
     if (err != 0) return NULL;
     return file;
 }
 
-char *loader_strncat(char *dest, size_t dest_sz, const char *src, size_t count) {
+char* loader_strncat(char* dest, size_t dest_sz, const char* src, size_t count) {
     errno_t err = strncat_s(dest, dest_sz, src, count);
     if (err != 0) return NULL;
     return dest;
 }
 
-char *loader_strncpy(char *dest, size_t dest_sz, const char *src, size_t count) {
+char* loader_strncpy(char* dest, size_t dest_sz, const char* src, size_t count) {
     errno_t err = strncpy_s(dest, dest_sz, src, count);
     if (err != 0) return NULL;
     return dest;

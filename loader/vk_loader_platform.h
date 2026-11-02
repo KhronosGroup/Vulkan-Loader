@@ -178,7 +178,7 @@
 #define PRINTF_SIZE_T_SPECIFIER "%zu"
 
 // Dynamic Loading of libraries:
-typedef void *loader_platform_dl_handle;
+typedef void* loader_platform_dl_handle;
 
 // Threads:
 typedef pthread_t loader_platform_thread;
@@ -245,7 +245,7 @@ typedef CONDITION_VARIABLE loader_platform_thread_cond;
 extern bool loader_disable_dynamic_library_unloading;
 
 // Returns true if the DIRECTORY_SYMBOL is contained within path
-static inline bool loader_platform_is_path(const char *path) { return strchr(path, DIRECTORY_SYMBOL) != NULL; }
+static inline bool loader_platform_is_path(const char* path) { return strchr(path, DIRECTORY_SYMBOL) != NULL; }
 
 // The loader has various initialization tasks which it must do before user code can run. This includes initializing synchronization
 // objects, determining the log level, writing the version of the loader to the log, and loading dll's (on windows). On linux, the
@@ -257,7 +257,7 @@ static inline bool loader_platform_is_path(const char *path) { return strchr(pat
 // there is no way to clean up the resources allocated by anything allocated by once init.
 
 #if defined(APPLE_STATIC_LOADER)
-static inline void loader_platform_thread_once_fn(pthread_once_t *ctl, void (*func)(void)) {
+static inline void loader_platform_thread_once_fn(pthread_once_t* ctl, void (*func)(void)) {
     assert(func != NULL);
     assert(ctl != NULL);
     pthread_once(ctl, func);
@@ -266,7 +266,7 @@ static inline void loader_platform_thread_once_fn(pthread_once_t *ctl, void (*fu
 #define LOADER_PLATFORM_THREAD_ONCE_EXTERN_DEFINITION(var) extern pthread_once_t var;
 #define LOADER_PLATFORM_THREAD_ONCE(ctl, func) loader_platform_thread_once_fn(ctl, func);
 #elif defined(WIN32)
-static inline void loader_platform_thread_win32_once_fn(INIT_ONCE *ctl, PINIT_ONCE_FN func) {
+static inline void loader_platform_thread_win32_once_fn(INIT_ONCE* ctl, PINIT_ONCE_FN func) {
     InitOnceExecuteOnce(ctl, func, NULL, NULL);
 }
 #define LOADER_PLATFORM_THREAD_ONCE_DECLARATION(var) INIT_ONCE var = INIT_ONCE_STATIC_INIT;
@@ -282,61 +282,61 @@ static inline void loader_platform_thread_win32_once_fn(INIT_ONCE *ctl, PINIT_ON
 struct loader_instance;
 
 // File IO
-bool loader_platform_file_exists(const struct loader_instance *inst, const char *path, bool *oom);
+bool loader_platform_file_exists(const struct loader_instance* inst, const char* path, bool* oom);
 // Returns true if the given string appears to be a relative or absolute
 // path, as opposed to a bare filename.
-bool loader_platform_is_path_absolute(const char *path);
+bool loader_platform_is_path_absolute(const char* path);
 // NOLINTNEXTLINE(concurrency-mt-unsafe) - no portable reentrant dirname; the returned buffer is copied by callers immediately
-char *loader_platform_dirname(char *path);
+char* loader_platform_dirname(char* path);
 // loader_platform_executable_path finds application path + name.
 // Allocates memory to store the path and returns it - caller is responsible for freeing
 // Sets oom to true if allocation failed. If it didn't fail allocating but didn't succeed getting the exe path, it returns NULL
-char *loader_platform_executable_path(const struct loader_instance *inst, bool *oom);
+char* loader_platform_executable_path(const struct loader_instance* inst, bool* oom);
 
 #if defined(__Fuchsia__)
-loader_platform_dl_handle loader_platform_open_driver(const char *libPath);
+loader_platform_dl_handle loader_platform_open_driver(const char* libPath);
 #endif
-loader_platform_dl_handle loader_platform_open_library(const struct loader_instance *inst, const char *libPath, bool *oom);
+loader_platform_dl_handle loader_platform_open_library(const struct loader_instance* inst, const char* libPath, bool* oom);
 
-const char *loader_platform_open_library_error(const char *libPath);
+const char* loader_platform_open_library_error(const char* libPath);
 void loader_platform_close_library(loader_platform_dl_handle library);
-void *loader_platform_get_proc_address(loader_platform_dl_handle library, const char *name);
-const char *loader_platform_get_proc_address_error(const char *name);
+void* loader_platform_get_proc_address(loader_platform_dl_handle library, const char* name);
+const char* loader_platform_get_proc_address_error(const char* name);
 
 // Thread mutex:
-void loader_platform_thread_create_mutex(loader_platform_thread_mutex *pMutex);
-void loader_platform_thread_lock_mutex(loader_platform_thread_mutex *pMutex);
-void loader_platform_thread_unlock_mutex(loader_platform_thread_mutex *pMutex);
-void loader_platform_thread_delete_mutex(loader_platform_thread_mutex *pMutex);
+void loader_platform_thread_create_mutex(loader_platform_thread_mutex* pMutex);
+void loader_platform_thread_lock_mutex(loader_platform_thread_mutex* pMutex);
+void loader_platform_thread_unlock_mutex(loader_platform_thread_mutex* pMutex);
+void loader_platform_thread_delete_mutex(loader_platform_thread_mutex* pMutex);
 
-void *thread_safe_strtok(char *str, const char *delim, char **saveptr);
-FILE *loader_fopen(const char *fileName, const char *mode);
-char *loader_strncat(char *dest, size_t dest_sz, const char *src, size_t count);
-char *loader_strncpy(char *dest, size_t dest_sz, const char *src, size_t count);
+void* thread_safe_strtok(char* str, const char* delim, char** saveptr);
+FILE* loader_fopen(const char* fileName, const char* mode);
+char* loader_strncat(char* dest, size_t dest_sz, const char* src, size_t count);
+char* loader_strncpy(char* dest, size_t dest_sz, const char* src, size_t count);
 
 #if defined(_WIN32)
 
 // Converts a wchar_t string to multi byte character string (utf-8)
 // oom is set to true if allocation failed
 // scope must be a valid VkSystemAllocationScope enum value - uint32_t is used to avoid needing to include vulkan.h
-char *loader_convert_wchar_to_char(const struct loader_instance *inst, const wchar_t *str_utf16, bool *oom, uint32_t scope);
+char* loader_convert_wchar_to_char(const struct loader_instance* inst, const wchar_t* str_utf16, bool* oom, uint32_t scope);
 
 // Converts a multi byte character string (utf-8) string to  wchar_t string
 // oom is set to true if allocation failed
 // scope must be a valid VkSystemAllocationScope enum value - uint32_t is used to avoid needing to include vulkan.h
-wchar_t *loader_convert_char_to_wchar(const struct loader_instance *inst, const char *str_utf8, bool *oom, uint32_t scope);
+wchar_t* loader_convert_char_to_wchar(const struct loader_instance* inst, const char* str_utf8, bool* oom, uint32_t scope);
 
 // Get the key for the plug n play driver registry
 // The string returned by this function should NOT be freed
-const char *LoaderPnpDriverRegistry(void);
-const wchar_t *LoaderPnpDriverRegistryWide(void);
+const char* LoaderPnpDriverRegistry(void);
+const wchar_t* LoaderPnpDriverRegistryWide(void);
 // Get the key for the plug 'n play explicit layer registry
 // The string returned by this function should NOT be freed
-const char *LoaderPnpELayerRegistry(void);
-const wchar_t *LoaderPnpELayerRegistryWide(void);
+const char* LoaderPnpELayerRegistry(void);
+const wchar_t* LoaderPnpELayerRegistryWide(void);
 // Get the key for the plug 'n play implicit layer registry
 // The string returned by this function should NOT be freed
-const char *LoaderPnpILayerRegistry(void);
-const wchar_t *LoaderPnpILayerRegistryWide(void);
+const char* LoaderPnpILayerRegistry(void);
+const wchar_t* LoaderPnpILayerRegistryWide(void);
 
 #endif

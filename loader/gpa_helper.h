@@ -24,6 +24,6 @@
 
 #include "loader_common.h"
 
-void *trampoline_get_proc_addr(struct loader_instance *inst, const char *funcName);
+void* trampoline_get_proc_addr(struct loader_instance* inst, const char* funcName);
 
-void *globalGetProcAddr(const char *name);
+void* globalGetProcAddr(const char* name);

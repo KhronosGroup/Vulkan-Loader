@@ -68,7 +68,7 @@ TEST(HashString, DifferentStringsUsuallyHashDifferently) {
 //     "vk" before hashing (`name += 2`), e.g. loader_hash_string("DestroyInstance").
 TEST(HashString, MatchesGeneratorEmbeddedConstants) {
     struct NameAndHash {
-        const char *name;
+        const char* name;
         uint32_t expected_hash;
     };
     const NameAndHash pairs[] = {
@@ -98,7 +98,7 @@ TEST(HashString, MatchesGeneratorEmbeddedConstants) {
         {"GetPhysicalDeviceQueueFamilyProperties", 0x027f4f12u},
         {"GetPhysicalDeviceMemoryProperties", 0x1c0f4f2eu},
     };
-    for (const auto &pair : pairs) {
+    for (const auto& pair : pairs) {
         ASSERT_EQ(pair.expected_hash, loader_hash_string(pair.name));
     }
 }
@@ -108,8 +108,8 @@ TEST(HashString, MatchesGeneratorEmbeddedConstants) {
 // demonstrate that a hash collision is handled safely by construction.
 TEST(HashString, SyntheticCollisionsAreHandledSafelyByConstruction) {
     struct CollidingPair {
-        const char *a;
-        const char *b;
+        const char* a;
+        const char* b;
         uint32_t expected_hash;
     };
     const CollidingPair pairs[] = {
@@ -117,7 +117,7 @@ TEST(HashString, SyntheticCollisionsAreHandledSafelyByConstruction) {
         {"I3US", "WWngS", 0x7431e3c9u},
         {"TOc9", "h8y0", 0xe7227ef4u},
     };
-    for (const auto &pair : pairs) {
+    for (const auto& pair : pairs) {
         // The two strings really are different...
         ASSERT_NE(0, strcmp(pair.a, pair.b));
 
