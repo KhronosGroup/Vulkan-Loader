@@ -2569,6 +2569,35 @@ TEST(EnumeratePhysicalDeviceGroups, DriverWhichFailsCountQueryIsSkipped) {
     ASSERT_EQ(0U, returned_group_count);
 }
 
+// A driver which reports the same VkPhysicalDevice in two groups produces two identical groups. Querying the groups more than
+// once must not make both of them reuse the same cached group, otherwise that allocation is freed twice.
+TEST(EnumeratePhysicalDeviceGroups, IdenticalGroupsCalledTwice) {
+    FrameworkEnvironment env{};
+    auto& driver = env.add_icd(TEST_ICD_PATH_VERSION_2, {}, ManifestICD{}.set_api_version(VK_API_VERSION_1_1))
+                       .set_min_icd_interface_version(5)
+                       .set_icd_api_version(VK_API_VERSION_1_1);
+    driver.add_and_get_physical_device("physical_device_0").properties.apiVersion = VK_API_VERSION_1_1;
+    driver.physical_device_groups.emplace_back(0);
+    driver.physical_device_groups.emplace_back(0);
+
+    InstWrapper inst{env.vulkan_functions};
+    inst.create_info.set_api_version(VK_API_VERSION_1_1);
+    inst.CheckCreate();
+
+    for (uint32_t call = 0; call < 2; call++) {
+        uint32_t group_count = 0;
+        ASSERT_EQ(VK_SUCCESS, inst->vkEnumeratePhysicalDeviceGroups(inst, &group_count, nullptr));
+        ASSERT_EQ(2U, group_count);
+        std::vector<VkPhysicalDeviceGroupProperties> group_props(
+            group_count, VkPhysicalDeviceGroupProperties{VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_GROUP_PROPERTIES});
+        ASSERT_EQ(VK_SUCCESS, inst->vkEnumeratePhysicalDeviceGroups(inst, &group_count, group_props.data()));
+        ASSERT_EQ(2U, group_count);
+        for (auto const& group : group_props) {
+            ASSERT_EQ(1U, group.physicalDeviceCount);
+        }
+    }
+}
+
 // Start with 7 devices in 4 different groups, and then remove a group,
 // querying vkEnumeratePhysicalDeviceGroups before and after the remove.
 TEST(EnumeratePhysicalDeviceGroups, CallTwiceRemoveGroupInBetween) {

@@ -7696,6 +7696,18 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_EnumeratePhysicalDeviceGroups(
 
             // Check if this physical device group with the same contents is already in the old buffer
             for (uint32_t old_idx = 0; old_idx < inst->phys_dev_group_count_term; old_idx++) {
+                // Only carry an old group over once. Two identical groups (a driver reporting the same physical device in more
+                // than one group) would otherwise both take the same allocation, which is then freed twice.
+                bool already_used = false;
+                for (uint32_t prev_idx = 0; prev_idx < idx; prev_idx++) {
+                    if (new_phys_dev_groups[prev_idx] == inst->phys_dev_groups_term[old_idx]) {
+                        already_used = true;
+                        break;
+                    }
+                }
+                if (already_used) {
+                    continue;
+                }
                 if (NULL != group_properties && NULL != inst->phys_dev_groups_term[old_idx] &&
                     group_properties->physicalDeviceCount == inst->phys_dev_groups_term[old_idx]->physicalDeviceCount) {
                     bool found_all_gpus = true;
