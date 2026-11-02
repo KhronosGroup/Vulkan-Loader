@@ -43,7 +43,7 @@
 //   print(hex(h))"
 // and also add the name to kGpaHelperCoreInstanceNames in tests/loader_get_proc_addr_tests.cpp, which
 // exhaustively calls every name here and fails loudly if this switch and that list ever drift apart.
-void *trampoline_get_proc_addr(struct loader_instance *inst, const char *funcName) {
+void* trampoline_get_proc_addr(struct loader_instance* inst, const char* funcName) {
     const uint32_t name_hash = loader_hash_string(funcName);
     // Don't include or check global functions
     switch (name_hash) {
@@ -754,7 +754,7 @@ void *trampoline_get_proc_addr(struct loader_instance *inst, const char *funcNam
     }
 
     // Instance extensions
-    void *addr;
+    void* addr;
     if (debug_extensions_InstanceGpa(inst, funcName, &addr)) return addr;
 
     if (wsi_swapchain_instance_gpa(inst, funcName, &addr)) return addr;
@@ -770,7 +770,7 @@ void *trampoline_get_proc_addr(struct loader_instance *inst, const char *funcNam
     return addr;
 }
 
-void *globalGetProcAddr(const char *name) {
+void* globalGetProcAddr(const char* name) {
     if (!name || name[0] != 'v' || name[1] != 'k') return NULL;
 
     name += 2;

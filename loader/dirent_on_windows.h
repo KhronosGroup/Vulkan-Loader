@@ -19,14 +19,14 @@ extern "C" {
 typedef struct DIR DIR;
 
 struct dirent {
-    char *d_name;
+    char* d_name;
 };
 
 // pass in VkAllocationCallbacks to allow allocation callback usage
-DIR *opendir(const VkAllocationCallbacks *pAllocator, const char *);
-int closedir(const VkAllocationCallbacks *pAllocator, DIR *);
-struct dirent *readdir(DIR *);
-void rewinddir(DIR *);
+DIR* opendir(const VkAllocationCallbacks* pAllocator, const char*);
+int closedir(const VkAllocationCallbacks* pAllocator, DIR*);
+struct dirent* readdir(DIR*);
+void rewinddir(DIR*);
 
 /*
 

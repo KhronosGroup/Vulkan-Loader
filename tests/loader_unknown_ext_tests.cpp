@@ -297,11 +297,11 @@ void check_layer_custom_functions_no_interception(FunctionLoader& loader, Parent
     for (uint32_t i = function_start; i < function_start + function_count;) {
         decltype(FunctionStruct::func_zero)* returned_func_i = loader.load(parent, func_names.at(i).c_str());
         ASSERT_NE(returned_func_i, nullptr);
-        EXPECT_EQ(returned_func_i(handle, &layer, func_names.at(i).c_str(), i), (i)*3);
+        EXPECT_EQ(returned_func_i(handle, &layer, func_names.at(i).c_str(), i), (i) * 3);
         i++;
         decltype(FunctionStruct::func_one)* returned_func_if = loader.load(parent, func_names.at(i).c_str());
         ASSERT_NE(returned_func_if, nullptr);
-        EXPECT_EQ(returned_func_if(handle, &layer, func_names.at(i).c_str(), i, i + 1.f), (i)*3 + (i + 1) * 10);
+        EXPECT_EQ(returned_func_if(handle, &layer, func_names.at(i).c_str(), i, i + 1.f), (i) * 3 + (i + 1) * 10);
         i++;
 
         decltype(FunctionStruct::func_two)* returned_func_iif = loader.load(parent, func_names.at(i).c_str());

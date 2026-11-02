@@ -86,7 +86,7 @@ indicated by *install_dir*:
 ### Building with Code Generation Requirements
 
 1. `Python 3.11`
-2. `clang-format` version 14 or higher
+2. `clang-format` version 22 or higher
    * Only required when submitting changes
 
 ### Test Requirements

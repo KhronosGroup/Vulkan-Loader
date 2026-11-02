@@ -60,7 +60,7 @@
 #include <crtdbg.h>
 #endif
 
-typedef HRESULT(APIENTRY *PFN_CreateDXGIFactory1)(REFIID riid, void **ppFactory);
+typedef HRESULT(APIENTRY* PFN_CreateDXGIFactory1)(REFIID riid, void** ppFactory);
 PFN_CreateDXGIFactory1 fpCreateDXGIFactory1;
 
 // Empty function just so windows_initialization can find the current module location
@@ -86,7 +86,7 @@ void windows_initialization(void) {
     StringCchCatW(systemPath, MAX_PATH, L"\\dxgi.dll");
     HMODULE dxgi_module = LoadLibraryW(systemPath);
     fpCreateDXGIFactory1 =
-        dxgi_module == NULL ? NULL : (PFN_CreateDXGIFactory1)(void *)GetProcAddress(dxgi_module, "CreateDXGIFactory1");
+        dxgi_module == NULL ? NULL : (PFN_CreateDXGIFactory1)(void*)GetProcAddress(dxgi_module, "CreateDXGIFactory1");
 
 #if !defined(NDEBUG) && !defined(_DLL)
     // When linking statically to the MSVC C runtime, we want to silence these warnings to prevent popups when compiled in debug
@@ -119,13 +119,13 @@ BOOL WINAPI DllMain(HINSTANCE hinstance, DWORD reason, LPVOID reserved) {
     return TRUE;
 }
 
-VkResult windows_add_json_entry(const struct loader_instance *inst, struct loader_string_list *search_paths,
+VkResult windows_add_json_entry(const struct loader_instance* inst, struct loader_string_list* search_paths,
                                 LPCSTR key_name,  // key name - used for debug prints - i.e. VulkanDriverName
                                 DWORD key_type,   // key data type
                                 LPSTR json_path,  // JSON string to add to the list reg_data
                                 DWORD json_size   // size in bytes of json_path
 ) {
-    for (char *curr_filename = json_path; curr_filename[0] != '\0'; curr_filename += strlen(curr_filename) + 1) {
+    for (char* curr_filename = json_path; curr_filename[0] != '\0'; curr_filename += strlen(curr_filename) + 1) {
         // Make sure we don't continue reading past the end of the buffer
         if (curr_filename - json_path >= (long)json_size) {
             break;
@@ -146,12 +146,12 @@ VkResult windows_add_json_entry(const struct loader_instance *inst, struct loade
     return VK_SUCCESS;
 }
 
-VkResult windows_get_device_registry_entry(const struct loader_instance *inst, struct loader_string_list *search_paths,
+VkResult windows_get_device_registry_entry(const struct loader_instance* inst, struct loader_string_list* search_paths,
                                            DEVINST dev_id, LPCSTR value_name) {
     VkResult res = VK_SUCCESS;
     HKEY hkrKey = INVALID_HANDLE_VALUE;
     DWORD requiredSize, data_type;
-    char *manifest_path = NULL;
+    char* manifest_path = NULL;
 
     CONFIGRET status = CM_Open_DevNode_Key(dev_id, KEY_QUERY_VALUE, 0, RegDisposition_OpenExisting, &hkrKey, CM_REGISTRY_SOFTWARE);
     if (status != CR_SUCCESS) {
@@ -184,7 +184,7 @@ VkResult windows_get_device_registry_entry(const struct loader_instance *inst, s
         goto out;
     }
 
-    ret = RegQueryValueEx(hkrKey, value_name, NULL, &data_type, (BYTE *)manifest_path, &requiredSize);
+    ret = RegQueryValueEx(hkrKey, value_name, NULL, &data_type, (BYTE*)manifest_path, &requiredSize);
 
     if (ret != ERROR_SUCCESS) {
         loader_log(inst, VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_DRIVER_BIT, 0,
@@ -213,10 +213,10 @@ out:
     return res;
 }
 
-VkResult windows_get_device_registry_files(const struct loader_instance *inst, uint32_t log_target_flag,
-                                           struct loader_string_list *search_paths, LPCSTR value_name) {
-    const wchar_t *softwareComponentGUID = L"{5c4c3332-344d-483c-8739-259e934c9cc8}";
-    const wchar_t *displayGUID = L"{4d36e968-e325-11ce-bfc1-08002be10318}";
+VkResult windows_get_device_registry_files(const struct loader_instance* inst, uint32_t log_target_flag,
+                                           struct loader_string_list* search_paths, LPCSTR value_name) {
+    const wchar_t* softwareComponentGUID = L"{5c4c3332-344d-483c-8739-259e934c9cc8}";
+    const wchar_t* displayGUID = L"{4d36e968-e325-11ce-bfc1-08002be10318}";
 #if defined(CM_GETIDLIST_FILTER_PRESENT)
     const ULONG flags = CM_GETIDLIST_FILTER_CLASS | CM_GETIDLIST_FILTER_PRESENT;
 #else
@@ -230,7 +230,7 @@ VkResult windows_get_device_registry_files(const struct loader_instance *inst, u
     ULONG childGuidSize = sizeof(childGuid);
 
     DEVINST devID = 0, childID = 0;
-    wchar_t *pDeviceNames = NULL;
+    wchar_t* pDeviceNames = NULL;
     ULONG deviceNamesSize = 0;
     VkResult result = VK_SUCCESS;
     uint32_t search_path_count_before = search_paths->count;
@@ -260,7 +260,7 @@ VkResult windows_get_device_registry_files(const struct loader_instance *inst, u
     } while (CM_Get_Device_ID_ListW(displayGUID, pDeviceNames, deviceNamesSize, flags) == CR_BUFFER_SMALL);
 
     if (pDeviceNames) {
-        for (wchar_t *deviceName = pDeviceNames; *deviceName; deviceName += wcslen(deviceName) + 1) {
+        for (wchar_t* deviceName = pDeviceNames; *deviceName; deviceName += wcslen(deviceName) + 1) {
             CONFIGRET status = CM_Locate_DevNodeW(&devID, deviceName, CM_LOCATE_DEVNODE_NORMAL);
             if (CR_SUCCESS != status) {
                 loader_log(inst, VULKAN_LOADER_ERROR_BIT | log_target_flag, 0,
@@ -337,12 +337,12 @@ VkResult windows_get_device_registry_files(const struct loader_instance *inst, u
     return result;
 }
 
-VkResult windows_get_registry_files(const struct loader_instance *inst, char *location, bool use_secondary_hive,
-                                    struct loader_string_list *search_paths) {
+VkResult windows_get_registry_files(const struct loader_instance* inst, char* location, bool use_secondary_hive,
+                                    struct loader_string_list* search_paths) {
     // This list contains all of the allowed ICDs. This allows us to verify that a device is actually present from the vendor
     // specified. This does disallow other vendors, but any new driver should use the device-specific registries anyway.
     const struct {
-        const char *filename;
+        const char* filename;
         unsigned int vendor_id;
     } known_drivers[] = {
 #if defined(_WIN64)
@@ -386,19 +386,19 @@ VkResult windows_get_registry_files(const struct loader_instance *inst, char *lo
     HKEY hive = DEFAULT_VK_REGISTRY_HIVE, key;
     DWORD access_flags;
     char name[2048];
-    char *loc = location;
-    char *next;
+    char* loc = location;
+    char* next;
     DWORD name_size = sizeof(name);
     DWORD value;
     DWORD value_size = sizeof(value);
     VkResult result = VK_SUCCESS;
     uint32_t search_path_count_before = search_paths->count;
-    IDXGIFactory1 *dxgi_factory = NULL;
+    IDXGIFactory1* dxgi_factory = NULL;
     bool is_driver = !strcmp(location, VK_DRIVERS_INFO_REGISTRY_LOC);
     uint32_t log_target_flag = is_driver ? VULKAN_LOADER_DRIVER_BIT : VULKAN_LOADER_LAYER_BIT;
 
     if (is_driver) {
-        HRESULT hres = fpCreateDXGIFactory1(&IID_IDXGIFactory1, (void **)&dxgi_factory);
+        HRESULT hres = fpCreateDXGIFactory1(&IID_IDXGIFactory1, (void**)&dxgi_factory);
         if (hres != S_OK) {
             loader_log(inst, VULKAN_LOADER_WARN_BIT | log_target_flag, 0,
                        "windows_get_registry_files: Failed to create dxgi factory for ICD registry verification. No ICDs will be "
@@ -440,7 +440,7 @@ VkResult windows_get_registry_files(const struct loader_instance *inst, char *lo
                         } else {
                             bool found_gpu = false;
                             for (int j = 0;; ++j) {
-                                IDXGIAdapter1 *adapter;
+                                IDXGIAdapter1* adapter;
                                 HRESULT hres = dxgi_factory->lpVtbl->EnumAdapters1(dxgi_factory, j, &adapter);
                                 if (hres == DXGI_ERROR_NOT_FOUND) {
                                     break;
@@ -508,13 +508,13 @@ out:
 }
 
 // Read manifest JSON files using the Windows driver interface
-VkResult windows_read_manifest_from_d3d_adapters(const struct loader_instance *inst, struct loader_string_list *search_paths,
-                                                 const wchar_t *value_name) {
+VkResult windows_read_manifest_from_d3d_adapters(const struct loader_instance* inst, struct loader_string_list* search_paths,
+                                                 const wchar_t* value_name) {
     VkResult result = VK_INCOMPLETE;
     LoaderEnumAdapters2 adapters = {.adapter_count = 0, .adapters = NULL};
-    LoaderQueryRegistryInfo *full_info = NULL;
+    LoaderQueryRegistryInfo* full_info = NULL;
     size_t full_info_size = 0;
-    char *json_path = NULL;
+    char* json_path = NULL;
     size_t json_path_size = 0;
 
     HMODULE gdi32_dll = GetModuleHandle("gdi32.dll");
@@ -524,9 +524,9 @@ VkResult windows_read_manifest_from_d3d_adapters(const struct loader_instance *i
     }
 
     PFN_LoaderEnumAdapters2 fpLoaderEnumAdapters2 =
-        (PFN_LoaderEnumAdapters2)(void *)GetProcAddress(gdi32_dll, "D3DKMTEnumAdapters2");
+        (PFN_LoaderEnumAdapters2)(void*)GetProcAddress(gdi32_dll, "D3DKMTEnumAdapters2");
     PFN_LoaderQueryAdapterInfo fpLoaderQueryAdapterInfo =
-        (PFN_LoaderQueryAdapterInfo)(void *)GetProcAddress(gdi32_dll, "D3DKMTQueryAdapterInfo");
+        (PFN_LoaderQueryAdapterInfo)(void*)GetProcAddress(gdi32_dll, "D3DKMTQueryAdapterInfo");
     if (fpLoaderEnumAdapters2 == NULL || fpLoaderQueryAdapterInfo == NULL) {
         result = VK_ERROR_INCOMPATIBLE_DRIVER;
         goto out;
@@ -578,10 +578,10 @@ VkResult windows_read_manifest_from_d3d_adapters(const struct loader_instance *i
         }
 
         while (status == STATUS_SUCCESS &&
-               ((LoaderQueryRegistryInfo *)query_info.private_data)->status == LOADER_QUERY_REGISTRY_STATUS_BUFFER_OVERFLOW) {
+               ((LoaderQueryRegistryInfo*)query_info.private_data)->status == LOADER_QUERY_REGISTRY_STATUS_BUFFER_OVERFLOW) {
             bool needs_copy = (full_info == NULL);
             size_t full_size = sizeof(LoaderQueryRegistryInfo) + filename_info.output_value_size;
-            void *buffer =
+            void* buffer =
                 loader_instance_heap_realloc(inst, full_info, full_info_size, full_size, VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
             if (buffer == NULL) {
                 result = VK_ERROR_OUT_OF_HOST_MEMORY;
@@ -607,7 +607,7 @@ VkResult windows_read_manifest_from_d3d_adapters(const struct loader_instance *i
             continue;
         }
         // Convert the wide string to a narrow string
-        void *buffer = loader_instance_heap_realloc(inst, json_path, json_path_size, full_info->output_value_size,
+        void* buffer = loader_instance_heap_realloc(inst, json_path, json_path_size, full_info->output_value_size,
                                                     VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
         if (buffer == NULL) {
             result = VK_ERROR_OUT_OF_HOST_MEMORY;
@@ -617,7 +617,7 @@ VkResult windows_read_manifest_from_d3d_adapters(const struct loader_instance *i
         json_path_size = full_info->output_value_size;
 
         // Iterate over each component string
-        for (const wchar_t *curr_path = full_info->output_string; curr_path[0] != '\0'; curr_path += wcslen(curr_path) + 1) {
+        for (const wchar_t* curr_path = full_info->output_string; curr_path[0] != '\0'; curr_path += wcslen(curr_path) + 1) {
             // json_path is only sized to the UTF-16 byte length, but the UTF-8 form can be longer (a U+0800-U+FFFF code
             // point takes 2 bytes in UTF-16 and 3 in UTF-8). When it does not fit, WideCharToMultiByte returns 0 and does
             // not null-terminate json_path, so use its return value for the length instead of running strlen off the end.
@@ -648,9 +648,9 @@ out:
 }
 
 // Look for data files in the registry.
-VkResult windows_read_data_files_in_registry(const struct loader_instance *inst, enum loader_data_files_type data_file_type,
-                                             bool warn_if_not_present, char *registry_location,
-                                             struct loader_string_list *out_files) {
+VkResult windows_read_data_files_in_registry(const struct loader_instance* inst, enum loader_data_files_type data_file_type,
+                                             bool warn_if_not_present, char* registry_location,
+                                             struct loader_string_list* out_files) {
     VkResult vk_result = VK_SUCCESS;
     struct loader_string_list search_paths = {0};
     uint32_t log_target_flag = 0;
@@ -733,9 +733,9 @@ out:
     return vk_result;
 }
 
-VkResult enumerate_adapter_physical_devices(struct loader_instance *inst, struct loader_icd_term *icd_term, LUID luid,
-                                            uint32_t *icd_phys_devs_array_count,
-                                            struct loader_icd_physical_devices *icd_phys_devs_array) {
+VkResult enumerate_adapter_physical_devices(struct loader_instance* inst, struct loader_icd_term* icd_term, LUID luid,
+                                            uint32_t* icd_phys_devs_array_count,
+                                            struct loader_icd_physical_devices* icd_phys_devs_array) {
     uint32_t count = 0;
     VkResult res = icd_term->scanned_icd->EnumerateAdapterPhysicalDevices(icd_term->instance, luid, &count, NULL);
     if (res == VK_ERROR_OUT_OF_HOST_MEMORY) {
@@ -749,7 +749,7 @@ VkResult enumerate_adapter_physical_devices(struct loader_instance *inst, struct
     }
 
     // Take a pointer to the last element of icd_phys_devs_array to simplify usage
-    struct loader_icd_physical_devices *next_icd_phys_devs = &icd_phys_devs_array[*icd_phys_devs_array_count];
+    struct loader_icd_physical_devices* next_icd_phys_devs = &icd_phys_devs_array[*icd_phys_devs_array_count];
 
     // Get the actual physical devices
     do {
@@ -758,7 +758,7 @@ VkResult enumerate_adapter_physical_devices(struct loader_instance *inst, struct
             return VK_SUCCESS;
         }
 
-        void *new_ptr = loader_instance_heap_realloc(inst, next_icd_phys_devs->physical_devices,
+        void* new_ptr = loader_instance_heap_realloc(inst, next_icd_phys_devs->physical_devices,
                                                      next_icd_phys_devs->device_count * sizeof(VkPhysicalDevice),
                                                      count * sizeof(VkPhysicalDevice), VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
         if (new_ptr == NULL) {
@@ -817,8 +817,8 @@ VkResult enumerate_adapter_physical_devices(struct loader_instance *inst, struct
 // API (such as the Dozen driver which converts vulkan to Dx12), we want to make sure the layered driver appears after the 'native'
 // driver. This function iterates over all physical devices and make sure any with matching LUID's are sorted such that drivers with
 // a underlyingAPI of VK_LAYERED_DRIVER_UNDERLYING_API_D3D12_MSFT are ordered after drivers without it.
-void sort_physical_devices_with_same_luid(struct loader_instance *inst, uint32_t icd_phys_devs_array_count,
-                                          struct loader_icd_physical_devices *icd_phys_devs_array) {
+void sort_physical_devices_with_same_luid(struct loader_instance* inst, uint32_t icd_phys_devs_array_count,
+                                          struct loader_icd_physical_devices* icd_phys_devs_array) {
     bool app_is_vulkan_1_1 = loader_check_version_meets_required(LOADER_VERSION_1_1_0, inst->app_api_version);
 
     for (uint32_t i = 0; icd_phys_devs_array_count > 1 && i < icd_phys_devs_array_count - 1; i++) {
@@ -834,7 +834,7 @@ void sort_physical_devices_with_same_luid(struct loader_instance *inst, uint32_t
             layered_driver_properties_msft.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_LAYERED_DRIVER_PROPERTIES_MSFT;
             VkPhysicalDeviceProperties2 props2 = {0};
             props2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
-            props2.pNext = (void *)&layered_driver_properties_msft;
+            props2.pNext = (void*)&layered_driver_properties_msft;
 
             // Because there may be multiple physical devices associated with each ICD, we need to check each physical device
             // whether it is layered
@@ -871,14 +871,14 @@ void sort_physical_devices_with_same_luid(struct loader_instance *inst, uint32_t
 }
 
 // This function allocates icd_phys_devs_array which must be freed by the caller if not null
-VkResult windows_read_sorted_physical_devices(struct loader_instance *inst, uint32_t *icd_phys_devs_array_count,
-                                              struct loader_icd_physical_devices **icd_phys_devs_array) {
+VkResult windows_read_sorted_physical_devices(struct loader_instance* inst, uint32_t* icd_phys_devs_array_count,
+                                              struct loader_icd_physical_devices** icd_phys_devs_array) {
     VkResult res = VK_SUCCESS;
 
     uint32_t icd_phys_devs_array_size = 0;
-    struct loader_icd_term *icd_term = NULL;
-    IDXGIFactory6 *dxgi_factory = NULL;
-    HRESULT hres = fpCreateDXGIFactory1(&IID_IDXGIFactory6, (void **)&dxgi_factory);
+    struct loader_icd_term* icd_term = NULL;
+    IDXGIFactory6* dxgi_factory = NULL;
+    HRESULT hres = fpCreateDXGIFactory1(&IID_IDXGIFactory6, (void**)&dxgi_factory);
     if (hres != S_OK) {
         loader_log(inst, VULKAN_LOADER_INFO_BIT, 0, "Failed to create DXGI factory 6. Physical devices will not be sorted");
         goto out;
@@ -892,9 +892,9 @@ VkResult windows_read_sorted_physical_devices(struct loader_instance *inst, uint
     }
 
     for (uint32_t i = 0;; ++i) {
-        IDXGIAdapter1 *adapter;
+        IDXGIAdapter1* adapter;
         hres = dxgi_factory->lpVtbl->EnumAdapterByGpuPreference(dxgi_factory, i, DXGI_GPU_PREFERENCE_UNSPECIFIED,
-                                                                &IID_IDXGIAdapter1, (void **)&adapter);
+                                                                &IID_IDXGIAdapter1, (void**)&adapter);
         if (hres == DXGI_ERROR_NOT_FOUND) {
             break;  // No more adapters
         } else if (hres != S_OK) {
@@ -920,7 +920,7 @@ VkResult windows_read_sorted_physical_devices(struct loader_instance *inst, uint
 
             if (icd_phys_devs_array_size <= *icd_phys_devs_array_count) {
                 uint32_t old_size = icd_phys_devs_array_size * sizeof(struct loader_icd_physical_devices);
-                void *new_ptr = loader_instance_heap_realloc(inst, *icd_phys_devs_array, old_size, 2 * old_size,
+                void* new_ptr = loader_instance_heap_realloc(inst, *icd_phys_devs_array, old_size, 2 * old_size,
                                                              VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
                 if (new_ptr == NULL) {
                     adapter->lpVtbl->Release(adapter);
@@ -959,8 +959,8 @@ out:
 
 VkLoaderFeatureFlags windows_initialize_dxgi(void) {
     VkLoaderFeatureFlags feature_flags = 0;
-    IDXGIFactory6 *dxgi_factory = NULL;
-    HRESULT hres = fpCreateDXGIFactory1(&IID_IDXGIFactory6, (void **)&dxgi_factory);
+    IDXGIFactory6* dxgi_factory = NULL;
+    HRESULT hres = fpCreateDXGIFactory1(&IID_IDXGIFactory6, (void**)&dxgi_factory);
     if (hres == S_OK) {
         feature_flags |= VK_LOADER_FEATURE_PHYSICAL_DEVICE_SORTING;
         dxgi_factory->lpVtbl->Release(dxgi_factory);
@@ -971,8 +971,8 @@ VkLoaderFeatureFlags windows_initialize_dxgi(void) {
 // Sort the VkPhysicalDevices that are part of the current group with the list passed in from the sorted list.
 // Multiple groups could have devices out of the same sorted list, however, a single group's devices must all come
 // from the same sorted list.
-void windows_sort_devices_in_group(struct loader_instance *inst, struct VkPhysicalDeviceGroupProperties *group_props,
-                                   struct loader_icd_physical_devices *icd_sorted_list) {
+void windows_sort_devices_in_group(struct loader_instance* inst, struct VkPhysicalDeviceGroupProperties* group_props,
+                                   struct loader_icd_physical_devices* icd_sorted_list) {
     uint32_t cur_index = 0;
     for (uint32_t dev = 0; dev < icd_sorted_list->device_count; ++dev) {
         for (uint32_t grp_dev = cur_index; grp_dev < group_props->physicalDeviceCount; ++grp_dev) {
@@ -994,10 +994,10 @@ void windows_sort_devices_in_group(struct loader_instance *inst, struct VkPhysic
 }
 
 // This function sorts an array in physical device groups based on the sorted physical device information
-VkResult windows_sort_physical_device_groups(struct loader_instance *inst, const uint32_t group_count,
-                                             struct loader_physical_device_group_term *sorted_group_term,
+VkResult windows_sort_physical_device_groups(struct loader_instance* inst, const uint32_t group_count,
+                                             struct loader_physical_device_group_term* sorted_group_term,
                                              const uint32_t sorted_device_count,
-                                             struct loader_icd_physical_devices *sorted_phys_dev_array) {
+                                             struct loader_icd_physical_devices* sorted_phys_dev_array) {
     if (0 == group_count || NULL == sorted_group_term) {
         loader_log(inst, VULKAN_LOADER_WARN_BIT, 0,
                    "windows_sort_physical_device_groups: Called with invalid information (Group count %d, Sorted Info %p)",
@@ -1038,18 +1038,18 @@ VkResult windows_sort_physical_device_groups(struct loader_instance *inst, const
     return VK_SUCCESS;
 }
 
-char *windows_get_app_package_manifest_path(const struct loader_instance *inst, bool *oom) {
+char* windows_get_app_package_manifest_path(const struct loader_instance* inst, bool* oom) {
     *oom = false;
     // These functions are only available on Windows 8 and above, load them dynamically for compatibility with Windows 7
-    typedef LONG(WINAPI * PFN_GetPackagesByPackageFamily)(PCWSTR, UINT32 *, PWSTR *, UINT32 *, WCHAR *);
+    typedef LONG(WINAPI * PFN_GetPackagesByPackageFamily)(PCWSTR, UINT32*, PWSTR*, UINT32*, WCHAR*);
     PFN_GetPackagesByPackageFamily fpGetPackagesByPackageFamily =
-        (PFN_GetPackagesByPackageFamily)(void *)GetProcAddress(GetModuleHandle(TEXT("kernel32.dll")), "GetPackagesByPackageFamily");
+        (PFN_GetPackagesByPackageFamily)(void*)GetProcAddress(GetModuleHandle(TEXT("kernel32.dll")), "GetPackagesByPackageFamily");
     if (!fpGetPackagesByPackageFamily) {
         return NULL;
     }
-    typedef LONG(WINAPI * PFN_GetPackagePathByFullName)(PCWSTR, UINT32 *, PWSTR);
+    typedef LONG(WINAPI * PFN_GetPackagePathByFullName)(PCWSTR, UINT32*, PWSTR);
     PFN_GetPackagePathByFullName fpGetPackagePathByFullName =
-        (PFN_GetPackagePathByFullName)(void *)GetProcAddress(GetModuleHandle(TEXT("kernel32.dll")), "GetPackagePathByFullName");
+        (PFN_GetPackagePathByFullName)(void*)GetProcAddress(GetModuleHandle(TEXT("kernel32.dll")), "GetPackagePathByFullName");
     if (!fpGetPackagePathByFullName) {
         return NULL;
     }
@@ -1065,9 +1065,9 @@ char *windows_get_app_package_manifest_path(const struct loader_instance *inst, 
         return NULL;
     }
 
-    char *ret = NULL;
-    WCHAR *buffer = loader_instance_heap_calloc(inst, sizeof(WCHAR) * bufferLength, VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
-    PWSTR *packages = loader_instance_heap_calloc(inst, sizeof(PWSTR) * numPackages, VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
+    char* ret = NULL;
+    WCHAR* buffer = loader_instance_heap_calloc(inst, sizeof(WCHAR) * bufferLength, VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
+    PWSTR* packages = loader_instance_heap_calloc(inst, sizeof(PWSTR) * numPackages, VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
     if (!buffer || !packages) {
         *oom = true;
         loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0,
@@ -1114,7 +1114,7 @@ cleanup:
     return ret;
 }
 
-VkResult get_settings_path_if_exists_in_registry_key(const struct loader_instance *inst, char **out_path, HKEY key) {
+VkResult get_settings_path_if_exists_in_registry_key(const struct loader_instance* inst, char** out_path, HKEY key) {
     VkResult result = VK_ERROR_INITIALIZATION_FAILED;
 
     char name[MAX_STRING_SIZE] = {0};
@@ -1168,7 +1168,7 @@ VkResult get_settings_path_if_exists_in_registry_key(const struct loader_instanc
     return result;
 }
 
-VkResult windows_get_loader_settings_file_path(const struct loader_instance *inst, char **out_path) {
+VkResult windows_get_loader_settings_file_path(const struct loader_instance* inst, char** out_path) {
     VkResult result = VK_SUCCESS;
     DWORD access_flags = KEY_QUERY_VALUE;
     LONG rtn_value = 0;

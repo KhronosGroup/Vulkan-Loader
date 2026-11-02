@@ -40,8 +40,8 @@
 uint32_t g_loader_debug = 0;
 
 void loader_init_global_debug_level(void) {
-    char *env;
-    char *orig;
+    char* env;
+    char* orig;
 
     if (g_loader_debug > 0) return;
 
@@ -50,7 +50,7 @@ void loader_init_global_debug_level(void) {
     // Parse comma-separated debug options
     orig = env = loader_getenv("VK_LOADER_DEBUG", NULL);
     while (env) {
-        char *p = strchr(env, ',');
+        char* p = strchr(env, ',');
         size_t len;
 
         if (p) {
@@ -90,7 +90,7 @@ void loader_init_global_debug_level(void) {
 void loader_set_global_debug_level(uint32_t new_loader_debug) { g_loader_debug = new_loader_debug; }
 
 // NOLINTNEXTLINE(bugprone-easily-swappable-parameters) - msg_type/cmd_line_size are convertible types, always passed in this order
-void generate_debug_flag_str(VkFlags msg_type, size_t cmd_line_size, char *cmd_line_msg) {
+void generate_debug_flag_str(VkFlags msg_type, size_t cmd_line_size, char* cmd_line_msg) {
     cmd_line_msg[0] = '\0';
 
     if ((msg_type & VULKAN_LOADER_ERROR_BIT) != 0) {
@@ -138,7 +138,7 @@ void generate_debug_flag_str(VkFlags msg_type, size_t cmd_line_size, char *cmd_l
 
 void DECORATE_PRINTF(4, 5)
     // NOLINTNEXTLINE(bugprone-easily-swappable-parameters) - msg_type/msg_code (unused) are convertible types; public API order
-    loader_log(const struct loader_instance *inst, VkFlags msg_type, int32_t msg_code, const char *format, ...) {
+    loader_log(const struct loader_instance* inst, VkFlags msg_type, int32_t msg_code, const char* format, ...) {
     (void)msg_code;
     char msg[512] = {0};
 
@@ -277,8 +277,8 @@ void DECORATE_PRINTF(4, 5)
 #endif
 }
 
-void loader_log_asm_function_not_supported(const struct loader_instance *inst, VkFlags msg_type, int32_t msg_code,
-                                           const char *func_name) {
+void loader_log_asm_function_not_supported(const struct loader_instance* inst, VkFlags msg_type, int32_t msg_code,
+                                           const char* func_name) {
     loader_log(inst, msg_type, msg_code, "Function %s not supported for this physical device", func_name);
 }
 

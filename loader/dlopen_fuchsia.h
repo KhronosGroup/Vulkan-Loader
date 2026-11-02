@@ -23,7 +23,7 @@
 __BEGIN_CDECLS
 
 // If not |driver|, then the request is to load a layer.
-void *dlopen_fuchsia(const char *name, int mode, bool driver);
-const char *dlerror_fuchsia(void);
+void* dlopen_fuchsia(const char* name, int mode, bool driver);
+const char* dlerror_fuchsia(void);
 
 __END_CDECLS

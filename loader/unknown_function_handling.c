@@ -31,34 +31,34 @@
 // known to work with GCC.
 #if !defined(UNKNOWN_FUNCTIONS_SUPPORTED)
 
-void loader_init_dispatch_dev_ext(struct loader_instance *inst, struct loader_device *dev) {
+void loader_init_dispatch_dev_ext(struct loader_instance* inst, struct loader_device* dev) {
     (void)inst;
     (void)dev;
 }
-void *loader_dev_ext_gpa_tramp(struct loader_instance *inst, const char *funcName) {
+void* loader_dev_ext_gpa_tramp(struct loader_instance* inst, const char* funcName) {
     (void)inst;
     (void)funcName;
     return NULL;
 }
-void *loader_dev_ext_gpa_term(struct loader_instance *inst, const char *funcName) {
-    (void)inst;
-    (void)funcName;
-    return NULL;
-}
-
-void *loader_phys_dev_ext_gpa_tramp(struct loader_instance *inst, const char *funcName) {
-    (void)inst;
-    (void)funcName;
-    return NULL;
-}
-void *loader_phys_dev_ext_gpa_term(struct loader_instance *inst, const char *funcName) {
+void* loader_dev_ext_gpa_term(struct loader_instance* inst, const char* funcName) {
     (void)inst;
     (void)funcName;
     return NULL;
 }
 
-void loader_free_dev_ext_table(struct loader_instance *inst) { (void)inst; }
-void loader_free_phys_dev_ext_table(struct loader_instance *inst) { (void)inst; }
+void* loader_phys_dev_ext_gpa_tramp(struct loader_instance* inst, const char* funcName) {
+    (void)inst;
+    (void)funcName;
+    return NULL;
+}
+void* loader_phys_dev_ext_gpa_term(struct loader_instance* inst, const char* funcName) {
+    (void)inst;
+    (void)funcName;
+    return NULL;
+}
+
+void loader_free_dev_ext_table(struct loader_instance* inst) { (void)inst; }
+void loader_free_phys_dev_ext_table(struct loader_instance* inst) { (void)inst; }
 
 #else
 
@@ -67,9 +67,9 @@ void loader_free_phys_dev_ext_table(struct loader_instance *inst) { (void)inst; 
 #include "log.h"
 
 // Forward declarations
-void *loader_get_dev_ext_trampoline(uint32_t index);
-void *loader_get_phys_dev_ext_tramp(uint32_t index);
-void *loader_get_phys_dev_ext_termin(uint32_t index);
+void* loader_get_dev_ext_trampoline(uint32_t index);
+void* loader_get_phys_dev_ext_tramp(uint32_t index);
+void* loader_get_phys_dev_ext_termin(uint32_t index);
 
 // Device function handling
 
@@ -80,16 +80,16 @@ void *loader_get_phys_dev_ext_termin(uint32_t index);
 // The initialization value is gotten by calling down the device chain with
 // GDPA.
 // If GDPA returns NULL then don't initialize the dispatch table entry.
-void loader_init_dispatch_dev_ext_entry(struct loader_instance *inst, struct loader_device *dev, uint32_t idx, const char *funcName)
+void loader_init_dispatch_dev_ext_entry(struct loader_instance* inst, struct loader_device* dev, uint32_t idx, const char* funcName)
 
 {
-    void *gdpa_value;
+    void* gdpa_value;
     if (dev != NULL) {
         gdpa_value = dev->loader_dispatch.core_dispatch.GetDeviceProcAddr(dev->chain_device, funcName);
         if (gdpa_value != NULL) dev->loader_dispatch.ext_dispatch[idx] = (PFN_vkDevExt)gdpa_value;
     } else {
-        for (struct loader_icd_term *icd_term = inst->icd_terms; icd_term != NULL; icd_term = icd_term->next) {
-            struct loader_device *ldev = icd_term->logical_device_list;
+        for (struct loader_icd_term* icd_term = inst->icd_terms; icd_term != NULL; icd_term = icd_term->next) {
+            struct loader_device* ldev = icd_term->logical_device_list;
             while (ldev) {
                 gdpa_value = ldev->loader_dispatch.core_dispatch.GetDeviceProcAddr(ldev->chain_device, funcName);
                 if (gdpa_value != NULL) ldev->loader_dispatch.ext_dispatch[idx] = (PFN_vkDevExt)gdpa_value;
@@ -101,15 +101,15 @@ void loader_init_dispatch_dev_ext_entry(struct loader_instance *inst, struct loa
 
 // Find all dev extension in the function names array  and initialize the dispatch table
 // for dev  for each of those extension entrypoints found in function names array.
-void loader_init_dispatch_dev_ext(struct loader_instance *inst, struct loader_device *dev) {
+void loader_init_dispatch_dev_ext(struct loader_instance* inst, struct loader_device* dev) {
     for (uint32_t i = 0; i < MAX_NUM_UNKNOWN_EXTS; i++) {
         if (inst->dev_ext_disp_functions[i] != NULL)
             loader_init_dispatch_dev_ext_entry(inst, dev, i, inst->dev_ext_disp_functions[i]);
     }
 }
 
-bool loader_check_icds_for_dev_ext_address(struct loader_instance *inst, const char *funcName) {
-    struct loader_icd_term *icd_term;
+bool loader_check_icds_for_dev_ext_address(struct loader_instance* inst, const char* funcName) {
+    struct loader_icd_term* icd_term;
     icd_term = inst->icd_terms;
     while (NULL != icd_term) {
         if (icd_term->scanned_icd->GetInstanceProcAddr(icd_term->instance, funcName))
@@ -123,15 +123,15 @@ bool loader_check_icds_for_dev_ext_address(struct loader_instance *inst, const c
 
 // Look in the layers list of device extensions, which contain names of entry points. If funcName is present, return true
 // If not, call down the first layer's vkGetInstanceProcAddr to determine if any layers support the function
-bool loader_check_layer_list_for_dev_ext_address(struct loader_instance *inst, const char *funcName) {
+bool loader_check_layer_list_for_dev_ext_address(struct loader_instance* inst, const char* funcName) {
     // Iterate over the layers.
     for (uint32_t layer = 0; layer < inst->expanded_activated_layer_list.count; ++layer) {
         // Iterate over the extensions.
-        const struct loader_device_extension_list *const extensions =
+        const struct loader_device_extension_list* const extensions =
             &(inst->expanded_activated_layer_list.list[layer]->device_extension_list);
         for (uint32_t extension = 0; extension < extensions->count; ++extension) {
             // Iterate over the entry points.
-            const struct loader_dev_ext_props *const property = &(extensions->list[extension]);
+            const struct loader_dev_ext_props* const property = &(extensions->list[extension]);
             for (uint32_t entry = 0; entry < property->entrypoints.count; ++entry) {
                 if (strcmp(property->entrypoints.list[entry], funcName) == 0) {
                     return true;
@@ -142,7 +142,7 @@ bool loader_check_layer_list_for_dev_ext_address(struct loader_instance *inst, c
     // If the function pointer doesn't appear in the layer manifest for intercepted device functions, look down the
     // vkGetInstanceProcAddr chain
     if (inst->expanded_activated_layer_list.count > 0) {
-        const struct loader_layer_functions *const functions = &(inst->expanded_activated_layer_list.list[0]->functions);
+        const struct loader_layer_functions* const functions = &(inst->expanded_activated_layer_list.list[0]->functions);
         if (NULL != functions->get_instance_proc_addr) {
             return NULL != functions->get_instance_proc_addr(inst->instance, funcName);
         }
@@ -151,11 +151,11 @@ bool loader_check_layer_list_for_dev_ext_address(struct loader_instance *inst, c
     return false;
 }
 
-void loader_free_dev_ext_table(struct loader_instance *inst) {
+void loader_free_dev_ext_table(struct loader_instance* inst) {
     for (uint32_t i = 0; i < inst->dev_ext_disp_function_count; i++) {
         loader_instance_heap_free(inst, inst->dev_ext_disp_functions[i]);
     }
-    memset((void *)inst->dev_ext_disp_functions, 0, sizeof(inst->dev_ext_disp_functions));
+    memset((void*)inst->dev_ext_disp_functions, 0, sizeof(inst->dev_ext_disp_functions));
 }
 
 /*
@@ -175,7 +175,7 @@ void loader_free_dev_ext_table(struct loader_instance *inst) {
  * NULL is returned if the function name array is full or if no discovered layer or
  * ICD returns a non-NULL GetProcAddr for it.
  */
-void *loader_dev_ext_gpa_impl(struct loader_instance *inst, const char *funcName, bool is_tramp) {
+void* loader_dev_ext_gpa_impl(struct loader_instance* inst, const char* funcName, bool is_tramp) {
     // Linearly look through already added functions to make sure we haven't seen it before
     // if we have, return the function at the index found
     for (uint32_t i = 0; i < inst->dev_ext_disp_function_count; i++) {
@@ -198,7 +198,7 @@ void *loader_dev_ext_gpa_impl(struct loader_instance *inst, const char *funcName
     // add found function to dev_ext_disp_functions;
     size_t funcName_len = strlen(funcName) + 1;
     inst->dev_ext_disp_functions[inst->dev_ext_disp_function_count] =
-        (char *)loader_instance_heap_calloc(inst, funcName_len, VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
+        (char*)loader_instance_heap_calloc(inst, funcName_len, VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
     if (NULL == inst->dev_ext_disp_functions[inst->dev_ext_disp_function_count]) {
         // failed to allocate memory, return NULL
         return NULL;
@@ -206,7 +206,7 @@ void *loader_dev_ext_gpa_impl(struct loader_instance *inst, const char *funcName
     loader_strncpy(inst->dev_ext_disp_functions[inst->dev_ext_disp_function_count], funcName_len, funcName, funcName_len);
     // init any dev dispatch table entries as needed
     loader_init_dispatch_dev_ext_entry(inst, NULL, inst->dev_ext_disp_function_count, funcName);
-    void *out_function = loader_get_dev_ext_trampoline(inst->dev_ext_disp_function_count);
+    void* out_function = loader_get_dev_ext_trampoline(inst->dev_ext_disp_function_count);
     inst->dev_ext_disp_function_count++;
     return out_function;
 }
@@ -215,24 +215,24 @@ void *loader_dev_ext_gpa_impl(struct loader_instance *inst, const char *funcName
 // instance's unknown function name table and walks the driver and logical device lists, all of which
 // vkCreateDevice/vkDestroyDevice/vkEnumeratePhysicalDevices mutate under that lock, while vkGetInstanceProcAddr takes
 // no lock of its own. loader_lock is recursive, so callers which already hold it are unaffected.
-void *loader_dev_ext_gpa_tramp(struct loader_instance *inst, const char *funcName) {
+void* loader_dev_ext_gpa_tramp(struct loader_instance* inst, const char* funcName) {
     loader_platform_thread_lock_mutex(&loader_lock);
-    void *addr = loader_dev_ext_gpa_impl(inst, funcName, true);
+    void* addr = loader_dev_ext_gpa_impl(inst, funcName, true);
     loader_platform_thread_unlock_mutex(&loader_lock);
     return addr;
 }
 
-void *loader_dev_ext_gpa_term(struct loader_instance *inst, const char *funcName) {
+void* loader_dev_ext_gpa_term(struct loader_instance* inst, const char* funcName) {
     loader_platform_thread_lock_mutex(&loader_lock);
-    void *addr = loader_dev_ext_gpa_impl(inst, funcName, false);
+    void* addr = loader_dev_ext_gpa_impl(inst, funcName, false);
     loader_platform_thread_unlock_mutex(&loader_lock);
     return addr;
 }
 
 // Physical Device function handling
 
-bool loader_check_icds_for_phys_dev_ext_address(struct loader_instance *inst, const char *funcName) {
-    struct loader_icd_term *icd_term;
+bool loader_check_icds_for_phys_dev_ext_address(struct loader_instance* inst, const char* funcName) {
+    struct loader_icd_term* icd_term;
     icd_term = inst->icd_terms;
     while (NULL != icd_term) {
         if (icd_term->scanned_icd->interface_version >= MIN_PHYS_DEV_EXTENSION_ICD_INTERFACE_VERSION &&
@@ -246,14 +246,14 @@ bool loader_check_icds_for_phys_dev_ext_address(struct loader_instance *inst, co
     return false;
 }
 
-bool loader_check_layer_list_for_phys_dev_ext_address(struct loader_instance *inst, const char *funcName) {
+bool loader_check_layer_list_for_phys_dev_ext_address(struct loader_instance* inst, const char* funcName) {
     for (uint32_t layer = 0; layer < inst->expanded_activated_layer_list.count; layer++) {
-        struct loader_layer_properties *layer_prop_list = inst->expanded_activated_layer_list.list[layer];
+        struct loader_layer_properties* layer_prop_list = inst->expanded_activated_layer_list.list[layer];
         // Find the first layer in the call chain which supports vk_layerGetPhysicalDeviceProcAddr
         // and call that, returning whether it found a valid pointer for this function name.
         // We return if the topmost layer supports GPDPA since the layer should call down the chain for us.
         if (layer_prop_list->interface_version > 1) {
-            const struct loader_layer_functions *const functions = &(layer_prop_list->functions);
+            const struct loader_layer_functions* const functions = &(layer_prop_list->functions);
             if (NULL != functions->get_physical_device_proc_addr) {
                 return NULL != functions->get_physical_device_proc_addr(inst->instance, funcName);
             }
@@ -262,11 +262,11 @@ bool loader_check_layer_list_for_phys_dev_ext_address(struct loader_instance *in
     return false;
 }
 
-void loader_free_phys_dev_ext_table(struct loader_instance *inst) {
+void loader_free_phys_dev_ext_table(struct loader_instance* inst) {
     for (uint32_t i = 0; i < MAX_NUM_UNKNOWN_EXTS; i++) {
         loader_instance_heap_free(inst, inst->phys_dev_ext_disp_functions[i]);
     }
-    memset((void *)inst->phys_dev_ext_disp_functions, 0, sizeof(inst->phys_dev_ext_disp_functions));
+    memset((void*)inst->phys_dev_ext_disp_functions, 0, sizeof(inst->phys_dev_ext_disp_functions));
 }
 
 // This function returns a generic trampoline or terminator function
@@ -281,7 +281,7 @@ void loader_free_phys_dev_ext_table(struct loader_instance *inst) {
 // If so then a new entry in the function name array is added.
 // Null is returned if discovered layer or ICD returns a non-NULL GetProcAddr for it
 // or if the function name table is full.
-void *loader_phys_dev_ext_gpa_impl(struct loader_instance *inst, const char *funcName, bool is_tramp) {
+void* loader_phys_dev_ext_gpa_impl(struct loader_instance* inst, const char* funcName, bool is_tramp) {
     assert(NULL != inst);
 
     // We should always check to see if any ICD supports it.
@@ -320,7 +320,7 @@ void *loader_phys_dev_ext_gpa_impl(struct loader_instance *inst, const char *fun
         // add found function to phys_dev_ext_disp_functions;
         size_t funcName_len = strlen(funcName) + 1;
         inst->phys_dev_ext_disp_functions[inst->phys_dev_ext_disp_function_count] =
-            (char *)loader_instance_heap_calloc(inst, funcName_len, VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
+            (char*)loader_instance_heap_calloc(inst, funcName_len, VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
         if (NULL == inst->phys_dev_ext_disp_functions[inst->phys_dev_ext_disp_function_count]) {
             // failed to allocate memory, return NULL
             return NULL;
@@ -334,7 +334,7 @@ void *loader_phys_dev_ext_gpa_impl(struct loader_instance *inst, const char *fun
     }
 
     // Setup the ICD function pointers
-    struct loader_icd_term *icd_term = inst->icd_terms;
+    struct loader_icd_term* icd_term = inst->icd_terms;
     while (NULL != icd_term) {
         if (MIN_PHYS_DEV_EXTENSION_ICD_INTERFACE_VERSION <= icd_term->scanned_icd->interface_version &&
             NULL != icd_term->scanned_icd->GetPhysicalDeviceProcAddr) {
@@ -359,9 +359,9 @@ void *loader_phys_dev_ext_gpa_impl(struct loader_instance *inst, const char *fun
     // point. Only set the instance dispatch table to it if it isn't NULL.
     if (is_tramp) {
         for (uint32_t i = 0; i < inst->expanded_activated_layer_list.count; i++) {
-            struct loader_layer_properties *layer_prop = inst->expanded_activated_layer_list.list[i];
+            struct loader_layer_properties* layer_prop = inst->expanded_activated_layer_list.list[i];
             if (layer_prop->interface_version > 1 && NULL != layer_prop->functions.get_physical_device_proc_addr) {
-                void *layer_ret_function =
+                void* layer_ret_function =
                     (PFN_PhysDevExt)layer_prop->functions.get_physical_device_proc_addr(inst->instance, funcName);
                 if (NULL != layer_ret_function) {
                     inst->disp->phys_dev_ext[new_function_index] = layer_ret_function;
@@ -380,15 +380,15 @@ void *loader_phys_dev_ext_gpa_impl(struct loader_instance *inst, const char *fun
 }
 // Main interface functions, makes it clear whether it is getting a terminator or trampoline. Both hold loader_lock for
 // the same reason as the device variants above.
-void *loader_phys_dev_ext_gpa_tramp(struct loader_instance *inst, const char *funcName) {
+void* loader_phys_dev_ext_gpa_tramp(struct loader_instance* inst, const char* funcName) {
     loader_platform_thread_lock_mutex(&loader_lock);
-    void *addr = loader_phys_dev_ext_gpa_impl(inst, funcName, true);
+    void* addr = loader_phys_dev_ext_gpa_impl(inst, funcName, true);
     loader_platform_thread_unlock_mutex(&loader_lock);
     return addr;
 }
-void *loader_phys_dev_ext_gpa_term(struct loader_instance *inst, const char *funcName) {
+void* loader_phys_dev_ext_gpa_term(struct loader_instance* inst, const char* funcName) {
     loader_platform_thread_lock_mutex(&loader_lock);
-    void *addr = loader_phys_dev_ext_gpa_impl(inst, funcName, false);
+    void* addr = loader_phys_dev_ext_gpa_impl(inst, funcName, false);
     loader_platform_thread_unlock_mutex(&loader_lock);
     return addr;
 }

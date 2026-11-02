@@ -43,7 +43,7 @@ void windows_initialization(void);
 // Append the JSON path data to the list and allocate/grow the list if it's not large enough.
 // Function returns true if filename was appended to reg_data list.
 // Caller should free reg_data.
-VkResult windows_add_json_entry(const struct loader_instance *inst, struct loader_string_list *search_paths,
+VkResult windows_add_json_entry(const struct loader_instance* inst, struct loader_string_list* search_paths,
                                 LPCSTR key_name,  // key name - used for debug prints - i.e. VulkanDriverName
                                 DWORD key_type,   // key data type
                                 LPSTR json_path,  // JSON string to add to the list reg_data
@@ -55,7 +55,7 @@ VkResult windows_add_json_entry(const struct loader_instance *inst, struct loade
 // This function looks for filename in given device handle, filename is then added to return list
 // function return true if filename was appended to reg_data list
 // If error occurs result is updated with failure reason
-VkResult windows_get_device_registry_entry(const struct loader_instance *inst, struct loader_string_list *search_paths,
+VkResult windows_get_device_registry_entry(const struct loader_instance* inst, struct loader_string_list* search_paths,
                                            DEVINST dev_id, LPCSTR value_name);
 
 // Find the list of registry files (names VulkanDriverName/VulkanDriverNameWow) in hkr .
@@ -69,8 +69,8 @@ VkResult windows_get_device_registry_entry(const struct loader_instance *inst, s
 //
 // *reg_data contains a string list of filenames as pointer.
 // When done using the returned string list, the caller should free the pointer.
-VkResult windows_get_device_registry_files(const struct loader_instance *inst, uint32_t log_target_flag,
-                                           struct loader_string_list *search_paths, LPCSTR value_name);
+VkResult windows_get_device_registry_files(const struct loader_instance* inst, uint32_t log_target_flag,
+                                           struct loader_string_list* search_paths, LPCSTR value_name);
 
 // Find the list of registry files (names within a key) in key "location".
 //
@@ -85,27 +85,27 @@ VkResult windows_get_device_registry_files(const struct loader_instance *inst, u
 //
 // *reg_data contains a string list of filenames as pointer.
 // When done using the returned string list, the caller should free the pointer.
-VkResult windows_get_registry_files(const struct loader_instance *inst, char *location, bool use_secondary_hive,
-                                    struct loader_string_list *search_paths);
+VkResult windows_get_registry_files(const struct loader_instance* inst, char* location, bool use_secondary_hive,
+                                    struct loader_string_list* search_paths);
 
 // Read manifest JSON files using the Windows driver interface
-VkResult windows_read_manifest_from_d3d_adapters(const struct loader_instance *inst, struct loader_string_list *search_paths,
-                                                 const wchar_t *value_name);
+VkResult windows_read_manifest_from_d3d_adapters(const struct loader_instance* inst, struct loader_string_list* search_paths,
+                                                 const wchar_t* value_name);
 
 // Look for data files in the registry.
-VkResult windows_read_data_files_in_registry(const struct loader_instance *inst, enum loader_data_files_type data_file_type,
-                                             bool warn_if_not_present, char *registry_location,
-                                             struct loader_string_list *out_files);
+VkResult windows_read_data_files_in_registry(const struct loader_instance* inst, enum loader_data_files_type data_file_type,
+                                             bool warn_if_not_present, char* registry_location,
+                                             struct loader_string_list* out_files);
 
 // This function allocates an array in sorted_devices which must be freed by the caller if not null
-VkResult windows_read_sorted_physical_devices(struct loader_instance *inst, uint32_t *icd_phys_devs_array_count,
-                                              struct loader_icd_physical_devices **icd_phys_devs_array);
+VkResult windows_read_sorted_physical_devices(struct loader_instance* inst, uint32_t* icd_phys_devs_array_count,
+                                              struct loader_icd_physical_devices** icd_phys_devs_array);
 
 // This function sorts an array in physical device groups based on the sorted physical device information
-VkResult windows_sort_physical_device_groups(struct loader_instance *inst, const uint32_t group_count,
-                                             struct loader_physical_device_group_term *sorted_group_term,
+VkResult windows_sort_physical_device_groups(struct loader_instance* inst, const uint32_t group_count,
+                                             struct loader_physical_device_group_term* sorted_group_term,
                                              const uint32_t sorted_device_count,
-                                             struct loader_icd_physical_devices *sorted_phys_dev_array);
+                                             struct loader_icd_physical_devices* sorted_phys_dev_array);
 
 // Creates a DXGI factory
 // Returns VkLoaderFeatureFlags containing VK_LOADER_FEATURE_PHYSICAL_DEVICE_SORTING if successful, otherwise 0
@@ -113,11 +113,11 @@ VkLoaderFeatureFlags windows_initialize_dxgi(void);
 
 // Retrieve a path to an installed app package that contains Vulkan manifests.
 // When done using the returned string, the caller should free the pointer.
-char *windows_get_app_package_manifest_path(const struct loader_instance *inst, bool *oom);
+char* windows_get_app_package_manifest_path(const struct loader_instance* inst, bool* oom);
 
 // Gets the path to the loader settings file, if it exists. If it doesn't exists, writes NULL to out_path.
 // The path is located through the registry as an entry in HKEY_CURRENT_USER/SOFTWARE/Khronos/Vulkan/LoaderSettings
 // and if nothing is there, will try to look in HKEY_LOCAL_MACHINE/SOFTWARE/Khronos/Vulkan/LoaderSettings.
 // If running with elevated privileges, this function only looks in HKEY_LOCAL_MACHINE.
-VkResult windows_get_loader_settings_file_path(const struct loader_instance *inst, char **out_path);
+VkResult windows_get_loader_settings_file_path(const struct loader_instance* inst, char** out_path);
 #endif  // WIN32

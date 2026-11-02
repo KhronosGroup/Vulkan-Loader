@@ -28,6 +28,8 @@
 
 #include <vector>
 
+// clang-format off
+
 // Macro to ease the definition of variables with builder member functions
 // type = type of the variable
 // name = name of the variable
@@ -62,3 +64,5 @@
         this->name.push_back(std::move(singular_name));               \
         return *this;                                                 \
     }
+
+// clang-format on

@@ -38,18 +38,18 @@ struct loader_string_list;
 //
 // @return -  A pointer to a cJSON object representing the JSON parse tree.
 //            This returned buffer should be freed by caller.
-TEST_FUNCTION_EXPORT VkResult loader_get_json(const struct loader_instance *inst, const char *filename, cJSON **json);
+TEST_FUNCTION_EXPORT VkResult loader_get_json(const struct loader_instance* inst, const char* filename, cJSON** json);
 
 // Given a cJSON object, find the string associated with the key and puts an pre-allocated string into out_string.
 // Length is given by out_str_len, and this function truncates the string with a null terminator if it the provided space isn't
 // large enough.
-VkResult loader_parse_json_string_to_existing_str(cJSON *object, const char *key, size_t out_str_len, char *out_string);
+VkResult loader_parse_json_string_to_existing_str(cJSON* object, const char* key, size_t out_str_len, char* out_string);
 
 // Given a cJSON object, find the string associated with the key and puts an allocated string into out_string.
 // It is the callers responsibility to free out_string.
-VkResult loader_parse_json_string(cJSON *object, const char *key, char **out_string);
+VkResult loader_parse_json_string(cJSON* object, const char* key, char** out_string);
 
 // Given a cJSON object, find the array of strings associated with they key and writes the count into out_count and data into
 // out_array_of_strings. It is the callers responsibility to free out_array_of_strings.
-VkResult loader_parse_json_array_of_strings(const struct loader_instance *inst, cJSON *object, const char *key,
-                                            struct loader_string_list *string_list);
+VkResult loader_parse_json_array_of_strings(const struct loader_instance* inst, cJSON* object, const char* key,
+                                            struct loader_string_list* string_list);

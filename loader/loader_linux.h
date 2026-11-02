@@ -27,12 +27,12 @@
 #include "loader_common.h"
 
 // This function allocates an array in sorted_devices which must be freed by the caller if not null
-VkResult linux_read_sorted_physical_devices(struct loader_instance *inst, uint32_t icd_count,
-                                            struct loader_icd_physical_devices *icd_devices, uint32_t phys_dev_count,
-                                            struct loader_physical_device_term **sorted_device_term);
+VkResult linux_read_sorted_physical_devices(struct loader_instance* inst, uint32_t icd_count,
+                                            struct loader_icd_physical_devices* icd_devices, uint32_t phys_dev_count,
+                                            struct loader_physical_device_term** sorted_device_term);
 
 // This function sorts an array in physical device groups
-VkResult linux_sort_physical_device_groups(struct loader_instance *inst, uint32_t group_count,
-                                           struct loader_physical_device_group_term *sorted_group_term);
+VkResult linux_sort_physical_device_groups(struct loader_instance* inst, uint32_t group_count,
+                                           struct loader_physical_device_group_term* sorted_group_term);
 
 #endif  // LOADER_ENABLE_LINUX_SORT
