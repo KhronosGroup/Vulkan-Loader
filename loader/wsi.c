@@ -721,7 +721,7 @@ VkResult allocate_icd_surface_struct(struct loader_instance* instance, size_t ba
     VkIcdSurface* icd_surface = NULL;
     VkResult res = loader_get_next_available_entry(instance, &instance->surfaces_list, &next_index, pAllocator);
     if (res != VK_SUCCESS) {
-        goto out;
+        return res;
     }
 
     // Next, if so, proceed with the implementation of this function:
@@ -761,6 +761,8 @@ VkResult allocate_icd_surface_struct(struct loader_instance* instance, size_t ba
 out:
     if (res != VK_SUCCESS) {
         loader_instance_heap_free(instance, icd_surface);
+        // Give back the slot reserved above, the caller has no surface to release it through
+        loader_release_object_from_list(&instance->surfaces_list, next_index);
         // cleanup of icd_term->surface_list is done during instance destruction
     }
     return res;
