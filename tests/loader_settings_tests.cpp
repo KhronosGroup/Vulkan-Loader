@@ -1529,6 +1529,50 @@ TEST(SettingsFile, EnvVarsWork_VK_LOADER_LAYERS_DISABLE) {
     ASSERT_TRUE(string_eq(layers.at(0).layerName, explicit_layer_name));
 }
 
+// ~implicit~ and ~explicit~ in VK_LOADER_LAYERS_DISABLE must only affect layers of that type when the settings file is active
+TEST(SettingsFile, VK_LOADER_LAYERS_DISABLE_ImplicitExplicitMatchLayerType) {
+    FrameworkEnvironment env{};
+    env.add_icd(TEST_ICD_PATH_VERSION_2).add_physical_device({});
+
+    const char* explicit_layer_name = "VK_LAYER_Regular_TestLayer1";
+    env.add_explicit_layer(
+        {}, ManifestLayer{}.add_layer(
+                ManifestLayer::LayerDescription{}.set_name(explicit_layer_name).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)));
+    const char* implicit_layer_name = "VK_LAYER_Implicit_TestLayer1";
+    env.add_implicit_layer({}, ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                             .set_name(implicit_layer_name)
+                                                             .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                             .set_disable_environment("DISABLE_ME")));
+
+    env.update_loader_settings(env.loader_settings.add_app_specific_setting(
+        AppSpecificSettings{}
+            .add_layer_configuration(LoaderSettingsLayerConfiguration{}
+                                         .set_name(explicit_layer_name)
+                                         .set_control("auto")
+                                         .set_path(env.get_shimmed_layer_manifest_path(0)))
+            .add_layer_configuration(LoaderSettingsLayerConfiguration{}
+                                         .set_name(implicit_layer_name)
+                                         .set_control("auto")
+                                         .set_path(env.get_shimmed_layer_manifest_path(1))
+                                         .set_treat_as_implicit_manifest(true))));
+    {
+        EnvVarWrapper layers_disable{"VK_LOADER_LAYERS_DISABLE", "~implicit~"};
+        InstWrapper inst{env.vulkan_functions};
+        inst.create_info.add_layer(explicit_layer_name);
+        inst.CheckCreate();
+        auto layers = inst.GetActiveLayers(inst.GetPhysDev(), 1);
+        ASSERT_TRUE(string_eq(layers.at(0).layerName, explicit_layer_name));
+    }
+    {
+        EnvVarWrapper layers_disable{"VK_LOADER_LAYERS_DISABLE", "~explicit~"};
+        InstWrapper inst{env.vulkan_functions};
+        inst.create_info.add_layer(explicit_layer_name);
+        inst.CheckCreate();
+        auto layers = inst.GetActiveLayers(inst.GetPhysDev(), 1);
+        ASSERT_TRUE(string_eq(layers.at(0).layerName, implicit_layer_name));
+    }
+}
+
 #if defined(WIN32)
 TEST(SettingsFile, MultipleKeysInRegistryInUnsecureLocation) {
     FrameworkEnvironment env{};
