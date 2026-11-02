@@ -1213,7 +1213,10 @@ VkResult enable_correct_layers_from_settings(struct loader_instance* inst, const
             props->enabled_by_what = ENABLED_BY_WHAT_LOADER_SETTINGS_FILE;
         } else {
             // Check if disable filter needs to skip the layer
-            if ((filters->disable_filter.disable_all || filters->disable_filter.disable_all_implicit ||
+            bool is_implicit = (0 == (props->type_flags & VK_LAYER_TYPE_FLAG_EXPLICIT_LAYER));
+            bool disabled_by_type =
+                is_implicit ? filters->disable_filter.disable_all_implicit : filters->disable_filter.disable_all_explicit;
+            if ((filters->disable_filter.disable_all || disabled_by_type ||
                  check_name_matches_filter_environment_var(props->info.layerName, &filters->disable_filter.additional_filters)) &&
                 !check_name_matches_filter_environment_var(props->info.layerName, &filters->allow_filter)) {
                 // Report a message that we've forced off a layer if it would have been enabled normally.
