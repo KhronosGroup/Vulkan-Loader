@@ -549,6 +549,77 @@ TEST(Allocation, CreateSurfaceIntentionalAllocFail) {
     }
 }
 
+// Forwards to malloc/realloc/free so every block is exactly the requested size, and refuses allocations of one size while
+// armed.
+struct SizeFilteredAllocator {
+    size_t fail_size = 0;
+    bool armed = false;
+    size_t failures = 0;
+    VkAllocationCallbacks callbacks{};
+
+    explicit SizeFilteredAllocator(size_t size_to_fail) : fail_size(size_to_fail) {
+        callbacks.pUserData = this;
+        callbacks.pfnAllocation = allocation;
+        callbacks.pfnReallocation = reallocation;
+        callbacks.pfnFree = deallocation;
+    }
+    VkAllocationCallbacks* get() { return &callbacks; }
+
+    bool should_fail(size_t size) {
+        if (armed && size == fail_size) {
+            failures++;
+            return true;
+        }
+        return false;
+    }
+    static VKAPI_ATTR void* VKAPI_CALL allocation(void* pUserData, size_t size, size_t, VkSystemAllocationScope) {
+        auto* self = reinterpret_cast<SizeFilteredAllocator*>(pUserData);
+        return self->should_fail(size) ? nullptr : malloc(size);
+    }
+    static VKAPI_ATTR void* VKAPI_CALL reallocation(void* pUserData, void* pOriginal, size_t size, size_t,
+                                                    VkSystemAllocationScope) {
+        auto* self = reinterpret_cast<SizeFilteredAllocator*>(pUserData);
+        return self->should_fail(size) ? nullptr : realloc(pOriginal, size);
+    }
+    static VKAPI_ATTR void VKAPI_CALL deallocation(void*, void* pMemory) { free(pMemory); }
+};
+
+// A failed surface creation must give back the slot it reserved in the instance's surface list. Otherwise every failure
+// pushes the next surface's index further along, until it lands past the end of a driver's freshly allocated surface list.
+TEST(Allocation, CreateSurfaceFailureReleasesSurfaceSlot) {
+    FrameworkEnvironment env{};
+    env.add_icd(TEST_ICD_PATH_VERSION_2)
+        .setup_WSI()
+        .add_physical_device(PhysicalDevice{}.add_queue_family_properties({{VK_QUEUE_GRAPHICS_BIT, 1, 0, {1, 1, 1}}, true}));
+
+    // The driver's surface list starts out with room for 32 surfaces
+    SizeFilteredAllocator allocator{32 * sizeof(VkSurfaceKHR)};
+    {
+        InstWrapper inst{env.vulkan_functions, allocator.get()};
+        inst.create_info.setup_WSI();
+        ASSERT_NO_FATAL_FAILURE(inst.CheckCreate());
+        VkPhysicalDevice phys_dev = inst.GetPhysDev();
+
+        allocator.armed = true;
+        for (uint32_t i = 0; i < 32; i++) {
+            VkSurfaceKHR surface{};
+            ASSERT_EQ(VK_ERROR_OUT_OF_HOST_MEMORY, create_surface(inst, surface));
+        }
+        allocator.armed = false;
+        ASSERT_EQ(allocator.failures, 32U);
+
+        VkSurfaceKHR surface{};
+        ASSERT_EQ(VK_SUCCESS, create_surface(inst, surface));
+
+        // The driver must be handed its own surface, not the loader's
+        VkBool32 supported = VK_FALSE;
+        ASSERT_EQ(VK_SUCCESS, env.vulkan_functions.vkGetPhysicalDeviceSurfaceSupportKHR(phys_dev, 0, surface, &supported));
+        ASSERT_EQ(VK_TRUE, supported);
+
+        env.vulkan_functions.vkDestroySurfaceKHR(inst.inst, surface, nullptr);
+    }
+}
+
 static VKAPI_ATTR VkBool32 VKAPI_CALL noop_debug_utils_callback(VkDebugUtilsMessageSeverityFlagBitsEXT,
                                                                 VkDebugUtilsMessageTypeFlagsEXT,
                                                                 const VkDebugUtilsMessengerCallbackDataEXT*, void*) {
