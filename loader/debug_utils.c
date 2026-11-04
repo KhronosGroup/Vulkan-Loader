@@ -256,13 +256,7 @@ out:
                     icd_term->debug_utils_messenger_list.list[next_index] = VK_NULL_HANDLE;
                 }
             }
-        }
-        if (index_reserved && inst->debug_utils_messengers_list.list &&
-            inst->debug_utils_messengers_list.capacity > next_index * sizeof(struct loader_used_object_status)) {
-            inst->debug_utils_messengers_list.list[next_index].status = VK_FALSE;
-            if (NULL != pAllocator) {
-                inst->debug_utils_messengers_list.list[next_index].allocation_callbacks = *pAllocator;
-            }
+            loader_release_object_from_list(&inst->debug_utils_messengers_list, next_index);
         }
         loader_free_with_instance_fallback(pAllocator, inst, new_dbg_func_node);
         loader_free_with_instance_fallback(pAllocator, inst, pNextIndex);
@@ -294,14 +288,7 @@ VKAPI_ATTR void VKAPI_CALL terminator_DestroyDebugUtilsMessengerEXT(VkInstance i
     }
 
     util_DestroyDebugUtilsMessenger(inst, messenger, pAllocator);
-    if (inst->debug_utils_messengers_list.list &&
-        inst->debug_utils_messengers_list.capacity > (*debug_messenger_index) * sizeof(struct loader_used_object_status)) {
-        inst->debug_utils_messengers_list.list[*debug_messenger_index].status = VK_FALSE;
-        if (NULL != pAllocator) {
-            inst->debug_utils_messengers_list.list[*debug_messenger_index].allocation_callbacks = *pAllocator;
-        }
-    }
-
+    loader_release_object_from_list(&inst->debug_utils_messengers_list, *debug_messenger_index);
     loader_free_with_instance_fallback(pAllocator, inst, debug_messenger_index);
 }
 
@@ -543,14 +530,9 @@ out:
                     icd_term->debug_report_callback_list.list[next_index] = VK_NULL_HANDLE;
                 }
             }
+            loader_release_object_from_list(&inst->debug_report_callbacks_list, next_index);
         }
-        if (index_reserved && inst->debug_report_callbacks_list.list &&
-            inst->debug_report_callbacks_list.capacity > next_index * sizeof(struct loader_used_object_status)) {
-            inst->debug_report_callbacks_list.list[next_index].status = VK_FALSE;
-            if (NULL != pAllocator) {
-                inst->debug_report_callbacks_list.list[next_index].allocation_callbacks = *pAllocator;
-            }
-        }
+
         loader_free_with_instance_fallback(pAllocator, inst, new_dbg_func_node);
         loader_free_with_instance_fallback(pAllocator, inst, pNextIndex);
     }
@@ -580,13 +562,7 @@ VKAPI_ATTR void VKAPI_CALL terminator_DestroyDebugReportCallbackEXT(VkInstance i
     }
 
     util_DestroyDebugReportCallback(inst, callback, pAllocator);
-    if (inst->debug_report_callbacks_list.list &&
-        inst->debug_report_callbacks_list.capacity > (*debug_report_index) * sizeof(struct loader_used_object_status)) {
-        inst->debug_report_callbacks_list.list[*debug_report_index].status = VK_FALSE;
-        if (NULL != pAllocator) {
-            inst->debug_report_callbacks_list.list[*debug_report_index].allocation_callbacks = *pAllocator;
-        }
-    }
+    loader_release_object_from_list(&inst->debug_report_callbacks_list, *debug_report_index);
     loader_free_with_instance_fallback(pAllocator, inst, debug_report_index);
 }
 
