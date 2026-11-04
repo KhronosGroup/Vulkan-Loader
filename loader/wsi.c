@@ -835,13 +835,7 @@ void cleanup_surface_creation(struct loader_instance* loader_inst, VkResult resu
                                                      pAllocator);
             }
         }
-        if (loader_inst->surfaces_list.list &&
-            loader_inst->surfaces_list.capacity > icd_surface->surface_index * sizeof(struct loader_used_object_status)) {
-            loader_inst->surfaces_list.list[icd_surface->surface_index].status = VK_FALSE;
-            if (NULL != pAllocator) {
-                loader_inst->surfaces_list.list[icd_surface->surface_index].allocation_callbacks = *pAllocator;
-            }
-        }
+        loader_release_object_from_list(&loader_inst->surfaces_list, icd_surface->surface_index);
         if (NULL != icd_surface->create_info) {
             loader_instance_heap_free(loader_inst, icd_surface->create_info);
         }
