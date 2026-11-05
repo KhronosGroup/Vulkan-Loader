@@ -21,10 +21,10 @@ NAME=vulkan
 # Make the library
 
 SRCS = cJSON.c debug_utils.c dev_ext_trampoline.c loader.c \
-	phys_dev_ext.c trampoline.c unknown_ext_chain.c wsi.c \
-	extension_manual.c unknown_function_handling.c settings.c \
-	log.c allocation.c loader_environment.c gpa_helper.c \
-	terminator.c
+	phys_dev_ext.c trampoline.c wsi.c extension_manual.c \
+	unknown_function_handling.c settings.c log.c allocation.c \
+	loader_environment.c gpa_helper.c terminator.c \
+	vk_loader_core_trampolines.c
 
 LDFLAGS += -Wl,--unresolved-symbols=report-all -Wl,--no-undefined -Wl,-fPIC
 
