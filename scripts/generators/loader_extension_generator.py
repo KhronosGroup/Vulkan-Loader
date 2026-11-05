@@ -917,23 +917,17 @@ VKAPI_ATTR VkResult VKAPI_CALL vkDevExtError(VkDevice dev) {
 
                 if command.params[0].type == 'VkPhysicalDevice':
                     out.append('    const VkLayerInstanceDispatchTable *disp;\n')
-                    out.append(f'    VkPhysicalDevice unwrapped_phys_dev = loader_unwrap_physical_device({phys_dev_var_name});\n')
-                    out.append('    if (VK_NULL_HANDLE == unwrapped_phys_dev) {\n')
-                    out.append('        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,\n')
-                    out.append(f'                   "{command.name}: Invalid {phys_dev_var_name} "\n')
-                    out.append(f'                   "[VUID-{command.name}-{phys_dev_var_name}-parameter]");\n')
-                    out.append('        abort(); /* Intentionally fail so user can correct issue. */\n')
-                    out.append('    }\n')
+                    out.append(f'    VkPhysicalDevice unwrapped_phys_dev = loader_unwrap_physical_device({phys_dev_var_name}, "{command.name}");\n')
                     out.append(f'    disp = loader_get_instance_layer_dispatch({phys_dev_var_name});\n')
                 elif command.params[0].type == 'VkInstance':
-                    out.append(f'    struct loader_instance *inst = loader_get_instance({instance_var_name});\n')
-                    out.append('    if (NULL == inst) {\n')
-                    out.append('        loader_log(\n')
-                    out.append('            NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,\n')
-                    out.append(f'            "{command.name}: Invalid instance [VUID-{command.name}-{instance_var_name}-parameter]");\n')
-                    out.append('        abort(); /* Intentionally fail so user can correct issue. */\n')
-                    out.append('    }\n')
+                    out.append(f'    struct loader_instance* inst = loader_validate_and_get_instance_dispatch({instance_var_name}, "{command.name}");\n')
                     out.append('#error("Not implemented. Likely needs to be manually generated!");\n')
+                elif command.params[0].type == 'VkDevice':
+                    out.append(f'    const VkLayerDispatchTable *disp = loader_validate_and_get_device_dispatch({command.params[0].name}, "{command.name}");\n')
+                elif command.params[0].type == 'VkCommandBuffer':
+                    out.append(f'    const VkLayerDispatchTable *disp = loader_validate_and_get_command_buffer_dispatch({command.params[0].name}, "{command.name}");\n')
+                elif command.params[0].type == 'VkQueue':
+                    out.append(f'    const VkLayerDispatchTable *disp = loader_validate_and_get_queue_dispatch({command.params[0].name}, "{command.name}");\n')
                 else:
                     out.append('    const VkLayerDispatchTable *disp = loader_get_dispatch(')
                     out.append(command.params[0].name)
@@ -1099,13 +1093,7 @@ VKAPI_ATTR VkResult VKAPI_CALL vkDevExtError(VkDevice dev) {
 
 
                 elif command.params[0].type == 'VkInstance':
-                    out.append(f'    struct loader_instance *inst = loader_get_instance({instance_var_name});\n')
-                    out.append('    if (NULL == inst) {\n')
-                    out.append('        loader_log(\n')
-                    out.append('            NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,\n')
-                    out.append(f'            "{command.name}: Invalid instance [VUID-{command.name}-{instance_var_name}-parameter]");\n')
-                    out.append('        abort(); /* Intentionally fail so user can correct issue. */\n')
-                    out.append('    }\n')
+                    out.append(f'    struct loader_instance *inst = loader_validate_and_get_instance({instance_var_name}, "{command.name}");\n')
                     out.append('#error("Not implemented. Likely needs to be manually generated!");\n')
                 elif command.extensions[0] in ['VK_EXT_debug_utils', 'VK_EXT_debug_marker']:
                     if command.name in ['vkDebugMarkerSetObjectNameEXT', 'vkDebugMarkerSetObjectTagEXT', 'vkSetDebugUtilsObjectNameEXT' , 'vkSetDebugUtilsObjectTagEXT']:
@@ -1183,16 +1171,22 @@ VKAPI_ATTR VkResult VKAPI_CALL vkDevExtError(VkDevice dev) {
                 out.append('}\n\n')
             else:
                 out.append(tramp_header)
-
-                out.append('    const VkLayerDispatchTable *disp = loader_get_dispatch(')
-                out.append(command.params[0].name)
-                out.append(');\n')
-                out.append('    if (NULL == disp) {\n')
-                out.append('        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,\n')
-                out.append(f'                   "{command.name}: Invalid {command.params[0].name} "\n')
-                out.append(f'                   "[VUID-{command.name}-{command.params[0].name}-parameter]");\n')
-                out.append('        abort(); /* Intentionally fail so user can correct issue. */\n')
-                out.append('    }\n')
+                if command.params[0].type == 'VkDevice':
+                    out.append(f'    const VkLayerDispatchTable *disp = loader_validate_and_get_device_dispatch({command.params[0].name}, "{command.name}");\n')
+                elif command.params[0].type == 'VkCommandBuffer':
+                    out.append(f'    const VkLayerDispatchTable *disp = loader_validate_and_get_command_buffer_dispatch({command.params[0].name}, "{command.name}");\n')
+                elif command.params[0].type == 'VkQueue':
+                    out.append(f'    const VkLayerDispatchTable *disp = loader_validate_and_get_queue_dispatch({command.params[0].name}, "{command.name}");\n')
+                else:
+                    out.append('    const VkLayerDispatchTable *disp = loader_get_dispatch(')
+                    out.append(command.params[0].name)
+                    out.append(');\n')
+                    out.append('    if (NULL == disp) {\n')
+                    out.append('        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,\n')
+                    out.append(f'                   "{command.name}: Invalid {command.params[0].name} "\n')
+                    out.append(f'                   "[VUID-{command.name}-{command.params[0].name}-parameter]");\n')
+                    out.append('        abort(); /* Intentionally fail so user can correct issue. */\n')
+                    out.append('    }\n')
 
                 if command.extensions[0] in NULL_CHECK_EXT_NAMES:
                     out.append('    if (disp->' + base_name + ' != NULL) {\n')
