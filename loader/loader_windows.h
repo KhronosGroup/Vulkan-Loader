@@ -68,4 +68,12 @@ char* windows_get_app_package_manifest_path(const struct loader_instance* inst, 
 // and if nothing is there, will try to look in HKEY_LOCAL_MACHINE/SOFTWARE/Khronos/Vulkan/LoaderSettings.
 // If running with elevated privileges, this function only looks in HKEY_LOCAL_MACHINE.
 VkResult windows_get_loader_settings_file_path(const struct loader_instance* inst, char** out_path);
+
+// Windows specific code of the normalize_path function
+VkResult windows_normalize_path(const struct loader_instance* inst, char** passed_in_path);
+
+// Windows specific code of the get_library_path_of_dl_handle function
+VkResult windows_get_library_path_of_dl_handle(const struct loader_instance* inst, loader_platform_dl_handle lib_handle,
+                                               PFN_vkGetInstanceProcAddr gipa, char** out_path);
+
 #endif  // WIN32

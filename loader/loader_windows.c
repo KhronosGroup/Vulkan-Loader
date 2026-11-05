@@ -1298,4 +1298,139 @@ out:
     return result;
 }
 
+// Windows has GetFullPathName which behaves similarly to realpath. Note that we call GetFullPathNameW after conversion to ensure
+// that any unicode in the path is handled correctly, as we can't easily modify the local to utf-8 and call GetFullPathNameA
+VkResult windows_normalize_path(const struct loader_instance* inst, char** passed_in_path) {
+    VkResult res = VK_SUCCESS;
+    wchar_t* path = NULL;
+
+    bool oom = false;
+    wchar_t* passed_in_path_wide = loader_convert_char_to_wchar(inst, *passed_in_path, &oom, VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
+    if (oom) {
+        res = VK_ERROR_OUT_OF_HOST_MEMORY;
+        goto out;
+    }
+    if (NULL == passed_in_path_wide) {
+        loader_log(inst, VULKAN_LOADER_DEBUG_BIT, 0, "normalize_path: Failed to convert char* \"%s\" to wchar_t*", *passed_in_path);
+        res = VK_ERROR_INITIALIZATION_FAILED;
+        goto out;
+    }
+    size_t path_len = wcslen(passed_in_path_wide) + 1;
+    path = loader_instance_heap_calloc(inst, path_len * sizeof(wchar_t), VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
+    if (NULL == path) {
+        res = VK_ERROR_OUT_OF_HOST_MEMORY;
+        goto out;
+    }
+    DWORD actual_len = GetFullPathNameW(passed_in_path_wide, (DWORD)path_len, path, NULL);
+    if (actual_len == 0) {
+        size_t last_error = (size_t)GetLastError();
+        loader_log_wide(inst, VULKAN_LOADER_DEBUG_BIT, 0,
+                        L"normalize_path: Call to GetFullPathNameW() failed with error code %zu when given the path %ls",
+                        last_error, passed_in_path_wide);
+        res = VK_ERROR_INITIALIZATION_FAILED;
+        goto out;
+    }
+
+    // If path_len wasn't big enough, need to realloc and call again
+    if (actual_len > path_len) {
+        wchar_t* new_path = loader_instance_heap_realloc(inst, path, path_len * sizeof(wchar_t), (actual_len) * sizeof(wchar_t),
+                                                         VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
+        if (NULL == new_path) {
+            loader_instance_heap_free(inst, path);
+            path = NULL;
+            res = VK_ERROR_OUT_OF_HOST_MEMORY;
+            goto out;
+        }
+        path = new_path;
+        path_len = actual_len;
+
+        actual_len = GetFullPathNameW(passed_in_path_wide, (DWORD)path_len, path, NULL);
+        if (actual_len == 0) {
+            size_t last_error = (size_t)GetLastError();
+            loader_log_wide(inst, VULKAN_LOADER_DEBUG_BIT, 0,
+                            L"normalize_path: Call to GetFullPathNameW() failed with error code %zu when given the path %ls",
+                            last_error, passed_in_path_wide);
+            res = VK_ERROR_INITIALIZATION_FAILED;
+            goto out;
+            // actual_len doesn't include null terminator
+        } else if (actual_len > path_len) {
+            loader_log_wide(
+                inst, VULKAN_LOADER_DEBUG_BIT, 0,
+                L"normalize_path: Call to GetFullPathNameW() with too small of a buffer when given the path %ls after the "
+                "initial call to GetFullPathNameW() failed for the same reason. Buffer size is %zu, actual size is %zu",
+                passed_in_path_wide, path_len, (size_t)actual_len);
+            res = VK_ERROR_INITIALIZATION_FAILED;
+            goto out;
+        }
+    }
+
+    char* converted_path = loader_convert_wchar_to_char(inst, path, &oom, VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
+    if (oom) {
+        res = VK_ERROR_OUT_OF_HOST_MEMORY;
+        goto out;
+    }
+    if (NULL == converted_path) {
+        loader_log_wide(inst, VULKAN_LOADER_DEBUG_BIT, 0, L"normalize_path: Failed to convert wchar_t* \"%ls\" to char*", path);
+        res = VK_ERROR_INITIALIZATION_FAILED;
+        goto out;
+    }
+    loader_instance_heap_free(inst, *passed_in_path);
+    // Replace string pointed to by passed_in_path with the one given to us by GetFullPathNameW (after converting it to a char*)
+    *passed_in_path = converted_path;
+
+out:
+    loader_instance_heap_free(inst, passed_in_path_wide);
+    loader_instance_heap_free(inst, path);
+    return res;
+}
+
+VkResult windows_get_library_path_of_dl_handle(const struct loader_instance* inst, loader_platform_dl_handle lib_handle,
+                                               PFN_vkGetInstanceProcAddr gipa, char** out_path) {
+    VkResult res = VK_SUCCESS;
+    (void)gipa;
+    size_t module_file_name_len = MAX_PATH;  // start with reasonably large buffer
+    wchar_t* buffer_utf16 =
+        (wchar_t*)loader_instance_heap_calloc(inst, module_file_name_len * sizeof(wchar_t), VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
+    if (NULL == buffer_utf16) {
+        res = VK_ERROR_OUT_OF_HOST_MEMORY;
+        goto out;
+    }
+    DWORD ret = GetModuleFileNameW(lib_handle, buffer_utf16, (DWORD)module_file_name_len);
+    if (ret == 0) {
+        goto out;
+    }
+    while (GetLastError() == ERROR_INSUFFICIENT_BUFFER) {
+        size_t new_module_file_name_len = module_file_name_len * 2;
+        wchar_t* new_buffer_utf16 =
+            (wchar_t*)loader_instance_heap_realloc(inst, buffer_utf16, module_file_name_len * sizeof(wchar_t),
+                                                   new_module_file_name_len * sizeof(wchar_t), VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
+        if (NULL == new_buffer_utf16) {
+            res = VK_ERROR_OUT_OF_HOST_MEMORY;
+            goto out;
+        }
+        buffer_utf16 = new_buffer_utf16;
+        module_file_name_len = new_module_file_name_len;
+
+        ret = GetModuleFileNameW(lib_handle, buffer_utf16, (DWORD)module_file_name_len);
+        if (ret == 0) {
+            goto out;
+        }
+    }
+    bool oom = false;
+    char* buffer_utf8 = loader_convert_wchar_to_char(inst, buffer_utf16, &oom, VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
+    if (oom) {
+        res = VK_ERROR_OUT_OF_HOST_MEMORY;
+        goto out;
+    }
+    if (NULL == buffer_utf8) {
+        goto out;
+    }
+
+    // Successfully got the 'real' path to the library.
+    *out_path = buffer_utf8;
+
+out:
+    loader_instance_heap_free(inst, buffer_utf16);
+    return res;
+}
 #endif  // _WIN32
