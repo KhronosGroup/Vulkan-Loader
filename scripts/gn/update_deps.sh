@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# Copyright (c) 2019-2023 LunarG, Inc.
+# Copyright (c) 2019-2026 LunarG, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,8 +14,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+
+set -e
+
 # Execute at repo root
-cd "$(dirname $0)/../../"
+cd "$(dirname "$0")/../../"
 
 # Use update_deps.py to update source dependencies from /scripts/known_good.json
 scripts/update_deps.py --dir="external" --no-build
