@@ -35,13 +35,15 @@
 // Declare the once_init variable
 LOADER_PLATFORM_THREAD_ONCE_EXTERN_DEFINITION(once_init)
 
-static inline VkPhysicalDevice loader_unwrap_physical_device(VkPhysicalDevice physicalDevice) {
+static inline VkPhysicalDevice loader_unwrap_physical_device(VkPhysicalDevice physicalDevice, const char* function_name) {
     if (VK_NULL_HANDLE == physicalDevice) {
         return VK_NULL_HANDLE;
     }
     struct loader_physical_device_tramp* phys_dev = (struct loader_physical_device_tramp*)physicalDevice;
-    if (PHYS_TRAMP_MAGIC_NUMBER != phys_dev->magic) {
-        return VK_NULL_HANDLE;
+    if (VK_NULL_HANDLE == phys_dev || PHYS_TRAMP_MAGIC_NUMBER != phys_dev->magic) {
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "%s: Invalid physicalDevice [VUID-%s-physicalDevice-parameter]", function_name, function_name);
+        abort(); /* Intentionally fail so user can correct issue. */
     }
     return phys_dev->phys_dev;
 }
@@ -75,6 +77,47 @@ static inline void loader_init_dispatch(void* obj, const void* data) {
 #endif
 
     loader_set_dispatch(obj, data);
+}
+
+struct loader_instance* loader_get_instance(VkInstance instance);
+
+static inline struct loader_instance* loader_validate_and_get_instance_dispatch(VkInstance instance, const char* function_name) {
+    struct loader_instance* ptr_instance = loader_get_instance(instance);
+    if (ptr_instance == NULL) {
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "%s: Invalid instance [VUID-%s-instance-parameter]", function_name, function_name);
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    return ptr_instance;
+}
+
+static inline const VkLayerDispatchTable* loader_validate_and_get_device_dispatch(VkDevice device, const char* function_name) {
+    const VkLayerDispatchTable* disp = loader_get_dispatch(device);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "%s: Invalid device [VUID-%s-device-parameter]", function_name, function_name);
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    return disp;
+}
+static inline const VkLayerDispatchTable* loader_validate_and_get_command_buffer_dispatch(VkCommandBuffer commandBuffer,
+                                                                                          const char* function_name) {
+    const VkLayerDispatchTable* disp = loader_get_dispatch(commandBuffer);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "%s: Invalid commandBuffer [VUID-%s-commandBuffer-parameter]", function_name, function_name);
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    return disp;
+}
+static inline const VkLayerDispatchTable* loader_validate_and_get_queue_dispatch(VkQueue queue, const char* function_name) {
+    const VkLayerDispatchTable* disp = loader_get_dispatch(queue);
+    if (NULL == disp) {
+        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
+                   "%s: Invalid queue [VUID-%s-queue-parameter]", function_name, function_name);
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    return disp;
 }
 
 // Global variables used across files
@@ -187,7 +230,6 @@ VkResult loader_scan_for_implicit_layers(struct loader_instance* inst, struct lo
 VkResult loader_get_icd_loader_instance_extensions(const struct loader_instance* inst, struct loader_icd_tramp_list* icd_tramp_list,
                                                    struct loader_extension_list* inst_exts);
 struct loader_icd_term* loader_get_icd_and_device(const void* device, struct loader_device** found_dev);
-struct loader_instance* loader_get_instance(VkInstance instance);
 loader_platform_dl_handle loader_open_layer_file(const struct loader_instance* inst, struct loader_layer_properties* prop,
                                                  bool* oom);
 struct loader_device* loader_create_logical_device(const struct loader_instance* inst, const VkAllocationCallbacks* pAllocator);

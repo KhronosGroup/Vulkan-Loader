@@ -43,13 +43,8 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceExternalImageFormatPropertiesNV(
     VkImageCreateFlags flags, VkExternalMemoryHandleTypeFlagsNV externalHandleType,
     VkExternalImageFormatPropertiesNV* pExternalImageFormatProperties) {
     const VkLayerInstanceDispatchTable* disp;
-    VkPhysicalDevice unwrapped_phys_dev = loader_unwrap_physical_device(physicalDevice);
-    if (VK_NULL_HANDLE == unwrapped_phys_dev) {
-        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
-                   "vkGetPhysicalDeviceExternalImageFormatPropertiesNV: Invalid physicalDevice "
-                   "[VUID-vkGetPhysicalDeviceExternalImageFormatPropertiesNV-physicalDevice-parameter]");
-        abort(); /* Intentionally fail so user can correct issue. */
-    }
+    VkPhysicalDevice unwrapped_phys_dev =
+        loader_unwrap_physical_device(physicalDevice, "vkGetPhysicalDeviceExternalImageFormatPropertiesNV");
     disp = loader_get_instance_layer_dispatch(physicalDevice);
 
     return disp->GetPhysicalDeviceExternalImageFormatPropertiesNV(unwrapped_phys_dev, format, type, tiling, usage, flags,
@@ -89,13 +84,8 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_GetPhysicalDeviceExternalImageFormatPr
 VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceSurfaceCapabilities2EXT(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface,
                                                                         VkSurfaceCapabilities2EXT* pSurfaceCapabilities) {
     const VkLayerInstanceDispatchTable* disp;
-    VkPhysicalDevice unwrapped_phys_dev = loader_unwrap_physical_device(physicalDevice);
-    if (VK_NULL_HANDLE == unwrapped_phys_dev) {
-        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
-                   "vkGetPhysicalDeviceExternalImageFormatPropertiesNV: Invalid physicalDevice "
-                   "[VUID-vkGetPhysicalDeviceSurfaceCapabilities2EXT-physicalDevice-parameter]");
-        abort(); /* Intentionally fail so user can correct issue. */
-    }
+    VkPhysicalDevice unwrapped_phys_dev =
+        loader_unwrap_physical_device(physicalDevice, "vkGetPhysicalDeviceSurfaceCapabilities2EXT");
     disp = loader_get_instance_layer_dispatch(physicalDevice);
     return disp->GetPhysicalDeviceSurfaceCapabilities2EXT(unwrapped_phys_dev, surface, pSurfaceCapabilities);
 }
@@ -151,12 +141,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_GetPhysicalDeviceSurfaceCapabilities2E
 
 VKAPI_ATTR VkResult VKAPI_CALL ReleaseDisplayEXT(VkPhysicalDevice physicalDevice, VkDisplayKHR display) {
     const VkLayerInstanceDispatchTable* disp;
-    VkPhysicalDevice unwrapped_phys_dev = loader_unwrap_physical_device(physicalDevice);
-    if (VK_NULL_HANDLE == unwrapped_phys_dev) {
-        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
-                   "vkReleaseDisplayEXT: Invalid physicalDevice [VUID-vkReleaseDisplayEXT-physicalDevice-parameter]");
-        abort(); /* Intentionally fail so user can correct issue. */
-    }
+    VkPhysicalDevice unwrapped_phys_dev = loader_unwrap_physical_device(physicalDevice, "vkReleaseDisplayEXT");
     disp = loader_get_instance_layer_dispatch(physicalDevice);
     return disp->ReleaseDisplayEXT(unwrapped_phys_dev, display);
 }
@@ -180,12 +165,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_ReleaseDisplayEXT(VkPhysicalDevice phy
 #if defined(VK_USE_PLATFORM_XLIB_XRANDR_EXT)
 VKAPI_ATTR VkResult VKAPI_CALL AcquireXlibDisplayEXT(VkPhysicalDevice physicalDevice, Display* dpy, VkDisplayKHR display) {
     const VkLayerInstanceDispatchTable* disp;
-    VkPhysicalDevice unwrapped_phys_dev = loader_unwrap_physical_device(physicalDevice);
-    if (VK_NULL_HANDLE == unwrapped_phys_dev) {
-        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
-                   "vkAcquireXlibDisplayEXT: Invalid physicalDevice [VUID-vkAcquireXlibDisplayEXT-physicalDevice-parameter]");
-        abort(); /* Intentionally fail so user can correct issue. */
-    }
+    VkPhysicalDevice unwrapped_phys_dev = loader_unwrap_physical_device(physicalDevice, "vkAcquireXlibDisplayEXT");
     disp = loader_get_instance_layer_dispatch(physicalDevice);
     return disp->AcquireXlibDisplayEXT(unwrapped_phys_dev, dpy, display);
 }
@@ -210,12 +190,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_AcquireXlibDisplayEXT(VkPhysicalDevice
 VKAPI_ATTR VkResult VKAPI_CALL GetRandROutputDisplayEXT(VkPhysicalDevice physicalDevice, Display* dpy, RROutput rrOutput,
                                                         VkDisplayKHR* pDisplay) {
     const VkLayerInstanceDispatchTable* disp;
-    VkPhysicalDevice unwrapped_phys_dev = loader_unwrap_physical_device(physicalDevice);
-    if (VK_NULL_HANDLE == unwrapped_phys_dev) {
-        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
-                   "vkGetRandROutputDisplayEXT: Invalid physicalDevice [VUID-vkGetRandROutputDisplayEXT-physicalDevice-parameter]");
-        abort(); /* Intentionally fail so user can correct issue. */
-    }
+    VkPhysicalDevice unwrapped_phys_dev = loader_unwrap_physical_device(physicalDevice, "vkGetRandROutputDisplayEXT");
     disp = loader_get_instance_layer_dispatch(physicalDevice);
     return disp->GetRandROutputDisplayEXT(unwrapped_phys_dev, dpy, rrOutput, pDisplay);
 }
@@ -247,13 +222,8 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceSurfacePresentModes2EXT(VkPhysic
                                                                         uint32_t* pPresentModeCount,
                                                                         VkPresentModeKHR* pPresentModes) {
     const VkLayerInstanceDispatchTable* disp;
-    VkPhysicalDevice unwrapped_phys_dev = loader_unwrap_physical_device(physicalDevice);
-    if (VK_NULL_HANDLE == unwrapped_phys_dev) {
-        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
-                   "vkGetPhysicalDeviceSurfacePresentModes2EXT: Invalid physicalDevice "
-                   "[VUID-vkGetPhysicalDeviceSurfacePresentModes2EXT-physicalDevice-parameter]");
-        abort(); /* Intentionally fail so user can correct issue. */
-    }
+    VkPhysicalDevice unwrapped_phys_dev =
+        loader_unwrap_physical_device(physicalDevice, "vkGetPhysicalDeviceSurfacePresentModes2EXT");
     disp = loader_get_instance_layer_dispatch(physicalDevice);
     return disp->GetPhysicalDeviceSurfacePresentModes2EXT(unwrapped_phys_dev, pSurfaceInfo, pPresentModeCount, pPresentModes);
 }
@@ -284,13 +254,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_GetPhysicalDeviceSurfacePresentModes2E
 VKAPI_ATTR VkResult VKAPI_CALL GetDeviceGroupSurfacePresentModes2EXT(VkDevice device,
                                                                      const VkPhysicalDeviceSurfaceInfo2KHR* pSurfaceInfo,
                                                                      VkDeviceGroupPresentModeFlagsKHR* pModes) {
-    const VkLayerDispatchTable* disp = loader_get_dispatch(device);
-    if (NULL == disp) {
-        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
-                   "vkGetDeviceGroupSurfacePresentModes2EXT: Invalid device "
-                   "[VUID-vkGetDeviceGroupSurfacePresentModes2EXT-device-parameter]");
-        abort(); /* Intentionally fail so user can correct issue. */
-    }
+    const VkLayerDispatchTable* disp = loader_validate_and_get_device_dispatch(device, "vkGetDeviceGroupSurfacePresentModes2EXT");
     return disp->GetDeviceGroupSurfacePresentModes2EXT(device, pSurfaceInfo, pModes);
 }
 
@@ -333,13 +297,7 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_GetDeviceGroupSurfacePresentModes2EXT(
 VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceToolPropertiesEXT(VkPhysicalDevice physicalDevice, uint32_t* pToolCount,
                                                                   VkPhysicalDeviceToolPropertiesEXT* pToolProperties) {
     const VkLayerInstanceDispatchTable* disp;
-    VkPhysicalDevice unwrapped_phys_dev = loader_unwrap_physical_device(physicalDevice);
-    if (VK_NULL_HANDLE == unwrapped_phys_dev) {
-        loader_log(NULL, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT | VULKAN_LOADER_VALIDATION_BIT, 0,
-                   "vkGetPhysicalDeviceToolPropertiesEXT: Invalid physicalDevice "
-                   "[VUID-vkGetPhysicalDeviceToolPropertiesEXT-physicalDevice-parameter]");
-        abort(); /* Intentionally fail so user can correct issue. */
-    }
+    VkPhysicalDevice unwrapped_phys_dev = loader_unwrap_physical_device(physicalDevice, "vkGetPhysicalDeviceToolPropertiesEXT");
     disp = loader_get_instance_layer_dispatch(physicalDevice);
     return disp->GetPhysicalDeviceToolPropertiesEXT(unwrapped_phys_dev, pToolCount, pToolProperties);
 }
