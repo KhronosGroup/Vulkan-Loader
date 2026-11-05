@@ -72,6 +72,7 @@ set(NORMAL_LOADER_SRCS
     extension_manual.h
     loader_environment.c
     loader_environment.h
+    generated/vk_loader_core_trampolines.c
     gpa_helper.c
     gpa_helper.h
     loader.c

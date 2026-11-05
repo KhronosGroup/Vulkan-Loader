@@ -94,7 +94,7 @@ config("vulkan_loader_config") {
   if (is_clang) {
     # Vulkan-Hpp uses `vk::PFN_...` function pointer types, which are different
     # from the C-styled `PFN_...` function pointers.
-    # 
+    #
     # These types are guaranteed to be identical during Vulkan-Hpp compile time.
     # However, UBsan's function sanitizer treats them as different types and
     # triggers a runtime error when these functions are called.
@@ -191,6 +191,7 @@ if (!is_android) {
       "loader/extension_manual.c",
       "loader/extension_manual.h",
       "loader/generated/vk_layer_dispatch_table.h",
+      "loader/generated/vk_loader_core_trampolines.c",
       "loader/generated/vk_loader_extensions.h",
       "loader/generated/vk_object_types.h",
       "loader/gpa_helper.h",
