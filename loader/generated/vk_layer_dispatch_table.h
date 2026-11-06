@@ -332,6 +332,9 @@ typedef struct VkLayerInstanceDispatchTable_ {
 #if defined(VK_USE_PLATFORM_UBM_SEC)
     PFN_vkGetPhysicalDeviceUbmPresentationSupportSEC GetPhysicalDeviceUbmPresentationSupportSEC;
 #endif // VK_USE_PLATFORM_UBM_SEC
+
+    // ---- VK_NV_internal_handle extension commands
+    PFN_vkGetPhysicalDeviceInternalHandleNV GetPhysicalDeviceInternalHandleNV;
 } VkLayerInstanceDispatchTable;
 
 // Device function pointer dispatch table
@@ -1405,6 +1408,11 @@ typedef struct VkLayerDispatchTable_ {
 
     // ---- VK_NV_compute_occupancy_priority extension commands
     PFN_vkCmdSetComputeOccupancyPriorityNV CmdSetComputeOccupancyPriorityNV;
+
+    // ---- VK_NV_internal_handle extension commands
+    PFN_vkGetDeviceInternalHandleNV GetDeviceInternalHandleNV;
+    PFN_vkGetQueueInternalHandleNV GetQueueInternalHandleNV;
+    PFN_vkGetCommandBufferInternalHandleNV GetCommandBufferInternalHandleNV;
 
     // ---- VK_EXT_primitive_restart_index extension commands
     PFN_vkCmdSetPrimitiveRestartIndexEXT CmdSetPrimitiveRestartIndexEXT;

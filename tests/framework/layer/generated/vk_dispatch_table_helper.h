@@ -809,6 +809,9 @@ static inline void layer_init_device_dispatch_table(VkDevice device, VkLayerDisp
     table->CmdEndRendering2EXT = (PFN_vkCmdEndRendering2EXT)gpa(device, "vkCmdEndRendering2EXT");
     table->CmdBeginCustomResolveEXT = (PFN_vkCmdBeginCustomResolveEXT)gpa(device, "vkCmdBeginCustomResolveEXT");
     table->CmdSetComputeOccupancyPriorityNV = (PFN_vkCmdSetComputeOccupancyPriorityNV)gpa(device, "vkCmdSetComputeOccupancyPriorityNV");
+    table->GetDeviceInternalHandleNV = (PFN_vkGetDeviceInternalHandleNV)gpa(device, "vkGetDeviceInternalHandleNV");
+    table->GetQueueInternalHandleNV = (PFN_vkGetQueueInternalHandleNV)gpa(device, "vkGetQueueInternalHandleNV");
+    table->GetCommandBufferInternalHandleNV = (PFN_vkGetCommandBufferInternalHandleNV)gpa(device, "vkGetCommandBufferInternalHandleNV");
     table->CmdSetPrimitiveRestartIndexEXT = (PFN_vkCmdSetPrimitiveRestartIndexEXT)gpa(device, "vkCmdSetPrimitiveRestartIndexEXT");
     table->CreateAccelerationStructureKHR = (PFN_vkCreateAccelerationStructureKHR)gpa(device, "vkCreateAccelerationStructureKHR");
     table->DestroyAccelerationStructureKHR = (PFN_vkDestroyAccelerationStructureKHR)gpa(device, "vkDestroyAccelerationStructureKHR");
@@ -1020,5 +1023,6 @@ static inline void layer_init_instance_dispatch_table(VkInstance instance, VkLay
 #if defined(VK_USE_PLATFORM_UBM_SEC)
     table->GetPhysicalDeviceUbmPresentationSupportSEC = (PFN_vkGetPhysicalDeviceUbmPresentationSupportSEC)gpa(instance, "vkGetPhysicalDeviceUbmPresentationSupportSEC");
 #endif  // VK_USE_PLATFORM_UBM_SEC
+    table->GetPhysicalDeviceInternalHandleNV = (PFN_vkGetPhysicalDeviceInternalHandleNV)gpa(instance, "vkGetPhysicalDeviceInternalHandleNV");
     // clang-format on
 }
