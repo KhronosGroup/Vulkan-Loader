@@ -485,7 +485,7 @@ static constexpr std::array kDeviceDispatchCoreNames = {
 // Explicit template arguments (not CTAD) are load-bearing: Clang caps the recursive fold expression in
 // libstdc++'s std::array deduction guide at 256 instantiations, below this array's 481 entries. Naming the
 // type and size directly skips that deduction guide.
-static constexpr std::array<const char*, 482> kExtensionInstanceGpaNames = {
+static constexpr std::array<const char*, 486> kExtensionInstanceGpaNames = {
     "vkGetPhysicalDeviceVideoCapabilitiesKHR",
     "vkGetPhysicalDeviceVideoFormatPropertiesKHR",
     "vkCreateVideoSessionKHR",
@@ -942,6 +942,10 @@ static constexpr std::array<const char*, 482> kExtensionInstanceGpaNames = {
     "vkGetPhysicalDeviceQueueFamilyDataGraphOpticalFlowImageFormatsARM",
     "vkCmdSetComputeOccupancyPriorityNV",
     "vkGetPhysicalDeviceCooperativeMatrixProperties2EXT",
+    "vkGetPhysicalDeviceInternalHandleNV",
+    "vkGetDeviceInternalHandleNV",
+    "vkGetQueueInternalHandleNV",
+    "vkGetCommandBufferInternalHandleNV",
     "vkCmdSetPrimitiveRestartIndexEXT",
     "vkCreateAccelerationStructureKHR",
     "vkDestroyAccelerationStructureKHR",

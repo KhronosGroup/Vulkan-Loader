@@ -525,6 +525,9 @@ struct loader_icd_term_dispatch {
 #if defined(VK_USE_PLATFORM_UBM_SEC)
     PFN_vkGetPhysicalDeviceUbmPresentationSupportSEC GetPhysicalDeviceUbmPresentationSupportSEC;
 #endif // VK_USE_PLATFORM_UBM_SEC
+
+    // ---- VK_NV_internal_handle extension commands
+    PFN_vkGetPhysicalDeviceInternalHandleNV GetPhysicalDeviceInternalHandleNV;
 };
 
 struct loader_instance_extension_enable_list {

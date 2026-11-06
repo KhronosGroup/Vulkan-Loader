@@ -357,6 +357,9 @@ VKAPI_ATTR bool VKAPI_CALL loader_icd_init_entries(struct loader_instance* inst,
     LOOKUP_GIPA(GetPhysicalDeviceUbmPresentationSupportSEC);
 #endif // VK_USE_PLATFORM_UBM_SEC
 
+    // ---- VK_NV_internal_handle extension commands
+    LOOKUP_GIPA(GetPhysicalDeviceInternalHandleNV);
+
 #undef LOOKUP_REQUIRED_GIPA
 #undef LOOKUP_GIPA
 
@@ -1447,6 +1450,11 @@ VKAPI_ATTR void VKAPI_CALL loader_init_device_extension_dispatch_table(struct lo
     // ---- VK_NV_compute_occupancy_priority extension commands
     table->CmdSetComputeOccupancyPriorityNV = (PFN_vkCmdSetComputeOccupancyPriorityNV)gdpa(dev, "vkCmdSetComputeOccupancyPriorityNV");
 
+    // ---- VK_NV_internal_handle extension commands
+    table->GetDeviceInternalHandleNV = (PFN_vkGetDeviceInternalHandleNV)gdpa(dev, "vkGetDeviceInternalHandleNV");
+    table->GetQueueInternalHandleNV = (PFN_vkGetQueueInternalHandleNV)gdpa(dev, "vkGetQueueInternalHandleNV");
+    table->GetCommandBufferInternalHandleNV = (PFN_vkGetCommandBufferInternalHandleNV)gdpa(dev, "vkGetCommandBufferInternalHandleNV");
+
     // ---- VK_EXT_primitive_restart_index extension commands
     table->CmdSetPrimitiveRestartIndexEXT = (PFN_vkCmdSetPrimitiveRestartIndexEXT)gdpa(dev, "vkCmdSetPrimitiveRestartIndexEXT");
 
@@ -1782,6 +1790,9 @@ VKAPI_ATTR void VKAPI_CALL loader_init_instance_extension_dispatch_table(VkLayer
 #if defined(VK_USE_PLATFORM_UBM_SEC)
     table->GetPhysicalDeviceUbmPresentationSupportSEC = (PFN_vkGetPhysicalDeviceUbmPresentationSupportSEC)gpa(inst, "vkGetPhysicalDeviceUbmPresentationSupportSEC");
 #endif // VK_USE_PLATFORM_UBM_SEC
+
+    // ---- VK_NV_internal_handle extension commands
+    table->GetPhysicalDeviceInternalHandleNV = (PFN_vkGetPhysicalDeviceInternalHandleNV)gpa(inst, "vkGetPhysicalDeviceInternalHandleNV");
 }
 
 // Functions that required a terminator need to have a separate dispatch table which contains their corresponding
@@ -4934,6 +4945,17 @@ VKAPI_ATTR void* VKAPI_CALL loader_lookup_device_dispatch_table(const VkLayerDis
             if (!strcmp(name, "CmdSetComputeOccupancyPriorityNV")) return (void *)table->CmdSetComputeOccupancyPriorityNV;
             break;
 
+        // ---- VK_NV_internal_handle extension commands
+        case 0xec915e22u:
+            if (!strcmp(name, "GetDeviceInternalHandleNV")) return (void *)table->GetDeviceInternalHandleNV;
+            break;
+        case 0xfa3139d5u:
+            if (!strcmp(name, "GetQueueInternalHandleNV")) return (void *)table->GetQueueInternalHandleNV;
+            break;
+        case 0x0093a9b5u:
+            if (!strcmp(name, "GetCommandBufferInternalHandleNV")) return (void *)table->GetCommandBufferInternalHandleNV;
+            break;
+
         // ---- VK_EXT_primitive_restart_index extension commands
         case 0x52eaa7c6u:
             if (!strcmp(name, "CmdSetPrimitiveRestartIndexEXT")) return (void *)table->CmdSetPrimitiveRestartIndexEXT;
@@ -5567,6 +5589,11 @@ VKAPI_ATTR void* VKAPI_CALL loader_lookup_instance_dispatch_table(const VkLayerI
             if (!strcmp(name, "GetPhysicalDeviceUbmPresentationSupportSEC")) return (void *)table->GetPhysicalDeviceUbmPresentationSupportSEC;
             break;
 #endif // VK_USE_PLATFORM_UBM_SEC
+
+        // ---- VK_NV_internal_handle extension commands
+        case 0xc5b50f7bu:
+            if (!strcmp(name, "GetPhysicalDeviceInternalHandleNV")) return (void *)table->GetPhysicalDeviceInternalHandleNV;
+            break;
         default:
             break;
     }
@@ -11008,6 +11035,52 @@ VKAPI_ATTR VkResult VKAPI_CALL terminator_GetPhysicalDeviceCooperativeMatrixProp
 }
 
 
+// ---- VK_NV_internal_handle extension trampoline/terminators
+
+VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceInternalHandleNV(
+    VkPhysicalDevice                            physicalDevice,
+    VkInternalHandleNV*                         pHandle) {
+    const VkLayerInstanceDispatchTable *disp;
+    VkPhysicalDevice unwrapped_phys_dev = loader_unwrap_physical_device(physicalDevice, "vkGetPhysicalDeviceInternalHandleNV");
+    disp = loader_get_instance_layer_dispatch(physicalDevice);
+    disp->GetPhysicalDeviceInternalHandleNV(unwrapped_phys_dev, pHandle);
+}
+
+VKAPI_ATTR void VKAPI_CALL terminator_GetPhysicalDeviceInternalHandleNV(
+    VkPhysicalDevice                            physicalDevice,
+    VkInternalHandleNV*                         pHandle) {
+    struct loader_physical_device_term *phys_dev_term = (struct loader_physical_device_term *)physicalDevice;
+    struct loader_icd_term *icd_term = phys_dev_term->this_icd_term;
+    if (NULL == icd_term->dispatch.GetPhysicalDeviceInternalHandleNV) {
+        loader_log(icd_term->this_instance, VULKAN_LOADER_FATAL_ERROR_BIT | VULKAN_LOADER_ERROR_BIT, 0,
+                   "ICD associated with VkPhysicalDevice does not support GetPhysicalDeviceInternalHandleNV");
+        abort(); /* Intentionally fail so user can correct issue. */
+    }
+    icd_term->dispatch.GetPhysicalDeviceInternalHandleNV(phys_dev_term->phys_dev, pHandle);
+}
+
+VKAPI_ATTR void VKAPI_CALL GetDeviceInternalHandleNV(
+    VkDevice                                    device,
+    VkInternalHandleNV*                         pHandle) {
+    const VkLayerDispatchTable *disp = loader_validate_and_get_device_dispatch(device, "vkGetDeviceInternalHandleNV");
+    disp->GetDeviceInternalHandleNV(device, pHandle);
+}
+
+VKAPI_ATTR void VKAPI_CALL GetQueueInternalHandleNV(
+    VkQueue                                     queue,
+    VkInternalHandleNV*                         pHandle) {
+    const VkLayerDispatchTable *disp = loader_validate_and_get_queue_dispatch(queue, "vkGetQueueInternalHandleNV");
+    disp->GetQueueInternalHandleNV(queue, pHandle);
+}
+
+VKAPI_ATTR void VKAPI_CALL GetCommandBufferInternalHandleNV(
+    VkCommandBuffer                             commandBuffer,
+    VkInternalHandleNV*                         pHandle) {
+    const VkLayerDispatchTable *disp = loader_validate_and_get_command_buffer_dispatch(commandBuffer, "vkGetCommandBufferInternalHandleNV");
+    disp->GetCommandBufferInternalHandleNV(commandBuffer, pHandle);
+}
+
+
 // ---- VK_EXT_primitive_restart_index extension trampoline/terminators
 
 VKAPI_ATTR void VKAPI_CALL CmdSetPrimitiveRestartIndexEXT(
@@ -14890,6 +14963,32 @@ bool extension_instance_gpa(struct loader_instance *ptr_instance, const char *na
             }
             break;
 
+        // ---- VK_NV_internal_handle extension commands
+        case 0x9dfe634au:
+            if (!strcmp("vkGetPhysicalDeviceInternalHandleNV", name)) {
+                *addr = (void *)GetPhysicalDeviceInternalHandleNV;
+                return true;
+            }
+            break;
+        case 0xc3ee6c2bu:
+            if (!strcmp("vkGetDeviceInternalHandleNV", name)) {
+                *addr = (void *)GetDeviceInternalHandleNV;
+                return true;
+            }
+            break;
+        case 0xdf5dcb8au:
+            if (!strcmp("vkGetQueueInternalHandleNV", name)) {
+                *addr = (void *)GetQueueInternalHandleNV;
+                return true;
+            }
+            break;
+        case 0x6c866e66u:
+            if (!strcmp("vkGetCommandBufferInternalHandleNV", name)) {
+                *addr = (void *)GetCommandBufferInternalHandleNV;
+                return true;
+            }
+            break;
+
         // ---- VK_EXT_primitive_restart_index extension commands
         case 0x19fa512du:
             if (!strcmp("vkCmdSetPrimitiveRestartIndexEXT", name)) {
@@ -15611,6 +15710,9 @@ const VkLayerInstanceDispatchTable instance_disp = {
 #if defined(VK_USE_PLATFORM_UBM_SEC)
     .GetPhysicalDeviceUbmPresentationSupportSEC = terminator_GetPhysicalDeviceUbmPresentationSupportSEC,
 #endif // VK_USE_PLATFORM_UBM_SEC
+
+    // ---- VK_NV_internal_handle extension commands
+    .GetPhysicalDeviceInternalHandleNV = terminator_GetPhysicalDeviceInternalHandleNV,
 };
 
 // A null-terminated list of all of the instance extensions supported by the loader.
