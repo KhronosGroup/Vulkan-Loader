@@ -5771,3 +5771,35 @@ TEST(DriverUnloadingFromZeroPhysDevs, HandleRecreation) {
 
     ASSERT_EQ(120U + 1U, log.count(data.pMessage));
 }
+
+// A driver that stops reporting physical devices must not be unloaded while a VkDevice created from it is still alive.
+TEST(DriverUnloadingFromZeroPhysDevs, DriverWithLiveDeviceNotUnloaded) {
+    FrameworkEnvironment env{};
+    add_driver_for_unloading_testing(env);
+    add_driver_for_unloading_testing(env);
+
+    InstWrapper inst{env.vulkan_functions};
+    inst.CheckCreate();
+    auto phys_devs = inst.GetPhysDevs(2);
+
+    DeviceWrapper dev_0{inst};
+    dev_0.create_info.add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
+    dev_0.CheckCreate(phys_devs[0]);
+    DeviceWrapper dev_1{inst};
+    dev_1.create_info.add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
+    dev_1.CheckCreate(phys_devs[1]);
+
+    env.get_test_icd(1).set_enum_physical_devices_return_code(VK_ERROR_INITIALIZATION_FAILED);
+    uint32_t phys_dev_count = 2;
+    std::array<VkPhysicalDevice, 2> phys_devs_after{};
+    ASSERT_EQ(VK_SUCCESS, inst->vkEnumeratePhysicalDevices(inst, &phys_dev_count, phys_devs_after.data()));
+    ASSERT_EQ(phys_dev_count, 1U);
+
+    // Both devices are still alive, so calls through their dispatch (and vkDestroyDevice in the wrappers) must keep working
+    VkQueue queue_0{};
+    inst->vkGetDeviceQueue(dev_0, 0, 0, &queue_0);
+    ASSERT_NE(queue_0, VK_NULL_HANDLE);
+    VkQueue queue_1{};
+    inst->vkGetDeviceQueue(dev_1, 0, 0, &queue_1);
+    ASSERT_NE(queue_1, VK_NULL_HANDLE);
+}

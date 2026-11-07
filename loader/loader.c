@@ -6485,7 +6485,9 @@ void unload_drivers_without_physical_devices(struct loader_instance* inst) {
 
     while (NULL != cur_icd_term) {
         struct loader_icd_term* next_icd_term = cur_icd_term->next;
-        if (cur_icd_term->physical_device_count == 0) {
+        // A driver can stop reporting physical devices after the application created a VkDevice from one of them. Unloading it
+        // then would free the loader_device that VkDevice dispatches through, so wait until its devices are destroyed.
+        if (cur_icd_term->physical_device_count == 0 && NULL == cur_icd_term->logical_device_list) {
             uint32_t cur_scanned_icd_index = UINT32_MAX;
             if (inst->icd_tramp_list.scanned_list) {
                 for (uint32_t i = 0; i < inst->icd_tramp_list.count; i++) {
