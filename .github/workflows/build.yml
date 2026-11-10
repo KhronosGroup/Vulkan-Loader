@@ -429,7 +429,7 @@ jobs:
     mac:
         # Mac is 10x expensive to run on GitHub machines, so only run if we know something else passed as well
         needs: windows_clang
-        runs-on: macos-14
+        runs-on: macos-26
         timeout-minutes: 30
         strategy:
             matrix:
@@ -466,7 +466,7 @@ jobs:
         # Mac is 10x expensive to run on GitHub machines, so only run if we know something else passed as well
         needs: windows_clang
         name: ${{ matrix.CMAKE_SYSTEM_NAME }}
-        runs-on: macos-14
+        runs-on: macos-26
         timeout-minutes: 30
         strategy:
             matrix:
