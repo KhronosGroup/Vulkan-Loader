@@ -22,8 +22,9 @@
 
 #pragma once
 
-#include "loader_common.h"
+struct loader_instance;
 
+// Defined in vk_loader_core_trampolines.c
 void* trampoline_get_proc_addr(struct loader_instance* inst, const char* funcName);
 
 void* globalGetProcAddr(const char* name);
