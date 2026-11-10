@@ -5798,8 +5798,8 @@ TEST(DriverUnloadingFromZeroPhysDevs, DriverWithLiveDeviceNotUnloaded) {
     // Both devices are still alive, so calls through their dispatch (and vkDestroyDevice in the wrappers) must keep working
     VkQueue queue_0{};
     inst->vkGetDeviceQueue(dev_0, 0, 0, &queue_0);
-    ASSERT_NE(queue_0, VK_NULL_HANDLE);
+    handle_assert_has_value(queue_0);
     VkQueue queue_1{};
     inst->vkGetDeviceQueue(dev_1, 0, 0, &queue_1);
-    ASSERT_NE(queue_1, VK_NULL_HANDLE);
+    handle_assert_has_value(queue_1);
 }
