@@ -25,7 +25,7 @@
 
 import os
 from base_generator import BaseGenerator
-from generators.common_code import ADD_INST_CMDS, APISpecific
+from generators.common_code import ADD_INST_CMDS, loader_hash_string, check_no_hash_collisions, APISpecific
 
 MANUALLY_GENERATED_ENTRYPOINTS = [
     'vkGetDeviceProcAddr',
@@ -66,7 +66,7 @@ class LoaderCoreGenerator(BaseGenerator):
 
         if self.filename == 'vk_loader_core_trampolines.c':
             self.print_vk_loader_core_trampoline_c(out)
-
+            self.print_trampoline_get_proc_addr(out)
         self.write(''.join(out))
 
     def add_preamble(self, out):
@@ -114,9 +114,13 @@ class LoaderCoreGenerator(BaseGenerator):
     def print_vk_loader_core_trampoline_c(self, out):
 
         out.append('\n')
+        out.append('#include <string.h>\n')
         out.append('#include <vulkan/vulkan.h>\n')
         out.append('#include "vk_loader_platform.h"\n')
         out.append('#include "loader.h"\n')
+        out.append('#include "debug_utils.h"\n')
+        out.append('#include "unknown_function_handling.h"\n')
+        out.append('#include "wsi.h"\n')
         out.append('\n\n')
 
         current_block = ''
@@ -179,3 +183,51 @@ class LoaderCoreGenerator(BaseGenerator):
                 out.append('}\n')
 
             out.append('}\n')
+
+
+    #
+    # Create a function for the core GPA call
+    def print_trampoline_get_proc_addr(self, out):
+        cur_extension_name = ''
+
+        out.append('''// Implementation for loader's vkGetInstanceProcAddr for non-global entrypoints
+    void* trampoline_get_proc_addr(struct loader_instance* inst, const char* funcName) {
+    const uint32_t name_hash = loader_hash_string(funcName);
+    switch (name_hash) {
+''')
+        full_names_for_collision_check = []
+        for command in [x for x in self.vk.commands.values() if not x.extensions]:
+
+            # Handled in globalGetProcAddr
+            if command.name in ADD_INST_CMDS:
+                continue
+
+            full_names_for_collision_check.append(command.name)
+            out.append(f'        case {loader_hash_string(command.name):#010x}u:\n')
+            out.append(f'            if (!strcmp(funcName, "{command.name}")) return {command.name};\n')
+            out.append('            break;\n')
+
+
+        check_no_hash_collisions(full_names_for_collision_check, 'trampoline_get_proc_addr')
+        out.append('''        default:
+        break;
+    }
+
+    // Instance extensions
+    void* addr;
+    if (debug_extensions_InstanceGpa(inst, funcName, &addr)) return addr;
+
+    if (wsi_swapchain_instance_gpa(inst, funcName, &addr)) return addr;
+
+    if (extension_instance_gpa(inst, funcName, name_hash, &addr)) return addr;
+
+    // Unknown physical device extensions
+    addr = loader_phys_dev_ext_gpa_tramp(inst, funcName);
+    if (NULL != addr) return addr;
+
+    // Unknown device extensions
+    addr = loader_dev_ext_gpa_tramp(inst, funcName);
+    return addr;
+}
+''')
+
