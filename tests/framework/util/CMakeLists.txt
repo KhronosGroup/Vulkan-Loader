@@ -88,3 +88,8 @@ if (APPLE_STATIC_LOADER)
     target_compile_definitions(testing_framework_util PUBLIC "APPLE_STATIC_LOADER=1")
     target_link_libraries(testing_framework_util PRIVATE vulkan)
 endif()
+
+# workaround macos regression in address sanitizer
+if (APPLE)
+    target_compile_options(testing_framework_util PUBLIC -mllvm -asan-globals=0)
+endif()
