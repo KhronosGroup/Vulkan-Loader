@@ -1416,6 +1416,8 @@ loader *trampoline* code is as follows:
 - Layers which add extensions that create dispatchable objects
 - Layers which insert extra Vulkan functions in the stream of functions they
 intercept from the application
+  - This includes layers calling functions that create dispatchable objects such
+    as vkAllocateCommandBuffers, vkGetDeviceQueue, and vkGetDeviceQueue2
 - Drivers which add extensions that create dispatchable objects
 
 The Khronos loader provides a callback that can be used for initializing a
