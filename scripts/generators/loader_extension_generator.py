@@ -25,7 +25,7 @@
 
 import os
 from base_generator import BaseGenerator
-from generators.common_code import ADD_INST_CMDS, AVOID_EXT_NAMES, AVOID_CMD_NAMES, WSI_EXT_NAMES, loader_hash_string, check_no_hash_collisions, APISpecific
+from generators.common_code import ADD_INST_CMDS, AVOID_EXT_NAMES, AVOID_CMD_NAMES, get_exported_wsi_ext_names, loader_hash_string, check_no_hash_collisions, APISpecific
 
 NULL_CHECK_EXT_NAMES= ['VK_EXT_debug_utils']
 
@@ -86,6 +86,8 @@ class LoaderExtensionGenerator(BaseGenerator):
         self.extension_commands = [x for x in self.vk.commands.values() if len(x.extensions) > 0]
 
         self.instance_extensions = [x for x in self.vk.extensions.values() if x.instance]
+
+        self.wsi_extensions = get_exported_wsi_ext_names(self.vk)
 
         out = []
         self.add_preamble(out)
@@ -751,7 +753,7 @@ VKAPI_ATTR VkResult VKAPI_CALL vkDevExtError(VkDevice dev) {
 
         current_block = ''
         for command in [x for x in self.vk.commands.values() if x.extensions]:
-            if (command.extensions[0] in WSI_EXT_NAMES or
+            if (command.extensions[0] in self.wsi_extensions or
                 command.extensions[0] in AVOID_EXT_NAMES or
                 command.name in AVOID_CMD_NAMES or
                 command.name in manual_ext_commands):
@@ -1135,7 +1137,7 @@ VKAPI_ATTR VkResult VKAPI_CALL vkDevExtError(VkDevice dev) {
         full_names_for_collision_check = []
         for command in [x for x in self.vk.commands.values() if x.extensions]:
             if (command.version or
-                command.extensions[0] in WSI_EXT_NAMES or
+                command.extensions[0] in self.wsi_extensions or
                 command.extensions[0] in AVOID_EXT_NAMES or
                 command.name in AVOID_CMD_NAMES ):
                 continue

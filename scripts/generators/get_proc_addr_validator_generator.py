@@ -20,13 +20,15 @@
 
 import os
 from base_generator import BaseGenerator
-from generators.common_code import DISPATCHABLE_TYPES, AVOID_EXT_NAMES, AVOID_CMD_NAMES, WSI_EXT_NAMES
+from generators.common_code import DISPATCHABLE_TYPES, AVOID_EXT_NAMES, AVOID_CMD_NAMES, get_exported_wsi_ext_names
 
 class GetProcAddrValidatorGenerator(BaseGenerator):
     def __init__(self):
         BaseGenerator.__init__(self)
 
     def generate(self):
+        self.wsi_extensions = get_exported_wsi_ext_names(self.vk)
+
         out = []
 
         out.append(f'''#pragma once
@@ -101,7 +103,7 @@ class GetProcAddrValidatorGenerator(BaseGenerator):
         extension_instance_gpa_funcs = []
         for command in [x for x in self.vk.commands.values() if x.extensions]:
             if (command.protect or command.version or
-                command.extensions[0] in WSI_EXT_NAMES or
+                command.extensions[0] in self.wsi_extensions or
                 command.extensions[0] in AVOID_EXT_NAMES or
                 command.name in AVOID_CMD_NAMES or
                 self.vk.extensions[command.extensions[0]].instance):
@@ -121,7 +123,7 @@ class GetProcAddrValidatorGenerator(BaseGenerator):
             if command.protect:
                 continue
             if ((command.version is None and len(command.extensions) == 0) or
-                command.version or (len(command.extensions) > 0 and command.extensions[0] in WSI_EXT_NAMES)):
+                command.version or (len(command.extensions) > 0 and command.extensions[0] in self.wsi_extensions)):
                 exported_functions_all_platforms.append(command.name)
         out.append(f'static constexpr std::array<const char*, {len(exported_functions_all_platforms)}> kExportedFunctionNames = {{\n')
         for command_name in exported_functions_all_platforms:
@@ -135,7 +137,7 @@ class GetProcAddrValidatorGenerator(BaseGenerator):
             if not command.protect:
                 continue
             if ((command.version is None and len(command.extensions) == 0) or
-                command.version or (len(command.extensions) > 0 and command.extensions[0] in WSI_EXT_NAMES)):
+                command.version or (len(command.extensions) > 0 and command.extensions[0] in self.wsi_extensions)):
                 if command.protect:
                     out.append(f'#if defined({command.protect})\n')
                 out.append(f'"{command.name}",\n')
