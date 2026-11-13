@@ -25,7 +25,7 @@
 
 import os
 from base_generator import BaseGenerator
-from generators.common_code import ADD_INST_CMDS, AVOID_EXT_NAMES, AVOID_CMD_NAMES, get_exported_wsi_ext_names, loader_hash_string, check_no_hash_collisions, APISpecific
+from generators.common_code import ADD_INST_CMDS, AVOID_EXT_NAMES, AVOID_CMD_NAMES, get_exported_wsi_ext_names, loader_hash_string, check_no_hash_collisions, APISpecific, DescribeBlock
 
 NULL_CHECK_EXT_NAMES= ['VK_EXT_debug_utils']
 
@@ -182,22 +182,6 @@ class LoaderExtensionGenerator(BaseGenerator):
         self.OutputLayerInstanceDispatchTable(out)
         self.OutputLayerDeviceDispatchTable(out)
 
-    def DescribeBlock(self, command, current_block, out, custom_commands_string = ' commands', indent = '    '):
-        effective_version_name = APISpecific.getEffectiveVersionName(self.targetApiName, command.version)
-        if command.extensions != current_block and effective_version_name != current_block:
-            if effective_version_name and len(command.extensions) == 0:
-                # Entry points that have an effective version in the target API
-                api_version_display_name = APISpecific.getApiVersionDisplayName(self.targetApiName, effective_version_name)
-                out.append(f"\n{indent}// ---- Core {api_version_display_name}{custom_commands_string}\n")
-                return effective_version_name
-            else:
-                # don't repeat unless the first extension is different (while rest can vary)
-                if not isinstance(current_block, list) or current_block[0] != command.extensions[0]:
-                    out.append(f"\n{indent}// ---- {command.extensions[0] if len(command.extensions) > 0 else ''} extension{custom_commands_string}\n")
-                return command.extensions
-        else:
-            return current_block
-
     def OutputPrototypesInHeader(self, out: list):
         out.append('''// Structures defined externally, but used here
 struct loader_instance;
@@ -309,7 +293,7 @@ VKAPI_ATTR void* VKAPI_CALL loader_lookup_instance_dispatch_table(const VkLayerI
             if (command.name in skip_commands or command.device )and command.name != 'vkGetDeviceProcAddr':
                 continue
 
-            current_block = self.DescribeBlock(command, current_block, out)
+            current_block = DescribeBlock(self.targetApiName, command, current_block, out)
 
             if command.protect:
                 out.append(f'#if defined({command.protect})\n')
@@ -348,7 +332,7 @@ VKAPI_ATTR void* VKAPI_CALL loader_lookup_instance_dispatch_table(const VkLayerI
                 if command.protect is not None:
                     out.append( f'#if defined({command.protect})\n')
 
-                current_block = self.DescribeBlock(command, current_block, out)
+                current_block = DescribeBlock(self.targetApiName, command, current_block, out)
 
                 out.append( f'    PFN_{command.name} {command.name[2:]};\n')
 
@@ -374,7 +358,7 @@ VKAPI_ATTR void* VKAPI_CALL loader_lookup_instance_dispatch_table(const VkLayerI
             if not command.instance:
                 continue
 
-            current_block = self.DescribeBlock(command, current_block, out)
+            current_block = DescribeBlock(self.targetApiName, command, current_block, out)
 
             if command.protect:
                 out.append(f'#if defined({command.protect})\n')
@@ -397,7 +381,7 @@ VKAPI_ATTR void* VKAPI_CALL loader_lookup_instance_dispatch_table(const VkLayerI
         current_block = ''
         for command in [x for x in self.vk.commands.values() if x.device]:
 
-            current_block = self.DescribeBlock(command, current_block, out)
+            current_block = DescribeBlock(self.targetApiName, command, current_block, out)
 
             if command.protect:
                 out.append(f'#if defined({command.protect})\n')
@@ -458,7 +442,7 @@ VKAPI_ATTR VkResult VKAPI_CALL vkDevExtError(VkDevice dev) {
             if command.name in skip_gipa_commands:
                 continue
             custom_commands_string= ' commands' if len(command.extensions) > 0 else ''
-            current_block = self.DescribeBlock(command, current_block, out, custom_commands_string=custom_commands_string)
+            current_block = DescribeBlock(self.targetApiName, command, current_block, out, custom_commands_string=custom_commands_string)
 
             if command.protect is not None:
                 out.append( f'#if defined({command.protect})\n')
@@ -538,7 +522,7 @@ VKAPI_ATTR VkResult VKAPI_CALL vkDevExtError(VkDevice dev) {
                 is_inst_handle_type = command.params[0].type in ['VkInstance', 'VkPhysicalDevice']
                 if ((cur_type == 'instance' and is_inst_handle_type) or (cur_type == 'device' and not is_inst_handle_type)):
 
-                    current_block = self.DescribeBlock(command, current_block, out)
+                    current_block = DescribeBlock(self.targetApiName, command, current_block, out)
 
                     # Remove 'vk' from proto name
                     base_name = command.name[2:]
@@ -588,7 +572,7 @@ VKAPI_ATTR VkResult VKAPI_CALL vkDevExtError(VkDevice dev) {
                 if command.protect is not None:
                     out.append(f'#if defined({command.protect})\n')
 
-                current_block = self.DescribeBlock(command, current_block, out)
+                current_block = DescribeBlock(self.targetApiName, command, current_block, out)
                 enable_extension_expressions = []
                 for ext in command.extensions:
                     enable_extension_expressions.append(f'dev->driver_extensions.{ext[3:].lower()}_enabled')
@@ -610,7 +594,7 @@ VKAPI_ATTR VkResult VKAPI_CALL vkDevExtError(VkDevice dev) {
 
                 if command.protect is not None:
                     out.append(f'#if defined({command.protect})\n')
-                current_block = self.DescribeBlock(command, current_block, out)
+                current_block = DescribeBlock(self.targetApiName, command, current_block, out)
 
                 out.append(f'{command.cPrototype.replace("VKAPI_CALL vk", "VKAPI_CALL ")}\n')
 
@@ -670,7 +654,7 @@ VKAPI_ATTR VkResult VKAPI_CALL vkDevExtError(VkDevice dev) {
                     is_inst_handle_type = command.params[0].type in ['VkInstance', 'VkPhysicalDevice']
                     if ((cur_type == 'instance' and is_inst_handle_type) or (cur_type == 'device' and not is_inst_handle_type)):
 
-                        current_block = self.DescribeBlock(command, current_block, out, indent='        ')
+                        current_block = DescribeBlock(self.targetApiName, command, current_block, out, indent='        ')
                         if len(command.extensions) == 0:
                             if cur_type == 'device':
                                 effective_version_name = APISpecific.getEffectiveVersionName(self.targetApiName, command.version)
@@ -759,7 +743,7 @@ VKAPI_ATTR VkResult VKAPI_CALL vkDevExtError(VkDevice dev) {
                 command.name in manual_ext_commands):
                 continue
 
-            current_block = self.DescribeBlock(command=command, current_block=current_block, out=out, custom_commands_string=' trampoline/terminators\n', indent='')
+            current_block = DescribeBlock(self.targetApiName, command=command, current_block=current_block, out=out, custom_commands_string=' trampoline/terminators\n', indent='')
 
             if command.protect is not None:
                 out.append(f'#if defined({command.protect})\n')
@@ -1272,7 +1256,7 @@ VKAPI_ATTR VkResult VKAPI_CALL vkDevExtError(VkDevice dev) {
             current_block = ''
             for command in commands:
                 if command.params[0].type in ['VkInstance', 'VkPhysicalDevice']:
-                    current_block = self.DescribeBlock(command, current_block, out)
+                    current_block = DescribeBlock(self.targetApiName, command, current_block, out)
                     # Remove 'vk' from proto name
                     base_name = command.name[2:]
                     aliased_name = SHARED_ALIASES[command.name][2:] if command.name in SHARED_ALIASES else base_name

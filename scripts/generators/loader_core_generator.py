@@ -25,7 +25,7 @@
 
 import os
 from base_generator import BaseGenerator
-from generators.common_code import ADD_INST_CMDS, loader_hash_string, check_no_hash_collisions, APISpecific
+from generators.common_code import ADD_INST_CMDS, loader_hash_string, check_no_hash_collisions, APISpecific, DescribeBlock
 
 MANUALLY_GENERATED_ENTRYPOINTS = [
     'vkGetDeviceProcAddr',
@@ -95,22 +95,6 @@ class LoaderCoreGenerator(BaseGenerator):
 
 ''')
 
-    def DescribeBlock(self, command, current_block, out, custom_commands_string = ' commands', indent = '    '):
-        effective_version_name = APISpecific.getEffectiveVersionName(self.targetApiName, command.version)
-        if command.extensions != current_block and effective_version_name != current_block:
-            if effective_version_name and len(command.extensions) == 0:
-                # Entry points that have an effective version in the target API
-                api_version_display_name = APISpecific.getApiVersionDisplayName(self.targetApiName, effective_version_name)
-                out.append(f"\n{indent}// ---- Core {api_version_display_name}{custom_commands_string}\n")
-                return effective_version_name
-            else:
-                # don't repeat unless the first extension is different (while rest can vary)
-                if not isinstance(current_block, list) or current_block[0] != command.extensions[0]:
-                    out.append(f"\n{indent}// ---- {command.extensions[0] if len(command.extensions) > 0 else ''} extension{custom_commands_string}\n")
-                return command.extensions
-        else:
-            return current_block
-
     def print_vk_loader_core_trampoline_c(self, out):
 
         out.append('\n')
@@ -130,7 +114,7 @@ class LoaderCoreGenerator(BaseGenerator):
             if command.params[0].type == 'VkInstance' or command.name in ADD_INST_CMDS or command.name in MANUALLY_GENERATED_ENTRYPOINTS:
                 continue
 
-            current_block = self.DescribeBlock(command, current_block, out)
+            current_block = DescribeBlock(self.targetApiName, command, current_block, out)
 
             param_decl = []
             for param in command.params:
