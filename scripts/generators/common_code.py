@@ -135,3 +135,19 @@ class APISpecific:
         match targetApiName:
             case 'vulkan':
                 return version.name
+
+def DescribeBlock(targetApiName, command, current_block, out, custom_commands_string = ' commands', indent = '    '):
+    effective_version_name = APISpecific.getEffectiveVersionName(targetApiName, command.version)
+    if command.extensions != current_block and effective_version_name != current_block:
+        if effective_version_name and len(command.extensions) == 0:
+            # Entry points that have an effective version in the target API
+            api_version_display_name = APISpecific.getApiVersionDisplayName(targetApiName, effective_version_name)
+            out.append(f"\n{indent}// ---- Core {api_version_display_name}{custom_commands_string}\n")
+            return effective_version_name
+        else:
+            # don't repeat unless the first extension is different (while rest can vary)
+            if not isinstance(current_block, list) or current_block[0] != command.extensions[0]:
+                out.append(f"\n{indent}// ---- {command.extensions[0] if len(command.extensions) > 0 else ''} extension{custom_commands_string}\n")
+            return command.extensions
+    else:
+        return current_block
