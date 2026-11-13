@@ -20,7 +20,7 @@
 
 import os
 import re
-from vulkan_object import Version
+from vulkan_object import VulkanObject, Version
 
 ADD_INST_CMDS = ['vkCreateInstance',
                  'vkEnumerateInstanceExtensionProperties',
@@ -35,28 +35,21 @@ AVOID_CMD_NAMES = ['vkCreateDebugUtilsMessengerEXT',
                    'vkDestroyDebugUtilsMessengerEXT',
                    'vkSubmitDebugUtilsMessageEXT']
 
-WSI_EXT_NAMES = ['VK_KHR_surface',
-                 'VK_KHR_display',
-                 'VK_KHR_xlib_surface',
-                 'VK_KHR_xcb_surface',
-                 'VK_KHR_wayland_surface',
-                 'VK_EXT_directfb_surface',
-                 'VK_KHR_win32_surface',
-                 'VK_KHR_android_surface',
-                 'VK_GGP_stream_descriptor_surface',
-                 'VK_MVK_macos_surface',
-                 'VK_MVK_ios_surface',
-                 'VK_EXT_headless_surface',
-                 'VK_EXT_metal_surface',
-                 'VK_FUCHSIA_imagepipe_surface',
-                 'VK_KHR_swapchain',
-                 'VK_KHR_display_swapchain',
-                 'VK_KHR_get_display_properties2',
-                 'VK_KHR_get_surface_capabilities2',
-                 'VK_QNX_screen_surface',
-                 'VK_NN_vi_surface',
-                 'VK_SEC_ubm_surface',
-                 ]
+# List of extensions that extend VK_KHR_surface as well as VK_KHR_surface itself
+def get_surface_ext_names(vk: VulkanObject):
+    exts = ['VK_KHR_surface']
+    for ext_name, ext in vk.extensions.items():
+        if ext.depends is not None and 'VK_KHR_surface' in ext.depends and ext.instance:
+            exts.append(ext_name)
+    # unsupported by the loader at the current time
+    exts.remove('VK_OHOS_surface')
+    return exts
+
+# List of extensions in WSI that the loader exports
+def get_exported_wsi_ext_names(vk: VulkanObject):
+    exts = get_surface_ext_names(vk)
+    exts.extend(['VK_KHR_swapchain', 'VK_KHR_display_swapchain', 'VK_KHR_get_display_properties2'])
+    return exts
 
 def _read_max_loader_string_length_from_c_header() -> int:
     header_path = os.path.join(os.path.dirname(__file__), '..', '..', 'loader', 'loader_common.h')
