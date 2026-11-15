@@ -1759,6 +1759,60 @@ TEST(SettingsFile, PreInstanceFunctions) {
     }
 }
 
+// Implicit layers found outside the settings file go in the unordered_layer_location slot, including when only implicit layers are
+// gathered, as vkEnumerateInstanceExtensionProperties does
+TEST(SettingsFile, UnorderedLayerLocationKeepsRegularImplicitLayersInInstanceExtensions) {
+    FrameworkEnvironment env;
+    env.add_icd(TEST_ICD_PATH_VERSION_2).add_physical_device({});
+
+    const char* settings_layer_name = "VK_LAYER_SettingsImplicitLayer";
+    env.add_implicit_layer({}, ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                             .set_name(settings_layer_name)
+                                                             .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                             .set_disable_environment("DISABLE_ME")));
+
+    const char* regular_layer_name = "VK_LAYER_RegularImplicitLayer";
+    env.add_implicit_layer({}, ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                             .set_name(regular_layer_name)
+                                                             .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                             .add_instance_extension({"VK_EXT_layer_settings"})
+                                                             .set_disable_environment("DISABLE_ME")));
+    env.layers.back().get_test_binary().instance_extensions.push_back("VK_EXT_layer_settings");
+
+    env.update_loader_settings(env.loader_settings.add_app_specific_setting(
+        AppSpecificSettings{}
+            .add_stderr_log_filter("all")
+            .add_layer_configuration(LoaderSettingsLayerConfiguration{}
+                                         .set_name(settings_layer_name)
+                                         .set_control("on")
+                                         .set_path(env.get_shimmed_layer_manifest_path(0))
+                                         .set_treat_as_implicit_manifest(true))
+            .add_layer_configuration(LoaderSettingsLayerConfiguration{}.set_control("unordered_layer_location"))));
+
+    auto layer_props = env.GetLayerProperties(2);
+    ASSERT_TRUE(string_eq(layer_props.at(0).layerName, settings_layer_name));
+    ASSERT_TRUE(string_eq(layer_props.at(1).layerName, regular_layer_name));
+
+    uint32_t count = 0;
+    ASSERT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &count, nullptr));
+    std::vector<VkExtensionProperties> ext_props{count};
+    ASSERT_EQ(VK_SUCCESS, env.vulkan_functions.vkEnumerateInstanceExtensionProperties(nullptr, &count, ext_props.data()));
+    bool found = false;
+    for (const auto& ext : ext_props) {
+        if (string_eq(ext.extensionName, "VK_EXT_layer_settings")) {
+            found = true;
+        }
+    }
+    ASSERT_TRUE(found);
+
+    InstWrapper inst{env.vulkan_functions};
+    inst.create_info.add_extension("VK_EXT_layer_settings");
+    inst.CheckCreate();
+    auto layers = inst.GetActiveLayers(inst.GetPhysDev(), 2);
+    ASSERT_TRUE(string_eq(layers.at(0).layerName, settings_layer_name));
+    ASSERT_TRUE(string_eq(layers.at(1).layerName, regular_layer_name));
+}
+
 // If an implicit layer's disable environment variable is set, but the settings file says to turn the layer on, the layer should be
 // activated.
 TEST(SettingsFile, ImplicitLayerDisableEnvironmentVariableOverriden) {

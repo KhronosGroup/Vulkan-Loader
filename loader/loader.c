@@ -3839,8 +3839,11 @@ VkResult loader_scan_for_implicit_layers(struct loader_instance* inst, struct lo
 
     // Remove layers from settings file that are off, are explicit, or are implicit layers that aren't active
     for (uint32_t i = 0; i < settings_layers.count; ++i) {
+        // Keep the unordered layer location, combine_settings_layers_with_regular_layers needs it to place the regular layers
+        if (settings_layers.list[i].settings_control_value == LOADER_SETTINGS_LAYER_UNORDERED_LAYER_LOCATION) {
+            continue;
+        }
         if (settings_layers.list[i].settings_control_value == LOADER_SETTINGS_LAYER_CONTROL_OFF ||
-            settings_layers.list[i].settings_control_value == LOADER_SETTINGS_LAYER_UNORDERED_LAYER_LOCATION ||
             (settings_layers.list[i].type_flags & VK_LAYER_TYPE_FLAG_EXPLICIT_LAYER) == VK_LAYER_TYPE_FLAG_EXPLICIT_LAYER ||
             !loader_implicit_layer_is_enabled(inst, layer_filters, &settings_layers.list[i])) {
             loader_remove_layer_in_list(inst, &settings_layers, i);
