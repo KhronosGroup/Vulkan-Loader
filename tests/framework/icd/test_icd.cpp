@@ -1698,6 +1698,10 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vk_icdEnumerateAdapterPhysicalDevices(VkInst
     }
     icd.called_enumerate_adapter_physical_devices = true;
     VkResult res = test_vkEnumeratePhysicalDevices(instance, pPhysicalDeviceCount, pPhysicalDevices);
+    if (nullptr == pPhysicalDevices && icd.enum_adapter_physical_devices_late_device_count > 0) {
+        *pPhysicalDeviceCount -= icd.enum_adapter_physical_devices_late_device_count;
+        icd.enum_adapter_physical_devices_late_device_count = 0;
+    }
     // For this testing, flip order intentionally
     if (nullptr != pPhysicalDevices) {
         std::reverse(pPhysicalDevices, pPhysicalDevices + *pPhysicalDeviceCount);
