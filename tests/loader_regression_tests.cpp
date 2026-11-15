@@ -5427,6 +5427,24 @@ TEST(EnumerateAdapterPhysicalDevices, ManyAdapters) {
         dev.CheckCreate(physical_device);
     }
 }
+
+// A physical device appearing between the count and fill calls makes the fill call return VK_INCOMPLETE. The loader must
+// query the count again instead of retrying with the same, too small, array forever.
+TEST(EnumerateAdapterPhysicalDevices, DeviceAddedBetweenCountAndFill) {
+    FrameworkEnvironment env;
+
+    add_dxgi_adapter(env, "physical_device_0", LUID{10, 100}, 2);
+    env.get_test_icd().add_and_get_physical_device("physical_device_1").properties.apiVersion = VK_API_VERSION_1_1;
+
+    InstWrapper inst{env.vulkan_functions};
+    inst.create_info.setup_WSI().set_api_version(VK_API_VERSION_1_1);
+    inst.CheckCreate();
+
+    env.get_test_icd().set_enum_adapter_physical_devices_late_device_count(1);
+    auto physical_devices = inst.GetPhysDevs(2);
+    ASSERT_EQ(physical_devices.size(), 2U);
+    EXPECT_TRUE(env.get_test_icd().called_enumerate_adapter_physical_devices);
+}
 #endif  // defined(WIN32)
 
 void try_create_swapchain(InstWrapper& inst, VkPhysicalDevice physical_device, DeviceWrapper& dev, VkSurfaceKHR const& surface) {

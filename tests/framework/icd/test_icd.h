@@ -328,6 +328,9 @@ struct TestICD {
 
     BUILDER_VALUE_WITH_DEFAULT(VkResult, enum_physical_devices_return_code, VK_SUCCESS);
     BUILDER_VALUE_WITH_DEFAULT(VkResult, enum_adapter_physical_devices_return_code, VK_SUCCESS);
+    // Number of physical devices the next vk_icdEnumerateAdapterPhysicalDevices count query leaves out, as if they were
+    // hot-plugged between the loader's count and fill calls
+    BUILDER_VALUE(uint32_t, enum_adapter_physical_devices_late_device_count)
     // When not VK_SUCCESS, vkEnumerateDeviceExtensionProperties returns this code without writing pPropertyCount or pProperties
     BUILDER_VALUE_WITH_DEFAULT(VkResult, enum_device_extension_properties_return_code, VK_SUCCESS);
     // When not VK_SUCCESS, vkEnumerateInstanceExtensionProperties returns this code without writing pPropertyCount or pProperties

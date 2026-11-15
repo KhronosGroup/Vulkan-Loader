@@ -822,10 +822,13 @@ VkResult enumerate_adapter_physical_devices(struct loader_instance* inst, struct
     // Take a pointer to the last element of icd_phys_devs_array to simplify usage
     struct loader_icd_physical_devices* next_icd_phys_devs = &icd_phys_devs_array[*icd_phys_devs_array_count];
 
-    // Get the actual physical devices
+    // Get the actual physical devices. On VK_INCOMPLETE the driver sets count to the number of handles it wrote, which is the
+    // size of the array passed in, so query the count again before growing the array.
     do {
         // As the driver should return the count in the first call, making sure we don't call realloc with a size of zero.
         if (count == 0) {
+            loader_instance_heap_free(inst, next_icd_phys_devs->physical_devices);
+            next_icd_phys_devs->physical_devices = NULL;
             return VK_SUCCESS;
         }
 
@@ -837,8 +840,9 @@ VkResult enumerate_adapter_physical_devices(struct loader_instance* inst, struct
         }
         next_icd_phys_devs->physical_devices = new_ptr;
         next_icd_phys_devs->device_count = count;
-    } while ((res = icd_term->scanned_icd->EnumerateAdapterPhysicalDevices(icd_term->instance, luid, &count,
-                                                                           next_icd_phys_devs->physical_devices)) == VK_INCOMPLETE);
+    } while ((res = icd_term->scanned_icd->EnumerateAdapterPhysicalDevices(
+                  icd_term->instance, luid, &count, next_icd_phys_devs->physical_devices)) == VK_INCOMPLETE &&
+             (res = icd_term->scanned_icd->EnumerateAdapterPhysicalDevices(icd_term->instance, luid, &count, NULL)) == VK_SUCCESS);
 
     if (res != VK_SUCCESS) {
         loader_instance_heap_free(inst, next_icd_phys_devs->physical_devices);
