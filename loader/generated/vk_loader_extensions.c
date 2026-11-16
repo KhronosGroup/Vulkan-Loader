@@ -31,6 +31,7 @@
 #include <string.h>
 #include "loader.h"
 #include "vk_loader_extensions.h"
+#include "vk_loader_wsi.h"
 #include <vulkan/vk_icd.h>
 #include "wsi.h"
 #include "debug_utils.h"

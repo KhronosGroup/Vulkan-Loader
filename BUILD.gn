@@ -193,6 +193,8 @@ if (!is_android) {
       "loader/generated/vk_layer_dispatch_table.h",
       "loader/generated/vk_loader_core_trampolines.c",
       "loader/generated/vk_loader_extensions.h",
+      "loader/generated/vk_loader_wsi.c",
+      "loader/generated/vk_loader_wsi.h",
       "loader/generated/vk_object_types.h",
       "loader/gpa_helper.h",
       "loader/gpa_helper.c",

@@ -156,6 +156,7 @@ class LoaderExtensionGenerator(BaseGenerator):
         out.append('#include <string.h>\n')
         out.append('#include "loader.h"\n')
         out.append('#include "vk_loader_extensions.h"\n')
+        out.append('#include "vk_loader_wsi.h"\n')
         out.append('#include <vulkan/vk_icd.h>\n')
         out.append('#include "wsi.h"\n')
         out.append('#include "debug_utils.h"\n')

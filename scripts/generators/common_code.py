@@ -151,3 +151,17 @@ def DescribeBlock(targetApiName, command, current_block, out, custom_commands_st
             return command.extensions
     else:
         return current_block
+
+class PlatformGuardHelper():
+    """Used to elide platform guards together, so redundant #endif then #ifdefs are removed
+    Note - be sure to call add_guard(None) when done to add a trailing #endif when needed
+    """
+    def __init__(self):
+        self.current_guard = None
+
+    def add_guard(self, out, guard):
+        if self.current_guard != guard and self.current_guard is not None:
+            out.append(f'#endif  // {self.current_guard}\n')
+        if self.current_guard != guard and guard is not None:
+            out.append(f'#if defined({guard})\n')
+        self.current_guard = guard

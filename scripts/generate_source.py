@@ -66,6 +66,7 @@ def RunGenerators(api: str, registry: str, directory: str, styleFile: str, targe
     from generators.dispatch_table_helper_generator import DispatchTableHelperGenerator
     from generators.helper_file_generator import HelperFileGenerator
     from generators.loader_core_generator import LoaderCoreGenerator
+    from generators.loader_wsi_generator import LoaderWsiGenerator
     from generators.loader_extension_generator import LoaderExtensionGenerator
     from generators.vk_result_to_string_generator import VkResultToStringGenerator
     from generators.get_proc_addr_validator_generator import GetProcAddrValidatorGenerator
@@ -84,6 +85,16 @@ def RunGenerators(api: str, registry: str, directory: str, styleFile: str, targe
     generators.update({
         'vk_loader_core_trampolines.c': {
             'generator' : LoaderCoreGenerator,
+            'genCombined': False,
+            'directory' : generated_directory,
+        },
+        'vk_loader_wsi.c': {
+            'generator' : LoaderWsiGenerator,
+            'genCombined': False,
+            'directory' : generated_directory,
+        },
+        'vk_loader_wsi.h': {
+            'generator' : LoaderWsiGenerator,
             'genCombined': False,
             'directory' : generated_directory,
         },
