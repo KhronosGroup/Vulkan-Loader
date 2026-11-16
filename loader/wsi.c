@@ -1517,7 +1517,7 @@ terminator_CreateStreamDescriptorSurfaceGGP(VkInstance instance, const VkStreamD
 
     // First, check to ensure the appropriate extension was enabled:
     struct loader_instance* loader_inst = loader_get_instance(instance);
-    if (!loader_inst->enabled_extensions.wsi_ggp_surface_enabled) {
+    if (!loader_inst->enabled_extensions.ggp_stream_descriptor_surface) {
         loader_log(loader_inst, VULKAN_LOADER_ERROR_BIT, 0,
                    "VK_GGP_stream_descriptor_surface extension not enabled. vkCreateStreamDescriptorSurfaceGGP not executed!");
         result = VK_ERROR_EXTENSION_NOT_PRESENT;
@@ -2907,7 +2907,7 @@ bool wsi_swapchain_instance_gpa(struct loader_instance* loader_inst, const char*
 
     // Functions for the VK_GGP_stream_descriptor_surface extension:
     if (!strcmp("vkCreateStreamDescriptorSurfaceGGP", name)) {
-        *addr = loader_inst->enabled_extensions.wsi_ggp_surface_enabled ? (void*)vkCreateStreamDescriptorSurfaceGGP : NULL;
+        *addr = loader_inst->enabled_extensions.ggp_stream_descriptor_surface ? (void*)vkCreateStreamDescriptorSurfaceGGP : NULL;
         return true;
     }
 #endif  // VK_USE_PLATFORM_GGP
