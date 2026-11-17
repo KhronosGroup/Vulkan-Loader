@@ -158,7 +158,7 @@ class LoaderCoreGenerator(BaseGenerator):
                     out.append('return ')
                 out.append(f'disp->{command.name[2:]}KHR({", ".join(params)});\n')
                 # only declare a block if there is no return type
-                out.append(f'}} {" else {" if command.returnType == 'void' else ""}\n')
+                out.append(f'}} {" else {" if command.returnType == "void" else ""}\n')
 
             if command.returnType != 'void':
                 out.append('return ')
