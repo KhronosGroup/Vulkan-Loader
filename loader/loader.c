@@ -6577,24 +6577,40 @@ VkResult setup_loader_tramp_phys_dev_groups(struct loader_instance* inst, uint32
         goto out;
     }
 
-    uint32_t cur_device = 0;
+    // A physical device listed in more than one group must still get a single trampoline object, otherwise
+    // setup_loader_tramp_phys_devs keeps one trampoline per occurrence and loses track of the extra ones.
+    uint32_t unique_count = 0;
     for (cur_idx = 0; cur_idx < group_count; ++cur_idx) {
         for (dev_idx = 0; dev_idx < groups[cur_idx].physicalDeviceCount; ++dev_idx) {
-            devices[cur_device++] = groups[cur_idx].physicalDevices[dev_idx];
+            VkPhysicalDevice phys_dev = groups[cur_idx].physicalDevices[dev_idx];
+            bool already_added = false;
+            for (uint32_t i = 0; i < unique_count; ++i) {
+                if (devices[i] == phys_dev) {
+                    already_added = true;
+                    break;
+                }
+            }
+            if (!already_added) {
+                devices[unique_count++] = phys_dev;
+            }
         }
     }
 
     // Update the devices based on the loader physical device values.
-    res = setup_loader_tramp_phys_devs(inst, phys_dev_count, devices);
+    res = setup_loader_tramp_phys_devs(inst, unique_count, devices);
     if (VK_SUCCESS != res) {
         goto out;
     }
 
     // Update the devices in the group structures now
-    cur_device = 0;
     for (cur_idx = 0; cur_idx < group_count; ++cur_idx) {
         for (dev_idx = 0; dev_idx < groups[cur_idx].physicalDeviceCount; ++dev_idx) {
-            groups[cur_idx].physicalDevices[dev_idx] = devices[cur_device++];
+            for (uint32_t i = 0; i < unique_count; ++i) {
+                if (((struct loader_physical_device_tramp*)devices[i])->phys_dev == groups[cur_idx].physicalDevices[dev_idx]) {
+                    groups[cur_idx].physicalDevices[dev_idx] = devices[i];
+                    break;
+                }
+            }
         }
     }
 out:
