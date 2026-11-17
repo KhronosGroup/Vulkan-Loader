@@ -1242,7 +1242,7 @@ static constexpr std::array<const char*, 263> kExportedFunctionNames = {
 };
 
 // List of functions that should be exported by the loader binary that are platform specific
-static constexpr std::array kPlatformExportedFunctionNames = {
+static const std::vector<const char*> kPlatformExportedFunctionNames = {
 #if defined(VK_USE_PLATFORM_XLIB_KHR)
     "vkCreateXlibSurfaceKHR",
 #endif  // defined(VK_USE_PLATFORM_XLIB_KHR)

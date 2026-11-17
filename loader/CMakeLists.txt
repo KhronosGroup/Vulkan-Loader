@@ -72,9 +72,6 @@ set(NORMAL_LOADER_SRCS
     extension_manual.h
     loader_environment.c
     loader_environment.h
-    generated/vk_loader_core_trampolines.c
-    generated/vk_loader_wsi.c
-    generated/vk_loader_wsi.h
     gpa_helper.c
     gpa_helper.h
     loader.c
@@ -93,6 +90,13 @@ set(NORMAL_LOADER_SRCS
     vk_loader_platform.h
     wsi.c
     wsi.h
+    )
+
+# Add generated files
+list(APPEND NORMAL_LOADER_SRCS
+    generated/vk_loader_core_trampolines.c
+    generated/vk_loader_wsi.c
+    generated/vk_loader_wsi.h
     )
 
 if(WIN32)

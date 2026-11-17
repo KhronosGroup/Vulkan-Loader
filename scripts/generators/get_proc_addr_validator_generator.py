@@ -132,7 +132,7 @@ class GetProcAddrValidatorGenerator(BaseGenerator):
         out.append('\n')
 
         out.append('''// List of functions that should be exported by the loader binary that are platform specific\n''')
-        out.append(f'static constexpr std::array kPlatformExportedFunctionNames = {{\n')
+        out.append(f'static const std::vector<const char*> kPlatformExportedFunctionNames = {{\n')
         for command in self.vk.commands.values():
             if not command.protect:
                 continue
