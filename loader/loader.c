@@ -5603,14 +5603,15 @@ VKAPI_ATTR void VKAPI_CALL terminator_DestroyInstance(VkInstance instance, const
     loader_clear_scanned_icd_list(ptr_instance, &ptr_instance->icd_tramp_list);
     loader_destroy_generic_list(ptr_instance, (struct loader_generic_list*)&ptr_instance->ext_list);
     if (NULL != ptr_instance->phys_devs_term) {
-        for (uint32_t i = 0; i < ptr_instance->phys_dev_count_term; i++) {
-            for (uint32_t j = i + 1; j < ptr_instance->phys_dev_count_term; j++) {
+        const uint32_t stored_count = ptr_instance->phys_dev_count_term + ptr_instance->removed_phys_dev_count_term;
+        for (uint32_t i = 0; i < stored_count; i++) {
+            for (uint32_t j = i + 1; j < stored_count; j++) {
                 if (ptr_instance->phys_devs_term[i] == ptr_instance->phys_devs_term[j]) {
                     ptr_instance->phys_devs_term[j] = NULL;
                 }
             }
         }
-        for (uint32_t i = 0; i < ptr_instance->phys_dev_count_term; i++) {
+        for (uint32_t i = 0; i < stored_count; i++) {
             loader_instance_heap_free(ptr_instance, ptr_instance->phys_devs_term[i]);
         }
         loader_instance_heap_free(ptr_instance, (void*)ptr_instance->phys_devs_term);
@@ -6007,8 +6008,9 @@ VkResult setup_loader_tramp_phys_devs(struct loader_instance* inst, uint32_t phy
         // Something is different, so do the full path of checking every device and creating a new array to use.
         // This can happen if a device was added, or removed, or we hadn't previously queried all the data and we
         // have more to store.
+        // Leave room to keep the old physical devices which are not enumerated anymore.
         new_phys_devs = (struct loader_physical_device_tramp**)loader_instance_heap_calloc(
-            inst, sizeof(struct loader_physical_device_tramp*) * new_count, VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
+            inst, sizeof(struct loader_physical_device_tramp*) * (new_count + old_count), VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
         if (NULL == new_phys_devs) {
             loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0,
                        "setup_loader_tramp_phys_devs:  Failed to allocate new physical device array of size %d", new_count);
@@ -6094,21 +6096,19 @@ out:
             if (new_count > inst->total_gpu_count) {
                 inst->total_gpu_count = new_count;
             }
-            // Free everything in the old array that was not copied into the new array
-            // here.  We can't attempt to do that before here since the previous loop
-            // looking before the "out:" label may hit an out of memory condition resulting
-            // in memory leaking.
+            // Keep everything in the old array that was not copied into the new array, the application may still be using
+            // those physical devices. They are freed when the instance is destroyed.
             if (NULL != inst->phys_devs_tramp) {
                 for (uint32_t i = 0; i < inst->phys_dev_count_tramp; i++) {
                     bool found = false;
-                    for (uint32_t j = 0; j < inst->total_gpu_count; j++) {
+                    for (uint32_t j = 0; j < found_count; j++) {
                         if (inst->phys_devs_tramp[i] == new_phys_devs[j]) {
                             found = true;
                             break;
                         }
                     }
                     if (!found) {
-                        loader_instance_heap_free(inst, inst->phys_devs_tramp[i]);
+                        new_phys_devs[found_count++] = inst->phys_devs_tramp[i];
                     }
                 }
                 loader_instance_heap_free(inst, (void*)inst->phys_devs_tramp);
@@ -6167,7 +6167,8 @@ VkResult check_and_add_to_new_phys_devs(struct loader_instance* inst, VkPhysical
         return VK_SUCCESS;
     }
     // Check if it was found in a previous call to vkEnumeratePhysicalDevices, we can just copy over the old data.
-    if (find_phys_dev(physical_device, inst->phys_dev_count_term, inst->phys_devs_term, &out_idx)) {
+    if (find_phys_dev(physical_device, inst->phys_dev_count_term + inst->removed_phys_dev_count_term, inst->phys_devs_term,
+                      &out_idx)) {
         new_phys_devs[idx] = inst->phys_devs_term[out_idx];
         (*cur_new_phys_dev_count)++;
         return VK_SUCCESS;
@@ -6217,6 +6218,7 @@ VkResult setup_loader_term_phys_devs(struct loader_instance* inst) {
     uint32_t new_phys_devs_capacity = 0;
     uint32_t new_phys_devs_count = 0;
     struct loader_physical_device_term** new_phys_devs = NULL;
+    const uint32_t old_phys_devs_count = inst->phys_dev_count_term + inst->removed_phys_dev_count_term;
 
     // No ICD's, no problem
     if (inst->icd_terms_count == 0) {
@@ -6327,9 +6329,10 @@ VkResult setup_loader_term_phys_devs(struct loader_instance* inst) {
     }
 
     // Create an allocation large enough to hold both the windows sorting enumeration and non-windows physical device
-    // enumeration
+    // enumeration, as well as the old physical devices which are not enumerated anymore.
     new_phys_devs = (struct loader_physical_device_term**)loader_instance_heap_calloc(
-        inst, sizeof(struct loader_physical_device_term*) * new_phys_devs_capacity, VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
+        inst, sizeof(struct loader_physical_device_term*) * (new_phys_devs_capacity + old_phys_devs_count),
+        VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
     if (NULL == new_phys_devs) {
         loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0,
                    "setup_loader_term_phys_devs:  Failed to allocate new physical device array of size %d", new_phys_devs_capacity);
@@ -6373,7 +6376,7 @@ VkResult setup_loader_term_phys_devs(struct loader_instance* inst) {
         }
         // Keep previously allocated physical device info since apps may already be using that!
         for (uint32_t new_idx = new_phys_devs_count; new_idx < new_phys_devs_capacity; new_idx++) {
-            for (uint32_t old_idx = 0; old_idx < inst->phys_dev_count_term; old_idx++) {
+            for (uint32_t old_idx = 0; old_idx < old_phys_devs_count; old_idx++) {
                 if (new_phys_devs[new_idx]->phys_dev == inst->phys_devs_term[old_idx]->phys_dev) {
                     loader_log(inst, VULKAN_LOADER_DEBUG_BIT | VULKAN_LOADER_DRIVER_BIT, 0,
                                "Copying old device %u into new device %u", old_idx, new_idx);
@@ -6418,7 +6421,7 @@ out:
                 // delete physical devices which were copied.
                 bool found = false;
                 if (NULL != inst->phys_devs_term) {
-                    for (uint32_t old_idx = 0; old_idx < inst->phys_dev_count_term; old_idx++) {
+                    for (uint32_t old_idx = 0; old_idx < old_phys_devs_count; old_idx++) {
                         if (new_phys_devs[i] == inst->phys_devs_term[old_idx]) {
                             found = true;
                             break;
@@ -6433,21 +6436,20 @@ out:
         }
         inst->total_gpu_count = 0;
     } else {
+        uint32_t removed_phys_devs_count = 0;
         if (NULL != inst->phys_devs_term) {
-            // Free everything in the old array that was not copied into the new array
-            // here.  We can't attempt to do that before here since the previous loop
-            // looking before the "out:" label may hit an out of memory condition resulting
-            // in memory leaking.
-            for (uint32_t i = 0; i < inst->phys_dev_count_term; i++) {
+            // Keep everything in the old array that was not copied into the new array, the application may still be using
+            // those physical devices. They are stored after the enumerated ones and freed when the instance is destroyed.
+            for (uint32_t i = 0; i < old_phys_devs_count; i++) {
                 bool found = false;
-                for (uint32_t j = 0; j < new_phys_devs_count; j++) {
+                for (uint32_t j = 0; j < new_phys_devs_count + removed_phys_devs_count; j++) {
                     if (new_phys_devs != NULL && inst->phys_devs_term[i] == new_phys_devs[j]) {
                         found = true;
                         break;
                     }
                 }
-                if (!found) {
-                    loader_instance_heap_free(inst, inst->phys_devs_term[i]);
+                if (!found && NULL != new_phys_devs) {
+                    new_phys_devs[new_phys_devs_count + removed_phys_devs_count++] = inst->phys_devs_term[i];
                 }
             }
             loader_instance_heap_free(inst, (void*)inst->phys_devs_term);
@@ -6455,6 +6457,7 @@ out:
 
         // Swap out old and new devices list
         inst->phys_dev_count_term = new_phys_devs_count;
+        inst->removed_phys_dev_count_term = removed_phys_devs_count;
         inst->phys_devs_term = new_phys_devs;
         inst->total_gpu_count = new_phys_devs_count;
     }
@@ -6490,7 +6493,16 @@ void unload_drivers_without_physical_devices(struct loader_instance* inst) {
         struct loader_icd_term* next_icd_term = cur_icd_term->next;
         // A driver can stop reporting physical devices after the application created a VkDevice from one of them. Unloading it
         // then would free the loader_device that VkDevice dispatches through, so wait until its devices are destroyed.
-        if (cur_icd_term->physical_device_count == 0 && NULL == cur_icd_term->logical_device_list) {
+        // The physical devices it reported before are kept until the instance is destroyed and still point at the driver, so
+        // it can't be unloaded either.
+        bool has_removed_phys_devs = false;
+        for (uint32_t i = 0; i < inst->removed_phys_dev_count_term; i++) {
+            if (inst->phys_devs_term[inst->phys_dev_count_term + i]->this_icd_term == cur_icd_term) {
+                has_removed_phys_devs = true;
+                break;
+            }
+        }
+        if (cur_icd_term->physical_device_count == 0 && NULL == cur_icd_term->logical_device_list && !has_removed_phys_devs) {
             uint32_t cur_scanned_icd_index = UINT32_MAX;
             if (inst->icd_tramp_list.scanned_list) {
                 for (uint32_t i = 0; i < inst->icd_tramp_list.count; i++) {

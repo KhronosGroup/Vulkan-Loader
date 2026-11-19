@@ -335,6 +335,9 @@ struct loader_instance {
     // create new data unless necessary.
     uint32_t total_gpu_count;
     uint32_t phys_dev_count_term;
+    // Physical devices which are no longer enumerated are kept after the first phys_dev_count_term entries of phys_devs_term,
+    // since the application may still use them. They are freed when the instance is destroyed.
+    uint32_t removed_phys_dev_count_term;
     struct loader_physical_device_term** phys_devs_term;
     uint32_t phys_dev_count_tramp;
     struct loader_physical_device_tramp** phys_devs_tramp;
