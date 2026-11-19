@@ -90,6 +90,9 @@ NTSTATUS APIENTRY ShimQueryAdapterInfo(const LoaderQueryAdapterInfo* query_info)
     }
     auto& adapter = *it;
     auto* reg_info = reinterpret_cast<LoaderQueryRegistryInfo*>(query_info->private_data);
+    if (reg_info->value_type != adapter.value_type) {
+        return STATUS_INVALID_PARAMETER;
+    }
 
     std::vector<std::wstring>* paths = nullptr;
     if (wcsstr(reg_info->value_name, L"DriverName") != nullptr) {  // looking for drivers

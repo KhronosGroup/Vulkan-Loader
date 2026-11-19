@@ -126,12 +126,15 @@ struct D3DKMT_Adapter {
     D3DKMT_Adapter& add_driver_manifest_path(std::filesystem::path const& src);
     D3DKMT_Adapter& add_implicit_layer_manifest_path(std::filesystem::path const& src);
     D3DKMT_Adapter& add_explicit_layer_manifest_path(std::filesystem::path const& src);
+    D3DKMT_Adapter& set_value_type(ULONG type);
 
     UINT hAdapter;
     LUID adapter_luid;
     std::vector<std::wstring> driver_paths;
     std::vector<std::wstring> implicit_layer_paths;
     std::vector<std::wstring> explicit_layer_paths;
+    // Registry type of the adapter's manifest values. Queries asking for a different type fail, like they do in the kernel.
+    ULONG value_type = REG_MULTI_SZ;
 
    private:
     D3DKMT_Adapter& add_path(std::filesystem::path src, std::vector<std::wstring>& dest);

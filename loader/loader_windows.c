@@ -669,9 +669,10 @@ VkResult windows_read_manifest_from_d3d_adapters(const struct loader_instance* i
             continue;
         }
 
+        // full_info may still hold the previous adapter's query, so always start it from this adapter's header
+        bool needs_copy = true;
         while (status == STATUS_SUCCESS &&
                ((LoaderQueryRegistryInfo*)query_info.private_data)->status == LOADER_QUERY_REGISTRY_STATUS_BUFFER_OVERFLOW) {
-            bool needs_copy = (full_info == NULL);
             size_t full_size = sizeof(LoaderQueryRegistryInfo) + filename_info.output_value_size;
             void* buffer =
                 loader_instance_heap_realloc(inst, full_info, full_info_size, full_size, VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
@@ -684,6 +685,7 @@ VkResult windows_read_manifest_from_d3d_adapters(const struct loader_instance* i
 
             if (needs_copy) {
                 memcpy(full_info, &filename_info, sizeof(LoaderQueryRegistryInfo));
+                needs_copy = false;
             }
             query_info.private_data = full_info;
             query_info.private_data_size = (UINT)full_info_size;
