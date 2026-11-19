@@ -4570,6 +4570,27 @@ TEST(RegistryManifestParsing, OversizedD3DKMTDriverPathDoesNotOverflow) {
     InstWrapper inst{env.vulkan_functions};
     inst.CheckCreate(VK_ERROR_INCOMPATIBLE_DRIVER);
 }
+
+// The buffer holding an adapter's registry value is reused for the next adapter. Make sure the next adapter is queried with
+// its own value type rather than the one left over from the previous adapter.
+TEST(RegistryManifestParsing, D3DKMTAdaptersWithDifferentValueTypes) {
+    FrameworkEnvironment env{};
+    env.add_icd(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA, ManifestOptions{}.set_discovery_type(ManifestDiscoveryType::null_dir))
+        .add_physical_device("physical_device_0")
+        .set_adapterLUID(_LUID{10, 1000});
+    env.add_icd(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA, ManifestOptions{}.set_discovery_type(ManifestDiscoveryType::null_dir))
+        .add_physical_device("physical_device_1")
+        .set_adapterLUID(_LUID{20, 2000});
+    env.platform_shim->add_d3dkmt_adapter(
+        D3DKMT_Adapter{0, _LUID{10, 1000}}.set_value_type(REG_SZ).add_driver_manifest_path(env.get_icd_manifest_path(0)));
+    env.platform_shim->add_d3dkmt_adapter(
+        D3DKMT_Adapter{1, _LUID{20, 2000}}.set_value_type(REG_MULTI_SZ).add_driver_manifest_path(env.get_icd_manifest_path(1)));
+
+    InstWrapper inst{env.vulkan_functions};
+    inst.CheckCreate();
+    auto phys_devs = inst.GetPhysDevs();
+    ASSERT_EQ(phys_devs.size(), 2U);
+}
 #endif
 
 TEST(LibraryLoading, SystemLocations) {

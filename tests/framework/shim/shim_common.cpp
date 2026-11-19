@@ -64,6 +64,11 @@ D3DKMT_Adapter& D3DKMT_Adapter::add_explicit_layer_manifest_path(std::filesystem
     return add_path(src, explicit_layer_paths);
 }
 
+D3DKMT_Adapter& D3DKMT_Adapter::set_value_type(ULONG type) {
+    value_type = type;
+    return *this;
+}
+
 D3DKMT_Adapter& D3DKMT_Adapter::add_path(std::filesystem::path src, std::vector<std::wstring>& dest) {
     dest.push_back(src.native());
     return *this;
