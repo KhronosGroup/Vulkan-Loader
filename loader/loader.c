@@ -3767,6 +3767,8 @@ void loader_remove_duplicate_layers(struct loader_instance* inst, struct loader_
                        layers->list[duplicate_index].info.layerName, layers->list[duplicate_index].manifest_file_name,
                        layers->list[i].info.layerName, layers->list[i].manifest_file_name);
             loader_remove_layer_in_list(inst, layers, duplicate_index);
+            // There may be more copies of this layer further down the list, so check it again
+            i--;
         }
     }
 }

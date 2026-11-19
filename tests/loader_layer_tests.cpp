@@ -992,6 +992,73 @@ TEST(ImplicitLayers, DuplicateLayers) {
     ASSERT_FALSE(env.debug_log.find("actually_layer_2"));
 }
 
+// Add 3 implicit layers with the same layer name and expect only the first one found to be kept.
+TEST(ImplicitLayers, DuplicateLayersThreeCopies) {
+    FrameworkEnvironment env;
+    env.add_icd(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA).add_physical_device({});
+
+    const char* same_layer_name_1 = "VK_LAYER_RegularLayer1";
+    env.add_implicit_layer(ManifestOptions{}
+                               // use override folder as just a folder and manually set the VK_ADD_IMPLICIT_LAYER_PATH env-var to it
+                               .set_discovery_type(ManifestDiscoveryType::overflow_folder),
+                           ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                         .set_name(same_layer_name_1)
+                                                         .set_description("actually_layer_1")
+                                                         .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                         .set_disable_environment("Red")));
+    auto& layer1 = env.get_test_layer(0);
+    layer1.set_description("actually_layer_1");
+    layer1.set_make_spurious_log_in_create_instance("actually_layer_1");
+    env.add_env_var_vk_implicit_layer_paths.add_to_list(env.get_folder(ManifestLocation::overflow).location());
+
+    env.add_implicit_layer(ManifestOptions{}.set_discovery_type(ManifestDiscoveryType::add_env_var).set_is_dir(true),
+                           ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                         .set_name(same_layer_name_1)
+                                                         .set_description("actually_layer_2")
+                                                         .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                         .set_disable_environment("Blue")));
+    auto& layer2 = env.get_test_layer(1);
+    layer2.set_description("actually_layer_2");
+    layer2.set_make_spurious_log_in_create_instance("actually_layer_2");
+
+    env.add_implicit_layer(ManifestOptions{}.set_discovery_type(ManifestDiscoveryType::generic),
+                           ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                         .set_name(same_layer_name_1)
+                                                         .set_description("actually_layer_3")
+                                                         .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                         .set_disable_environment("Green")));
+    auto& layer3 = env.get_test_layer(2);
+    layer3.set_description("actually_layer_3");
+    layer3.set_make_spurious_log_in_create_instance("actually_layer_3");
+
+    auto layer_props = env.GetLayerProperties(1);
+    ASSERT_TRUE(string_eq(same_layer_name_1, layer_props[0].layerName));
+    ASSERT_TRUE(string_eq(layer1.description.c_str(), layer_props[0].description));
+
+    {
+        InstWrapper inst{env.vulkan_functions};
+        FillDebugUtilsCreateDetails(inst.create_info, env.debug_log);
+        inst.CheckCreate();
+        auto enabled_layer_props = inst.GetActiveLayers(inst.GetPhysDev(), 1);
+        ASSERT_TRUE(string_eq(layer1.description.c_str(), enabled_layer_props.at(0).description));
+        ASSERT_TRUE(env.debug_log.find("actually_layer_1"));
+        ASSERT_FALSE(env.debug_log.find("actually_layer_2"));
+        ASSERT_FALSE(env.debug_log.find("actually_layer_3"));
+    }
+    env.debug_log.clear();
+    // Disabling the copy that was kept must not let a later copy load in its place
+    {
+        EnvVarWrapper disable_layer_1{"Red", "1"};
+        InstWrapper inst{env.vulkan_functions};
+        FillDebugUtilsCreateDetails(inst.create_info, env.debug_log);
+        inst.CheckCreate();
+        inst.GetActiveLayers(inst.GetPhysDev(), 0);
+        ASSERT_FALSE(env.debug_log.find("actually_layer_1"));
+        ASSERT_FALSE(env.debug_log.find("actually_layer_2"));
+        ASSERT_FALSE(env.debug_log.find("actually_layer_3"));
+    }
+}
+
 TEST(ImplicitLayer, DuplicateLayersWithDifferentExtensions) {
     // Put the duplicate layer without the extension first
     {
