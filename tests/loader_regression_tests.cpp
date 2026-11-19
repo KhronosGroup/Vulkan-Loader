@@ -5803,3 +5803,81 @@ TEST(DriverUnloadingFromZeroPhysDevs, DriverWithLiveDeviceNotUnloaded) {
     inst->vkGetDeviceQueue(dev_1, 0, 0, &queue_1);
     handle_assert_has_value(queue_1);
 }
+
+// A VkPhysicalDevice, and any VkDevice created from it, must stay usable after it drops out of a later
+// vkEnumeratePhysicalDevices call.
+TEST(DriverUnloadingFromZeroPhysDevs, GetDeviceProcAddrAfterPhysicalDeviceRemoved) {
+    FrameworkEnvironment env{};
+    add_driver_for_unloading_testing(env);
+    add_driver_for_unloading_testing(env);
+
+    InstWrapper inst{env.vulkan_functions};
+    inst.CheckCreate();
+    auto phys_devs = inst.GetPhysDevs(2);
+
+    DeviceWrapper dev_0{inst};
+    dev_0.create_info.add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
+    dev_0.CheckCreate(phys_devs[0]);
+    DeviceWrapper dev_1{inst};
+    dev_1.create_info.add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
+    dev_1.CheckCreate(phys_devs[1]);
+    PFN_vkVoidFunction create_command_pool_0 = inst->vkGetDeviceProcAddr(dev_0, "vkCreateCommandPool");
+    ASSERT_NE(nullptr, create_command_pool_0);
+    PFN_vkVoidFunction create_command_pool_1 = inst->vkGetDeviceProcAddr(dev_1, "vkCreateCommandPool");
+    ASSERT_NE(nullptr, create_command_pool_1);
+
+    // The physical device of one of the devices is no longer enumerated
+    env.get_test_icd(1).set_enum_physical_devices_return_code(VK_ERROR_INITIALIZATION_FAILED);
+    uint32_t phys_dev_count = 2;
+    std::array<VkPhysicalDevice, 2> phys_devs_after{};
+    ASSERT_EQ(VK_SUCCESS, inst->vkEnumeratePhysicalDevices(inst, &phys_dev_count, phys_devs_after.data()));
+    ASSERT_EQ(phys_dev_count, 1U);
+
+    ASSERT_EQ(create_command_pool_0, inst->vkGetDeviceProcAddr(dev_0, "vkCreateCommandPool"));
+    ASSERT_EQ(create_command_pool_1, inst->vkGetDeviceProcAddr(dev_1, "vkCreateCommandPool"));
+    {
+        DeviceWrapper dev_2{inst};
+        dev_2.create_info.add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
+        dev_2.CheckCreate(phys_devs[0]);
+        DeviceWrapper dev_3{inst};
+        dev_3.create_info.add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
+        dev_3.CheckCreate(phys_devs[1]);
+        PFN_vkVoidFunction create_command_pool_0 = inst->vkGetDeviceProcAddr(dev_0, "vkCreateCommandPool");
+        ASSERT_NE(nullptr, create_command_pool_0);
+        PFN_vkVoidFunction create_command_pool_1 = inst->vkGetDeviceProcAddr(dev_1, "vkCreateCommandPool");
+        ASSERT_NE(nullptr, create_command_pool_1);
+    }
+}
+
+// A driver whose only physical device drops out of enumeration must not be unloaded while the application can still use that
+// VkPhysicalDevice, and the same handle must be returned once it is enumerated again.
+TEST(DriverUnloadingFromZeroPhysDevs, PhysicalDeviceUsableAfterRemoved) {
+    FrameworkEnvironment env{};
+    add_driver_for_unloading_testing(env);
+    add_driver_for_unloading_testing(env);
+
+    InstWrapper inst{env.vulkan_functions};
+    inst.CheckCreate();
+    auto phys_devs = inst.GetPhysDevs(2);
+
+    env.get_test_icd(1).set_enum_physical_devices_return_code(VK_ERROR_INITIALIZATION_FAILED);
+    uint32_t phys_dev_count = 2;
+    std::array<VkPhysicalDevice, 2> phys_devs_after{};
+    ASSERT_EQ(VK_SUCCESS, inst->vkEnumeratePhysicalDevices(inst, &phys_dev_count, phys_devs_after.data()));
+    ASSERT_EQ(phys_dev_count, 1U);
+    ASSERT_TRUE(phys_devs_after[0] == phys_devs[0] || phys_devs_after[0] == phys_devs[1]);
+    VkPhysicalDevice removed_phys_dev = phys_devs_after[0] == phys_devs[0] ? phys_devs[1] : phys_devs[0];
+
+    VkPhysicalDeviceProperties props{};
+    inst->vkGetPhysicalDeviceProperties(removed_phys_dev, &props);
+    {
+        DeviceWrapper dev{inst};
+        dev.create_info.add_device_queue(DeviceQueueCreateInfo{}.add_priority(0.0f));
+        dev.CheckCreate(removed_phys_dev);
+    }
+
+    env.get_test_icd(1).set_enum_physical_devices_return_code(VK_SUCCESS);
+    auto phys_devs_recovered = inst.GetPhysDevs(2);
+    ASSERT_EQ(phys_devs[0], phys_devs_recovered[0]);
+    ASSERT_EQ(phys_devs[1], phys_devs_recovered[1]);
+}
