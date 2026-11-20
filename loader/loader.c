@@ -4087,6 +4087,26 @@ loader_platform_dl_handle loader_open_layer_file(const struct loader_instance* i
     return prop->lib_handle;
 }
 
+// Returns true if name is one of the PATH_SEPARATOR separated entries of layers_env. Matches whole entries only, the same way
+// loader_add_environment_layers splits and compares them.
+// NOLINTNEXTLINE(bugprone-easily-swappable-parameters) - distinct roles (entry list vs. single name), no safer ordering
+static bool layers_env_contains_name(const char* layers_env, const char* name) {
+    size_t name_len = strlen(name);
+    const char* entry = layers_env;
+    while (*entry != '\0') {
+        const char* separator = strchr(entry, PATH_SEPARATOR);
+        size_t entry_len = NULL != separator ? (size_t)(separator - entry) : strlen(entry);
+        if (entry_len == name_len && 0 == strncmp(entry, name, name_len)) {
+            return true;
+        }
+        if (NULL == separator) {
+            break;
+        }
+        entry = separator + 1;
+    }
+    return false;
+}
+
 // Go through the search_list and find any layers which match type. If layer
 // type match is found in then add it to ext_list.
 // If the layer name is in enabled_layers_env, do not add it to the list, that way it can be ordered alongside the other env-var
@@ -4097,7 +4117,7 @@ VkResult loader_add_implicit_layers(struct loader_instance* inst, const char* en
         struct loader_layer_properties* prop = &inst->instance_layer_list.list[src_layer];
         if (0 == (prop->type_flags & VK_LAYER_TYPE_FLAG_EXPLICIT_LAYER)) {
             // If this layer appears in the enabled_layers_env, don't add it. We will let loader_add_environment_layers handle it
-            if (NULL == enabled_layers_env || NULL == strstr(enabled_layers_env, prop->info.layerName)) {
+            if (NULL == enabled_layers_env || !layers_env_contains_name(enabled_layers_env, prop->info.layerName)) {
                 VkResult result = loader_add_implicit_layer(inst, prop, filters);
                 if (result == VK_ERROR_OUT_OF_HOST_MEMORY) return result;
             }
