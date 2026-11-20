@@ -400,31 +400,34 @@ jobs:
         timeout-minutes: 30
         strategy:
             matrix:
-                compiler: [ clang, clang-cl ]
-                config: [ Debug, Release ]
+                compiler: [ clang] # , clang-cl ]
+                config: [ Debug] #, Release ]
+
         steps:
-          - uses: actions/checkout@v7
-          - uses: TheMrMilchmann/setup-msvc-dev@v4
-            with:
-              arch: x64
-          - name: ccache
-            uses: hendrikmuhs/ccache-action@v1.2.25
-            with:
-              key: windows_clang-${{ matrix.compiler }}-${{ matrix.config }}
-          - run: |
-              cmake -S. -B build `
-              -D CMAKE_C_COMPILER=${{matrix.compiler}} `
-              -D CMAKE_CXX_COMPILER=${{matrix.compiler}} `
-              -D UPDATE_DEPS=ON `
-              -D CMAKE_BUILD_TYPE=${{matrix.config}} `
-              -D CMAKE_C_COMPILER_LAUNCHER=ccache `
-              -D CMAKE_CXX_COMPILER_LAUNCHER=ccache `
-              -D BUILD_WERROR=ON `
-              -D BUILD_TESTS=ON `
-              -G Ninja
-          - run: cmake --build build/
-          - run: ctest --parallel --output-on-failure --test-dir build/
-          - run: cmake --install build --prefix build/install
+          - run: echo "FIXME Clang is broken currently, needs https://github.com/actions/runner-images/pull/15370 to reach the runners to re-enable"
+          # - uses: actions/checkout@v7
+          # - uses: TheMrMilchmann/setup-msvc-dev@v4
+          #   with:
+          #     arch: x64
+          # - name: ccache
+          #   uses: hendrikmuhs/ccache-action@v1.2.25
+          #   with:
+          #     key: windows_clang-${{ matrix.compiler }}-${{ matrix.config }}
+          # - run: |
+          #     cmake -S. -B build `
+          #     -D CMAKE_C_COMPILER=${{matrix.compiler}} `
+          #     -D CMAKE_CXX_COMPILER=${{matrix.compiler}} `
+          #     -D UPDATE_DEPS=ON `
+          #     -D CMAKE_BUILD_TYPE=${{matrix.config}} `
+          #     -D CMAKE_C_COMPILER_LAUNCHER=ccache `
+          #     -D CMAKE_CXX_COMPILER_LAUNCHER=ccache `
+          #     -D BUILD_WERROR=ON `
+          #     -D BUILD_TESTS=ON `
+          #     -G Ninja
+
+          # - run: cmake --build build/
+          # - run: ctest --parallel --output-on-failure --test-dir build/
+          # - run: cmake --install build --prefix build/install
 
     mac:
         # Mac is 10x expensive to run on GitHub machines, so only run if we know something else passed as well
