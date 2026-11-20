@@ -808,28 +808,27 @@ VkResult enumerate_adapter_physical_devices(struct loader_instance* inst, struct
                                             uint32_t* icd_phys_devs_array_count,
                                             struct loader_icd_physical_devices* icd_phys_devs_array) {
     uint32_t count = 0;
-    VkResult res = icd_term->scanned_icd->EnumerateAdapterPhysicalDevices(icd_term->instance, luid, &count, NULL);
-    if (res == VK_ERROR_OUT_OF_HOST_MEMORY) {
-        return res;
-    } else if (res == VK_ERROR_INCOMPATIBLE_DRIVER || res == VK_ERROR_INITIALIZATION_FAILED || 0 == count) {
-        return VK_SUCCESS;  // This driver doesn't support the adapter
-    } else if (res != VK_SUCCESS) {
-        loader_log(inst, VULKAN_LOADER_WARN_BIT, 0,
-                   "Failed to convert DXGI adapter into Vulkan physical device with unexpected error code: %d", res);
-        return VK_SUCCESS;
-    }
+    VkResult res = VK_SUCCESS;
 
     // Take a pointer to the last element of icd_phys_devs_array to simplify usage
     struct loader_icd_physical_devices* next_icd_phys_devs = &icd_phys_devs_array[*icd_phys_devs_array_count];
 
     // Get the actual physical devices. On VK_INCOMPLETE the driver sets count to the number of handles it wrote, which is the
-    // size of the array passed in, so query the count again before growing the array.
+    // size of the array passed in, so the count is queried again at the start of every pass.
     do {
+        res = icd_term->scanned_icd->EnumerateAdapterPhysicalDevices(icd_term->instance, luid, &count, NULL);
         // As the driver should return the count in the first call, making sure we don't call realloc with a size of zero.
-        if (count == 0) {
+        if (res != VK_SUCCESS || 0 == count) {
+            // VK_ERROR_INCOMPATIBLE_DRIVER and VK_ERROR_INITIALIZATION_FAILED mean this driver doesn't support the adapter
+            if (res != VK_SUCCESS && res != VK_ERROR_OUT_OF_HOST_MEMORY && res != VK_ERROR_INCOMPATIBLE_DRIVER &&
+                res != VK_ERROR_INITIALIZATION_FAILED) {
+                loader_log(inst, VULKAN_LOADER_WARN_BIT, 0,
+                           "Failed to convert DXGI adapter into Vulkan physical device with unexpected error code: %d", res);
+            }
             loader_instance_heap_free(inst, next_icd_phys_devs->physical_devices);
             next_icd_phys_devs->physical_devices = NULL;
-            return VK_SUCCESS;
+            // Unless OUT_OF_HOST_MEMORY occurs, only return VK_SUCCESS
+            return res == VK_ERROR_OUT_OF_HOST_MEMORY ? res : VK_SUCCESS;
         }
 
         void* new_ptr = loader_instance_heap_realloc(inst, next_icd_phys_devs->physical_devices,
@@ -840,9 +839,8 @@ VkResult enumerate_adapter_physical_devices(struct loader_instance* inst, struct
         }
         next_icd_phys_devs->physical_devices = new_ptr;
         next_icd_phys_devs->device_count = count;
-    } while ((res = icd_term->scanned_icd->EnumerateAdapterPhysicalDevices(
-                  icd_term->instance, luid, &count, next_icd_phys_devs->physical_devices)) == VK_INCOMPLETE &&
-             (res = icd_term->scanned_icd->EnumerateAdapterPhysicalDevices(icd_term->instance, luid, &count, NULL)) == VK_SUCCESS);
+    } while ((res = icd_term->scanned_icd->EnumerateAdapterPhysicalDevices(icd_term->instance, luid, &count,
+                                                                           next_icd_phys_devs->physical_devices)) == VK_INCOMPLETE);
 
     if (res != VK_SUCCESS) {
         loader_instance_heap_free(inst, next_icd_phys_devs->physical_devices);
