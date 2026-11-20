@@ -1246,6 +1246,29 @@ TEST(ImplicitLayers, OrderedByVK_INSTANCE_LAYERS) {
     }
 }
 
+// An implicit layer whose name is only part of a VK_INSTANCE_LAYERS entry must still be enabled
+TEST(ImplicitLayers, NamePartOfVK_INSTANCE_LAYERSEntry) {
+    FrameworkEnvironment env;
+    env.add_icd(TEST_ICD_PATH_VERSION_2_EXPORT_ICD_GPDPA).add_physical_device({});
+    const char* implicit_layer_name = "VK_LAYER_implicit";
+    env.add_implicit_layer({}, ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                             .set_name(implicit_layer_name)
+                                                             .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                             .set_disable_environment("foo")));
+    const char* explicit_layer_name = "VK_LAYER_implicit_debug";
+    env.add_explicit_layer(
+        {}, ManifestLayer{}.add_layer(
+                ManifestLayer::LayerDescription{}.set_name(explicit_layer_name).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)));
+
+    EnvVarWrapper env_var("VK_INSTANCE_LAYERS");
+    env_var.add_to_list(explicit_layer_name);
+    InstWrapper inst{env.vulkan_functions};
+    inst.CheckCreate();
+    auto active_layers = inst.GetActiveLayers(inst.GetPhysDev(), 2);
+    ASSERT_TRUE(string_eq(active_layers.at(0).layerName, implicit_layer_name));
+    ASSERT_TRUE(string_eq(active_layers.at(1).layerName, explicit_layer_name));
+}
+
 // Makes sure explicit layers can't override pre-instance functions even if enabled by an env-var
 TEST(ExplicitLayers, OverridePreInstanceFunctions) {
     FrameworkEnvironment env;
