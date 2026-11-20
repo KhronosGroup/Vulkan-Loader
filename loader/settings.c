@@ -973,7 +973,7 @@ TEST_FUNCTION_EXPORT VkResult get_settings_layers(const struct loader_instance* 
         if (layer_config->control == LOADER_SETTINGS_LAYER_CONTROL_OFF) {
             struct loader_layer_properties props = {0};
             props.settings_control_value = LOADER_SETTINGS_LAYER_CONTROL_OFF;
-            loader_strncpy(props.info.layerName, VK_MAX_EXTENSION_NAME_SIZE, layer_config->name, VK_MAX_EXTENSION_NAME_SIZE);
+            loader_strncpy(props.info.layerName, VK_MAX_EXTENSION_NAME_SIZE, layer_config->name, VK_MAX_EXTENSION_NAME_SIZE - 1);
             props.info.layerName[VK_MAX_EXTENSION_NAME_SIZE - 1] = '\0';
             res = loader_copy_to_new_str(inst, layer_config->path, &props.manifest_file_name);
             if (VK_ERROR_OUT_OF_HOST_MEMORY == res) {

@@ -363,6 +363,42 @@ TEST(SettingsFile, LayerDisablesImplicitLayer) {
     }
 }
 
+// A layer turned off in the settings file whose name is longer than VK_MAX_EXTENSION_NAME_SIZE must not stop other layers from
+// loading
+TEST(SettingsFile, LayerOffWithOverlongName) {
+    FrameworkEnvironment env{};
+    env.add_icd(TEST_ICD_PATH_VERSION_2).add_physical_device({});
+    const char* explicit_layer_name = "VK_LAYER_Regular_TestLayer";
+    env.add_explicit_layer(
+        ManifestOptions{}.set_discovery_type(ManifestDiscoveryType::overflow_folder),
+        ManifestLayer{}.add_layer(
+            ManifestLayer::LayerDescription{}.set_name(explicit_layer_name).set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)));
+
+    std::string long_layer_name(VK_MAX_EXTENSION_NAME_SIZE + 44, 'A');
+    env.update_loader_settings(env.loader_settings.set_file_format_version({1, 0, 0}).add_app_specific_setting(
+        AppSpecificSettings{}
+            .add_stderr_log_filter("all")
+            .add_layer_configuration(LoaderSettingsLayerConfiguration{}
+                                         .set_name(long_layer_name)
+                                         .set_path(env.get_shimmed_layer_manifest_path(0))
+                                         .set_control("off"))
+            .add_layer_configuration(LoaderSettingsLayerConfiguration{}
+                                         .set_name(explicit_layer_name)
+                                         .set_path(env.get_shimmed_layer_manifest_path(0))
+                                         .set_control("on"))));
+    {
+        auto layer_props = env.GetLayerProperties(1);
+        ASSERT_TRUE(string_eq(layer_props.at(0).layerName, explicit_layer_name));
+
+        InstWrapper inst{env.vulkan_functions};
+        FillDebugUtilsCreateDetails(inst.create_info, env.debug_log);
+        inst.CheckCreate();
+        ASSERT_TRUE(env.debug_log.find(get_settings_location_log_message(env)));
+        auto layers = inst.GetActiveLayers(inst.GetPhysDev(), 1);
+        ASSERT_TRUE(string_eq(layers.at(0).layerName, explicit_layer_name));
+    }
+}
+
 // Implicit layers should be reordered by the settings file
 TEST(SettingsFile, ImplicitLayersDontInterfere) {
     FrameworkEnvironment env{};
