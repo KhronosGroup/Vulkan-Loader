@@ -742,6 +742,19 @@ VKAPI_ATTR VkResult VKAPI_CALL test_vkCreateDevice(VkPhysicalDevice physicalDevi
 
     auto& physical_device_info = GetPhysDevice(physicalDevice);
 
+    // The loader must hand down driver handles for every physical device in the group, not handles belonging to one of
+    // its own wrapper objects.
+    for (const VkBaseInStructure* pNext = reinterpret_cast<const VkBaseInStructure*>(pCreateInfo->pNext); pNext != nullptr;
+         pNext = pNext->pNext) {
+        if (pNext->sType != VK_STRUCTURE_TYPE_DEVICE_GROUP_DEVICE_CREATE_INFO) {
+            continue;
+        }
+        const auto* group_info = reinterpret_cast<const VkDeviceGroupDeviceCreateInfo*>(pNext);
+        for (uint32_t i = 0; i < group_info->physicalDeviceCount; i++) {
+            check_valid_physical_device(group_info->pPhysicalDevices[i]);
+        }
+    }
+
     CreatedDeviceDetails new_device_details{};
     new_device_details.physical_device_created_from =
         icd.created_physical_device_details.at(physicalDevice).vk_physical_device.handle;

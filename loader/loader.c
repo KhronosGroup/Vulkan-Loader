@@ -4267,7 +4267,11 @@ VKAPI_ATTR VkResult VKAPI_CALL loader_layer_create_device(VkInstance instance, V
 
     loader_platform_thread_lock_mutex(&loader_lock);
 
-    if (instance != VK_NULL_HANDLE) {
+    // A layer creating a device through pfnLayerCreateDevice passes an instance handle along with a physical device from
+    // its own point in the call chain, so only the application's physical devices are loader trampoline objects.
+    const bool app_provided_phys_devs = (VK_NULL_HANDLE == instance);
+
+    if (!app_provided_phys_devs) {
         inst = loader_get_instance(instance);
         internal_device = physicalDevice;
     } else {
@@ -4313,7 +4317,8 @@ VKAPI_ATTR VkResult VKAPI_CALL loader_layer_create_device(VkInstance instance, V
 
     setup_logical_device_enabled_layer_extensions(inst, dev, &icd_exts, pCreateInfo);
 
-    res = loader_create_device_chain(internal_device, pCreateInfo, pAllocator, inst, dev, layerGIPA, nextGDPA);
+    res = loader_create_device_chain(internal_device, pCreateInfo, pAllocator, inst, dev, layerGIPA, nextGDPA,
+                                     app_provided_phys_devs);
     if (res != VK_SUCCESS) {
         loader_log(inst, VULKAN_LOADER_ERROR_BIT, 0, "vkCreateDevice:  Failed to create device chain.");
         goto out;
@@ -4765,12 +4770,12 @@ void loader_activate_instance_layer_extensions(struct loader_instance* inst, VkI
 VkResult loader_create_device_chain(VkPhysicalDevice pd, const VkDeviceCreateInfo* pCreateInfo,
                                     const VkAllocationCallbacks* pAllocator, const struct loader_instance* inst,
                                     struct loader_device* dev, PFN_vkGetInstanceProcAddr callingLayer,
-                                    PFN_vkGetDeviceProcAddr* layerNextGDPA) __attribute__((optnone)) {
+                                    PFN_vkGetDeviceProcAddr* layerNextGDPA, bool app_provided_phys_devs) __attribute__((optnone)) {
 #else
 VkResult loader_create_device_chain(VkPhysicalDevice pd, const VkDeviceCreateInfo* pCreateInfo,
                                     const VkAllocationCallbacks* pAllocator, const struct loader_instance* inst,
                                     struct loader_device* dev, PFN_vkGetInstanceProcAddr callingLayer,
-                                    PFN_vkGetDeviceProcAddr* layerNextGDPA) {
+                                    PFN_vkGetDeviceProcAddr* layerNextGDPA, bool app_provided_phys_devs) {
 #endif
     uint32_t num_activated_layers = 0;
     struct activated_layer_info* activated_layers = NULL;
@@ -4820,7 +4825,10 @@ VkResult loader_create_device_chain(VkPhysicalDevice pd, const VkDeviceCreateInf
     // need to look for the corresponding VkDeviceGroupDeviceCreateInfo struct in the device list.  This is because we
     // need to replace all the incoming physical device values (which are really loader trampoline physical device values)
     // with the layer/ICD version.
-    {
+    // Only the handles the application passed in are trampoline objects. A layer creating a device through
+    // pfnLayerCreateDevice hands back the create info it was given, whose group already holds the handles for its own
+    // point in the chain, so they must be left alone - the same way its physicalDevice argument is.
+    if (app_provided_phys_devs) {
         VkBaseOutStructure* pNext = (VkBaseOutStructure*)loader_create_info.pNext;
         VkBaseOutStructure* pPrev = (VkBaseOutStructure*)&loader_create_info;
         while (NULL != pNext) {

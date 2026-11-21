@@ -258,7 +258,7 @@ VKAPI_ATTR void VKAPI_CALL loader_layer_destroy_device(VkDevice device, const Vk
 VkResult loader_create_device_chain(VkPhysicalDevice pd, const VkDeviceCreateInfo* pCreateInfo,
                                     const VkAllocationCallbacks* pAllocator, const struct loader_instance* inst,
                                     struct loader_device* dev, PFN_vkGetInstanceProcAddr callingLayer,
-                                    PFN_vkGetDeviceProcAddr* layerNextGDPA);
+                                    PFN_vkGetDeviceProcAddr* layerNextGDPA, bool app_provided_phys_devs);
 
 VkResult loader_validate_device_extensions(struct loader_instance* this_instance,
                                            const struct loader_pointer_layer_list* activated_device_layers,

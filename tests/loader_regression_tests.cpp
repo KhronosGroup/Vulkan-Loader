@@ -4914,6 +4914,34 @@ TEST(LayerCreatesDevice, Basic) {
     dev.CheckCreate(inst.GetPhysDev());
 }
 
+TEST(LayerCreatesDevice, DeviceGroupInPNextChain) {
+    FrameworkEnvironment env{};
+    env.add_icd(TEST_ICD_PATH_VERSION_2).add_physical_device("physical_device_0");
+
+    env.add_implicit_layer({}, ManifestLayer{}.add_layer(ManifestLayer::LayerDescription{}
+                                                             .set_name("implicit_layer_name")
+                                                             .set_lib_path(TEST_LAYER_PATH_EXPORT_VERSION_2)
+                                                             .set_disable_environment("DISABLE_ME")));
+    env.get_test_layer().set_call_create_device_while_create_device_is_called(true);
+    env.get_test_layer().set_physical_device_index_to_use_during_create_device(0);
+
+    InstWrapper inst{env.vulkan_functions};
+    inst.create_info.set_api_version(VK_API_VERSION_1_1);
+    inst.CheckCreate();
+
+    VkPhysicalDevice phys_dev = inst.GetPhysDev();
+    std::array<VkPhysicalDevice, 1> group_devices{phys_dev};
+
+    VkDeviceGroupDeviceCreateInfo group_info{};
+    group_info.sType = VK_STRUCTURE_TYPE_DEVICE_GROUP_DEVICE_CREATE_INFO;
+    group_info.physicalDeviceCount = static_cast<uint32_t>(group_devices.size());
+    group_info.pPhysicalDevices = group_devices.data();
+
+    DeviceWrapper dev{inst};
+    dev.create_info.dev.pNext = &group_info;
+    dev.CheckCreate(phys_dev);
+}
+
 TEST(LayerCreatesDevice, DifferentPhysicalDevice) {
     FrameworkEnvironment env{};
     env.add_icd(TEST_ICD_PATH_VERSION_2).add_physical_device("Device0");
