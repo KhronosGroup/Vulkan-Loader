@@ -124,6 +124,7 @@ static inline const VkLayerDispatchTable* loader_validate_and_get_queue_dispatch
 extern struct loader_struct loader;
 extern loader_platform_thread_mutex loader_lock;
 extern loader_platform_thread_mutex loader_preload_icd_lock;
+extern struct loader_icd_tramp_list preloaded_icds;
 
 TEST_FUNCTION_EXPORT bool compare_vk_extension_properties(const VkExtensionProperties* op1, const VkExtensionProperties* op2);
 
@@ -236,6 +237,7 @@ struct loader_device* loader_create_logical_device(const struct loader_instance*
 void loader_add_logical_device(struct loader_icd_term* icd_term, struct loader_device* found_dev);
 void loader_remove_logical_device(struct loader_icd_term* icd_term, struct loader_device* found_dev,
                                   const VkAllocationCallbacks* pAllocator);
+const VkAllocationCallbacks* ignore_null_callback(const VkAllocationCallbacks* callbacks);
 // NOTE: Outside of loader, this entry-point is only provided for error
 // cleanup.
 void loader_destroy_logical_device(struct loader_device* dev, const VkAllocationCallbacks* pAllocator);
@@ -264,14 +266,6 @@ VkResult loader_validate_device_extensions(struct loader_instance* this_instance
                                            const struct loader_pointer_layer_list* activated_device_layers,
                                            const struct loader_extension_list* icd_exts, const VkDeviceCreateInfo* pCreateInfo);
 
-VkResult setup_loader_tramp_phys_devs(struct loader_instance* inst, uint32_t phys_dev_count, VkPhysicalDevice* phys_devs);
-VkResult setup_loader_tramp_phys_dev_groups(struct loader_instance* inst, uint32_t group_count,
-                                            VkPhysicalDeviceGroupProperties* groups);
-void unload_drivers_without_physical_devices(struct loader_instance* inst);
-
-VkResult loader_apply_settings_device_configurations(struct loader_instance* inst, uint32_t* pPhysicalDeviceCount,
-                                                     VkPhysicalDevice* pPhysicalDevices);
-
 TEST_FUNCTION_EXPORT VkStringErrorFlags vk_string_validate(const int max_length, const char* utf8);
 char* loader_get_next_path(char* path);
 VkResult add_if_manifest_file(const struct loader_instance* inst, const char* file_name, struct loader_string_list* out_files);
@@ -287,20 +281,6 @@ bool loader_check_version_meets_required(loader_api_version required, loader_api
 
 // Helper that returns true if the string passed in path ends in .json
 bool is_json(const char* path, size_t len);
-
-VkResult loader_filter_enumerated_physical_devices(const struct loader_instance* inst,
-                                                   const struct loader_envvar_id_filter* device_id_filter,
-                                                   const struct loader_envvar_id_filter* vendor_id_filter,
-                                                   const struct loader_envvar_id_filter* driver_id_filter,
-                                                   const uint32_t in_PhysicalDeviceCount,
-                                                   const VkPhysicalDevice* in_pPhysicalDevices, uint32_t* out_pPhysicalDeviceCount,
-                                                   VkPhysicalDevice* out_pPhysicalDevices);
-
-VkResult loader_filter_enumerated_physical_device_groups(
-    const struct loader_instance* inst, const struct loader_envvar_id_filter* device_id_filter,
-    const struct loader_envvar_id_filter* vendor_id_filter, const struct loader_envvar_id_filter* driver_id_filter,
-    const uint32_t in_PhysicalDeviceGroupCount, const VkPhysicalDeviceGroupProperties* in_pPhysicalDeviceGroupProperties,
-    uint32_t* out_PhysicalDeviceGroupCount, VkPhysicalDeviceGroupProperties* out_pPhysicalDeviceGroupProperties);
 
 // Convenience macros for common versions
 #if !defined(LOADER_VERSION_1_0_0)

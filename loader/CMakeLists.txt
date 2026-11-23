@@ -80,6 +80,8 @@ set(NORMAL_LOADER_SRCS
     log.h
     loader_json.c
     loader_json.h
+    physical_device_enumeration.c
+    physical_device_enumeration.h
     settings.c
     settings.h
     terminator.c
