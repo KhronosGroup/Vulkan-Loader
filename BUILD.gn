@@ -207,6 +207,8 @@ if (!is_android) {
       "loader/loader_json.h",
       "loader/log.c",
       "loader/log.h",
+      "loader/physical_device_enumeration.c",
+      "loader/physical_device_enumeration.h",
       # Should only be linked when assembler is used
       # "loader/phys_dev_ext.c",
       "loader/settings.c",

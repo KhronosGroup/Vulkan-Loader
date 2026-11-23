@@ -35,6 +35,7 @@
 #include "loader.h"
 #include "loader_environment.h"
 #include "log.h"
+#include "physical_device_enumeration.h"
 #include "settings.h"
 #include "vk_loader_extensions.h"
 #include "vk_loader_platform.h"
